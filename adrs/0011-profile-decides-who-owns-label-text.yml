@@ -1,0 +1,37 @@
+id: MJL-0011
+slug: profile-decides-who-owns-label-text
+plan_id: null
+title: A contrast profile decides who owns the label text
+description: github scores the declared pairs, and mkdocs-material scores the host's forced text in both themes
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [contrast, accessibility]
+
+lens: |-
+  Contrast is a property of a pair, and which pair is read depends on who controls the text.
+
+provenance: The auditor learned that Material forces label text and ignores color, so a declared pair there proved nothing
+enforced_in:
+  - src/parse/contrast.ts, with the github, mkdocs-material and erDiagram scorers
+
+relates_to: []
+
+problem:
+  symptom: A diagram that passed under the declared colours was unreadable in one Material theme.
+  pain_point: The gate passed a diagram a reader could not read.
+
+decision:
+  given: a diagram is read through a host theme that overrides its colours
+  we_prefer: scoring the host text against each fill composited over both theme backgrounds, over scoring the declared color
+  because: the pair a reader sees is the one that must pass
+  unless: the profile is github, where the author controls the text
+  in_practice:
+    - auto reads mkdocs-material when an ancestor holds mkdocs.yml, and github otherwise.
+    - A translucent fill is composited over each canvas and the worse result gates.
+
+consequences:
+  pros:
+    - A diagram that passes reads in both themes.
+  cons:
+    - The host's colours are constants that can drift from the theme.

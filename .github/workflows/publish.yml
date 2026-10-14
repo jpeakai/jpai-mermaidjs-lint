@@ -1,0 +1,144 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  # Read the version from package.json on main, pin the SHA, refuse a version
+  # that is already tagged or already on npm, then create a DRAFT release.
+  # Every later job checks out that SHA, so a merge mid-run cannot drift in.
+  prepare:
+    runs-on: ubuntu-latest
+    name: Prepare draft release
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+      sha: ${{ steps.meta.outputs.sha }}
+      npm_tag: ${{ steps.meta.outputs.npm_tag }}
+    steps:
+      # A run started from another branch executes that branch's copy of this
+      # file, so refuse it before anything is created.
+      - name: Refuse a run not started from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Releases run only from main, and this run started from ${{ github.ref }}. Run: gh workflow run publish.yml --ref main"
+          exit 1
+
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Resolve version, SHA and npm dist-tag
+        id: meta
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          NAME=$(node -p "require('./package.json').name")
+          case "$VERSION" in
+            *alpha*) NPM_TAG=alpha ;;
+            *beta*) NPM_TAG=beta ;;
+            *rc*) NPM_TAG=rc ;;
+            *) NPM_TAG=latest ;;
+          esac
+          {
+            echo "version=$VERSION"
+            echo "name=$NAME"
+            echo "tag=v$VERSION"
+            echo "sha=$(git rev-parse HEAD)"
+            echo "npm_tag=$NPM_TAG"
+          } >> "$GITHUB_OUTPUT"
+          echo "::notice::Preparing $NAME v$VERSION at $(git rev-parse HEAD) (npm tag $NPM_TAG)"
+
+      - name: Fail fast if the version is already released
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          NAME: ${{ steps.meta.outputs.name }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists. Bump the version in package.json, or delete it: gh release delete $TAG --cleanup-tag --yes"
+            exit 1
+          fi
+          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+            echo "::error::Tag $TAG exists with no release. Delete it: git push origin :refs/tags/$TAG"
+            exit 1
+          fi
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "::error::$NAME@$VERSION is already on npm, and npm never allows a version to be reused. Bump the version."
+            exit 1
+          fi
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          SHA: ${{ steps.meta.outputs.sha }}
+          NPM_TAG: ${{ steps.meta.outputs.npm_tag }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [ "$NPM_TAG" != "latest" ]; then PRERELEASE_FLAG="--prerelease"; fi
+          # shellcheck disable=SC2086
+          gh release create "$TAG" --repo "${{ github.repository }}" --target "$SHA" \
+            --title "$TAG" --draft --generate-notes $PRERELEASE_FLAG
+
+  # Trusted Publishing: npm trusts this repo and this workflow file, so no npm
+  # token is stored. npm publish runs prepublishOnly (make check) and prepack
+  # (make build) before it uploads. The npm environment only admits main, so
+  # GitHub itself refuses this job for any other branch.
+  publish-npm:
+    needs: prepare
+    runs-on: ubuntu-latest
+    name: Publish to npm
+    environment: npm
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+
+      - name: Show npm version
+        # Trusted Publishing needs npm 11.5.1 or later, which Node 24 bundles.
+        # Never self-upgrade npm here: see actions/runner-images#13883.
+        run: npm --version
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Publish
+        run: npm publish --provenance --access public --tag ${{ needs.prepare.outputs.npm_tag }}
+
+  # Flip the draft to published only after npm accepted the package. On a
+  # failure the draft stays: fix, delete the draft, and run the workflow again.
+  finalize-release:
+    needs: [prepare, publish-npm]
+    runs-on: ubuntu-latest
+    name: Publish release
+    permissions:
+      contents: write
+    steps:
+      - name: Flip draft to published
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          gh release edit "$TAG" --repo "${{ github.repository }}" --draft=false
+          echo "::notice::Released $TAG"

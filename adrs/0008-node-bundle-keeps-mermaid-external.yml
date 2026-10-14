@@ -1,0 +1,37 @@
+id: MJL-0008
+slug: node-bundle-keeps-mermaid-external
+plan_id: null
+title: The Node bundle keeps mermaid and its parsers external
+description: dist inlines this package's code and leaves its dependencies to be installed
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [packaging, node]
+
+lens: |-
+  Bundling mermaid inlines its whole renderer and its dynamic chunks, and breaks nothing a normal install would not fix.
+
+provenance: Node will not strip types from a package inside node_modules, so a bundle is needed, but mermaid is not ours to bundle
+enforced_in:
+  - the build target in the Makefile, which passes --packages=external
+
+relates_to: []
+
+problem:
+  symptom: A bundled mermaid made the package tens of megabytes and duplicated it.
+  pain_point: Installing the tool downloaded the renderer twice.
+
+decision:
+  given: dist must run on Node without Bun
+  we_prefer: bundling only this package's own source, over bundling every dependency
+  because: npm already installs the dependencies, and mermaid chooses its own dynamic imports
+  unless: a dependency ships TypeScript only
+  in_practice:
+    - No Bun global appears in src, and a test runs the bundle under Node.
+    - The installed size includes mermaid.
+
+consequences:
+  pros:
+    - The bundle stays small and mermaid resolves itself.
+  cons:
+    - A consumer needs the dependencies installed.

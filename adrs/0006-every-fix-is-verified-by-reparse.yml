@@ -1,0 +1,39 @@
+id: MJL-0006
+slug: every-fix-is-verified-by-reparse
+plan_id: null
+title: Every edit is proven by re-parsing the document
+description: An edit is kept only when the markdown tree and every diagram's structure are unchanged
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [fixing, verification]
+
+lens: |-
+  A fixer proposes, and the engine disposes. A fixer cannot be the judge of its own edit.
+
+provenance: The scripts had no fixers, so a fixer here needs a proof the scripts never had to give
+enforced_in:
+  - src/fix/verify.ts, whose same-diagrams expectation compares the markdown tree and each diagram's parsed structure, and src/fix/engine.ts
+relates_to:
+  - relation: depends_on
+    target: MJL-0005
+    note: a refusal is the normal outcome of a failed proof
+
+problem:
+  symptom: A colour edit that landed on the wrong line would still have parsed.
+  pain_point: The edit looked right and altered another diagram.
+
+decision:
+  given: an edit has been spliced into the source
+  we_prefer: re-parsing the whole document and comparing structure, over trusting the fixer's offsets
+  because: the mermaid parser and the markdown parser are the authority on what the document says
+  unless: the expectation is same-tree, which only compares the markdown tree
+  in_practice:
+    - The verifier is asynchronous, because a diagram is re-parsed by mermaid.
+    - A refused edit is remembered while its source slice is unchanged, so the loop converges.
+
+consequences:
+  pros:
+    - A buggy or plugin fixer cannot corrupt a diagram unnoticed.
+  cons:
+    - Every fix pass parses mermaid again.

@@ -1,0 +1,23 @@
+.*_cache/
+.playwright*/
+.claude/
+.agents/
+.codex/
+tmp/
+.gcloud/
+.gitconfig*
+
+# Ignore all the children repos this top level orchestrator monorepo
+# The point of this repo is a root node level perspective of the entire system.
+# There are child orchestrator repos too that are responsible for their own domain
+# Each node in the heirarchy is a git repo to implement change management processes.
+jpai-*/
+# python
+.venv/
+__pycache__/
+
+# node
+node_modules/
+
+# build output, bundled at publish time
+dist/

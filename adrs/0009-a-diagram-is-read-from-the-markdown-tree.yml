@@ -1,0 +1,37 @@
+id: MJL-0009
+slug: a-diagram-is-read-from-the-markdown-tree
+plan_id: null
+title: A diagram is a code node of the markdown tree
+description: Fences come from mdast, and offsets are mapped back to the source by line
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [parsing, markdown]
+
+lens: |-
+  The markdown parser already knows what a fence is. A line scanner disagrees with it inside lists and quotes.
+
+provenance: The scripts matched an opening line with a regular expression and missed fences in lists and quotes
+enforced_in:
+  - src/model.ts, which collects mermaid code nodes and builds each diagram's offset map
+
+relates_to: []
+
+problem:
+  symptom: A fence indented in a list was ignored, so its diagram was never checked.
+  pain_point: A gate exited clean on a document it had not read.
+
+decision:
+  given: a rule or a fixer needs the diagrams of a document and their positions
+  we_prefer: taking them from the parsed tree and mapping a directive back to the source line, over scanning lines
+  because: the tree gives exact fences and exemptions, and a mapped line lets a fixer edit inside a list or quote
+  unless: a line cannot be mapped back, in which case the fixer refuses
+  in_practice:
+    - A standalone .mmd file is one diagram with no tree around it.
+    - An unclosed fence is reported, and closed only when nothing follows it.
+
+consequences:
+  pros:
+    - Every fence the renderer would draw is checked.
+  cons:
+    - A fence tagged mermaid with extra attributes is also read, which the scripts did not.

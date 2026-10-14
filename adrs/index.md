@@ -1,0 +1,55 @@
+<!-- GENERATED from the bundle's *.yml by okf_render.py. Do not edit; regenerate. -->
+
+# Decision Records
+
+| Record | Decision | Status |
+|---|---|---|
+| [MJL-0001](0001-parse-with-mermaids-own-parsers.md) | Every diagram is measured by mermaid's own parsers | accepted |
+| [MJL-0002](0002-one-rule-per-finding-code.md) | One rule per finding code, one file per rule | accepted |
+| [MJL-0003](0003-findings-fail-or-the-rule-is-off.md) | A finding fails the run, or the rule is off | accepted |
+| [MJL-0004](0004-complexity-is-never-autofixed.md) | No complexity rule has a fixer | accepted |
+| [MJL-0005](0005-a-fixer-refuses-when-unsure.md) | A fixer refuses whenever the answer is a design choice | accepted |
+| [MJL-0006](0006-every-fix-is-verified-by-reparse.md) | Every edit is proven by re-parsing the document | accepted |
+| [MJL-0007](0007-plugins-follow-the-prose-gates-contract.md) | Plugins follow the prose-gates contract | accepted |
+| [MJL-0008](0008-node-bundle-keeps-mermaid-external.md) | The Node bundle keeps mermaid and its parsers external | accepted |
+| [MJL-0009](0009-a-diagram-is-read-from-the-markdown-tree.md) | A diagram is a code node of the markdown tree | accepted |
+| [MJL-0010](0010-thresholds-are-options-not-environment.md) | Thresholds are rule options and flags, never environment variables | accepted |
+| [MJL-0011](0011-profile-decides-who-owns-label-text.md) | A contrast profile decides who owns the label text | accepted |
+# By group
+
+## config
+
+* [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
+## contrast
+
+* [MJL-0011](0011-profile-decides-who-owns-label-text.md) - github scores the declared pairs, and mkdocs-material scores the host's forced text in both themes
+## fixing
+
+* [MJL-0004](0004-complexity-is-never-autofixed.md) - Splitting a diagram changes what it says, so a human does it
+* [MJL-0005](0005-a-fixer-refuses-when-unsure.md) - Contrast is repaired only with black or white, and only when it provably clears 4.5 to 1
+* [MJL-0006](0006-every-fix-is-verified-by-reparse.md) - An edit is kept only when the markdown tree and every diagram's structure are unchanged
+## packaging
+
+* [MJL-0008](0008-node-bundle-keeps-mermaid-external.md) - dist inlines this package's code and leaves its dependencies to be installed
+## parsing
+
+* [MJL-0001](0001-parse-with-mermaids-own-parsers.md) - Structure comes from the Langium grammars and mermaid core, never from regexes over the text
+* [MJL-0009](0009-a-diagram-is-read-from-the-markdown-tree.md) - Fences come from mdast, and offsets are mapped back to the source by line
+## plugins
+
+* [MJL-0007](0007-plugins-follow-the-prose-gates-contract.md) - A plugin is { meta, rules } with a namespace, an apiVersion and declared categories
+## policy
+
+* [MJL-0003](0003-findings-fail-or-the-rule-is-off.md) - There is no warning level, and an advisory pair is not a finding
+## rules
+
+* [MJL-0002](0002-one-rule-per-finding-code.md) - Each distinct failure is its own rule id, so it can be switched off alone
+# Relationship graph
+
+Open [graph.html](graph.html) to explore the records visually: click a node to read it, and links between records navigate the graph.
+The same edge set is rendered as prose in [graph.md](graph.md), and as data in [graph.json](graph.json).
+
+* MJL-0001 --depended_on_by--> MJL-0002
+* MJL-0002 --depends_on--> MJL-0001
+* MJL-0005 --depended_on_by--> MJL-0006
+* MJL-0006 --depends_on--> MJL-0005

@@ -1,0 +1,39 @@
+id: MJL-0001
+slug: parse-with-mermaids-own-parsers
+plan_id: null
+title: Every diagram is measured by mermaid's own parsers
+description: Structure comes from the Langium grammars and mermaid core, never from regexes over the text
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [parsing, architecture]
+
+lens: |-
+  A diagram is a grammar, not a line format. Counting nodes with a regex disagrees with the renderer on every unusual diagram.
+
+provenance: The skill scripts began as a Python regex counter and were rewritten against mermaid's parsers, which was strictly more accurate
+enforced_in:
+  - src/parse/stats.ts, which dispatches to @mermaid-js/parser and mermaid core and reads each parser's result
+relates_to:
+  - relation: depended_on_by
+    target: MJL-0002
+    note: every complexity rule reads these stats
+
+problem:
+  symptom: A regex counted nodes in a flowchart and missed subgraphs, ports and multi-line labels.
+  pain_point: A complexity verdict rested on a count the renderer would not have produced.
+
+decision:
+  given: a rule needs the nodes, edges and subgraphs of a diagram
+  we_prefer: reading them from the parser result, over scanning the diagram text
+  because: the parser already implements the grammar exactly, so the counts are the ones a reader sees
+  unless: a diagram type has no parser result that exposes structure, which fails as an unparseable diagram
+  in_practice:
+    - Langium grammars cover the newer types, and mermaid core covers the rest through a happy-dom shim.
+    - A diagram that yields no nodes from multi-line source is reported, never rated clean.
+
+consequences:
+  pros:
+    - Counts match what a reader sees.
+  cons:
+    - The package depends on mermaid and a DOM shim.

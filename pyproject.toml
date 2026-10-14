@@ -1,0 +1,18 @@
+[project]
+name = "jpai-mermaidjs-lint"
+version = "0.1.0"
+description = "Dev tooling only: renders this repo's okf-yaml decision bundle. The package itself is TypeScript."
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    # Renders this repo's okf-yaml decision bundle (uv run meta adr render).
+    "jpai-meta-cli",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+jpai-meta-cli = { git = "https://github.com/jpeakai/jpai-meta-cli.git" }

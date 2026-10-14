@@ -1,0 +1,37 @@
+id: MJL-0004
+slug: complexity-is-never-autofixed
+plan_id: null
+title: No complexity rule has a fixer
+description: Splitting a diagram changes what it says, so a human does it
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [fixing, safety]
+
+lens: |-
+  A fixer that shortens or splits a diagram edits its meaning, and no check can prove the meaning survived.
+
+provenance: The scripts only recommended a split count, and a split needs a boundary that only the author knows
+enforced_in:
+  - src/rules/complexity.ts, whose factory never takes a fix
+
+relates_to: []
+
+problem:
+  symptom: A mechanical split cut a diagram across the one edge that explained it.
+  pain_point: The result passed the threshold and lost the point of the diagram.
+
+decision:
+  given: a diagram exceeds a node or score threshold
+  we_prefer: reporting it with a split recommendation, over rewriting it
+  because: the boundary of a split is a design decision
+  unless: never
+  in_practice:
+    - The remediation names existing subgraph boundaries and a per-diagram target.
+    - The verifier would have no structure-preserving expectation to hold a split to.
+
+consequences:
+  pros:
+    - A fix never changes what a diagram means.
+  cons:
+    - A complexity finding always needs a human.

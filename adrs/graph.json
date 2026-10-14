@@ -1,0 +1,247 @@
+{
+  "elements": [
+    {
+      "data": {
+        "id": "group-config",
+        "label": "config",
+        "colour": "#6366f1"
+      }
+    },
+    {
+      "data": {
+        "id": "group-contrast",
+        "label": "contrast",
+        "colour": "#0891b2"
+      }
+    },
+    {
+      "data": {
+        "id": "group-fixing",
+        "label": "fixing",
+        "colour": "#059669"
+      }
+    },
+    {
+      "data": {
+        "id": "group-packaging",
+        "label": "packaging",
+        "colour": "#d97706"
+      }
+    },
+    {
+      "data": {
+        "id": "group-parsing",
+        "label": "parsing",
+        "colour": "#db2777"
+      }
+    },
+    {
+      "data": {
+        "id": "group-plugins",
+        "label": "plugins",
+        "colour": "#7c3aed"
+      }
+    },
+    {
+      "data": {
+        "id": "group-policy",
+        "label": "policy",
+        "colour": "#0284c7"
+      }
+    },
+    {
+      "data": {
+        "id": "group-rules",
+        "label": "rules",
+        "colour": "#65a30d"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0001",
+        "label": "0001",
+        "parent": "group-parsing",
+        "colour": "#db2777",
+        "file": "0001-parse-with-mermaids-own-parsers.md",
+        "title": "Every diagram is measured by mermaid's own parsers",
+        "description": "Structure comes from the Langium grammars and mermaid core, never from regexes over the text",
+        "status": "accepted",
+        "tags": "parsing, architecture"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0002",
+        "label": "0002",
+        "parent": "group-rules",
+        "colour": "#65a30d",
+        "file": "0002-one-rule-per-finding-code.md",
+        "title": "One rule per finding code, one file per rule",
+        "description": "Each distinct failure is its own rule id, so it can be switched off alone",
+        "status": "accepted",
+        "tags": "rules, architecture"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0003",
+        "label": "0003",
+        "parent": "group-policy",
+        "colour": "#0284c7",
+        "file": "0003-findings-fail-or-the-rule-is-off.md",
+        "title": "A finding fails the run, or the rule is off",
+        "description": "There is no warning level, and an advisory pair is not a finding",
+        "status": "accepted",
+        "tags": "policy, severity"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0004",
+        "label": "0004",
+        "parent": "group-fixing",
+        "colour": "#059669",
+        "file": "0004-complexity-is-never-autofixed.md",
+        "title": "No complexity rule has a fixer",
+        "description": "Splitting a diagram changes what it says, so a human does it",
+        "status": "accepted",
+        "tags": "fixing, safety"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0005",
+        "label": "0005",
+        "parent": "group-fixing",
+        "colour": "#059669",
+        "file": "0005-a-fixer-refuses-when-unsure.md",
+        "title": "A fixer refuses whenever the answer is a design choice",
+        "description": "Contrast is repaired only with black or white, and only when it provably clears 4.5 to 1",
+        "status": "accepted",
+        "tags": "fixing, safety"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0006",
+        "label": "0006",
+        "parent": "group-fixing",
+        "colour": "#059669",
+        "file": "0006-every-fix-is-verified-by-reparse.md",
+        "title": "Every edit is proven by re-parsing the document",
+        "description": "An edit is kept only when the markdown tree and every diagram's structure are unchanged",
+        "status": "accepted",
+        "tags": "fixing, verification"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0007",
+        "label": "0007",
+        "parent": "group-plugins",
+        "colour": "#7c3aed",
+        "file": "0007-plugins-follow-the-prose-gates-contract.md",
+        "title": "Plugins follow the prose-gates contract",
+        "description": "A plugin is { meta, rules } with a namespace, an apiVersion and declared categories",
+        "status": "accepted",
+        "tags": "plugins, architecture"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0008",
+        "label": "0008",
+        "parent": "group-packaging",
+        "colour": "#d97706",
+        "file": "0008-node-bundle-keeps-mermaid-external.md",
+        "title": "The Node bundle keeps mermaid and its parsers external",
+        "description": "dist inlines this package's code and leaves its dependencies to be installed",
+        "status": "accepted",
+        "tags": "packaging, node"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0009",
+        "label": "0009",
+        "parent": "group-parsing",
+        "colour": "#db2777",
+        "file": "0009-a-diagram-is-read-from-the-markdown-tree.md",
+        "title": "A diagram is a code node of the markdown tree",
+        "description": "Fences come from mdast, and offsets are mapped back to the source by line",
+        "status": "accepted",
+        "tags": "parsing, markdown"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0010",
+        "label": "0010",
+        "parent": "group-config",
+        "colour": "#6366f1",
+        "file": "0010-thresholds-are-options-not-environment.md",
+        "title": "Thresholds are rule options and flags, never environment variables",
+        "description": "A preset and numeric overrides come from the config or a flag",
+        "status": "accepted",
+        "tags": "config, determinism"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0011",
+        "label": "0011",
+        "parent": "group-contrast",
+        "colour": "#0891b2",
+        "file": "0011-profile-decides-who-owns-label-text.md",
+        "title": "A contrast profile decides who owns the label text",
+        "description": "github scores the declared pairs, and mkdocs-material scores the host's forced text in both themes",
+        "status": "accepted",
+        "tags": "contrast, accessibility"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0001-depended_on_by-MJL-0002",
+        "source": "MJL-0001",
+        "target": "MJL-0002",
+        "label": "depended on by",
+        "relation": "depended_on_by",
+        "note": "every complexity rule reads these stats"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0002-depends_on-MJL-0001",
+        "source": "MJL-0002",
+        "target": "MJL-0001",
+        "label": "depends on",
+        "relation": "depends_on",
+        "note": "the rules read the parsed stats"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0005-depended_on_by-MJL-0006",
+        "source": "MJL-0005",
+        "target": "MJL-0006",
+        "label": "depended on by",
+        "relation": "depended_on_by",
+        "note": "the verifier backs a refusal with proof"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0006-depends_on-MJL-0005",
+        "source": "MJL-0006",
+        "target": "MJL-0005",
+        "label": "depends on",
+        "relation": "depends_on",
+        "note": "a refusal is the normal outcome of a failed proof"
+      }
+    }
+  ],
+  "layout": {
+    "name": "cose"
+  },
+  "height": 620
+}

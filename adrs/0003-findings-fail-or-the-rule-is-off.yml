@@ -1,0 +1,37 @@
+id: MJL-0003
+slug: findings-fail-or-the-rule-is-off
+plan_id: null
+title: A finding fails the run, or the rule is off
+description: There is no warning level, and an advisory pair is not a finding
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [policy, severity]
+
+lens: |-
+  A warning costs attention and protects nothing, because people and agents learn to ignore it.
+
+provenance: The scripts exited 1 on warnings too, and the contrast audit printed a non-gating advisory marker that nothing acted on
+enforced_in:
+  - src/config.ts, whose only severities are error and off, and src/rules/contrast-border-below-ui-minimum.ts, which skips advisory pairs
+
+relates_to: []
+
+problem:
+  symptom: A border that cannot clear 3:1 in both themes was printed as advisory and exited 0.
+  pain_point: Output carried findings that no gate enforced.
+
+decision:
+  given: a check is uncertain enough that failing on it seems harsh
+  we_prefer: making the rule off by default or removing the check, over reporting it without failing
+  because: a run that exits 0 should have nothing to report
+  unless: never
+  in_practice:
+    - A rule is either on and failing, or switched off in the config.
+    - A pair the original auditor marked advisory is not reported.
+
+consequences:
+  pros:
+    - The exit code and the output always agree.
+  cons:
+    - A borderline heuristic must be removed or opted into.

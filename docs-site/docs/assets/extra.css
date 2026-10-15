@@ -89,8 +89,9 @@
   margin: 0.6rem 0;
 }
 
-/* Long report lines wrap rather than scroll inside a narrow card. */
-.md-typeset .grid.ml-compare pre code {
+/* Long report lines wrap rather than scroll inside a narrow card or a callout. */
+.md-typeset .grid.ml-compare pre code,
+.md-typeset .admonition.failure pre code {
   white-space: pre-wrap;
   word-break: break-word;
 }

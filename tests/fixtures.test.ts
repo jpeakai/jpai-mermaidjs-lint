@@ -7,6 +7,7 @@ import { loadFixtures } from "./fixture-loader.ts";
 
 const fixtures = loadFixtures();
 const pinned = fixtures.filter((f) => f.fixed !== null);
+const withLlm = fixtures.filter((f) => f.llm !== null);
 
 const distinctRules = async (source: string, file: string): Promise<string[]> =>
   [...new Set((await checkMarkdown(source, file)).map((f) => f.rule))].sort();
@@ -35,5 +36,18 @@ describe("fixture corpus", () => {
 
   test.each(pinned.map((f) => [f.rel, f] as const))("%s fixes to its pinned .fixed file", async (_, f) => {
     expect(await fixSource(f.source, f.path)).toBe(f.fixed as string);
+  });
+
+  // What --fix leaves behind needs judgment, so the gallery shows an LLM fix
+  // for it, and that fix must actually clear every finding.
+  test.each(fixtures.map((f) => [f.rel, f] as const))("%s has an LLM fix if --fix leaves findings", async (_, f) => {
+    const left = await distinctRules(await fixSource(f.source, f.path), f.path);
+    if (left.length > 0) expect(f.llm, `${f.rel} keeps ${left.join(" ")} after --fix`).not.toBeNull();
+  });
+
+  test.each(withLlm.map((f) => [f.rel, f] as const))("%s LLM fix lints clean and says why", async (_, f) => {
+    const llm = f.llm as NonNullable<typeof f.llm>;
+    expect(llm.reason, `${llm.path} has no llm: comment`).not.toBeNull();
+    expect(await distinctRules(llm.source, llm.path)).toEqual([]);
   });
 });

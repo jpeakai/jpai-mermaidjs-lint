@@ -5,6 +5,8 @@ Each fix example is real output: `tests/rules-doc.test.ts` runs every block belo
 
 A block labelled before is followed by its after, which is exactly what `--fix` writes.
 A block labelled reported is a case the fixer leaves alone, so the finding stays for a human.
+A block labelled llm follows each reported block, and shows the judgment fix an LLM would make, with its reason in a comment.
+It must lint clean.
 Rules marked with a star in `--help` have a fixer.
 
 ## Categories
@@ -31,6 +33,15 @@ There is no fixer, since a syntax error needs an author.
 ```mermaid
 flowchart LR
   A -->
+```
+````
+
+````text llm
+<!-- llm: The edge had no target, so it now points at a node B, the smallest change that makes the flowchart parse. -->
+
+```mermaid
+flowchart LR
+  A --> B
 ```
 ````
 
@@ -131,6 +142,17 @@ erDiagram
 ```
 ````
 
+````text llm
+<!-- llm: An entity draws rows on light and dark backgrounds, and no one label colour reads on all of them, so the class marks the entity with a border and leaves the rows to the theme. -->
+
+```mermaid
+erDiagram
+  CAR ||--o{ WHEEL : has
+  classDef c stroke:#1d4ed8,stroke-width:2px
+  class CAR c
+```
+````
+
 A fill with no declared `color:` is reported by `contrast-directive-unauditable` instead, because choosing a colour is a design decision.
 
 ### contrast-border-below-ui-minimum
@@ -149,6 +171,17 @@ flowchart LR
 ```
 ````
 
+````text llm
+<!-- llm: The near-white stroke vanished on the white fill, so it becomes a mid grey that clears 3 to 1 against the fill. -->
+
+```mermaid
+flowchart LR
+  A --> B
+  classDef c fill:#ffffff,color:#000000,stroke:#5f6368
+  class A c
+```
+````
+
 ### contrast-directive-unauditable
 
 A style directive whose contrast cannot be audited.
@@ -160,6 +193,17 @@ Reporting it as a skip would let a gate exit clean on a diagram it never checked
 flowchart LR
   A --> B
   classDef c fill:#123456
+  class A c
+```
+````
+
+````text llm
+<!-- llm: The dark navy fill needs light text, so the class declares white, which reads at well over 4.5 to 1. -->
+
+```mermaid
+flowchart LR
+  A --> B
+  classDef c fill:#123456,color:#ffffff
   class A c
 ```
 ````

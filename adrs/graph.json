@@ -241,6 +241,19 @@
     },
     {
       "data": {
+        "id": "MJL-0014",
+        "label": "0014",
+        "parent": "group-testing",
+        "colour": "#0891b2",
+        "file": "0014-an-llm-fix-is-committed-and-verified.md",
+        "title": "An LLM fix is committed beside its fixture and verified clean",
+        "description": "Judgment fixes for what --fix leaves are authored once as .llm siblings, never generated at build time",
+        "status": "accepted",
+        "tags": "testing, fixtures, docs"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",

@@ -120,9 +120,20 @@ const ruleSection = (doc: string, id: string): string => {
   return next < 0 ? rest : rest.slice(0, next + 1);
 };
 
-const BLOCK = /````text (before|after|reported)\n([\s\S]*?)\n````/g;
+const BLOCK = /````text (before|after|reported|llm)\n([\s\S]*?)\n````/g;
 
-const ruleExample = async (id: string, src: string, after: string | null): Promise<string> => {
+const LLM_REASON = /<!--\s*llm:\s*(.*?)\s*-->/;
+
+const ruleExample = async (id: string, src: string, after: string | null, llmSrc: string | null): Promise<string> => {
+  const llm =
+    llmSrc === null
+      ? null
+      : await llmFix(
+          `RULES.md ${id}`,
+          { path: DOC_FILE, source: llmSrc, reason: LLM_REASON.exec(llmSrc)?.[1] ?? null },
+          "markdown",
+        );
+  if (after === null && llm === null) fail(`RULES.md ${id}`, "a reported example has no LLM fix after it");
   const findings = await checkMarkdown(src, DOC_FILE);
   if (findings.length === 0) fail(`RULES.md ${id}`, "an example reports nothing");
   const fixed = await fixSource(src, DOC_FILE);
@@ -138,16 +149,21 @@ const ruleExample = async (id: string, src: string, after: string | null): Promi
     after === null
       ? [card("Reported, left for a human", "before", diagramOf(src))]
       : [card("Before", "before", diagramOf(src)), card("After --fix", "after", diagramOf(after))];
+  const llmDiagram = llm?.diagrams[0];
+  if (llmDiagram !== undefined) cards.push(card("LLM fix", "after", mermaid(llmDiagram)));
 
   const out = [
     compare(cards),
     admonition("!!!", "failure", "What the linter reports", fenced(reportLines(findings, DOC_NAME), "text")),
   ];
+  if (llm) out.push(admonition("!!!", "tip", "What an LLM would fix", llm.reason));
   if (draw) {
     const source =
-      after === null
-        ? fenced(src, "markdown")
-        : `${tab("Before", fenced(src, "markdown"))}\n${tab("After --fix", fenced(after, "markdown"))}`;
+      after !== null
+        ? `${tab("Before", fenced(src, "markdown"))}\n${tab("After --fix", fenced(after, "markdown"))}`
+        : llm
+          ? `${tab("Reported", fenced(src, "markdown"))}\n${tab("LLM fix", fenced(llm.source, "markdown"))}`
+          : fenced(src, "markdown");
     out.push(admonition("???", "example", "Markdown source", source));
   }
   return out.join("\n");
@@ -200,11 +216,12 @@ const rulesPage = async (): Promise<string> => {
       const blocks = [...section.matchAll(BLOCK)].map((m) => ({ kind: m[1] as string, src: `${m[2]}\n` }));
       for (let i = 0; i < blocks.length; i++) {
         const block = blocks[i];
-        if (!block || block.kind === "after") continue;
+        if (!block || block.kind === "after" || block.kind === "llm") continue;
         const next = blocks[i + 1];
         const after = block.kind === "before" && next?.kind === "after" ? next.src : null;
+        const llm = block.kind === "reported" && next?.kind === "llm" ? next.src : null;
         if (block.kind === "before" && after === null) fail(`RULES.md ${rule.id}`, "a before example has no after");
-        out.push(await ruleExample(rule.id, block.src, after), "");
+        out.push(await ruleExample(rule.id, block.src, after, llm), "");
       }
     }
   }
@@ -212,6 +229,37 @@ const rulesPage = async (): Promise<string> => {
 };
 
 // ── Fixtures page ───────────────────────────────────────────────────────
+
+interface CheckedLlmFix {
+  source: string;
+  reason: string;
+  diagrams: string[];
+}
+
+// An LLM fix is shown only after it is proven: it must say why, and lint clean.
+const llmFix = async (
+  where: string,
+  llm: NonNullable<Fixture["llm"]>,
+  kind: "markdown" | "diagram",
+): Promise<CheckedLlmFix> => {
+  if (llm.reason === null) fail(where, "its LLM fix has no llm: comment saying why");
+  const left = await checkMarkdown(llm.source, llm.path);
+  if (left.length) fail(where, `its LLM fix still reports ${distinct(left).join(" ")}`);
+  return {
+    source: llm.source,
+    reason: llm.reason ?? "",
+    diagrams: buildDocModel(llm.source, kind).diagrams.map((d) => d.source),
+  };
+};
+
+// The reasoning, any diagrams not already drawn in the row above, and the source.
+const llmBlock = (llm: CheckedLlmFix, draw: string[], lang: string): string => {
+  const parts = [llm.reason];
+  if (draw.length)
+    parts.push(compare(draw.map((d, i) => card(`LLM fix ${i + 1} of ${draw.length}`, "after", mermaid(d)))));
+  parts.push(admonition("???", "note", "LLM fix source", fenced(llm.source, lang)));
+  return admonition("!!!", "tip", "What an LLM would fix", parts.join("\n\n"));
+};
 
 const fixtureSection = async (f: Fixture): Promise<string> => {
   const findings = await checkMarkdown(f.source, f.path);
@@ -228,7 +276,7 @@ const fixtureSection = async (f: Fixture): Promise<string> => {
   const out: string[] = [
     `### ${basename(f.rel, ext)}`,
     "",
-    `${got.length ? got.map((r) => badge(r)).join("") : badge("clean", "fix")}${f.fixed !== null ? badge("pinned fix", "fix") : ""}`,
+    `${got.length ? got.map((r) => badge(r)).join("") : badge("clean", "fix")}${f.fixed !== null ? badge("pinned fix", "fix") : ""}${f.llm !== null ? badge("LLM fix", "fix") : ""}`,
     "",
     `[\`${f.rel}\`](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/${f.rel})`,
     "",
@@ -236,6 +284,9 @@ const fixtureSection = async (f: Fixture): Promise<string> => {
 
   const before = buildDocModel(f.source, kind).diagrams;
   const after = buildDocModel(fixed, kind).diagrams;
+  const llm = f.llm ? await llmFix(f.rel, f.llm, kind) : null;
+  // One diagram fixed into one diagram reads best as one row of cards.
+  const inline = llm !== null && before.length === 1 && llm.diagrams.length === 1;
   if (before.length > 0 && before.length <= DRAW_LIMIT) {
     for (const [i, d] of before.entries()) {
       const own = findings.filter((x) => x.line >= d.startLine && x.line <= d.endLine);
@@ -246,10 +297,12 @@ const fixtureSection = async (f: Fixture): Promise<string> => {
       const cards =
         a && a.source !== d.source
           ? [card("Before", "before", body), card("After --fix", "after", mermaid(a.source))]
-          : [card(own.length ? "Reported" : "Lints clean", own.length ? "before" : "after", body)];
+          : [card(own.length ? "Before" : "Lints clean", own.length ? "before" : "after", body)];
+      if (inline && llm) cards.push(card("LLM fix", "after", mermaid(llm.diagrams[0] as string)));
       out.push(compare(cards));
     }
   }
+  if (llm) out.push(llmBlock(llm, inline || before.length > DRAW_LIMIT ? [] : llm.diagrams, lang));
   if (findings.length)
     out.push(
       admonition(
@@ -275,6 +328,7 @@ const fixturesPage = async (): Promise<string> => {
     "",
     "The cases the test suite runs, drawn as GitHub renders them.",
     "Each file names the rules it must report, and a pinned fix holds the exact output of `--fix`.",
+    "Where `--fix` leaves findings, an LLM fix shows the judgment fix an LLM would make, with its reason.",
     "To add a case, see [Add a fixture](index.md#add-a-fixture).",
     "",
   ];

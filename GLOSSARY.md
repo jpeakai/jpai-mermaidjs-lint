@@ -41,6 +41,7 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Fixture | One `.md` or `.mmd` file under `tests/fixtures` or `examples/` that the test suite runs as a case. |
 | Expect comment | The line in a fixture naming the rule ids it must report, or none for a clean file. |
 | Pinned fix | A `<name>.fixed.<ext>` sibling of a fixture holding the exact output of `--fix`. |
+| LLM fix | A `<name>.llm.<ext>` sibling of a fixture, or an `llm` block in `RULES.md`, holding the judgment fix an LLM proposed for findings `--fix` leaves. It states its reason in an `llm:` comment and must lint clean. |
 | Docs site | The MkDocs Material site under `docs-site/`, whose reference pages are generated from the fixtures, `RULES.md` and `examples/`. |
 | Bundle | The `adrs/` directory as a whole, including the records and everything generated from them. |
 | Dialect | This repo's declared documentation conventions, in `docs/CONVENTIONS.md`. |

@@ -118,6 +118,9 @@ Under Node, a `.js` or `.ts` rule loads only as the `"type"` field in the projec
 | No `"type"` field | On Node 20.19 or a later 20 release, or on 22.7 or newer, loads with a `MODULE_TYPELESS_PACKAGE_JSON` warning on every run. On 20.18 or older, on 21, or on 22.0 to 22.6, it fails with `error[plugin-import]`. |
 | `"commonjs"` | Fails with `error[plugin-import]`, `could not be imported: Unexpected token 'export'`, and exits 1 |
 
+A `.ts` rule also needs Node 22.18 or newer, as `.mts` does, whatever the `"type"` field says.
+On older Node it fails with `error[plugin-source]` before it is imported.
+
 `npm init -y` writes `"type": "commonjs"` in npm 11, so the npm route in [Get started](../get-started.md) makes a project where a `.js` rule fails.
 `bun init -y` writes `"type": "module"`.
 To keep a `.js` or `.ts` name, set `"type": "module"` in `package.json`, or rename the file to `.mjs` or `.mts`.

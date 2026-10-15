@@ -18,6 +18,7 @@
 | [MJL-0012](0012-a-fixture-declares-its-own-expectation.md) | A fixture declares what it must report in its own file | accepted |
 | [MJL-0013](0013-the-docs-site-is-generated-from-tested-sources.md) | The docs site is generated from the sources the tests run | accepted |
 | [MJL-0014](0014-an-llm-fix-is-committed-and-verified.md) | An LLM fix is committed beside its fixture and verified clean | accepted |
+| [MJL-0015](0015-four-tenets-define-the-tool.md) | Four tenets define what the tool guarantees | accepted |
 # By group
 
 ## config
@@ -50,6 +51,9 @@
 ## rules
 
 * [MJL-0002](0002-one-rule-per-finding-code.md) - Each distinct failure is its own rule id, so it can be switched off alone
+## scope
+
+* [MJL-0015](0015-four-tenets-define-the-tool.md) - Readable in light and dark, renders, simple enough to follow, and extensible, and nothing else belongs in the core
 ## testing
 
 * [MJL-0012](0012-a-fixture-declares-its-own-expectation.md) - Each fixture names its expected rule ids in an expect comment, and a .fixed sibling pins its fix output

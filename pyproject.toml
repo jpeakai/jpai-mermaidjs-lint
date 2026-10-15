@@ -11,7 +11,28 @@ dev = [
     # plugin and theme system Material is built on, so it stays below 2.
     "mkdocs>=1.6,<2",
     "mkdocs-material>=9.7.7",
+    "pytest>=9.1.1",
+    "pytest-xharness-eval>=0.5.0",
 ]
 
 [tool.uv]
 package = false
+
+[tool.pytest.ini_options]
+# This repo has no Python test suite: `tests/` holds the Bun tests, which pytest
+# does not collect, so a bare `pytest` collects nothing and spends nothing.
+# The eval cells under skills/*/evals/ are each a live billed agent session, so
+# they only run when a path asks for them:
+#   uv run pytest skills/mermaidjs-lint/evals --dry-run
+testpaths = ["tests"]
+# The plugin's build workspaces, dependencies and scratch are never test sources.
+norecursedirs = [".xharness_eval_cache", "node_modules", "dist", "tmp", ".venv", "docs-site"]
+# Tier 2 and tier 3 models of each harness. The task is a bounded fix with a
+# deterministic grader, so the question worth paying for is whether the smaller
+# models can do it, not whether the flagship can. Add a flagship with --model.
+xharness_matrix = [
+    "claude/claude-sonnet-5-5",
+    "claude/claude-haiku-4-5-20251001",
+    "codex/gpt-5.6-terra",
+    "codex/gpt-6-luna",
+]

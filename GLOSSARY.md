@@ -10,6 +10,7 @@ When a new domain term enters the code or the conversation, add it here in the s
 |---|---|
 | Diagram | One Mermaid source: a mermaid fence in a markdown file, or a whole `.mmd` file. |
 | Fence | The code block that holds a diagram in markdown. It is unterminated when it never closes. |
+| Tenet | One of the four guarantees the tool exists to make: readable in light and dark, renders, simple enough to follow, extensible. |
 | Rule | One deterministic check with a rule id, and optionally a fixer. |
 | Rule id | The name of a rule, written category-short-name, such as contrast-text-below-aa. |
 | Category | The group a rule belongs to: parse, complexity or contrast, or a one-word category a plugin declares. |

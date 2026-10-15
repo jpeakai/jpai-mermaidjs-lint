@@ -1,4 +1,4 @@
-.PHONY: install build fix adrs check ci typecheck test test-cov-ts docs-ci site site-serve clean
+.PHONY: install build fix adrs check ci typecheck test test-cov-ts docs-ci site site-serve evals-dry evals clean
 
 install:
 	uv sync
@@ -51,7 +51,8 @@ ci: fix typecheck test-cov-ts docs-ci
 # reads from docs-site/mkdocs.yml.
 SITE_GENERATED := docs-site/docs/reference/rules.md docs-site/docs/gallery/fixtures.md docs-site/docs/gallery/examples.md
 SITE_DOCS := $(filter-out $(SITE_GENERATED),$(wildcard docs-site/docs/*.md docs-site/docs/*/*.md)) $(wildcard docs-site/diagrams/*.md)
-DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md) $(SITE_DOCS) tests/fixtures/README.md
+SKILL_DOCS := $(wildcard skills/*/*.md skills/*/evals/*.md)
+DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md) $(SITE_DOCS) $(SKILL_DOCS) tests/fixtures/README.md
 
 # The docs site. The generator re-checks every example as it writes the
 # reference pages, then mkdocs builds in strict mode, so a drifted example or a
@@ -67,6 +68,16 @@ site-serve:
 docs-ci:
 	bunx --bun @jpeakai/prose-gates $(DOCS)
 	bun run src/bin.ts $(DOCS)
+
+# The agent eval suite for the mermaidjs-lint skill, run by pytest-xharness-eval.
+# evals-dry lists the matrix of cells and invokes nothing. evals runs it live:
+# every live cell is a billed agent session (claude and codex CLIs), so narrow
+# the spend with ARGS, for example ARGS="--harness claude -k label_colour".
+evals-dry:
+	uv run pytest skills/mermaidjs-lint/evals --dry-run
+
+evals:
+	uv run pytest skills/mermaidjs-lint/evals -v $(ARGS)
 
 clean:
 	rm -rf dist tmp node_modules

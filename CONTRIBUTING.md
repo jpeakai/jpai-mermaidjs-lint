@@ -2,6 +2,19 @@
 
 How to set up `jpai-mermaidjs-lint`, make a change, and get it accepted.
 
+## What a change must serve
+
+The tool makes four guarantees, and a change is accepted when it strengthens one of them without weakening another:
+
+| Tenet | The guarantee |
+|---|---|
+| **Readable in light and dark** | Every label can be read against its fill, in both light and dark themes |
+| **Renders** | Every diagram parses with mermaid's own parsers, and every fence is closed |
+| **Simple enough to follow** | Visual complexity is scored, so an oversized diagram is flagged to be split |
+| **Extensible** | A plugin system adds rules that load, run and fix exactly like the built-ins |
+
+A rule that serves none of them belongs in a plugin, not in the core.
+
 ## Setup
 
 This repo is a bun project with a uv side for tooling.

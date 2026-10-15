@@ -99,9 +99,11 @@ An edit outside those bounds is refused, and the finding stays.
 
 | Expectation | Holds when |
 |---|---|
-| `same-diagrams` | The markdown is unchanged outside the mermaid fences, once whitespace in text is collapsed, and the document holds the same number of diagrams. Each diagram keeps its keyword, its diagram type, its node, edge and subgraph counts, its deepest nesting, its node ids and its subgraph names. |
-| `same-tree` | The markdown tree is identical, except for whitespace in prose text. Mermaid fence bodies must match exactly. In a `.mmd` or `.mermaid` file the tree is empty, so the diagram must also pass the `same-diagrams` check. |
+| `same-diagrams` | The markdown is unchanged outside the mermaid fences, once whitespace in text is collapsed, and the document holds the same number of diagrams. Each diagram keeps its keyword, whether it parses, its diagram type, its node, edge and subgraph counts, its deepest nesting, its tree depth, its node ids and its subgraph names. |
+| `same-tree` | The markdown tree is identical, except for whitespace in prose text. Mermaid fence bodies must match exactly, and no diagram that parsed may stop parsing. In a `.mmd` or `.mermaid` file the tree is empty, so the diagram must also pass the `same-diagrams` check. |
 
+Whether a diagram parses is the test `parse-diagram-unparseable` applies.
+Under `same-diagrams` it must not change in either direction, so an edit can neither break a diagram nor be the edit that repairs one.
 `same-diagrams` does not compare the edge list, so an edge's endpoints, direction and arrow type can change.
 It does not compare labels, node text or style directives either.
 A fixer that declares it must therefore keep those intact itself, because the engine will not refuse a change to them.

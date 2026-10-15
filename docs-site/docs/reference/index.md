@@ -23,7 +23,7 @@ Each page links to the guide that shows it in use.
 |---|---|
 | Runtime | Bun, or Node `>=20`, the `engines` field of `package.json` |
 | Mermaid | The `mermaid` package at `^11.14.0`, and `@mermaid-js/parser`, both installed with this package |
-| TypeScript local rules | `bunx --bun mermaidjs-lint`, or Node 22.18 or newer |
+| TypeScript local rules | Bun, through `bunx --bun @jpeakai/mermaidjs-lint`, or Node 22.18 or newer |
 
 `npm ls mermaid` in your project prints the mermaid version a run uses.
 A host such as GitHub draws diagrams with its own mermaid version.
@@ -56,6 +56,6 @@ Finding message text is not part of it, so match on the rule id, not the message
 ## Changelog
 
 [CHANGELOG.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CHANGELOG.md) lists the user-visible changes in each release.
-These pages are built from the `main` branch, so they may describe a change that is not yet on npm.
-Such a change is listed under `Unreleased` in the changelog.
+These pages are published with each release, so they describe the latest release on npm.
+A change on `main` that is not yet released is listed under `Unreleased` in the changelog.
 `mermaidjs-lint --version` prints the version you run, and releases up to 0.1.1 lack the flag.

@@ -151,13 +151,52 @@ describe("same-tree on a raw diagram file", () => {
     });
   }
 
-  test("a markdown file is still judged by its tree alone", async () => {
+  test("a markdown file is still judged by its tree", async () => {
     const src = `# Title\n\n${fence("flowchart LR\n  A --> B")}`;
     const plugin = rewriter(
       (s) => ({ start: s.indexOf("Title"), end: s.indexOf("Title") + 5, text: "Heading" }),
       "same-tree",
     );
     expect((await fixRule(plugin, "diagram-rewrite", src)).refused).toHaveLength(1);
+  });
+});
+
+// `pie title Pets` parses to zero nodes, so a fixer that appends junk keeps
+// every count the same. Only the parse result tells the edit broke it.
+describe("an edit that breaks a diagram's parse", () => {
+  const PIE = "pie title Pets\n";
+  const breaker = (kind: "same-tree" | "same-diagrams") =>
+    rewriter((src) => {
+      const at = src.indexOf(PIE) + PIE.length;
+      return { start: at, end: at, text: "this is not pie syntax !!!\n" };
+    }, kind);
+
+  test("same-diagrams: refused in a markdown file", async () => {
+    const src = fence(PIE.trimEnd());
+    const out = await fixRule(breaker("same-diagrams"), "diagram-rewrite", src, { file: "doc.md" });
+    expect(out.output).toBe(src);
+    expect(out.applied).toEqual([]);
+    expect(out.refused).toHaveLength(1);
+    expect(await checkMarkdown(out.output, "doc.md")).toEqual([]);
+  });
+
+  for (const kind of ["same-tree", "same-diagrams"] as const) {
+    test(`${kind}: refused in a raw diagram file`, async () => {
+      const out = await fixRule(breaker(kind), "diagram-rewrite", PIE, { file: "d.mmd" });
+      expect(out.output).toBe(PIE);
+      expect(out.refused).toHaveLength(1);
+    });
+  }
+
+  test("same-diagrams: a harmless edit to the same diagram is still applied", async () => {
+    const src = fence(PIE.trimEnd());
+    const plugin = rewriter((s) => {
+      const at = s.indexOf("Pets");
+      return { start: at, end: at + 4, text: "Cats" };
+    }, "same-diagrams");
+    const out = await fixRule(plugin, "diagram-rewrite", src, { file: "doc.md" });
+    expect(out.applied).toHaveLength(1);
+    expect(out.output).toContain("pie title Cats");
   });
 });
 

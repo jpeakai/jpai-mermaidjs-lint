@@ -34,7 +34,9 @@ Four kinds of file are code, and they run with your permissions.
 - **A `.mjs` config.** `mermaidjs-lint.config.mjs` is a module, so reading it runs it. A `.json` config is only parsed.
 - **The package runner's own config.** Bun reads `bunfig.toml` in the working folder, and npm reads the project's `.npmrc`. A `preload` or a `node-options=--import=...` there runs code before the linter starts.
 
-The project root, and so every source above, comes from the working folder.
+Every source above is found from the project root.
+That is the nearest folder at or above the working folder that holds a `package.json`, a config file or a `.mermaidjs-lint` folder.
+Running from a subfolder of a checkout therefore still loads the checkout's code.
 `--list-rules` and `--validate-plugins` import every plugin too, because they load them to list or check them.
 
 What each flag changes:

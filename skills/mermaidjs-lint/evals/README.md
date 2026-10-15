@@ -47,6 +47,8 @@ Preview the matrix first. Nothing is invoked and nothing is billed:
 make evals-dry
 ```
 
+The dry run writes its report to `tmp/evals-dry/report/report.json`, so the last live run's report in `.xharness_eval_cache/` stays as it was.
+
 Then run it live. **Every cell is a billed agent session.**
 
 ```sh

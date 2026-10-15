@@ -9,6 +9,7 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Term | Meaning |
 |---|---|
 | Diagram | One Mermaid source: a mermaid fence in a markdown file, or a whole `.mmd` or `.mermaid` file. |
+| Raw diagram file | A `.mmd` or `.mermaid` file, read as one diagram with no markdown around it. Its document kind is `diagram`, and its markdown tree is empty. |
 | Fence | The code block that holds a diagram in markdown. It is unterminated when it never closes. |
 | Tenet | One of the four things the tool exists for: three guarantees about every diagram (readable in light and dark, renders, simple enough to follow) and one commitment about the tool (extensible). Worded once in `docs-site/includes/tenets.md`. |
 | Gate | A check that fails the run, with exit 1, while any finding remains. Every rule is a gate, and `make docs-ci` runs the gates over this repo's markdown. |
@@ -18,7 +19,8 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Finding | One reported violation, with a file, a line range, a rule id, a message and optionally a remediation. |
 | Remediation | The optional next step a rule attaches to a finding, shown in `--json` output. |
 | Parse engine | The code that reads a diagram's structure from mermaid's own parsers. |
-| Stats | The nodes, edges, subgraphs and nesting depth the parse engine reads from a diagram. |
+| Stats | The nodes, edges, subgraphs, subgraph nesting depth and tree depth the parse engine reads from a diagram. |
+| Tree depth | How far a tree-shaped diagram (`mindmap`, `treemap`, `treeView` or `ishikawa`) reaches below its root. It weighs on the visual complexity score, but it is not subgraph nesting. |
 | Visual complexity score | Nodes plus half a point per edge plus three per subgraph, scaled by one tenth per level of nesting. Written VCS in finding messages. |
 | Preset | A named set of density thresholds: low-density, medium-density or high-density. |
 | Ladder | The ordered thresholds of one measure. A diagram lands in one band, so one rule of the ladder fires. |
@@ -45,7 +47,7 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Error code | The stable kebab-case name of a failure, shown as error[code] and carried on the error class. |
 | Adversarial test | A hostile input written to break a fixer, asserting a refusal or an exact safe output. |
 | Record | One decision, authored as YAML in `adrs/`. Its markdown is generated and never edited. |
-| Fixture | One `.md` or `.mmd` file under `tests/fixtures` or `examples/` that the test suite runs as a case. |
+| Fixture | One `.md`, `.mmd` or `.mermaid` file under `tests/fixtures` or `examples/` that the test suite runs as a case. |
 | Expect comment | The line in a fixture naming the rule ids it must report, or none for a clean file. |
 | Pinned fix | A `<name>.fixed.<ext>` sibling of a fixture holding the exact output of `--fix`. |
 | LLM fix | A `<name>.llm.<ext>` sibling of a fixture, or an `llm` block in `RULES.md`, holding the judgement fix an LLM proposed for findings `--fix` leaves. It states its reason in an `llm:` comment and must lint clean. |
@@ -53,5 +55,5 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Bundle | The `adrs/` directory as a whole, including the records and everything generated from them. |
 | Dialect | This repo's declared documentation conventions, in `docs/CONVENTIONS.md`. |
 | Release | One version published to npm by the Publish workflow, with a matching tag and GitHub release. |
-| Changelog | `CHANGELOG.md`, the curated list of user-visible changes per release, with an Unreleased section for what is on main but not yet on npm. |
+| Changelog | `CHANGELOG.md`, the curated list of user-visible changes per release, with an Unreleased section for what is on main but not yet released. |
 | Agent skill | `skills/mermaidjs-lint/`, the instructions an AI coding agent follows to lint and fix diagrams with this tool, with its eval suite. |

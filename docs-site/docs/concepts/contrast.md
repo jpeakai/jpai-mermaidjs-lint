@@ -85,6 +85,7 @@ None of these is scored, and none of them produces a finding:
 - **A node with no style.** It takes the renderer's theme colours, which cannot be known without drawing it.
 - **A node's `color:` with no `fill:` beside it, outside an `erDiagram`.** A `classDef` or `style` line that sets only `color:` has no declared background to score it against.
 - **A node's `stroke:` with no `fill:` beside it.** A border on an unfilled node has no declared background to score it against, under either profile.
+- **A fully transparent fill.** A `fill:transparent` or a fill with zero alpha, such as `#ffffff00`, draws no box, so its `color:` and `stroke:` are not scored. White text on that fill passes, even on a white page.
 - **A `linkStyle` line's `stroke:`.** An edge line is not scored against the page.
 - **A border pair under `mkdocs-material` or in an `erDiagram`.** It is scored but advisory, as [The three profiles](#the-three-profiles) explains.
 - **Theme settings.** An `%%{init}%%` directive or frontmatter that sets `theme` or `themeVariables` is not read.

@@ -41,12 +41,16 @@ List what remains with its remediation, which only `--json` prints:
 bunx @jpeakai/mermaidjs-lint --json <file>
 ```
 
-Edit the file in place. Read each finding's `rule` and `remediation`, then:
+Edit the file in place. Read each finding's `rule` and `remediation`, then follow the table below.
+Where a finding's `remediation` says more than its row, follow the `remediation`.
 
 | Rule | Fix |
 |------|-----|
 | `parse-diagram-unparseable` | Repair the syntax with the smallest change that parses: complete a dangling edge, close a bracket, quote a label. |
-| `contrast-text-below-aa` | Declare a `color:` that reads at **4.5:1 or better** against the `fill:`. Light text on a dark fill, dark text on a light fill. |
+| `parse-fence-unterminated` | Add the closing fence directly after the last line of the diagram, with the opening line's prefix: `> ` in a quote, the item's indent in a list. |
+| `contrast-text-below-aa` | Change the `fill:` or the `color:` until the label reads at **4.5:1 or better** in every theme. Light text on a dark fill, dark text on a light fill. |
+| `contrast-text-below-aa` under `mkdocs-material` | The theme ignores `color:`, so change the `fill:` until the theme's own text reads on it in light and dark. |
+| `contrast-text-below-aa` on a `linkStyle` | No colour reads on the edge label box in both themes. Drop `color:` from the `linkStyle` and let the theme set the edge text. |
 | `contrast-directive-unauditable` | A `fill:` with no `color:` cannot be audited. Declare the label colour beside the fill, clearing 4.5:1. |
 | `contrast-border-below-ui-minimum` | Set a `stroke:` that reads at **3:1 or better** against the fill. |
 | `complexity-node-count-*`, `complexity-visual-score-*` | Split the diagram into an overview plus one diagram per part, along its named subgraphs or natural stages. |

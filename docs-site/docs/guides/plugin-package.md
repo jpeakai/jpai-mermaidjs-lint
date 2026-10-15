@@ -44,10 +44,10 @@ The package's default export, in `index.js`, is the plugin: its metadata and its
 const FLOWCHART = new Set(["flowchart", "graph"]);
 
 export default {
-  meta: { name: "acme", namespace: "acme", apiVersion: 1, categories: { house: "Acme house style" } },
+  meta: { name: "acme", namespace: "acme", apiVersion: 1, categories: { acme: "Acme house style" } },
   rules: {
-    "house-direction": {
-      category: "house",
+    "acme-direction": {
+      category: "acme",
       summary: "a flowchart that does not read in the house direction",
       options: { direction: "string" },
       check: ({ doc, options }) => {
@@ -62,9 +62,11 @@ export default {
 };
 ```
 
-- **`namespace`** prefixes every rule id, so this rule runs as `acme/house-direction`. It must be lower-case and cannot be `local`.
+- **`namespace`** prefixes every rule id, so this rule runs as `acme/acme-direction`. It must be lower-case and cannot be `local`.
 - **`apiVersion`** must match the version the tool implements, which is `1`.
-- **`categories`** declares any new category word the rules use. A built-in category needs no declaration.
+- **`categories`** declares any new category word the rules use, and each rule key starts with its category word. A built-in category needs no declaration.
+  A category word is global, so no other plugin or local rule in the project may declare it, as [the plugin model](../concepts/plugin-model.md#namespaces-and-categories-are-global) explains.
+  This guide uses `acme` because [Write a local rule](local-rule.md) already declares `house`.
 - **`options`** declares each option the rule accepts, as a name mapped to `number`, `string`, `boolean` or `string[]`. The rule reads them from `options`.
 
 A flowchart opens with either `flowchart` or `graph`, so the rule checks both keywords.
@@ -74,7 +76,7 @@ A flowchart opens with either `flowchart` or `graph`, so the rule checks both ke
 The `testing` entry point runs one rule over a string, with the same contract checks and fix engine as a real run.
 It skips two load checks: the reserved `local` namespace, and conflicts between plugins.
 Run `--validate-plugins` in a project to catch those.
-Create `test/house-direction.test.js`:
+Create `test/acme-direction.test.js`:
 
 ```js
 import { expect, test } from "bun:test";
@@ -84,12 +86,12 @@ import plugin from "../index.js";
 const graphTopDown = "```mermaid\ngraph TD\n  A --> B\n```\n";
 
 test("reports a graph that reads top down", async () => {
-  const findings = await checkRule(plugin, "house-direction", graphTopDown);
-  expect(findings.map((f) => f.rule)).toEqual(["acme/house-direction"]);
+  const findings = await checkRule(plugin, "acme-direction", graphTopDown);
+  expect(findings.map((f) => f.rule)).toEqual(["acme/acme-direction"]);
 });
 
 test("takes the direction from its options", async () => {
-  const findings = await checkRule(plugin, "house-direction", graphTopDown, { options: { direction: "TD" } });
+  const findings = await checkRule(plugin, "acme-direction", graphTopDown, { options: { direction: "TD" } });
   expect(findings).toEqual([]);
 });
 ```
@@ -143,7 +145,7 @@ mermaidjs-lint: plugins valid: acme (1 rule)
 A plugin rule is switched off, or given options, exactly like a built-in:
 
 ```json
-{ "rules": { "acme/house-direction": ["error", { "direction": "TD" }] } }
+{ "rules": { "acme/acme-direction": ["error", { "direction": "TD" }] } }
 ```
 
 The config is checked against the rule's `options` before any file is read.

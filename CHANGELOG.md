@@ -4,19 +4,40 @@ Every change a user of `@jpeakai/mermaidjs-lint` can see, by release.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows [semantic versioning](https://semver.org/).
 While the package is at `0.x`, a minor release may break the public surface that [Versioning](https://jpeakai.github.io/jpai-mermaidjs-lint/reference/#versioning) lists.
 
-The docs site and the README describe the `main` branch.
-Anything under `Unreleased` is on `main` but not yet on npm.
+The docs site describes the latest release, because it is published when a release is.
+The README on GitHub describes the `main` branch.
+Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- Fix verification refuses an edit that leaves a diagram unparseable when it parsed before. `same-diagrams` also requires each diagram's parse result to be unchanged, and `same-tree` refuses an edit that breaks a diagram's parse.
+- `complexity-subgraph-nesting-too-deep` no longer fires on the depth of a `mindmap`, `treemap`, `treeView` or `ishikawa`, which draw no subgraphs. Their depth still counts toward the visual complexity score, which is unchanged.
+
+- A `flowchart-elk` diagram is read and measured as a flowchart. 0.3.0 reported it as `parse-diagram-unparseable`.
+
+### Changed
+
+- `DiagramStats` gains `max_tree_depth`, the depth of a tree-shaped diagram. `max_subgraph_depth` is now 0 for `mindmap`, `treemap`, `treeView` and `ishikawa`.
+- `same-diagrams` also compares `max_tree_depth`.
+- `error[fix-outside-root]` now ends "or run on the target path itself".
+- The `parse-fence-unterminated` remediation says to add the closing fence directly after the diagram's last line. It also says to repeat the opening line's prefix: `> ` in a quote, or the item's indent in a list.
+- `make evals-dry` writes its report under `tmp/evals-dry/`, so the last live run's report stays as it was.
+- The docs site deploys after the Publish workflow succeeds, or when its workflow is run by hand, so it describes the latest release. A pull request or a push to `main` only builds it.
+- The agent skill's remediation table covers `parse-fence-unterminated`, and gives `contrast-text-below-aa` its own rows for `mkdocs-material` and a `linkStyle`. It tells the agent to follow a finding's own `remediation` where that says more than the table.
+
+### Upgrading from 0.3.0
+
+- **A plugin fixer may see an edit refused.** An edit that turns a parseable diagram into an unparseable one is refused, and the finding stays. So is a `same-diagrams` edit that makes an unparseable diagram parse.
+- **Code that reads `max_subgraph_depth` for a tree-shaped diagram reads 0.** Read `max_tree_depth` instead.
 
 ## [0.3.0] - 2026-10-15
 
 ### Added
 
 - The package ships `.d.ts` type declarations in `dist/types/`, so a TypeScript project type-checks a plugin with no extra compiler options.
-- `error[package-json]`, exit 1, for a project `package.json` that is not a JSON object. A `--no-plugins` run carries on past it.
+- `error[package-json]`, exit 1, for a project `package.json` that is not a JSON object. A `--no-plugins` run carries on past it. An installed plugin whose `package.json` is not a JSON object fails to load with `error[plugin-source]`, which `--lenient-plugins` skips. 0.2.0 stopped with an uncaught error there.
 - `error[fix-not-converging]`, exit 1, names the rules whose fixers never stop proposing edits.
 - `error[fix-outside-root]`, exit 2, stops `--fix` before it writes through a symbolic link whose target is outside the project root.
 - The library exports the types `Preset`, `ThresholdConfig`, `PluginFailure`, `SourceKind`, `Setup`, `SetupOptions` and `Collected`. `setUp` also returns the project `root`.
@@ -39,6 +60,9 @@ Nothing yet.
 ### Upgrading from 0.2.0
 
 - **A plugin may fail to load.** Rename a rule key or namespace with a trailing or doubled hyphen. Rename a `preset` or `profile` option that is not a string.
+- **Two local rule files with one name fail the load.** Files such as `house-x.js` and `house-x.mjs` loaded as one rule on 0.2.0, and now fail with `error[plugin-contract]`, exit 1. Keep one of them.
+- **`--fix` may stop on a symbolic link.** A named link whose target is outside the project root now stops `--fix` with `error[fix-outside-root]`, exit 2, before any file is written. Fix the target in its own project, or run on the target path itself.
+- **A plugin author sees two values change.** A rule's `ctx.file` is the absolute path in a command run. A config `plugins` entry that is not installed reports `kind` `config` in `--json`, not `package`.
 - **A diagram may newly exceed a complexity limit.** `quadrantChart`, `timeline`, `xychart` and `stateDiagram` now count more nodes, and nested composite states can exceed the nesting limit.
 
 ## [0.2.0] - 2026-10-15

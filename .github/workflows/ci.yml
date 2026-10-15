@@ -33,8 +33,9 @@ jobs:
           node-version: ${{ matrix.node }}
 
       # The docs site build re-checks every example and fixture against the
-      # tool, so it runs here too, in a required check, not only in the Docs
-      # workflow. Once per matrix is enough, so it runs on the publish Node.
+      # tool, so it runs here too, in the Check job every pull request is
+      # merged on, not only in the Docs workflow. Once per matrix is enough,
+      # so it runs on the publish Node.
       - uses: astral-sh/setup-uv@v10.3.0
         if: matrix.node == '24'
 

@@ -115,7 +115,8 @@ Report a vulnerability privately, as [SECURITY.md](SECURITY.md) describes.
 
 ## Landing a change
 
-Every change lands through a pull request, and nobody pushes to main directly.
+By convention every change lands through a pull request whose checks pass, and nobody pushes to main directly.
+Main is not a protected branch, so nothing enforces the convention.
 
 ```sh
 git switch -c <short-topic>
@@ -123,8 +124,9 @@ git push -u origin <short-topic>
 gh pr create --fill
 ```
 
-A pull request merges once Check (Node 20) and Check (Node 24) pass on its latest commit.
+Merge a pull request only once Check (Node 20) and Check (Node 24) pass on its latest commit.
 Check (Node 24) also builds the docs site.
+The repository requires no check, so the merge button stays enabled while a check is red.
 A change a user can see also adds a line under `Unreleased` in [CHANGELOG.md](CHANGELOG.md).
 
 ## Recording a decision

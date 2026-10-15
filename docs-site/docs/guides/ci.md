@@ -81,7 +81,7 @@ A config setting for a plugin rule is set aside in that run, and standard error 
 
 ```text
 mermaidjs-lint: plugins off; skipped mermaidjs-lint-plugin-acme
-mermaidjs-lint: ignored config setting for acme/house-direction, whose plugin did not load
+mermaidjs-lint: ignored config setting for acme/acme-direction, whose plugin did not load
 ```
 
 Version 0.1.1 does not set the setting aside, and fails the run with `error[unknown-rule]` instead.

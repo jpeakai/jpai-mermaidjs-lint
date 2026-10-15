@@ -33,6 +33,15 @@ describe("parse engine adapters", () => {
     });
   }
 
+  test("flowchart-elk is read as a flowchart", async () => {
+    const stats = await buildDocModel(fence("flowchart-elk TD\n  A --> B\n  B --> C")).diagrams[0]?.stats();
+    expect(stats?.error).toBeNull();
+    expect(stats?.diagram_type).toBe("flowchart-elk");
+    expect(stats?.nodes).toBe(3);
+    expect(stats?.edges).toBe(2);
+    expect(await rules(fence("flowchart-elk TD\n  A --> B"))).toEqual([]);
+  });
+
   test("a diagram of an unknown type carries the parser's reason", async () => {
     const stats = await buildDocModel(fence("notADiagram\n  x")).diagrams[0]?.stats();
     expect(stats?.nodes).toBe(0);

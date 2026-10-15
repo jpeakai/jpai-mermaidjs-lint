@@ -16,7 +16,7 @@ erDiagram
     }
     Root {
         string type "root"
-        Node[] children "Code nodes with lang mermaid"
+        Node[] children "the whole markdown tree, not only mermaid fences"
     }
     Diagram {
         number index
@@ -49,6 +49,7 @@ erDiagram
         number edges
         number subgraphs
         number max_subgraph_depth
+        number max_tree_depth "mindmap, treemap, treeView, ishikawa"
         string[] node_ids
         string[] subgraph_names
         enum parser_used "langium or mermaid-core"

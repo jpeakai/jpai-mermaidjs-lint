@@ -47,13 +47,14 @@ When a new domain term enters the code or the conversation, add it to the glossa
 ## Never
 
 - Never edit a generated file.
-  Everything in `adrs/` except the `.yml` records is generated.
+  Everything in `adrs/` except the `.yml` records, `okf_render.py`, `record.schema.json` and `templates/` is generated.
+  Fix generated ADR prose in its record or its template.
   So is `dist/`, which `make build` bundles from `src/` for Node and git ignores.
   So are the docs site's rules page, its fixtures and examples gallery pages, and its snippets.
   `make site` writes them from `RULES.md`, `tests/fixtures`, `examples/` and the CLI help.
   The gallery's `index.md` and `agent-evals.md` are hand-written.
 - Never let the docs describe unreleased behaviour without an `Unreleased` entry in `CHANGELOG.md`.
-  The site deploys from main, and npm readers run the latest release.
+  The README on GitHub shows main, while the site and npm readers see the latest release.
 - Never add a warning level.
   A finding fails the run or the rule is off, per [MJL-0003](adrs/0003-findings-fail-or-the-rule-is-off.md).
 - Never let a fixer guess.
@@ -75,7 +76,8 @@ When a new domain term enters the code or the conversation, add it to the glossa
 - Never use mocks in tests.
   Tests run the real parsers over real strings and files.
 - Never push to main.
-  Every change lands through a pull request that passes CI.
+  By convention every change lands through a pull request whose checks pass.
+  Main is not protected, so nothing enforces this but the convention.
 
 ## More
 

@@ -152,11 +152,18 @@ const round4 = (x: number): number => Math.round(x * 10000) / 10000;
 // (nodes + edges*w_e + subgraphs*w_s) * (1 + depth*w_d). Edge density is
 // reported as 0 below two nodes rather than dividing by a fallback, which gave
 // nonsense when a parser returned edges but no nodes.
+//
+// The depth is subgraph nesting or, for a tree-shaped type (mindmap, treemap,
+// treeView, ishikawa), tree depth; a diagram has only one of the two. A deep
+// tree is as hard to follow as deep nesting, so its depth still weighs on the
+// score, and the score of those types is unchanged from when tree depth was
+// counted as nesting. Only complexity-subgraph-nesting-too-deep ignores it,
+// because its remedy (flatten subgraphs) cannot apply to a tree.
 export const calculateComplexity = (stats: DiagramStats, config: ThresholdConfig): ComplexityMetrics => {
   const n = stats.nodes;
   const e = stats.edges;
   const s = stats.subgraphs;
-  const d = stats.max_subgraph_depth;
+  const d = Math.max(stats.max_subgraph_depth, stats.max_tree_depth);
   const base = n + e * config.edge_weight + s * config.subgraph_weight;
   const vcs = base * (1 + d * config.depth_weight);
   const maxEdges = n > 1 ? n * (n - 1) : 0;

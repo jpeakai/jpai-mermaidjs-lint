@@ -32,8 +32,12 @@ gh run watch "$(gh run list --workflow=publish.yml --limit 1 --json databaseId -
 npm view @jpeakai/mermaidjs-lint version --prefer-online   # confirm the new version is live
 ```
 
-Check (Node 24) also builds the docs site, so a broken site blocks the merge.
+Check (Node 24) also builds the docs site, so a broken site fails that check.
+Main is not protected, so nothing stops a merge while a check is red: wait for both to pass.
 npm can take a few minutes to serve a new version, so re-run `npm view` until it shows.
+Once Publish succeeds, the Docs workflow builds the released commit and deploys the site.
+The site therefore never describes a version npm does not have yet.
+A merge to main only builds the site as a check.
 
 The workflow creates the tag and the GitHub release itself, so never tag by hand.
 A run started from any branch but main fails before it creates anything.
@@ -47,6 +51,7 @@ A version containing `alpha`, `beta` or `rc` publishes under that npm dist-tag a
 4. `publish-npm` runs in the `npm` environment, checks out the pinned commit and runs `npm publish --provenance`.
 5. npm runs `prepublishOnly`, which is `make check`, then `prepack`, which is `make build`.
 6. `finalize-release` flips the draft to published once npm has accepted the package.
+7. The Docs workflow starts when Publish completes. On success it builds the commit Publish released and deploys it to GitHub Pages. A failed Publish deploys nothing.
 
 ## One-time setup
 
@@ -74,14 +79,23 @@ A local publish cannot carry provenance, and that is expected for this one versi
 ### 3. Record the release on GitHub
 
 The workflow did not create this version, so tag it to match what later runs produce.
+Later runs use the version's `CHANGELOG.md` section as the release notes, so this step does too.
 
 ```sh
-gh release create "v$(node -p "require('./package.json').version")" --target main --generate-notes
+VERSION=$(node -p "require('./package.json').version")
+mkdir -p tmp
+awk -v v="$VERSION" 'BEGIN { gsub(/\./, "\\.", v) }
+  /^## / { if (found) exit; if ($0 ~ ("^## \\[?" v "\\]?( |$)")) { found = 1; next } }
+  found && !/^\[[^]]+\]: / { print }' CHANGELOG.md > tmp/release-notes.md
+gh release create "v$VERSION" --target main --title "v$VERSION" --notes-file tmp/release-notes.md
 ```
 
-### 4. Protect main
+### 4. Protect main (optional, not applied)
 
-Require a pull request and both CI checks for every change to main, with no exception for admins.
+This repository does not protect main.
+Every change lands through a pull request whose checks pass by convention, as [CONTRIBUTING.md](../CONTRIBUTING.md#landing-a-change) states, and nothing enforces it.
+The command below is kept for a package that wants enforcement.
+It requires a pull request and both CI checks for every change to main, with no exception for admins.
 No approval is required, since a single maintainer cannot approve their own pull request.
 
 ```sh
@@ -152,12 +166,13 @@ The package page on npmjs.com should show a provenance badge that links to the w
 | `Tag vX exists with no release` | The workflow makes a tag only as it publishes the release, so the tag was pushed by hand, or a release was deleted without `--cleanup-tag`. Delete the remote tag with `git push origin :refs/tags/vX`, then run again. |
 | `already on npm` | npm never lets a version be reused, even after an unpublish, so bump the version. |
 | `Releases run only from main` | The run started from another branch. Merge the change first, then run it with `--ref main`. |
-| `Branch is not allowed to deploy to npm` | The `npm` environment refused a branch other than main, which is the protection working. |
-| `Protected branch update failed` on push | Main takes changes only through a pull request, so push a branch and open one. |
+| `Branch is not allowed to deploy to npm` | The `npm` environment refused a branch other than main, which is step 5 working. |
+| `Protected branch update failed` on push | Only once step 4 is applied: main then takes changes only through a pull request, so push a branch and open one. |
 | `E404` or `ENEEDAUTH` on publish | The trusted publisher does not match: check the repository name, that the workflow filename is exactly `publish.yml`, and that the environment is `npm`. |
 | `E403` on publish | The npm account or the trusted publisher has no rights in the `jpeakai` org. |
 | Provenance error | The repository must be public, and the job needs `id-token: write`. |
 | `make check` fails in the publish job | The same failure shows in the CI workflow, so fix it on `main` first. |
+| The site still shows the previous version | The Docs run after Publish failed or did not start. Re-run it from the Actions tab. `gh workflow run docs.yml --ref main` also deploys, but it deploys main as it stands, so use it only when main holds no unreleased change. |
 | A draft release is left behind | The npm step failed after `prepare`. Delete the draft with `gh release delete vX --cleanup-tag --yes`, fix the cause, and run again. |
 
 ## Why the gates differ

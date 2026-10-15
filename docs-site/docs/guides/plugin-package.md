@@ -21,10 +21,10 @@ Start the package in a new folder, with this `package.json`:
   "exports": "./index.js",
   "files": ["index.js"],
   "peerDependencies": {
-    "@jpeakai/mermaidjs-lint": "^0.2.0"
+    "@jpeakai/mermaidjs-lint": "^0.3.0"
   },
   "devDependencies": {
-    "@jpeakai/mermaidjs-lint": "^0.2.0"
+    "@jpeakai/mermaidjs-lint": "^0.3.0"
   }
 }
 ```
@@ -32,8 +32,8 @@ Start the package in a new folder, with this `package.json`:
 - **`"type": "module"`** marks `index.js` as an ES module. Without it, Node reparses the file, and warns on every run while you test the package through a link.
 - **`exports`** names the file the linter imports.
 - **`peerDependencies`** says which linter versions the plugin works with, and uses the project's own copy.
-  Under 0.x a caret range accepts only patch releases, so `^0.2.0` matches 0.2.5 but not 0.3.0.
-  Each 0.x minor may change the plugin contract, so widen the range only after testing the next minor, for example to `>=0.2.0 <0.4.0`.
+  Under 0.x a caret range accepts only patch releases, so `^0.3.0` matches 0.3.5 but not 0.4.0.
+  Each 0.x minor may change the plugin contract, so widen the range only after testing the next minor, for example to `>=0.3.0 <0.5.0`.
 - **`devDependencies`** installs the linter, so the plugin's tests can run.
 
 ## Export the plugin

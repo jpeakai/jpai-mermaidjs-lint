@@ -92,6 +92,28 @@ describe("cli", () => {
     expect(r.stdout).toContain("parse:");
     expect(r.stdout).toContain("  parse-fence-unterminated*");
   });
+
+  test("--list-rules honours --config and refuses a flag or path it would ignore", async () => {
+    const root = tempProject({
+      "off.json": JSON.stringify({ rules: { "parse-fence-unterminated": "off" } }),
+      "a.md": fence("flowchart LR\n  A --> B"),
+    });
+    const listed = await runCli(root, ["--list-rules", "--config", "off.json", "--no-plugins"]);
+    expect(listed.code).toBe(0);
+    expect(listed.stdout).not.toContain("parse-fence-unterminated");
+    for (const extra of [
+      ["--json"],
+      ["--fix"],
+      ["--preset", "high"],
+      ["--profile", "github"],
+      ["--canvas-dark", "#000000"],
+      ["a.md"],
+    ]) {
+      const r = await runCli(root, ["--list-rules", ...extra]);
+      expect(r.code).toBe(2);
+      expect(r.stderr).toContain("error[flag]: --list-rules takes only --config and --no-plugins or --lenient-plugins");
+    }
+  });
 });
 
 describe("cli additions", () => {

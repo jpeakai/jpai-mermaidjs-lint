@@ -25,7 +25,7 @@ The text below is generated from `mermaidjs-lint --help` when this site is built
 | `--no-plugins` | | | off | Load no plugin, refuse a `.mjs` config, and set aside config settings for plugin rules |
 | `--lenient-plugins` | | | off | Skip a plugin that fails to load, and say so |
 | `--validate-plugins` | | | off | Load every plugin, report every failure, and check no file |
-| `--list-rules` | | | off | Print every active rule by category, then the plugins |
+| `--list-rules` | | | off | Print every active rule by category, then the plugins. Takes only `--config` and `--no-plugins` or `--lenient-plugins`. |
 | `--version` | | | | Print the version, for a bug report |
 | `--help` | `-h` | | | Print the help |
 
@@ -33,10 +33,13 @@ Some flags cannot be combined, and the run exits 2 when they are:
 
 - `--no-plugins` with `--lenient-plugins`.
 - `--validate-plugins` with `--no-plugins`, `--fix`, `--list-rules` or any path.
+- `--list-rules` with any path, `--fix`, `--json`, `--preset`, `--profile`, `--canvas-light` or `--canvas-dark`, which it would ignore.
 - `--canvas-light` or `--canvas-dark` with `--profile mkdocs-material`.
 
 A canvas colour that will not parse, or is translucent, is `error[flag]` with exit code 2.
+A canvas flag beside `--profile mkdocs-material` is `error[flag]`.
 A file that `auto` or the config scores under `mkdocs-material` refuses a canvas flag with `error[canvas-profile]`.
+So does a config canvas run with `--profile mkdocs-material`.
 A canvas from the config is set aside, not refused, for a file that `auto` scores under `mkdocs-material`.
 One stderr line names those files.
 [A host with its own page sets a canvas](../concepts/contrast.md#a-host-with-its-own-page-sets-a-canvas) explains what the canvas changes.
@@ -119,7 +122,7 @@ A failure prints `error[code]: reason`, and the same `code` is on the exported e
 
 | Code | Exit code | Cause |
 |---|---|---|
-| `flag` | 2 | An unknown flag, a bad flag value, flags that contradict, no paths, a path that cannot be read, or no matching files |
+| `flag` | 2 | An unknown flag, a bad flag value, flags that contradict (such as a canvas flag beside `--profile mkdocs-material`), no paths, a path that cannot be read, or no matching files |
 | `config-file` | 2 | The config cannot be read or parsed, or is neither `.json` nor `.mjs` |
 | `config-not-found` | 2 | The file given to `--config` does not exist |
 | `config-code` | 2 | `--no-plugins` was given, and the config to read is a `.mjs` file, which is code |
@@ -127,8 +130,8 @@ A failure prints `error[code]: reason`, and the same `code` is on the exported e
 | `config-shape` | 2 | An unknown config key, or a key of the wrong type |
 | `rule-setting` | 2 | A rule setting that is not a severity, or a severity and options |
 | `unknown-rule` | 2 | A rule id that is not loaded. Outside strict mode, a plugin rule id is set aside instead. |
-| `rule-option` | 2 | An option the rule does not declare, a value of the wrong type, a preset or profile name that does not exist, a canvas colour that is not an opaque CSS colour, or a canvas beside `profile` `mkdocs-material` |
-| `canvas-profile` | 2 | A canvas flag met a file scored under `mkdocs-material`, or a canvas met an explicit `mkdocs-material` profile. Material's page is its own. |
+| `rule-option` | 2 | An option the rule does not declare, a value of the wrong type, a preset or profile name that does not exist, a canvas colour that is not an opaque CSS colour, or a canvas beside `profile` `mkdocs-material` on the same rule |
+| `canvas-profile` | 2 | A canvas from one source met a `mkdocs-material` profile from another: a canvas flag on a file that the config or `auto` scores under `mkdocs-material`, or a config canvas with `--profile mkdocs-material`. Material's page is its own. |
 | `fix-outside-root` | 2 | `--fix` was given a symbolic link whose target is outside the project root |
 | `package-json` | 1 | The project's `package.json` is not a JSON object. A run with plugins off, through `--no-plugins` or `"plugins": false` in the config, reads nothing from it, so it carries on. |
 | `fix-not-converging` | 1 | A fixer kept proposing edits for 1000 passes. The message names the rules still editing, and that file is not written. |
@@ -191,7 +194,7 @@ Standard error carries these lines, each when it applies:
 | `files` | How many files were checked |
 | `plugins` | Each loaded plugin: `kind` (`local`, `package` or `config`), `spec`, `namespace` and its `rules` ids |
 | `skippedPlugins` | Each plugin a lenient run left out: `source`, `kind`, `code` and `message` |
-| `canvasSetAside` | Each file whose config canvas was set aside because `auto` scores it under `mkdocs-material`, as a path relative to the working directory |
+| `canvasSetAside` | Each file whose config canvas was set aside because `auto` scores it under `mkdocs-material`, as a path relative to the working directory, or absolute when the file is outside it |
 
 Under `--no-plugins`, `skippedPlugins` is empty, and the skipped plugins appear only on standard error.
 `--validate-plugins --json` prints `{ valid, plugins, failures }` instead, where `failures` has the shape of `skippedPlugins`.

@@ -10,7 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- `--list-rules` refuses a path, `--fix`, `--json`, `--preset`, `--profile`, `--canvas-light` or `--canvas-dark` with `error[flag]`, since it would ignore them.
+  It takes only `--config` and `--no-plugins` or `--lenient-plugins`, and its `--help` usage line now lists them.
 
 ## [0.6.2] - 2026-10-16
 
@@ -25,7 +28,9 @@ Nothing yet.
 
 - A canvas from the config no longer stops a run over a file that `auto` scores under `mkdocs-material`.
   The canvas is set aside for that file, which is scored under `mkdocs-material`, and one stderr line names every such file.
-  A canvas flag on such a file, or a canvas beside an explicit `mkdocs-material` profile, is still `error[canvas-profile]`.
+  A canvas flag on such a file is still `error[canvas-profile]`.
+  So is a canvas from the config or the flags beside a `mkdocs-material` profile from the other.
+  A canvas flag beside `--profile mkdocs-material` is still `error[flag]`, and a canvas beside `profile` `mkdocs-material` on one config rule is still `error[rule-option]`.
 - The `error[canvas-profile]` hint names the way out of the setting that caused it.
 
 ### Added
@@ -47,7 +52,9 @@ Nothing yet.
   Translucent fills, edge label boxes and a sequence diagram's page-backed text and lines are scored on it.
   The default stays GitHub's `#ffffff` and `#0d1117`, so a run that sets no canvas reports what it did before.
 - The canvas applies under the `github` profile only.
-  A file scored under `mkdocs-material` refuses a canvas with the new `error[canvas-profile]` (`CanvasProfileError`), rather than ignoring it.
+  A file scored under `mkdocs-material` refuses a canvas rather than ignoring it.
+  A canvas flag beside `--profile mkdocs-material` is `error[flag]`, and a canvas beside `profile` `mkdocs-material` on one config rule is `error[rule-option]`.
+  Any other canvas on such a file is the new `error[canvas-profile]` (`CanvasProfileError`).
 - A canvas colour that will not parse, or is translucent, is `error[flag]` from a flag and `error[rule-option]` from the config.
 - A plugin rule may declare an option of the new type `canvas`. It receives the canvas flags as the contrast rules do, and its value is checked the same way.
 

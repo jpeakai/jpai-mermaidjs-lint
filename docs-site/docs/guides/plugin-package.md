@@ -32,7 +32,8 @@ Start the package in a new folder, with this `package.json`:
 - **`"type": "module"`** marks `index.js` as an ES module. Without it, Node reparses the file, and warns on every run while you test the package through a link.
 - **`exports`** names the file the linter imports.
 - **`peerDependencies`** says which linter versions the plugin works with, and uses the project's own copy.
-  The range starts at 0.6.1, the first release where a `canvas` option under another name receives the canvas flags.
+  A rule with a `canvas`-type option under another name needs 0.6.1 or newer, so the template starts there.
+  0.6.1 is the first release where such an option receives the canvas flags.
   Before it, only an option named `canvas` received them.
   Under 0.x a caret range accepts only patch releases, so `^0.6.1` matches 0.6.5 but not 0.7.0.
   Each 0.x minor may change the plugin contract, so widen the range only after testing the next minor, for example to `>=0.6.1 <0.8.0`.

@@ -31,7 +31,7 @@ erDiagram
         Diagram[] diagrams
     }
     OptionSpec {
-        record names "name to number string boolean string[]"
+        record names "name to number string boolean string[] canvas"
     }
     RuleOptions {
         record values "name to unknown"

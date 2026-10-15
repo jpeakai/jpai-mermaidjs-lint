@@ -5,11 +5,13 @@ This guide builds a rule that reports a `TODO` left in a diagram.
 
 ## Create the rule file
 
-Create `.mermaidjs-lint/rules/parse-no-todo.mjs` at the project root:
+Create `.mermaidjs-lint/rules/house-no-todo.mjs` at the project root:
 
 ```js
+export const categories = { house: "Our house style" };
+
 export default {
-  category: "parse",
+  category: "house",
   summary: "a TODO left in a diagram",
   check: ({ doc }) =>
     doc.diagrams
@@ -19,7 +21,9 @@ export default {
 ```
 
 The file name is the rule key, and it must start with the rule's category, as `category-short-name`.
-The rule loads on its own, with the id `local/parse-no-todo`.
+The `categories` export declares `house` as a new category, because a TODO is a house-style choice.
+Keep the built-in categories, `parse`, `complexity` and `contrast`, for what those words mean.
+The rule loads on its own, with the id `local/house-no-todo`.
 
 ## Run it
 
@@ -39,31 +43,59 @@ bunx mermaidjs-lint docs/
 
 ```text
 mermaidjs-lint: loaded local (1 rule)
-docs/flow.md:1-5 local/parse-no-todo TODO left in a diagram
+docs/flow.md:1-5 local/house-no-todo TODO left in a diagram
 1 finding(s) in 1 file(s)
 ```
 
 ## Test it
 
-The `testing` entry point runs one rule over a string, with the same contract checks and fix engine as a real run:
+The `testing` entry point runs one rule over a string, with the same contract checks and fix engine as a real run.
 
-```ts
-import { expect, test } from "bun:test";
-import { checkRule, localPlugin } from "@jpeakai/mermaidjs-lint/testing";
-import * as mod from "../.mermaidjs-lint/rules/parse-no-todo.mjs";
+=== "Bun"
 
-const plugin = localPlugin("parse-no-todo", mod);
+    Create `tests/house-no-todo.test.ts`:
 
-test("reports a TODO in a diagram", async () => {
-  const src = "```mermaid\nflowchart LR\n  %% TODO\n  A --> B\n```\n";
-  const findings = await checkRule(plugin, "parse-no-todo", src);
-  expect(findings.map((f) => f.rule)).toEqual(["local/parse-no-todo"]);
-});
-```
+    ```ts
+    import { expect, test } from "bun:test";
+    import { checkRule, localPlugin } from "@jpeakai/mermaidjs-lint/testing";
+    import * as mod from "../.mermaidjs-lint/rules/house-no-todo.mjs";
+
+    const plugin = localPlugin("house-no-todo", mod);
+
+    test("reports a TODO in a diagram", async () => {
+      const src = "```mermaid\nflowchart LR\n  %% TODO\n  A --> B\n```\n";
+      const findings = await checkRule(plugin, "house-no-todo", src);
+      expect(findings.map((f) => f.rule)).toEqual(["local/house-no-todo"]);
+    });
+    ```
+
+    Run it with `bun test`.
+
+=== "Node"
+
+    Create `tests/house-no-todo.test.mjs`:
+
+    ```js
+    import assert from "node:assert/strict";
+    import { test } from "node:test";
+    import { checkRule, localPlugin } from "@jpeakai/mermaidjs-lint/testing";
+    import * as mod from "../.mermaidjs-lint/rules/house-no-todo.mjs";
+
+    const plugin = localPlugin("house-no-todo", mod);
+
+    test("reports a TODO in a diagram", async () => {
+      const src = "```mermaid\nflowchart LR\n  %% TODO\n  A --> B\n```\n";
+      const findings = await checkRule(plugin, "house-no-todo", src);
+      assert.deepEqual(findings.map((f) => f.rule), ["local/house-no-todo"]);
+    });
+    ```
+
+    Run it with `node --test tests/house-no-todo.test.mjs`.
+
+Either route reports one passing test.
 
 ## Go further
 
 - **Add a fixer** by returning edits from a `fix` function. Each edit must declare what stays the same, and the engine refuses any edit that breaks it. See [Plugin API](../reference/plugin-api.md#edits).
-- **Use a new category** by exporting `categories` from the file, as `export const categories = { house: "Our house style" }`, and naming the file `house-<name>.mjs`.
 - **Write it in TypeScript** as `.ts` or `.mts`. The command starts on Node even under `bunx`, so run `bunx --bun mermaidjs-lint docs/` to use Bun, or use Node 22.18 or newer. Anything else fails with `error[plugin-source]`.
 - **Check every rule loads** with `bunx mermaidjs-lint --validate-plugins`.

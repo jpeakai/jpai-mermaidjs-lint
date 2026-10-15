@@ -49,7 +49,8 @@ gitGraph LR:
 ### info
 
 `info` draws no nodes.
-The parse rule flags only a multi-line diagram that reads as zero nodes, so this one-line diagram passes.
+The parse rule flags a diagram the parser reports an error for, or a mermaid-core diagram read as zero nodes from several lines.
+This one-line diagram is neither, so it passes.
 
 ```mermaid
 info

@@ -16,6 +16,10 @@ With no such folder, the project root is the working directory.
 `--config FILE` reads another file instead.
 Two config files at the root is an error.
 
+A `.mjs` config is code, and reading it runs that code.
+Under `--no-plugins` a `.mjs` config is never imported, and the run stops with `error[config-code]` instead.
+A `.json` config is read as usual.
+
 ## Keys
 
 | Key | Type | Default | Meaning |
@@ -41,10 +45,15 @@ A rule id maps to a severity, or to a severity and options:
 {
   "rules": {
     "contrast-directive-unauditable": "off",
+    "complexity-node-count-cognitive-limit": ["error", { "nodeHardLimit": 80 }],
     "complexity-node-count-hard-limit": ["error", { "nodeHardLimit": 80 }]
   }
 }
 ```
+
+A threshold is the boundary between two neighbouring bands, so set it on both rules that read it.
+Set on one rule alone, it opens a gap or an overlap, and an overlap makes two rules report the same diagram.
+[Each measure is a ladder](../concepts/complexity.md#each-measure-is-a-ladder) shows which rules read each threshold.
 
 | Severity | Meaning |
 |---|---|
@@ -67,18 +76,21 @@ Each rule declares the options it takes.
 
 ### Complexity rules
 
-Every complexity rule takes the same options.
+Every complexity rule accepts the same options.
+`complexity-subgraph-nesting-too-deep` accepts them but reads none, because its limit is fixed at three levels.
 
 | Option | Type | Meaning |
 |---|---|---|
 | `preset` | string | `low-density`, `medium-density` or `high-density`, or an alias from [Flags](cli.md#flags) |
 | `nodeAcceptable`, `nodeComplex`, `nodeHardLimit` | number | The node-count bands |
-| `vcsAcceptable`, `vcsComplex` | number | The score bands |
+| `vcsAcceptable`, `vcsComplex` | number | The score bands. `vcsComplex` is the complex threshold that `complexity-visual-score-critical` fires above. |
 | `nodeTarget`, `vcsTarget` | number | The size a finding suggests splitting down to |
 | `edgeWeight`, `subgraphWeight`, `depthWeight` | number | The weights of the [visual complexity score](../concepts/complexity.md#two-measures) |
 | `nodeIdeal`, `vcsIdeal`, `vcsCritical` | number | Accepted, but no rule reads them yet |
 
 A threshold option overrides the preset's value.
+A `--preset` or `--profile` flag overrides the `preset` or `profile` option, but not a threshold option.
+[Precedence](cli.md#precedence) gives the full order.
 The preset values are:
 
 --8<-- "presets-table.md"
@@ -86,5 +98,15 @@ The preset values are:
 ## Errors
 
 A bad config stops the run before any file is read, with exit code 2 and `error[code]`.
-The codes are `config-file`, `config-not-found`, `config-ambiguous`, `config-shape`, `rule-setting`, `unknown-rule` and `rule-option`.
+The codes are listed below.
+
+- `config-file`
+- `config-not-found`
+- `config-code`
+- `config-ambiguous`
+- `config-shape`
+- `rule-setting`
+- `unknown-rule`
+- `rule-option`
+
 [Error codes](cli.md#error-codes) gives the cause of each.

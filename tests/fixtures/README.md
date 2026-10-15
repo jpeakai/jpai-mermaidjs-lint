@@ -23,7 +23,7 @@ Without one, the suite still checks that fixing is idempotent and never adds a r
 ## Show what an LLM would fix
 
 When `--fix` leaves findings, the suite requires a sibling named `<name>.llm.md` or `<name>.llm.mmd`.
-It is the fix a careful LLM would make by judgment: a split diagram, a new label colour, a repaired edge.
+It is the fix a careful LLM would make by judgement: a split diagram, a new label colour, a repaired edge.
 Put the reason in one comment, and the file must lint clean:
 
 ```text
@@ -39,6 +39,14 @@ The docs site shows it beside the original, with the reason.
 |---|---|
 | `rules/` | One small file per behaviour, named for what it shows |
 | `clean/` | Files that must report nothing |
-| `contrast/`, `complexity/`, `gallery/` | Larger scenario files ported from the original skill |
-| `skill-evals/` | The fixtures the original skill graded its output against |
+| `contrast/`, `complexity/`, `gallery/` | Larger scenario files ported from an earlier set of diagram-checking scripts |
+| `skill-evals/` | The fixtures those earlier scripts graded their output against |
 | `regressions/` | A file for every bug found in the wild, added with the fix. Create the folder with the first one. |
+
+A new folder also needs a one-line description in `FIXTURE_GROUPS` in `scripts/build-site.ts`, which the fixture gallery prints above it.
+
+## Prose in a fixture
+
+The prose in a fixture is published in the fixture gallery, but `make docs-ci` does not gate it.
+A fixture is the input under test, so it may break the prose gates on purpose.
+Write its prose to the same standard as the docs anyway.

@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { checkMarkdown, fixSource, RULE } from "../src/index.ts";
+import { checkMarkdown, fixSource, RULE, RULES } from "../src/index.ts";
 import { edgeLabelBackground, scoreMkdocs } from "../src/parse/contrast.ts";
+import { parseFailed } from "../src/parse/metrics.ts";
+import { parserReason } from "../src/parse/stats.ts";
 import { chain, fence, rules } from "./helpers.ts";
 
 describe("parse rules", () => {
@@ -11,7 +13,7 @@ describe("parse rules", () => {
   test("a syntax error is unparseable, and skips the complexity rules", async () => {
     const found = await checkMarkdown(fence("flowchart LR\n  A -->"), "doc.md");
     expect(found.map((f) => f.rule)).toEqual([RULE.UNPARSEABLE]);
-    expect(found[0]?.message).toContain("yielded 0 nodes");
+    expect(found[0]?.message).toContain("flowchart did not parse (parser: mermaid-core)");
     expect(found[0]?.line).toBe(1);
     expect(found[0]?.endLine).toBe(4);
   });
@@ -207,5 +209,79 @@ describe("one-line diagrams", () => {
 
   test.each(["info", "pie title Pets", "graph TD; A-->B", "sequenceDiagram"])("%s on one line parses", async (src) => {
     expect(await rules(fence(src))).not.toContain(RULE.UNPARSEABLE);
+  });
+
+  test("the message carries the parser's whole reason on one line, and never says multi-line", async () => {
+    const [hit] = await checkMarkdown(fence("graph TD; A-->; B[[["), "doc.md");
+    expect(hit?.message).not.toContain("multi-line");
+    expect(hit?.message).not.toContain("\n");
+    expect(hit?.message).toContain("Parse error on line 1:");
+    expect(hit?.message).toContain("got 'SEMI'");
+    expect(hit?.message).toContain("its line numbers count within the diagram, not the file");
+  });
+});
+
+describe("zero-node diagrams", () => {
+  test.each(["pie\n  title Pets", "info\n  showInfo"])("%j parses with no nodes and is not reported", async (src) => {
+    expect(await rules(fence(src))).toEqual([]);
+  });
+
+  test("a langium type the grammar rejects carries the langium reason", async () => {
+    const [hit] = await checkMarkdown(fence('pie\n  "Dogs" : many'), "doc.md");
+    expect(hit?.rule).toBe(RULE.UNPARSEABLE);
+    expect(hit?.message).toContain("pie did not parse (parser: langium)");
+    expect(hit?.message).toContain("Parsing failed");
+  });
+
+  test("mermaid core reading several lines as zero nodes is still a silent failure", async () => {
+    // A mermaid-core result with no error and no nodes, from more than one line.
+    const stats = {
+      nodes: 0,
+      edges: 0,
+      subgraphs: 0,
+      max_subgraph_depth: 0,
+      node_ids: [],
+      subgraph_names: [],
+      parser_used: "mermaid-core" as const,
+      diagram_type: "flowchart",
+      error: null,
+    };
+    expect(parseFailed("flowchart LR\n  %% nothing\n  style A fill:#fff", stats)).toBe(true);
+    expect(parseFailed("flowchart LR", stats)).toBe(false);
+    expect(parseFailed("pie\n  title Pets", { ...stats, parser_used: "langium" })).toBe(false);
+  });
+
+  test("zenuml says why it cannot be checked", async () => {
+    const [hit] = await checkMarkdown(fence("zenuml\n  Alice->Bob: hi"), "doc.md");
+    expect(hit?.rule).toBe(RULE.UNPARSEABLE);
+    expect(hit?.message).toContain("external mermaid add-on that mermaidjs-lint does not include");
+    expect(hit?.remediation).toContain("No fixer can help");
+  });
+
+  test("a parser reason drops the echoed source and its pointer, and keeps the rest", () => {
+    const err = new Error("Parse error on line 3:\n...A --> B  C[[[\n------^\nExpecting 'TEXT', got 'SQS'");
+    expect(parserReason(err)).toBe("Parse error on line 3: Expecting 'TEXT', got 'SQS'");
+    expect(parserReason(new Error("No diagram type detected for text: nope\n  lots\n  of source"))).toBe(
+      "No diagram type detected for text: nope",
+    );
+    expect(parserReason("  plain  reason \n")).toBe("plain reason");
+  });
+});
+
+describe("rule wording", () => {
+  test("the score rule names the complex threshold it compares against", async () => {
+    const found = await checkMarkdown(fence(chain(30)), "doc.md", { preset: "low" });
+    const hit = found.find((f) => f.rule === RULE.VCS_CRITICAL);
+    expect(hit?.message).toMatch(/^VCS [\d.]+ > 40 complex threshold$/);
+    const rule = RULES.find((r) => r.id === RULE.VCS_CRITICAL);
+    expect(rule?.summary).toContain("complex threshold");
+  });
+
+  test("the hard-limit summary names the preset's hard limit", () => {
+    expect(RULES.find((r) => r.id === RULE.NODES_HARD)?.summary).toBe("more nodes than the preset's hard limit");
+  });
+
+  test("the parse summary does not limit itself to multi-line diagrams", () => {
+    expect(RULES.find((r) => r.id === RULE.UNPARSEABLE)?.summary).not.toContain("multi-line");
   });
 });

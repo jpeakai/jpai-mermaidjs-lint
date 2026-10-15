@@ -9,15 +9,16 @@ It is the declared dialect and it outranks any general convention.
 
 Every change serves one of these, per [MJL-0015](adrs/0015-four-tenets-define-the-tool.md).
 A rule or feature that serves none of them does not belong.
-Three are guarantees about every diagram, and the fourth is a commitment about the tool.
+Three tenets are guarantees about every diagram the tool passes, and the fourth is a commitment about the tool.
 
-- **Readable in light and dark.** The colours a diagram declares are scored against their fill as the host renders it, in both light and dark themes.
-- **Renders.** Every diagram parses with the mermaid parsers this package ships, and every fence is closed.
+- **Readable in light and dark.** Declared fills, label colours and borders are scored as the host draws them, on nodes, erDiagram rows and edge labels, in both themes.
+- **Renders.** Every diagram parses with the mermaid parsers this package ships, and every mermaid fence is closed.
 - **Simple enough to follow.** Node count and visual complexity are scored against a density preset, so an oversized diagram is flagged to be split.
 - **Extensible.** A plugin adds rules of your own, which run through the same config, fix engine and verification as the built-ins.
 
 Never reword a tenet in one place.
 Change `docs-site/includes/tenets.md`, then the same line in `README.md`, `CONTRIBUTING.md` and here, as `tests/tenets.test.ts` asserts.
+The framing sentence above the list is repeated word for word in the same files and on the site's home and concepts pages.
 
 ## Commands
 
@@ -48,6 +49,8 @@ When a new domain term enters the code or the conversation, add it to the glossa
   Everything in `adrs/` except the `.yml` records is generated.
   So is `dist/`, which `make build` bundles from `src/` for Node and git ignores.
   So are the docs site's rules page, gallery pages and snippets, which `make site` writes from `RULES.md`, `tests/fixtures` and `examples/`.
+- Never let the docs describe unreleased behaviour without an `Unreleased` entry in `CHANGELOG.md`.
+  The site deploys from main, and npm readers run the latest release.
 - Never add a warning level.
   A finding fails the run or the rule is off, per [MJL-0003](adrs/0003-findings-fail-or-the-rule-is-off.md).
 - Never let a fixer guess.
@@ -61,6 +64,8 @@ When a new domain term enters the code or the conversation, add it to the glossa
   A bad plugin stops the run with its reason, unless the run is lenient.
 - Never let a plugin edit bypass verification.
   A plugin fixer meets the same proof as a built-in one.
+- Never describe fix verification as proving more than `src/fix/verify.ts` compares.
+  It does not compare edge endpoints, labels or node text.
 - Never fix a fix bug without first adding the adversarial test that reproduces it.
 - Never use a Bun global in `src/`.
   The Node bundle must run without Bun.

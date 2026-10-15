@@ -3,7 +3,10 @@
 Diagrams in documentation should be readable.
 Deterministic checks and verified fixes for Mermaid diagrams in markdown.
 
-**[Docs](https://jpeakai.github.io/jpai-mermaidjs-lint/)** | **[Rules](https://jpeakai.github.io/jpai-mermaidjs-lint/reference/rules/)** | **[GitHub](https://github.com/jpeakai/jpai-mermaidjs-lint)** | **[npm](https://www.npmjs.com/package/@jpeakai/mermaidjs-lint)**
+**[Docs](https://jpeakai.github.io/jpai-mermaidjs-lint/)** | **[Rules](https://jpeakai.github.io/jpai-mermaidjs-lint/reference/rules/)** | **[Changelog](CHANGELOG.md)** | **[GitHub](https://github.com/jpeakai/jpai-mermaidjs-lint)** | **[npm](https://www.npmjs.com/package/@jpeakai/mermaidjs-lint)**
+
+This README and the docs site describe the `main` branch.
+A feature on `main` but not yet on npm is listed under `Unreleased` in the [changelog](CHANGELOG.md).
 
 ## Usage
 
@@ -12,17 +15,20 @@ bunx @jpeakai/mermaidjs-lint README.md docs/     # report findings, exit 1 if an
 npx -y @jpeakai/mermaidjs-lint --fix docs/       # apply every fix proven safe, report the rest
 ```
 
-A path is a `.mmd` file, a markdown file whose mermaid fences are checked, or a directory, which is walked for both.
+Pass your own paths: every path you name must exist, or the run stops with a usage error and exit 2.
+A `.mmd` or `.mermaid` file is read as one diagram, and any other file you name is read as markdown.
+A directory is walked for `.mmd`, `.mermaid`, `.md` and `.markdown` files.
+The walk skips dot-folders and any folder named `node_modules`, `vendor`, `dist`, `build`, `tmp` or `__pycache__`, at any depth.
 Installed as a dev dependency, the command is `mermaidjs-lint`, and `--help` lists every flag.
 
 [Get started](https://jpeakai.github.io/jpai-mermaidjs-lint/get-started/) walks through a first run, a fix, and adding the check to a project.
 
 ## The four tenets
 
-Three tenets are guarantees about every diagram, and the fourth is a commitment about the tool.
+Three tenets are guarantees about every diagram the tool passes, and the fourth is a commitment about the tool.
 
-- **Readable in light and dark.** The colours a diagram declares are scored against their fill as the host renders it, in both light and dark themes.
-- **Renders.** Every diagram parses with the mermaid parsers this package ships, and every fence is closed.
+- **Readable in light and dark.** Declared fills, label colours and borders are scored as the host draws them, on nodes, erDiagram rows and edge labels, in both themes.
+- **Renders.** Every diagram parses with the mermaid parsers this package ships, and every mermaid fence is closed.
 - **Simple enough to follow.** Node count and visual complexity are scored against a density preset, so an oversized diagram is flagged to be split.
 - **Extensible.** A plugin adds rules of your own, which run through the same config, fix engine and verification as the built-ins.
 
@@ -40,8 +46,9 @@ The [rules page](https://jpeakai.github.io/jpai-mermaidjs-lint/reference/rules/)
 Every finding fails the run, and a rule you do not want is switched off in the config.
 Node, edge and subgraph counts come from mermaid's own parsers.
 Style directives are read line by line, so a style joined to other statements by a semicolon is not seen.
-Every fix is verified by parsing the document again.
-A fix that would change anything else is refused, so the finding stays for a human.
+Every fix is verified by parsing the document again, and a fix that fails the check is refused, so the finding stays for a human.
+The check holds the markdown outside the diagrams unchanged, and each diagram's type, node ids, subgraph names and counts.
+It does not compare edge endpoints, edge labels or node text, so review the diff a fix writes.
 
 ## Requirements and compatibility
 
@@ -59,6 +66,22 @@ A fix that would change anything else is refused, so the finding stays for a hum
 - [Write a local rule](https://jpeakai.github.io/jpai-mermaidjs-lint/guides/local-rule/) or [publish a plugin package](https://jpeakai.github.io/jpai-mermaidjs-lint/guides/plugin-package/): add rules of your own, which load with no config.
 - [Troubleshooting](https://jpeakai.github.io/jpai-mermaidjs-lint/guides/troubleshooting/): a README that fails after adding `mkdocs.yml`, skipping a diagram, and other common questions.
 
+## Use it from an AI agent
+
+[`skills/mermaidjs-lint/`](skills/mermaidjs-lint/SKILL.md) is an agent skill that runs the linter, applies the safe fixes, then fixes what remains by judgement.
+It is not in the npm package, so copy it from this repository.
+For Claude Code, run these in your project:
+
+```sh
+git clone --depth 1 https://github.com/jpeakai/jpai-mermaidjs-lint.git mermaidjs-lint-src
+mkdir -p .claude/skills
+cp -R mermaidjs-lint-src/skills/mermaidjs-lint .claude/skills/
+```
+
+Copy it to `~/.claude/skills/` instead to use it in every project, then delete the clone.
+Another agent can follow `SKILL.md` as plain instructions.
+[Agent evals](https://jpeakai.github.io/jpai-mermaidjs-lint/gallery/agent-evals/) shows how well agents fix the fixtures with it.
+
 ## Library use
 
 ```ts
@@ -74,8 +97,8 @@ The [Library API](https://jpeakai.github.io/jpai-mermaidjs-lint/reference/librar
 ## Versioning
 
 The package follows semantic versioning, and while it is at `0.x` a minor release may break the public surface.
-That surface is the rule ids, the `--json` output, the exit codes, the plugin `apiVersion` and the exported types.
-[GitHub Releases](https://github.com/jpeakai/jpai-mermaidjs-lint/releases) is the changelog.
+[Versioning](https://jpeakai.github.io/jpai-mermaidjs-lint/reference/#versioning) lists what that surface is.
+[CHANGELOG.md](CHANGELOG.md) lists what changed in each release, and what is on `main` but not yet released.
 
 ## Security
 
@@ -87,7 +110,7 @@ A plugin is code that runs on your machine, and plugins load on their own once a
 Report a bug or ask a question in [GitHub issues](https://github.com/jpeakai/jpai-mermaidjs-lint/issues).
 A bug report needs:
 
-- The version, from `mermaidjs-lint --version`.
+- The version, from `mermaidjs-lint --version`, or from `npm ls @jpeakai/mermaidjs-lint` on 0.1.1 and earlier.
 - The command you ran.
 - The diagram, or the smallest file that shows the problem.
 - The output of the same command with `--json`.

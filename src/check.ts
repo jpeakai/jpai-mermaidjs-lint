@@ -4,7 +4,7 @@
 // them. A rule may be synchronous or return a promise, so a rule that waits on
 // a tool or a service overlaps with the others.
 
-import { buildDocModel, type DocModel } from "./model.ts";
+import { buildDocModel, type DocModel, documentKind } from "./model.ts";
 import { BUILTIN, HELPERS, type Registry } from "./rules/registry.ts";
 import type { Finding, Rule, RuleOptions } from "./rules/types.ts";
 
@@ -44,5 +44,4 @@ export const checkMarkdown = (
   file: string,
   flags: RunFlags = {},
   registry: Registry = BUILTIN,
-): Promise<Finding[]> =>
-  checkModel(buildDocModel(src, file.toLowerCase().endsWith(".mmd") ? "diagram" : "markdown"), file, flags, registry);
+): Promise<Finding[]> => checkModel(buildDocModel(src, documentKind(file)), file, flags, registry);

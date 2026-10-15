@@ -107,6 +107,16 @@ const collectMermaid = (node: Node, out: Code[]): void => {
   for (const child of (node as Parent).children ?? []) collectMermaid(child, out);
 };
 
+// The extensions of a raw diagram file. Any other file is read as markdown.
+export const DIAGRAM_EXTS = [".mmd", ".mermaid"] as const;
+
+// How a file is read, from its name alone: a raw diagram, or markdown whose
+// mermaid fences are the diagrams.
+export const documentKind = (file: string): "markdown" | "diagram" => {
+  const lower = file.toLowerCase();
+  return DIAGRAM_EXTS.some((ext) => lower.endsWith(ext)) ? "diagram" : "markdown";
+};
+
 export const buildDocModel = (src: string, kind: "markdown" | "diagram" = "markdown"): DocModel => {
   const lineStarts = lineStartsOf(src);
   if (kind === "diagram") {

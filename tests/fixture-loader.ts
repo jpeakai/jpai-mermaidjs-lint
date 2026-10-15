@@ -7,7 +7,7 @@
 //
 // A sibling named <name>.fixed.<ext> pins the exact output of --fix.
 //
-// A sibling named <name>.llm.<ext> is the judgment fix an LLM proposed for the
+// A sibling named <name>.llm.<ext> is the judgement fix an LLM proposed for the
 // findings --fix cannot clear, such as a split diagram or a new palette. It
 // carries its reasoning in a comment, and it must lint clean:
 //

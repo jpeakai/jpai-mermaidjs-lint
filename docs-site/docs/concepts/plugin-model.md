@@ -29,10 +29,16 @@ Discovery reads three places, in this order:
 2. **Declared dependencies** whose name matches `mermaidjs-lint-plugin` or `mermaidjs-lint-plugin-*`, scoped or not. Only the project's own `dependencies`, `devDependencies` and `optionalDependencies` are read.
 3. **Paths or names listed** under `plugins` in the config file.
 
-`node_modules` is never scanned.
-Only code the project chose to depend on can run, which matters because a plugin is code that runs on your machine.
-For a repository you do not trust, `--no-plugins` gives a run with the built-in rules only.
-[SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) states the full trust model, including why `--no-plugins` is not a boundary in CI.
+`node_modules` is never scanned for plugins.
+Only declared names and local rule files load, and a declared name resolves from the nearest `node_modules` at or above the project root.
+That matters because a plugin is code that runs on your machine.
+
+A plugin is not the only code a run can execute.
+A `mermaidjs-lint.config.mjs` is a module, so reading it runs it, and each `plugins` entry in the config names more code to load.
+`--no-plugins` loads no plugin and never imports a `.mjs` config, so a run uses the built-in rules and at most a `.json` config.
+Faced with a `.mjs` config, it stops with `error[config-code]`, and `--config` with a `.json` config of your own lets it run.
+It does not make a repository you do not trust safe, because installing its dependencies has already run their code.
+[SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) states the full trust model.
 
 ## Loading checks the contract before anything runs
 
@@ -64,7 +70,7 @@ Without that rule, two plugins could produce identical rule ids, and a config li
 | strict | The default | Stops the run with `error[code]` |
 | lenient | `--lenient-plugins`, or `"pluginLoading": "lenient"` | Is left out, and the run says so |
 | collect | `--validate-plugins` | Is left out, and every failure is reported at the end. No file is checked. |
-| off | `--no-plugins`, or `"plugins": false` | Nothing is loaded, and every discovered plugin is reported as skipped |
+| off | `--no-plugins`, or `"plugins": false` | Nothing is loaded. Discovery still runs, and every plugin it found is reported as skipped. |
 
 Strict is the default because a gate that silently drops a rule would pass files it never checked.
 Outside strict mode, a config setting for a plugin rule that did not load is set aside, and the run says so.
@@ -79,7 +85,7 @@ The gate still fails, so the broken rule is noticed.
 
 A plugin fixer gets no special trust.
 It stops the run if it throws, returns something other than a list, or returns an edit with no valid expectation.
-An edit with offsets outside the source is refused like any other edit that fails the proof, and the finding stays.
+An edit with offsets outside the source is refused like any other edit that fails verification, and the finding stays.
 
 ## Next
 

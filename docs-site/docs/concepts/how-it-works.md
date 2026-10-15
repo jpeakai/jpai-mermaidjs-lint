@@ -27,7 +27,7 @@ A bad config or a broken plugin therefore stops the run before it touches a docu
 Each file is parsed to a markdown tree once.
 The mermaid fences in that tree become the diagrams every rule reads.
 A check and a fix therefore never disagree about which text is a diagram.
-A `.mmd` file is one diagram with no markdown around it.
+A `.mmd` or `.mermaid` file is one diagram with no markdown around it.
 
 A rule that needs structure asks the diagram for its stats.
 For the newer diagram types, the parse engine reads them from mermaid's Langium grammars.
@@ -35,8 +35,12 @@ For the rest, it reads them from mermaid's own core, under a DOM shim.
 A regular expression would miscount subgraphs, ports and multi-line labels, and the counts would differ from what a reader sees.
 The parse happens once per diagram, on first use, and every rule shares the result.
 
-A diagram that yields no nodes is reported as `parse-diagram-unparseable`.
-A one-line diagram, such as `pie title Pets`, may have no nodes and still be valid, so on one line only a parser error is reported.
+A diagram whose parser reports an error is reported as `parse-diagram-unparseable`, on one line or many.
+The finding carries the parser's reason, and its line numbers count from the diagram's first line.
+Having no nodes is not an error on its own, so a valid `pie` with only a title line, or `info`, passes.
+Mermaid's core can read a multi-line diagram into an empty structure without complaint.
+For the types it reads, a multi-line diagram with no nodes is therefore reported as a silent parse failure.
+A `zenuml` diagram is always reported, because it is drawn by a mermaid add-on this package does not include.
 
 Two things are read from the text rather than the parser.
 The diagram keyword is the first word past any frontmatter and comments, and it picks which parser runs.
@@ -51,17 +55,20 @@ No rule reads another rule's result, so a check starts every rule together and w
 A rule may return its findings directly or as a promise.
 The findings are then sorted by line and rule id, so output is stable from run to run.
 
-## Fixing is a loop with a proof
+## Fixing is a loop with a check
 
 `--fix` does not trust a fixer.
 A fixer proposes edits: a span of the source, its replacement, and an expectation of what must stay the same.
 
 | Expectation | What must hold after the edit |
 |---|---|
-| `same-diagrams` | The markdown is unchanged outside the mermaid fences, every diagram is still there, and each one parses to the same structure |
+| `same-diagrams` | The markdown is unchanged outside the mermaid fences, and the document holds the same number of diagrams. Each keeps its keyword, type, counts, deepest nesting, node ids and subgraph names. |
 | `same-tree` | The markdown tree is unchanged once whitespace in text is collapsed |
 
 The engine splices the edits, parses the whole document again, and keeps the change only when every expectation holds.
+`same-diagrams` is a structural check, and it does not show that nothing else changed.
+It does not compare edges, labels, node text or styles, so a fixer that declares it must keep those intact itself.
+[Edits](../reference/plugin-api.md#edits) lists exactly what each expectation compares.
 A rule's edits are first tried as one batch.
 When the batch fails, each edit is tried alone, so one bad edit never blocks the others.
 An edit that fails is refused, remembered, and never proposed again for the same text.
@@ -72,7 +79,7 @@ The file is then written, and checked like any other.
 
 !!! warning "A refused edit leaves the finding in place"
 
-    When a fixer is unsure, or its edit fails the proof, the text is left alone and the finding is still reported.
+    When a fixer is unsure, or its edit fails the check, the text is left alone and the finding is still reported.
     That is deliberate: a fix that might change what a diagram says needs a human.
 
 ## What a run does not do

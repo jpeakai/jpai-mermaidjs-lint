@@ -4,7 +4,7 @@ import { RULE } from "./types.ts";
 
 export const complexityNodeCountHardLimit = complexityRule({
   id: RULE.NODES_HARD,
-  summary: "more nodes than any diagram can hold, above the hard limit",
+  summary: "more nodes than the preset's hard limit",
   hit: ({ stats }, c) =>
     stats.nodes > c.node_hard_limit
       ? {

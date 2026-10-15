@@ -8,9 +8,10 @@ When a new domain term enters the code or the conversation, add it here in the s
 
 | Term | Meaning |
 |---|---|
-| Diagram | One Mermaid source: a mermaid fence in a markdown file, or a whole `.mmd` file. |
+| Diagram | One Mermaid source: a mermaid fence in a markdown file, or a whole `.mmd` or `.mermaid` file. |
 | Fence | The code block that holds a diagram in markdown. It is unterminated when it never closes. |
 | Tenet | One of the four things the tool exists for: three guarantees about every diagram (readable in light and dark, renders, simple enough to follow) and one commitment about the tool (extensible). Worded once in `docs-site/includes/tenets.md`. |
+| Gate | A check that fails the run, with exit 1, while any finding remains. Every rule is a gate, and `make docs-ci` runs the gates over this repo's markdown. |
 | Rule | One deterministic check with a rule id, and optionally a fixer. |
 | Rule id | The name of a rule, written category-short-name, such as contrast-text-below-aa. |
 | Category | The group a rule belongs to: parse, complexity or contrast, or a one-word category a plugin declares. |
@@ -39,6 +40,7 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Config file | The optional `mermaidjs-lint.config.json` or `.mjs` that switches rules off and sets their options. |
 | Project root | The nearest ancestor of the working directory with a `package.json`, a config file or a `.mermaidjs-lint` directory, or the working directory when none has one. |
 | Registry | The rules a run uses: the built-ins plus loaded plugins, with the config applied. |
+| Source kind | Where a plugin came from, shown in `--list-rules` and `--json`: local for a file in `.mermaidjs-lint/rules`, package for a declared `mermaidjs-lint-plugin-*` dependency, config for an entry in the config's `plugins` list. |
 | Plugin mode | How a plugin that fails to load is treated: off, strict, lenient or collect. Strict is the default. |
 | Error code | The stable kebab-case name of a failure, shown as error[code] and carried on the error class. |
 | Adversarial test | A hostile input written to break a fixer, asserting a refusal or an exact safe output. |
@@ -46,8 +48,10 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Fixture | One `.md` or `.mmd` file under `tests/fixtures` or `examples/` that the test suite runs as a case. |
 | Expect comment | The line in a fixture naming the rule ids it must report, or none for a clean file. |
 | Pinned fix | A `<name>.fixed.<ext>` sibling of a fixture holding the exact output of `--fix`. |
-| LLM fix | A `<name>.llm.<ext>` sibling of a fixture, or an `llm` block in `RULES.md`, holding the judgment fix an LLM proposed for findings `--fix` leaves. It states its reason in an `llm:` comment and must lint clean. |
+| LLM fix | A `<name>.llm.<ext>` sibling of a fixture, or an `llm` block in `RULES.md`, holding the judgement fix an LLM proposed for findings `--fix` leaves. It states its reason in an `llm:` comment and must lint clean. |
 | Docs site | The MkDocs Material site under `docs-site/`, whose reference pages are generated from the fixtures, `RULES.md` and `examples/`. |
 | Bundle | The `adrs/` directory as a whole, including the records and everything generated from them. |
 | Dialect | This repo's declared documentation conventions, in `docs/CONVENTIONS.md`. |
 | Release | One version published to npm by the Publish workflow, with a matching tag and GitHub release. |
+| Changelog | `CHANGELOG.md`, the curated list of user-visible changes per release, with an Unreleased section for what is on main but not yet on npm. |
+| Agent skill | `skills/mermaidjs-lint/`, the instructions an AI coding agent follows to lint and fix diagrams with this tool, with its eval suite. |

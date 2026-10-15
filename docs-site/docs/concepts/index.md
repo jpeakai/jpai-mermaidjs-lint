@@ -5,15 +5,15 @@ Read them away from the keyboard: none of them asks you to run anything.
 
 ## The four tenets
 
-Three tenets are guarantees about every diagram the tool passes, and the fourth is a commitment about the tool itself.
+Three tenets are guarantees about every diagram the tool passes, and the fourth is a commitment about the tool.
 Each concept page explains how one of them is delivered, and where its limits are.
 
 --8<-- "tenets.md"
 
 | Tenet | Delivered by | Its limit | Explained in |
 |---|---|---|---|
-| **Readable in light and dark** | The contrast rules | Only declared colours are scored, so an unstyled node or a theme setting is not checked | [Contrast profiles](contrast.md) |
-| **Renders** | The parse rules | It parses rather than draws, and a host on another mermaid version may still fail to draw it | [How a run works](how-it-works.md) |
+| **Readable in light and dark** | The contrast rules | Only declared colours are scored. An unstyled node, a theme setting, a `linkStyle` `stroke:` and a fill-less `color:` outside an `erDiagram` are not. A border under `mkdocs-material` or in an `erDiagram` is scored but never reported. | [Contrast profiles](contrast.md) |
+| **Renders** | The parse rules | It parses rather than draws, and a host on another mermaid version may still fail to draw it. A diagram after an unclosed fence of another language is not seen. | [How a run works](how-it-works.md) |
 | **Simple enough to follow** | The complexity rules | It flags and suggests where to split, but never splits | [Measuring complexity](complexity.md) |
 | **Extensible** | Local rules and plugin packages | A plugin is code that runs on your machine, so trust what you install | [The plugin model](plugin-model.md) |
 

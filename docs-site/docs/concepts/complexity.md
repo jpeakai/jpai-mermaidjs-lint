@@ -39,15 +39,20 @@ Only the rule for that band fires, so one diagram never gets three findings for 
 | Score | above `vcsAcceptable`, up to `vcsComplex` | `complexity-visual-score-acceptable-exceeded` |
 | Score | above `vcsComplex` | `complexity-visual-score-critical` |
 
+Each threshold in the table bounds two neighbouring bands, so two rules read it.
+
 Nesting has its own rule: subgraphs nested three or more levels deep fire `complexity-subgraph-nesting-too-deep`.
+That limit is fixed at three, and no preset or option changes it.
 
 !!! warning "Some threshold options have no effect yet"
 
     The presets also define `nodeIdeal`, `vcsIdeal` and `vcsCritical`, and the config accepts them, but no rule reads them today.
-    The critical score rule fires above `vcsComplex`.
+    `complexity-visual-score-critical` fires above `vcsComplex`, the complex threshold, and its message names that threshold.
 
 Because each rule covers one band, set the preset for the whole ladder at once with `--preset`.
-Setting `preset` on one complexity rule in the config moves only that rule's band, which can leave gaps between bands.
+Setting `preset` or a threshold on one complexity rule in the config moves only that rule's band.
+That can leave a gap between bands, or an overlap where two rules report the same diagram.
+[Rule settings](../reference/configuration.md#rule-settings) shows a threshold set on both rules that read it.
 
 ## Why complexity is never fixed automatically
 

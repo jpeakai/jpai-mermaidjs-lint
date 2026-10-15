@@ -3,6 +3,24 @@
 Answers to the questions a first week with the linter raises.
 Each entry starts from what you see, then gives the fix.
 
+## The run exits 2 with an error line
+
+Exit code 2 means the command could not start the check.
+The first line of standard error names the cause as `error[code]`, and the usage lines that follow it are a reminder.
+
+| First line | Cause | Fix |
+|---|---|---|
+| `error[flag]: cannot read <path>` | A path you named does not exist | Pass only paths that exist, such as `docs/` |
+| `error[flag]: no matching files` | The paths hold no markdown, `.mmd` or `.mermaid` file | Point at the folder that holds your diagrams |
+| `error[flag]: no files given` | No path was named | Name at least one file or folder |
+| `error[flag]: Unknown option '--x'` | A misspelt flag, or one newer than your installed version | Check the flag in `--help` |
+| `error[unknown-rule]` | The config names a rule that is not loaded | See [A plugin rule id is unknown](#a-plugin-rule-id-is-unknown) |
+| `error[rule-option]` | A rule option has the wrong name or type | Match the option to [Config file](../reference/configuration.md#rule-options) |
+| `error[config-code]` | A `.mjs` config under `--no-plugins` | Pass `--config` with a `.json` config, or drop `--no-plugins` |
+| `error[config-file]`, `error[config-shape]` or another `config-` code | The config cannot be read or has the wrong shape | Fix the file the error names |
+
+[Error codes](../reference/cli.md#error-codes) lists every code.
+
 ## README.md fails after adding mkdocs.yml
 
 The `auto` profile scores a file as Material renders it when any parent folder holds `mkdocs.yml` or `mkdocs.yaml`.
@@ -46,11 +64,11 @@ Plugins are discovered from the project root's `package.json` and `.mermaidjs-li
 
 ## A plugin rule id is unknown
 
-`error[unknown-rule]` for an id such as `acme/house-left-to-right` means no loaded plugin has that rule.
+`error[unknown-rule]` for an id such as `acme/house-direction` means no loaded plugin has that rule.
 
 - **Check the plugin is declared.** Its package must be in the project's `dependencies`, `devDependencies` or `optionalDependencies`, and installed.
 - **Check the id.** `mermaidjs-lint --list-rules` prints every loaded rule under its real id.
-- **Expect it under `--no-plugins`.** That run sets aside settings for plugin rules, and standard error says so, so it never fails on them.
+- **Expect it under `--no-plugins`.** That run sets aside settings for plugin rules, and standard error says so, so it never fails on them. Version 0.1.1 fails on them instead.
 
 ## A TypeScript local rule fails to load
 
@@ -64,6 +82,8 @@ Print the version with:
 ```sh
 bunx mermaidjs-lint --version
 ```
+
+Version 0.1.1 has no `--version` flag, so print it there with `npm ls @jpeakai/mermaidjs-lint`.
 
 Then open an issue at [GitHub issues](https://github.com/jpeakai/jpai-mermaidjs-lint/issues) with:
 

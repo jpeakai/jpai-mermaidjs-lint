@@ -12,7 +12,7 @@ No `mkdocs.yml` sits above this folder, so the default `auto` profile reads it a
 Under that profile, the declared `color:` is the label colour a reader sees.
 This file is the LLM fix for `scenarios.md`.
 Each section keeps the description of what the linter reports on the original diagram, then shows the fix.
-The fix picks colours by judgment, where `--fix` could only swap a label colour for black or white.
+The fix picks colours by judgement, where `--fix` could only swap a label colour for black or white.
 Every diagram in this file lints clean:
 
 ```bash

@@ -51,7 +51,7 @@ erDiagram
         number max_subgraph_depth
         string[] node_ids
         string[] subgraph_names
-        enum parser_used "langium mermaid-core custom"
+        enum parser_used "langium or mermaid-core"
         string diagram_type
         string error "nullable"
     }

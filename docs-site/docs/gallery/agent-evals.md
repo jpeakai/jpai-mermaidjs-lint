@@ -14,6 +14,7 @@ A cell passes only when all of these hold:
 - **The right file changed, and nothing else appeared.** Linter caches are the only allowed additions.
 - **The linter reports nothing.** This package's own CLI runs on the agent's file and finds zero findings.
 - **Nothing was deleted to get there.** Every diagram and every node of the original is still present, so removing a diagram never passes.
+- **The structure matches the committed LLM fix.** Each fixture's `.llm.md` sibling is the golden, and only structure is compared, because the colours and split points are the agent's to choose.
 
 The grader is deterministic: the verdict comes from the linter and the structure checks, never from another model.
 
@@ -41,7 +42,12 @@ The whole run cost an estimated $1.04.
 
 ## Run them yourself
 
-The suite uses the [`pytest-xharness-eval`](https://github.com/neozenith/pytest-xharness-eval) plugin, and needs the `claude` and `codex` CLIs on your `PATH`, each logged in.
+The suite uses the [`pytest-xharness-eval`](https://github.com/neozenith/pytest-xharness-eval) plugin, a dev dependency of this repository.
+It needs:
+
+- The `claude` and `codex` CLIs on your `PATH`, each logged in.
+- `bun` on your `PATH`, with `make install` run, for the grader's lint step.
+- Network access to the npm registry from each agent's sandbox, because the skill runs the linter through `bunx` or `npx`.
 
 Preview the matrix without spending anything:
 

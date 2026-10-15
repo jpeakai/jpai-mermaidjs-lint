@@ -281,7 +281,7 @@ flowchart TD
 
 ```text
 complexity-node-count-hard-limit 101 nodes > 100 hard limit
-complexity-visual-score-critical VCS 105.5 > 100 critical threshold
+complexity-visual-score-critical VCS 105.5 > 100 complex threshold
 ```
 
 ### Recommendation
@@ -390,7 +390,7 @@ flowchart LR
 
 Twenty services are all coupled to each other.
 This is a monolith being broken apart, where every extracted service still depends on every other one.
-The 190 edges push the score past the critical threshold, though the 20 nodes are fine.
+The 190 edges push the score past the complex threshold, though the 20 nodes are fine.
 
 ```mermaid
 flowchart LR
@@ -418,7 +418,7 @@ flowchart LR
 ### What the linter reports
 
 ```text
-complexity-visual-score-critical VCS 115.0 > 100 critical threshold
+complexity-visual-score-critical VCS 115.0 > 100 complex threshold
 ```
 
 ### Recommendation
@@ -573,7 +573,7 @@ flowchart TB
 
 ### Failing example
 
-Mermaid does not recognise the diagram keyword, so the parser reads zero nodes.
+Mermaid does not recognise the diagram keyword, so the parser rejects it with an error.
 
 ```mermaid
 not_a_known_diagram_type
@@ -584,7 +584,7 @@ not_a_known_diagram_type
 ### What the linter reports
 
 ```text
-parse-diagram-unparseable not_a_known_diagram_type yielded 0 nodes from multi-line source (parser: mermaid-core): No diagram type detected matching given configuration for text: not_a_known_diagram_type
+parse-diagram-unparseable not_a_known_diagram_type did not parse (parser: mermaid-core): No diagram type detected matching given configuration for text: not_a_known_diagram_type
 ```
 
 The complexity rules skip a diagram that fails to parse.

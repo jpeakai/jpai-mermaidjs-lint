@@ -38,12 +38,12 @@ Its default export is one `PluginRule`, its file name is the key, and it may exp
 | Field | Type | Meaning |
 |---|---|---|
 | `category` | `string` | A built-in category, or one the plugin declares |
-| `summary` | `string` | One line, shown by `--list-rules` and `--help` |
+| `summary` | `string` | One line, shown by `--list-rules`. `--help` lists the built-in rules only. |
 | `options` | `Record<string, "number" \| "string" \| "boolean" \| "string[]">`, optional | The options the rule accepts, checked against the config before a run |
 | `check(ctx)` | returns `PluginFinding[]` or a promise of it | Reports findings |
 | `fix(ctx)` | returns `PluginEdit[]` or a promise of it, optional | Proposes edits |
 
-The rule key must start with its category, as `category-short-name`.
+The rule key matches `^[a-z][a-z0-9-]*$`, and must start with its category, as `category-short-name`.
 The rule runs under the id `namespace/key`.
 
 ## Context
@@ -65,8 +65,8 @@ A check returns a list of findings.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `line` | `number` | The first file line |
-| `endLine` | `number`, optional | The last file line. Defaults to `line`. |
+| `line` | `number` | The first file line, a whole number of at least 1 |
+| `endLine` | `number`, optional | The last file line, a whole number of at least `line`. Defaults to `line`. |
 | `message` | `string` | What failed |
 | `remediation` | `string`, optional | The next step, shown in `--json` output |
 
@@ -79,14 +79,21 @@ A fixer returns a list of edits.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `start`, `end` | `number` | The range of `doc.src` to replace |
+| `start`, `end` | `number` | The range of `doc.src` to replace, as UTF-16 code unit offsets, as JavaScript string indices count them |
 | `text` | `string` | The replacement |
 | `expect` | `{ kind: "same-diagrams" }` or `{ kind: "same-tree" }` | What must still hold after the edit |
 
+Offsets are whole numbers, with `0 <= start <= end <= doc.src.length`.
+An edit outside those bounds is refused, and the finding stays.
+
 | Expectation | Holds when |
 |---|---|
-| `same-diagrams` | The markdown is unchanged outside the mermaid fences, every diagram is still there, and each parses to the same structure |
-| `same-tree` | The markdown tree is unchanged once whitespace in text is collapsed |
+| `same-diagrams` | The markdown is unchanged outside the mermaid fences, and the document holds the same number of diagrams. Each diagram keeps its keyword, its diagram type, its node, edge and subgraph counts, its deepest nesting, its node ids and its subgraph names. |
+| `same-tree` | The markdown tree is unchanged once whitespace in text is collapsed, mermaid fence bodies included |
+
+`same-diagrams` does not compare the edge list, so an edge's endpoints, direction and arrow type can change.
+It does not compare labels, node text or style directives either.
+A fixer that declares it must therefore keep those intact itself, because the engine will not refuse a change to them.
 
 The engine applies an edit, parses the document again, and keeps the edit only when its expectation holds.
 A fixer that throws, returns something other than a list, or returns an edit with no valid expectation stops the run with `error[plugin-fixer]`.
@@ -102,7 +109,7 @@ Import from `@jpeakai/mermaidjs-lint/testing`.
 | `fixRule(plugin, key, source, run?)` | `{ output, applied, refused }` after the rule's fixer has run to a fixpoint |
 
 `run` may hold `options` for the rule, `flags` such as `{ preset, profile }`, and a `file` name, which defaults to `test.md`.
-A name ending in `.mmd` treats the source as a standalone diagram.
+A name ending in `.mmd` or `.mermaid` treats the source as a standalone diagram.
 
 ## Load errors
 

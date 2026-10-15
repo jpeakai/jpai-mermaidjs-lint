@@ -53,7 +53,20 @@ When a file renders through Material but its folder holds no `mkdocs.yml`, pass 
 bunx mermaidjs-lint --profile mkdocs-material site-content/
 ```
 
-To pin it for good, set `profile` on the three contrast rules in the [config file](../reference/configuration.md#rule-options).
+To pin it for good, set `profile` on the three contrast rules in `mermaidjs-lint.config.json`:
+
+```json
+{
+  "rules": {
+    "contrast-text-below-aa": ["error", { "profile": "mkdocs-material" }],
+    "contrast-border-below-ui-minimum": ["error", { "profile": "mkdocs-material" }],
+    "contrast-directive-unauditable": ["error", { "profile": "mkdocs-material" }]
+  }
+}
+```
+
+A `--profile` flag still overrides this for one run.
+[Config file](../reference/configuration.md#rule-options) lists the profile option.
 
 ## Why Material differs from GitHub
 

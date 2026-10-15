@@ -8,28 +8,17 @@ accepted_on: 2026-10-15
 last_changed_on: 2026-10-15
 tags: [config, determinism]
 
-lens: |-
-  A result that depends on inherited shell state differs between a laptop and CI for no reason anyone can read.
-
 provenance: The scripts read MERMAID_COMPLEXITY_* variables and needed a special case so a flag could beat them
 enforced_in:
   - src/parse/metrics.ts, whose thresholdsFrom reads only rule options, and src/check.ts, which lets a flag override an option
 
 relates_to: []
 
-problem:
-  symptom: An exported variable changed a gate's verdict without a change to the repo.
-  pain_point: The same commit passed in one shell and failed in another.
-
 decision:
   given: a project needs different density limits
   we_prefer: setting preset or a numeric threshold per rule in the config, with a run flag on top, over environment variables
   because: the config is committed and reviewed, so the verdict is reproducible
   unless: never
-  in_practice:
-    - The order is the flag, then the rule option, then the default preset high-density.
-    - Preset aliases such as low and strict are kept.
-
 consequences:
   pros:
     - A verdict is a function of the repo and the command line.

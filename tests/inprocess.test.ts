@@ -3,7 +3,15 @@
 
 import { afterEach, describe, expect, test } from "bun:test";
 import { describeError, main } from "../src/cli.ts";
-import { ConfigFileError, loadConfig, MermaidLintError, parseConfig } from "../src/index.ts";
+import {
+  ConfigFileError,
+  checkMarkdown,
+  FlagError,
+  fixSourceReport,
+  loadConfig,
+  MermaidLintError,
+  parseConfig,
+} from "../src/index.ts";
 import { chain, fence, tempProject } from "./helpers.ts";
 
 const realLog = console.log;
@@ -51,6 +59,15 @@ describe("main", () => {
     expect(r.code).toBe(2);
     expect(r.err).toContain("error[flag]");
     expect(describeError(new Error("x"))).toBe("error: x");
+  });
+
+  test("a library run rejects a bad preset or profile with FlagError", async () => {
+    const preset = checkMarkdown(DOC, "a.md", { preset: "bogus" });
+    await expect(preset).rejects.toBeInstanceOf(FlagError);
+    await expect(preset).rejects.toMatchObject({ code: "flag", flag: "preset" });
+    const profile = fixSourceReport(DOC, "a.md", { profile: "print" });
+    await expect(profile).rejects.toMatchObject({ code: "flag", flag: "profile" });
+    expect(await checkMarkdown(DOC, "a.md", { preset: "HIGH", profile: "github" })).toEqual([]);
   });
 
   test("validation reports plugins as json", async () => {

@@ -10,7 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- `checkMarkdown`, `checkModel`, `fixSource` and `fixSourceReport` reject an unknown `preset` or `profile` in `RunFlags` with `FlagError`, code `flag`. They rejected with a plain `Error` before.
+- `--help` describes `--json`.
 
 ## [0.4.0] - 2026-10-16
 
@@ -18,7 +21,6 @@ Nothing yet.
 
 - Fix verification refuses an edit that leaves a diagram unparseable when it parsed before. `same-diagrams` also requires each diagram's parse result to be unchanged, and `same-tree` refuses an edit that breaks a diagram's parse.
 - `complexity-subgraph-nesting-too-deep` no longer fires on the depth of a `mindmap`, `treemap`, `treeView` or `ishikawa`, which draw no subgraphs. Their depth still counts toward the visual complexity score, which is unchanged.
-
 - A `flowchart-elk` diagram is read and measured as a flowchart. 0.3.0 reported it as `parse-diagram-unparseable`.
 
 ### Changed

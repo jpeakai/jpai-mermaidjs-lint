@@ -38,7 +38,9 @@ The grader is deterministic: the verdict comes from the linter and the structure
 
 Run on 2026-10-15 with the tier 2 and tier 3 model of each harness, the project matrix in `pyproject.toml`.
 The run used the skill as of commit `7285ec2`.
-The results predate the current skill text: commit `b64f849` changed `SKILL.md` later the same day, and the suite has not been run since.
+The results predate the current skill text.
+`SKILL.md` has changed since, first in commit `b64f849` later the same day.
+The suite has not been run since.
 
 | Case | `claude/claude-sonnet-5-5` | `claude/claude-haiku-4-5-20251001` | `codex/gpt-5.6-terra` | `codex/gpt-6-luna` |
 |---|---|---|---|---|

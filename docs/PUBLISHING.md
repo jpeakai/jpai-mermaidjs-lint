@@ -12,7 +12,7 @@ Before the commit, edit three things by hand:
 
 - **The changelog heading.** In `CHANGELOG.md`, rename `[Unreleased]` to `[X.Y.Z] - date`, and add an empty `[Unreleased]` above it.
 - **The changelog links.** At the foot of `CHANGELOG.md`, point `[Unreleased]` at `compare/vX.Y.Z...HEAD`, and add a `[X.Y.Z]` line comparing the previous tag with the new one.
-- **The plugin template's range.** On a minor release, test the example plugin against the new version, then widen the `@jpeakai/mermaidjs-lint` ranges in `docs-site/docs/guides/plugin-package.md`.
+- **The plugin template's range.** On a minor release, update the `@jpeakai/mermaidjs-lint` ranges in `docs-site/docs/guides/plugin-package.md`, and the caret example under them, to accept the new version. `tests/package.test.ts` fails otherwise.
 
 ```sh
 git switch main && git pull

@@ -21,7 +21,7 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Parse engine | The code that reads a diagram's structure from mermaid's own parsers. |
 | Stats | The nodes, edges, subgraphs, subgraph nesting depth and tree depth the parse engine reads from a diagram. |
 | Tree depth | How far a tree-shaped diagram (`mindmap`, `treemap`, `treeView` or `ishikawa`) reaches below its root. It weighs on the visual complexity score, but it is not subgraph nesting. |
-| Visual complexity score | Nodes plus half a point per edge plus three per subgraph, scaled by one tenth per level of nesting. Written VCS in finding messages. |
+| Visual complexity score | Nodes plus half a point per edge plus three per subgraph, scaled by one tenth per level of subgraph nesting or tree depth, whichever is deeper. Written VCS in finding messages. |
 | Preset | A named set of density thresholds: low-density, medium-density or high-density. |
 | Ladder | The ordered thresholds of one measure. A diagram lands in one band, so one rule of the ladder fires. |
 | Band | The range between two thresholds of a ladder, such as above `nodeAcceptable` up to `nodeComplex`. Each band has one rule. |

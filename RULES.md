@@ -268,7 +268,7 @@ flowchart LR
 ### complexity-visual-score-critical
 
 A visual complexity score above the preset's complex threshold, `vcsComplex`, which is 100 under `high-density`.
-The score is nodes plus half a point per edge plus three per subgraph, scaled by one tenth per level of nesting.
+The score is nodes plus half a point per edge plus three per subgraph. It is scaled by one tenth per level of subgraph nesting or tree depth, whichever is deeper.
 The `vcsCritical` option is accepted but no rule reads it.
 This diagram has only 35 nodes, but its ten subgraphs, two levels of nesting and report-back edges score above 100.
 

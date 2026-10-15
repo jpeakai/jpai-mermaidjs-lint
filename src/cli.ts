@@ -5,13 +5,13 @@ import { lstat, readFile, realpath, writeFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import pkg from "../package.json" with { type: "json" };
-import { checkModel, type RunFlags } from "./check.ts";
+import { checkModel, checkRunFlags, type RunFlags } from "./check.ts";
 import { FixOutsideRootError, FlagError, MermaidLintError, UsageError } from "./errors.ts";
 import { collectFiles, DIAGRAM_FILE_EXTS, SKIP_DIRS } from "./files.ts";
 import { fixSourceReport } from "./fix/engine.ts";
 import { buildDocModel, DIAGRAM_EXTS, documentKind } from "./model.ts";
 import { PROFILES } from "./parse/contrast.ts";
-import { canonicalPreset, PRESET_NAMES } from "./parse/metrics.ts";
+import { PRESET_NAMES } from "./parse/metrics.ts";
 import type { PluginFailure } from "./plugins/index.ts";
 import { setUp } from "./project.ts";
 import { RULES } from "./rules/index.ts";
@@ -52,6 +52,7 @@ Examples of every rule, with fixes: https://jpeakai.github.io/jpai-mermaidjs-lin
   numeric threshold set in the config overrides both.
 --profile NAME sets how contrast is read: ${PROFILES.join(", ")}. It overrides a profile set in the config.
   auto reads mkdocs-material when any parent folder holds mkdocs.yml or mkdocs.yaml, else github.
+--json prints one JSON object instead of text lines.
 --fix applies every fix it can prove safe, then reports what remains.
 A fixer that is unsure leaves the text alone and the finding stays.
 --config FILE reads that config instead of mermaidjs-lint.config.json or .mjs at the project root.
@@ -220,12 +221,7 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
   }
   const listing = values["list-rules"];
   const validating = values["validate-plugins"];
-  if (values.preset !== undefined && canonicalPreset(values.preset) === null) {
-    throw new FlagError("--preset", `--preset must be one of ${PRESET_NAMES.join(", ")}, not "${values.preset}"`);
-  }
-  if (values.profile !== undefined && !PROFILES.includes(values.profile as (typeof PROFILES)[number])) {
-    throw new FlagError("--profile", `--profile must be one of ${PROFILES.join(", ")}, not "${values.profile}"`);
-  }
+  checkRunFlags({ preset: values.preset, profile: values.profile }, "--");
   if (values["no-plugins"] && values["lenient-plugins"]) {
     throw new FlagError("--lenient-plugins", "--no-plugins and --lenient-plugins contradict each other");
   }

@@ -5,7 +5,7 @@ How to set up `jpai-mermaidjs-lint`, make a change, and get it accepted.
 ## Setup
 
 This repo is a bun project with a uv side for tooling.
-The bun side is the package itself, and the uv side supplies the `meta` command that renders the decision bundle.
+The bun side is the package itself, and the uv side renders the decision bundle and builds the docs site.
 
 ```sh
 make install   # uv sync, then bun install
@@ -20,6 +20,8 @@ make build     # bundle src into dist for Node, which git ignores
 make test      # build, then run the test suite once
 make ci        # fix, typecheck, coverage gate, then assert the tree is clean
 make docs-ci   # gate every markdown file with this repo's own source
+make site      # generate the reference pages, then build the docs site in strict mode
+make site-serve  # the same, served locally with live reload
 ```
 
 `dist/` holds the Node bundles and is never committed.
@@ -36,6 +38,12 @@ The coverage gate fails below 90% aggregate for functions or lines.
 4. Add tests that run the real parser over real strings.
 
 A rule that rewrites text needs an expectation from the verifier, and an adversarial test for every case it refuses.
+
+## Adding a fixture
+
+A diagram that misbehaves in the wild becomes a fixture: one file under `tests/fixtures`, with an expect comment naming the rules it must report.
+[tests/fixtures/README.md](tests/fixtures/README.md) has the format.
+The test suite and the docs site both pick it up, with no code to write.
 
 ## Landing a change
 

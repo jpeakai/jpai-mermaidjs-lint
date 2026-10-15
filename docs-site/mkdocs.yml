@@ -1,0 +1,56 @@
+# The docs site. It lives in its own folder because the linter reads an
+# ancestor mkdocs.yml as "this markdown renders through Material": here, that
+# is true only of the site's own pages, and the rest of the repo stays scored as
+# GitHub renders it. Build with `make site`; reference/ is generated.
+
+site_name: mermaidjs-lint
+site_description: Deterministic lint gates and verified fixers for Mermaid diagrams in markdown
+site_url: https://jpeakai.github.io/jpai-mermaidjs-lint/
+repo_url: https://github.com/jpeakai/jpai-mermaidjs-lint
+repo_name: jpeakai/jpai-mermaidjs-lint
+edit_uri: ""
+docs_dir: docs
+site_dir: ../tmp/docs-site
+strict: true
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Rules: reference/rules.md
+  - Fixtures: reference/fixtures.md
+  - Examples: reference/examples.md

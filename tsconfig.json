@@ -16,6 +16,6 @@
       "@jpeakai/mermaidjs-lint/testing": ["./src/testing.ts"]
     }
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "examples/**/*.ts"],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts", "examples/**/*.ts"],
   "exclude": ["node_modules"]
 }

@@ -3,7 +3,7 @@
 Diagrams in documentation should be readable.
 Deterministic checks and verified fixes for Mermaid diagrams in markdown.
 
-**[Rules](RULES.md)** | **[GitHub](https://github.com/jpeakai/jpai-mermaidjs-lint)** | **[npm](https://www.npmjs.com/package/@jpeakai/mermaidjs-lint)**
+**[Docs](https://jpeakai.github.io/jpai-mermaidjs-lint/)** | **[Rules](RULES.md)** | **[GitHub](https://github.com/jpeakai/jpai-mermaidjs-lint)** | **[npm](https://www.npmjs.com/package/@jpeakai/mermaidjs-lint)**
 
 ## Usage
 
@@ -29,6 +29,7 @@ Exit codes are 0 for clean, 1 for findings, and 2 for a usage error.
 
 Eleven rules in three categories.
 [RULES.md](RULES.md) shows a failing example for each one, and the fix where there is one.
+The [docs site](https://jpeakai.github.io/jpai-mermaidjs-lint/) draws every example before and after `--fix`.
 There is no warning level, so every finding fails the run.
 A rule you do not want is switched off in the config.
 

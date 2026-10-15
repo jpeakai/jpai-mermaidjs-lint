@@ -1,0 +1,27 @@
+id: MJL-0012
+slug: a-fixture-declares-its-own-expectation
+plan_id: null
+title: A fixture declares what it must report in its own file
+description: Each fixture names its expected rule ids in an expect comment, and a .fixed sibling pins its fix output
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [testing, fixtures]
+
+provenance: The original skill's example files carried their expected outcomes in prose tables nothing checked, and new cases needed test code to run
+enforced_in:
+  - tests/fixture-loader.ts, which reads the expect comment and the .fixed sibling
+  - tests/fixtures.test.ts, which fails a fixture with no expect comment or a mismatch
+relates_to: []
+
+decision:
+  given: diagrams that misbehave keep turning up, and each one should become a regression case
+  we_prefer: an expect comment inside the fixture plus an optional .fixed sibling, over a central table of expectations in test code
+  because: adding a case is then adding one file, and the expectation travels with the diagram it describes
+  unless: a case needs options or a profile other than the defaults, which then needs a richer comment
+consequences:
+  pros:
+    - A contributor adds a case without touching test code.
+    - The docs site renders the same files with the same expectations.
+  cons:
+    - Distinct rule ids are compared, not finding counts or lines, so a second finding of the same rule goes unnoticed.

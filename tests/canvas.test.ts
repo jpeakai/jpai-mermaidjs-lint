@@ -299,6 +299,19 @@ describe("a config canvas in a repo with a Material site", () => {
     ]);
   });
 
+  test("--json lists the set-aside files under canvasSetAside", async () => {
+    const r = await runCli(repo(), ["docs", "site/docs", "--json"]);
+    expect(r.code).toBe(1);
+    const out = JSON.parse(r.stdout) as { canvasSetAside: string[]; files: number };
+    expect(out.canvasSetAside).toEqual(["site/docs/flow.md", "site/docs/plain.md"]);
+    expect(out.files).toBe(3);
+  });
+
+  test("--json carries an empty canvasSetAside when no canvas is set aside", async () => {
+    const r = await runCli(repo(), ["docs", "--json"]);
+    expect((JSON.parse(r.stdout) as { canvasSetAside: string[] }).canvasSetAside).toEqual([]);
+  });
+
   test("the set-aside file scores as it does with no canvas, in check and in fix", async () => {
     const root = repo();
     const r = await runCli(root, ["site/docs/flow.md", "--fix"]);

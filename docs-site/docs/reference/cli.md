@@ -151,7 +151,7 @@ docs/architecture.md:6 contrast-text-below-aa classDef warn: text 1.43:1 < 4.5 (
 A line reads `file:line rule message`.
 A finding that spans a diagram prints its first and last line, as `file:3-7`.
 
-Standard error carries these lines about plugins, each when it applies:
+Standard error carries these lines, each when it applies:
 
 | Line | When |
 |---|---|
@@ -159,6 +159,8 @@ Standard error carries these lines about plugins, each when it applies:
 | `mermaidjs-lint: plugins off; skipped mermaidjs-lint-plugin-acme` | `--no-plugins`, or `"plugins": false` in the config, found plugins and loaded none |
 | `mermaidjs-lint: skipped plugin <source> [code]: reason` | A lenient run left a broken plugin out |
 | `mermaidjs-lint: ignored config setting for <id>, whose plugin did not load` | A config setting named a plugin rule that is not loaded |
+| `mermaidjs-lint: skipped symbolic link <path>; name it as a path to check it` | A directory walk met a symbolic link |
+| `mermaidjs-lint: config canvas set aside for N files scored under mkdocs-material: <paths>` | A config canvas met files that `auto` scores under `mkdocs-material`. The `--json` object lists the same paths under `canvasSetAside`. |
 
 ## JSON output
 
@@ -178,7 +180,8 @@ Standard error carries these lines about plugins, each when it applies:
   ],
   "files": 1,
   "plugins": [],
-  "skippedPlugins": []
+  "skippedPlugins": [],
+  "canvasSetAside": []
 }
 ```
 
@@ -188,6 +191,7 @@ Standard error carries these lines about plugins, each when it applies:
 | `files` | How many files were checked |
 | `plugins` | Each loaded plugin: `kind` (`local`, `package` or `config`), `spec`, `namespace` and its `rules` ids |
 | `skippedPlugins` | Each plugin a lenient run left out: `source`, `kind`, `code` and `message` |
+| `canvasSetAside` | Each file whose config canvas was set aside because `auto` scores it under `mkdocs-material`, as a path relative to the working directory |
 
 Under `--no-plugins`, `skippedPlugins` is empty, and the skipped plugins appear only on standard error.
 `--validate-plugins --json` prints `{ valid, plugins, failures }` instead, where `failures` has the shape of `skippedPlugins`.

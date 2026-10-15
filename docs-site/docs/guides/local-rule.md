@@ -104,7 +104,7 @@ Either route reports one passing test.
 ## Go further
 
 - **Add a fixer** by returning edits from a `fix` function. Each edit must declare what stays the same, and the engine refuses any edit that breaks it. See [Plugin API](../reference/plugin-api.md#edits).
-- **Write it in TypeScript** as `.mts`. The command starts on Node even under `bunx`, so run `bunx --bun mermaidjs-lint docs/` to use Bun, or use Node 22.18 or newer. Anything else fails with `error[plugin-source]`.
+- **Write it in TypeScript** as `.mts`. The command starts on Node even under `bunx`, so run `bunx --bun mermaidjs-lint docs/` to use Bun. On Node, use 22.18 or newer (23.6 or newer on Node 23). Anything else fails with `error[plugin-source]`.
 - **Check every rule loads** with `bunx mermaidjs-lint --validate-plugins`.
 
 ## Choose the file extension
@@ -118,7 +118,7 @@ Under Node, a `.js` or `.ts` rule loads only as the `"type"` field in the projec
 | No `"type"` field | On Node 20.19 or a later 20 release, or on 22.7 or newer, loads with a `MODULE_TYPELESS_PACKAGE_JSON` warning on every run. On 20.18 or older, on 21, or on 22.0 to 22.6, it fails with `error[plugin-import]`. |
 | `"commonjs"` | Fails with `error[plugin-import]`, `could not be imported: Unexpected token 'export'`, and exits 1 |
 
-A `.ts` rule also needs Node 22.18 or newer, as `.mts` does, whatever the `"type"` field says.
+A `.ts` rule also needs Node 22.18 or newer (23.6 or newer on Node 23), as `.mts` does, whatever the `"type"` field says.
 On older Node it fails with `error[plugin-source]` before it is imported.
 
 `npm init -y` writes `"type": "commonjs"` in npm 11, so the npm route in [Get started](../get-started.md) makes a project where a `.js` rule fails.

@@ -66,7 +66,7 @@ Each rule declares the options it accepts and their types, and a config that bre
 A threshold is the boundary between two bands, so the two rules either side of it both read it.
 Set it on both rules that read it, or a diagram between the old and new values reports two bands at once, or none.
 `nodeHardLimit` is read by the cognitive-limit and hard-limit rules, as in the example. There, of the node-count rules, only the hard limit fires on a diagram of 90 nodes.
-[Rule settings](../reference/configuration.md#rule-settings) names the rules that read each threshold.
+[Each measure is a ladder](../concepts/complexity.md#each-measure-is-a-ladder) names the rules that read each threshold.
 
 ## Know which setting wins
 

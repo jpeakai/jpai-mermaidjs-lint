@@ -103,4 +103,17 @@ describe("the plugin package guide", () => {
       expect(Bun.semver.satisfies(pkg.version, range as string)).toBe(true);
     }
   });
+
+  test("its caret example accepts the version this package is, and says true things", () => {
+    const guide = readFileSync(join(PROJECT_ROOT, "docs-site", "docs", "guides", "plugin-package.md"), "utf8");
+    const caret = /so `(\^[^`]+)` matches (\d+\.\d+\.\d+) but not (\d+\.\d+\.\d+)/.exec(guide);
+    expect(caret).not.toBeNull();
+    const [, range, matched, unmatched] = caret as RegExpExecArray;
+    expect(Bun.semver.satisfies(pkg.version, range as string)).toBe(true);
+    expect(Bun.semver.satisfies(matched as string, range as string)).toBe(true);
+    expect(Bun.semver.satisfies(unmatched as string, range as string)).toBe(false);
+    const widened = /for example to `([^`]+)`/.exec(guide);
+    expect(widened).not.toBeNull();
+    expect(Bun.semver.satisfies(pkg.version, (widened as RegExpExecArray)[1] as string)).toBe(true);
+  });
 });

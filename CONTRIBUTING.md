@@ -56,7 +56,7 @@ The coverage gate fails below 90% aggregate for functions or lines.
 2. Add its id to `RULE` in `src/rules/types.ts`, and register it in `RULES` in `src/rules/index.ts`.
 3. If it has a fixer, also add it to `FIX_ORDER` in `src/rules/index.ts`, at the position its edits must apply. A fixer missing from `FIX_ORDER` never runs under `--fix`.
 4. Add its section and examples to `RULES.md`, and its id to the Categories table there. `tests/rules-doc.test.ts` holds both to the code.
-5. Add a fixture named for the rule, `tests/fixtures/rules/<id>.md`, with an expect comment naming the rule. `tests/fixtures.test.ts` fails until some fixture expects every core rule. If `--fix` cannot clear it, add the `.llm.md` sibling that [Adding a fixture](#adding-a-fixture) describes.
+5. Add a fixture under `tests/fixtures/rules/`, named for what it shows, with an expect comment naming the rule. `tests/fixtures.test.ts` fails until some fixture expects every core rule. If `--fix` cannot clear it, add the `.llm.md` sibling that [Adding a fixture](#adding-a-fixture) describes.
 6. Add tests that run the real parser over real strings.
 7. Add a row for the rule to the remediation table in `skills/mermaidjs-lint/SKILL.md`, unless an existing row already covers it.
 8. Add a line under `Unreleased` in `CHANGELOG.md`.

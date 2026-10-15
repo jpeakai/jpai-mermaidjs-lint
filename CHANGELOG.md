@@ -10,7 +10,9 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The `error[plugin-source]` message for a TypeScript local rule says Node 23 needs 23.6 or newer. Node 23.0 to 23.5 cannot import TypeScript.
 
 ## [0.4.2] - 2026-10-16
 

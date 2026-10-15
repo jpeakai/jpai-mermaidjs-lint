@@ -75,7 +75,8 @@ Plugins are discovered from the project root's `package.json` and `.mermaidjs-li
 ## A TypeScript local rule fails to load
 
 `error[plugin-source]` on a `.ts` or `.mts` rule means the runtime cannot import TypeScript.
-The installed command starts with Node, even under `bunx`, so run it on Bun with `bunx --bun mermaidjs-lint`, or use Node 22.18 or newer.
+The installed command starts with Node, even under `bunx`, so run it on Bun with `bunx --bun mermaidjs-lint`.
+On Node, use 22.18 or newer (23.6 or newer on Node 23).
 
 ## A `.js` local rule fails with `Unexpected token 'export'`
 

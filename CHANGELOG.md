@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.4.0] - 2026-10-16
+
 ### Fixed
 
 - Fix verification refuses an edit that leaves a diagram unparseable when it parsed before. `same-diagrams` also requires each diagram's parse result to be unchanged, and `same-tree` refuses an edit that breaks a diagram's parse.
@@ -112,7 +116,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.1.0...v0.1.1

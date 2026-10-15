@@ -20,6 +20,7 @@
 | [MJL-0014](0014-an-llm-fix-is-committed-and-verified.md) | An LLM fix is committed beside its fixture and verified clean | accepted |
 | [MJL-0015](0015-four-tenets-define-the-tool.md) | Four tenets define what the tool guarantees | accepted |
 | [MJL-0016](0016-a-back-edge-may-be-appended-to-an-accepted-record.md) | A back-edge may be appended to an accepted record | accepted |
+| [MJL-0017](0017-sequence-colours-come-from-mermaids-theme-engine.md) | Sequence colours come from Mermaid's own theme engine | accepted |
 # By group
 
 ## config
@@ -28,6 +29,7 @@
 ## contrast
 
 * [MJL-0011](0011-profile-decides-who-owns-label-text.md) - github scores the declared pairs, and mkdocs-material scores the host's forced text in both themes
+* [MJL-0017](0017-sequence-colours-come-from-mermaids-theme-engine.md) - A sequence diagram is scored by theme variables Mermaid resolves on a pinned version
 ## decisions
 
 * [MJL-0016](0016-a-back-edge-may-be-appended-to-an-accepted-record.md) - The one edit an accepted record allows is adding the inverse of a relation a newer record declares

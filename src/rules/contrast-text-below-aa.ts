@@ -19,11 +19,11 @@ export const contrastTextBelowAa: Rule = {
   category: "contrast",
   summary: "label text below 4.5:1 against its fill",
   options: CONTRAST_OPTIONS,
-  check: (ctx) => {
+  check: async (ctx) => {
     const profile = profileOf(ctx);
     const found: Finding[] = [];
     for (const diagram of ctx.doc.diagrams) {
-      for (const p of contrastOf(diagram, profile).pairs) {
+      for (const p of (await contrastOf(diagram, profile)).pairs) {
         if (p.kind !== "text" || p.passes) continue;
         const where = [p.theme, p.row].filter(Boolean).join("/");
         const line = fileLine(diagram, p.line);
@@ -38,21 +38,23 @@ export const contrastTextBelowAa: Rule = {
           remediation:
             profile === "mkdocs-material"
               ? "The host theme forces the label text, so change the fill until the host text reads on it in both themes."
-              : p.directive.kind === "linkStyle"
-                ? "An edge label sits on Mermaid's own label box, light in one theme and grey in the other, and no one colour reads on both, so drop color: from the linkStyle and let the theme set the label text."
-                : "Darken or lighten the fill, or change color:, until the ratio reaches 4.5:1 in every theme.",
+              : p.directive.kind === "themeVariables"
+                ? "A sequence diagram colour is a theme variable, and text with no box of its own sits on the page, so set the variable to a colour that reads on its background in both themes, or remove it and let the theme set it."
+                : p.directive.kind === "linkStyle"
+                  ? "An edge label sits on Mermaid's own label box, light in one theme and grey in the other, and no one colour reads on both, so drop color: from the linkStyle and let the theme set the label text."
+                  : "Darken or lighten the fill, or change color:, until the ratio reaches 4.5:1 in every theme.",
         });
       }
     }
     return found;
   },
-  fix: (ctx) => {
+  fix: async (ctx) => {
     const profile = profileOf(ctx);
     // Under a host profile color: is ignored, so there is nothing to rewrite.
     if (profile === "mkdocs-material") return [];
     const edits: Edit[] = [];
     for (const diagram of ctx.doc.diagrams) {
-      const { pairs } = contrastOf(diagram, profile);
+      const { pairs } = await contrastOf(diagram, profile);
       const failing = new Set(pairs.filter((p) => p.kind === "text" && !p.passes).map((p) => p.directive));
       for (const directive of failing) {
         const span = directive.spans.color;

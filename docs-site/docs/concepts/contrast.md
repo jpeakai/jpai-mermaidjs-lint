@@ -19,8 +19,8 @@ A check that scored the declared `color:` on a Material site would pass diagrams
 
 | Profile | Scores | Used when |
 |---|---|---|
-| `github` | The declared fill against the declared `color:`, and against the declared `stroke:` for borders. A `linkStyle` `color:` is scored against the edge label box. An `erDiagram` is scored row by row, as [below](#an-erdiagram-is-scored-row-by-row). | The markdown renders as written, as on GitHub |
-| `mkdocs-material` | The fill against the host's forced text colour, in both the light and dark theme, for every diagram type | The markdown renders through Material, which forces label text |
+| `github` | The declared fill against the declared `color:`, and against the declared `stroke:` for borders. A `linkStyle` `color:` is scored against the edge label box. An `erDiagram` is scored row by row, as [below](#an-erdiagram-is-scored-row-by-row). A `sequenceDiagram` is scored by its theme colours, as [below](#a-sequence-diagram-is-scored-by-its-theme-colours). | The markdown renders as written, as on GitHub |
+| `mkdocs-material` | The fill against the host's forced text colour, in both the light and dark theme, for every diagram type except a `sequenceDiagram`, whose labels the host forces outright | The markdown renders through Material, which forces label text |
 | `auto` | `mkdocs-material` when any parent folder of the file holds `mkdocs.yml` or `mkdocs.yaml`, otherwise `github` | The default |
 
 Under `github`, a translucent fill is first composited over both of GitHub's page backgrounds, because a reader sees it blended with the page.
@@ -77,6 +77,48 @@ With no `color:`, the theme's label text is scored on the filled even rows.
 A missing `color:` is not reported here, because a translucent fill with no `color:` is how an entity reads in both themes.
 Under `mkdocs-material`, an `erDiagram` is scored like any other diagram.
 
+### A sequence diagram is scored by its theme colours
+
+A `sequenceDiagram` has no style lines.
+Its colours are theme variables, some set in frontmatter or an `%%{init}%%` directive and the rest derived by Mermaid's theme.
+The tool reads the config with Mermaid's own parser and resolves every variable with Mermaid's own theme engine, in both themes.
+Under `github` that is the `default` theme in light and the `dark` theme in dark. A theme the config pins applies to both.
+
+The SVG has no background, so anything without a box of its own sits on the page.
+A `themeVariables.background` paints nothing behind it.
+Under `github`, each element is scored against this background:
+
+| Element | Foreground | Background | Kind |
+|---|---|---|---|
+| Participant label and border | `actorTextColor`, `actorBorder` | `actorBkg` | Text, border |
+| Human `actor` name and stick figure | `actorTextColor`, `actorBorder` | The page | Text, border |
+| Lifeline | `actorLineColor` | The page | Border |
+| Message text and arrow | `signalTextColor`, `signalColor` | The page | Text, border |
+| Note | `noteTextColor` | `noteBkgColor` | Text |
+| Frame keyword, such as `loop` | `labelTextColor` | `labelBoxBkgColor` | Text |
+| Frame description and frame line | `loopTextColor`, `labelBoxBorderColor` | The page | Text, border |
+| Activation bar | `activationBorderColor` | `activationBkgColor` | Border |
+| `autonumber` number | `sequenceNumberColor` | `signalColor` | Text |
+| Messages and frame text inside a `rect` | `signalTextColor`, `signalColor`, `loopTextColor` | The `rect` colour | Text, border |
+
+A row is scored only when the diagram draws that element.
+A translucent background is composited over the page first.
+Mermaid's own themes pass, with one exception. The `dark` theme draws note text at 4.49 to 1, so a note with no colours set fails in dark.
+A note draws its own box, so setting `noteBkgColor` and `noteTextColor` to one readable pair fixes it in both themes.
+
+Under `mkdocs-material`, Material draws Mermaid's `default` theme in both of its schemes.
+Its own CSS replaces every sequence label, box, note, frame, `rect` and number colour. So no sequence text pair is the author's, and none is scored.
+Three surfaces keep the diagram's colours: lifelines, arrowheads and activation bars.
+They are scored as borders, so they are advisory, as every border under this profile is.
+
+A config the tool cannot model is reported as `contrast-directive-unauditable`:
+
+- **`themeCSS`.** CSS can restyle anything, and under Material it replaces the host's own CSS.
+- **A theme other than `base`, `default`, `dark`, `forest` or `neutral`.** The other themes colour each actor from palettes of their own.
+- **A colour Mermaid cannot read.** The theme derives colours from each other, so one bad value stops the whole theme.
+
+The colours change between Mermaid releases, so the package pins the exact Mermaid version it resolves them with.
+
 ## What is not scored
 
 Contrast is scored for the colours a diagram declares.
@@ -88,7 +130,8 @@ None of these is scored, and none of them produces a finding:
 - **A fully transparent fill.** A `fill:transparent` or a fill with zero alpha, such as `#ffffff00`, draws no box, so its `color:` and `stroke:` are not scored. White text on that fill passes, even on a white page.
 - **A `linkStyle` line's `stroke:`.** An edge line is not scored against the page.
 - **A border pair under `mkdocs-material` or in an `erDiagram`.** It is scored but advisory, as [The three profiles](#the-three-profiles) explains.
-- **Theme settings.** An `%%{init}%%` directive or frontmatter that sets `theme` or `themeVariables` is not read.
+- **Theme settings outside a `sequenceDiagram`.** An `%%{init}%%` directive or frontmatter that sets `theme` or `themeVariables` is read only for a sequence diagram.
+- **A sequence `box` and the other participant shapes.** The colour of a `box` around a group of participants is not scored, and nor are shapes such as `database`.
 - **A style joined by a semicolon.** Style directives are read line by line, so `graph TD; A-->B; style A fill:#fff` hides its style.
 
 ## Why a fill with no label colour is reported
@@ -105,6 +148,7 @@ It does so only when that choice reaches 4.5 to 1 on every background the direct
 - A border has no fixer, because changing a stroke changes how a category looks.
 - Under `mkdocs-material` there is no `color:` to rewrite, so the fill itself must change, and choosing a fill is a design decision.
 - In an `erDiagram`, a class colours alternating rows on different backgrounds, so no single label colour may pass them all.
+- In a `sequenceDiagram`, a colour is a theme variable that other variables derive from. Changing one can move pairs it was not scored in. Text on the page also needs a colour that flips with the theme.
 
 ## Choosing a profile
 

@@ -22,7 +22,7 @@ Each page links to the guide that shows it in use.
 | Need | What is supported |
 |---|---|
 | Runtime | Bun, or Node `>=20`, the `engines` field of `package.json` |
-| Mermaid | The `mermaid` package at `^11.14.0`, and `@mermaid-js/parser`, both installed with this package |
+| Mermaid | The `mermaid` package pinned at `11.17.2`, because sequence diagram colours change between releases, and `@mermaid-js/parser`, both installed with this package |
 | TypeScript local rules | Bun, through `bunx --bun @jpeakai/mermaidjs-lint`, or Node 22.18 or newer (23.6 or newer on Node 23) |
 
 `npm ls mermaid` in your project prints the mermaid version a run uses.

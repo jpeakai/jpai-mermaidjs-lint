@@ -12,11 +12,11 @@ export const contrastBorderBelowUiMinimum: Rule = {
   category: "contrast",
   summary: "a border below 3:1 against its fill",
   options: CONTRAST_OPTIONS,
-  check: (ctx) => {
+  check: async (ctx) => {
     const profile = profileOf(ctx);
     const found: Finding[] = [];
     for (const diagram of ctx.doc.diagrams) {
-      for (const p of contrastOf(diagram, profile).pairs) {
+      for (const p of (await contrastOf(diagram, profile)).pairs) {
         if (p.kind !== "border" || p.passes || p.advisory) continue;
         const line = fileLine(diagram, p.line);
         found.push({
@@ -27,7 +27,10 @@ export const contrastBorderBelowUiMinimum: Rule = {
           message:
             `${p.directive.kind} ${p.selector}: border ${p.assessment.ratio.toFixed(2)}:1 < ${AA_NON_TEXT} ` +
             `(${p.foreground} on ${p.background}${p.theme ? `, ${p.theme}` : ""})`,
-          remediation: "Darken the stroke or lighten the fill until the ratio reaches 3:1.",
+          remediation:
+            p.directive.kind === "themeVariables"
+              ? "Set the theme variable to a colour that reaches 3:1 on its background in both themes, or remove it and let the theme set it."
+              : "Darken the stroke or lighten the fill until the ratio reaches 3:1.",
         });
       }
     }

@@ -473,6 +473,7 @@ Contrast is read through a profile.
 Under `github` the declared pairs are scored as written, and a translucent fill is composited over both GitHub canvases.
 Under `mkdocs-material` the host forces the label text, so `color:` is ignored and the host text is scored in both themes.
 `auto` reads `mkdocs-material` when any parent folder holds `mkdocs.yml` or `mkdocs.yaml`.
+A `sequenceDiagram` is scored by the theme colours Mermaid resolves for it, in both themes, as [Contrast profiles](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/contrast/#a-sequence-diagram-is-scored-by-its-theme-colours) explains.
 
 ### contrast-text-below-aa
 
@@ -542,6 +543,27 @@ flowchart LR
 ```
 ````
 
+In a `sequenceDiagram`, message text has no box, so it sits on the page in both themes.
+A fixed colour that reads on a white page fades on a dark one.
+The colour is a theme variable with no fill to pair, so the finding stays for a human.
+
+````text reported
+```mermaid
+%%{init: {"themeVariables": {"signalTextColor": "#475569"}}}%%
+sequenceDiagram
+  A->>B: Request
+```
+````
+
+````text llm
+<!-- llm: Message text sits on the page, so it keeps the theme's own colour, which flips with the reader, and the init directive goes. -->
+
+```mermaid
+sequenceDiagram
+  A->>B: Request
+```
+````
+
 A fill with no declared `color:` is reported by `contrast-directive-unauditable` instead, because choosing a colour is a design decision.
 
 ### contrast-border-below-ui-minimum
@@ -575,6 +597,7 @@ flowchart LR
 
 A style directive whose contrast cannot be audited.
 Under `github` that is a `fill:` with no `color:` beside it, or a colour that does not parse.
+In a `sequenceDiagram` it is also a `themeCSS` setting, or a theme the tool does not model.
 Reporting it as a skip would let a gate exit clean on a diagram it never checked.
 
 ````text reported

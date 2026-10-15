@@ -9,6 +9,10 @@ Anything under `Unreleased` is on `main` but not yet on npm.
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.2.0 - 2026-10-15
+
 ### Added
 
 - `--version` prints the version, to quote in a bug report.

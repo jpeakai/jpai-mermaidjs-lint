@@ -71,6 +71,8 @@ Scoring still assumes the host draws Mermaid's `default` theme in light and its 
 That assumption sets the edge label box, the `erDiagram` rows and every sequence theme variable.
 A host that draws another theme, or the same theme in both modes, is not modelled, so its scores are approximate.
 For a sequence diagram on such a host, pin the theme the host draws, so both modes are scored with it.
+On the host's canvas that pin can pass, though a pinned theme fails on GitHub's own page, as [the sequence section](#a-sequence-diagram-is-scored-by-its-theme-colours) explains.
+Run the check with `--canvas-light` and `--canvas-dark` set to the host's page to confirm it.
 For any other diagram, check the scores against the host by eye in both modes.
 
 A canvas applies under `github` only.
@@ -79,9 +81,9 @@ How a file under `mkdocs-material` treats a canvas depends on where the canvas c
 
 | Canvas from | Profile from | Result |
 |---|---|---|
-| The config | `auto` | The canvas is set aside for that file, which is scored under `mkdocs-material`. One stderr line names every such file. |
+| The config | `auto`, by default or set | The canvas is set aside for that file, which is scored under `mkdocs-material`. One stderr line names every such file, and `--json` lists them under `canvasSetAside`. |
 | `--canvas-light` or `--canvas-dark` | `auto` | Usage error `canvas-profile`, exit 2 |
-| Any | `--profile mkdocs-material` or the rule's `profile` option | Usage error, exit 2 |
+| Any | `--profile mkdocs-material`, or the rule's `profile` option set to `mkdocs-material` | Usage error, exit 2 |
 
 The config covers the whole tree.
 So a repo with a Material site keeps one config with a canvas, and its Material files set it aside.
@@ -152,10 +154,11 @@ With no theme pinned, Mermaid's `default` and `dark` themes pass, except notes i
 The `dark` theme draws note text at 4.49 to 1, so a note with no colours set fails in dark.
 A note draws its own box, so setting `noteBkgColor` and `noteTextColor` to one readable pair fixes it in both themes.
 
-A pinned theme draws both light and dark, so its page-backed text fails on one of the two pages.
+On GitHub's own page, a pinned theme draws both light and dark, so its page-backed text fails on one of the two pages.
 `theme: default` puts its dark message text on GitHub's dark page, and `theme: dark` puts its light message text on the white page.
-Setting the page-backed colours yourself does not help under `github`: no text colour reaches 4.5 to 1 on both `#ffffff` and `#0d1117`.
-So under `github`, leave the theme unpinned and let Mermaid draw `default` in light and `dark` in dark.
+Setting the page-backed colours yourself does not help there: no text colour reaches 4.5 to 1 on both `#ffffff` and `#0d1117`.
+So with GitHub's canvas, leave the theme unpinned and let Mermaid draw `default` in light and `dark` in dark.
+A host with its own canvas that draws one theme in both modes is the exception: pin that theme, as [the canvas section](#a-host-with-its-own-page-sets-a-canvas) says.
 
 Under `mkdocs-material`, Material draws Mermaid's `default` theme in both of its schemes.
 Its own CSS replaces every sequence label, box, note, frame, `rect` and number colour. So no sequence text pair is the author's, and none is scored.

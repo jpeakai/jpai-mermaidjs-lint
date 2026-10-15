@@ -10,7 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- The `--json` object carries `canvasSetAside`, the files whose config canvas was set aside because `auto` scores them under `mkdocs-material`.
+  Before, only a stderr line named them, so a job reading the JSON object never learnt the canvas was dropped.
 
 ## [0.6.1] - 2026-10-16
 

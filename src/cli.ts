@@ -284,11 +284,12 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
 
   // A config canvas is set aside for a file the auto profile reads as
   // mkdocs-material, and one line names every such file, so the run says what
-  // it scored without the canvas.
-  const setAside = files.filter((file) => canvasSetAside(file, flags, registry));
+  // it scored without the canvas. The --json object carries the same paths, so
+  // a job that reads only stdout still learns the canvas was dropped.
+  const setAside = files.filter((file) => canvasSetAside(file, flags, registry)).map((f) => display(f, cwd));
   if (setAside.length > 0) {
     console.error(
-      `mermaidjs-lint: config canvas set aside for ${plural(setAside.length, "file")} scored under mkdocs-material: ${setAside.map((f) => display(f, cwd)).join(", ")}`,
+      `mermaidjs-lint: config canvas set aside for ${plural(setAside.length, "file")} scored under mkdocs-material: ${setAside.join(", ")}`,
     );
   }
 
@@ -321,7 +322,11 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
       message: reasonOf(f),
     }));
     console.log(
-      JSON.stringify({ findings: all, files: files.length, plugins: registry.sources, skippedPlugins }, null, 2),
+      JSON.stringify(
+        { findings: all, files: files.length, plugins: registry.sources, skippedPlugins, canvasSetAside: setAside },
+        null,
+        2,
+      ),
     );
   } else {
     for (const f of all) console.log(reportLine(f, f.file));

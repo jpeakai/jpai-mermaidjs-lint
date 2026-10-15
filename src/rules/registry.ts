@@ -7,7 +7,7 @@
 import type { Config } from "../config.ts";
 import { RuleOptionError, UnknownRuleError } from "../errors.ts";
 import { compositeOver, wcagRatio } from "../parse/color.ts";
-import { PROFILES } from "../parse/contrast.ts";
+import { canvasColourProblem, PROFILES, THEMES, type Theme } from "../parse/contrast.ts";
 import { canonicalPreset } from "../parse/metrics.ts";
 import { detectKeyword } from "../parse/stats.ts";
 import { FIX_ORDER, RULES } from "./index.ts";
@@ -56,7 +56,34 @@ const typeOf = (value: unknown): OptionType | null => {
   if (typeof value === "string") return "string";
   if (typeof value === "boolean") return "boolean";
   if (Array.isArray(value) && value.every((v) => typeof v === "string")) return "string[]";
+  if (isCanvasShape(value)) return "canvas";
   return null;
+};
+
+// An object naming light, dark or both, and nothing else. Its colours are
+// checked after the shape, so the message can say which side is wrong.
+const isCanvasShape = (value: unknown): value is Record<Theme, unknown> => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const keys = Object.keys(value);
+  return keys.length > 0 && keys.every((k) => THEMES.includes(k as Theme));
+};
+
+const describeType = (want: OptionType): string =>
+  want === "canvas" ? 'an object such as { "light": "#ffffff", "dark": "#0d1117" }' : `a ${want}`;
+
+const checkCanvas = (where: string, rule: Rule, name: string, value: Record<Theme, unknown>): void => {
+  for (const side of THEMES) {
+    if (!(side in value)) continue;
+    const problem = canvasColourProblem(value[side]);
+    if (problem) {
+      throw new RuleOptionError(
+        where,
+        rule.id,
+        name,
+        `option "${name}.${side}" of "${rule.id}" ${problem}: ${JSON.stringify(value[side])}`,
+      );
+    }
+  }
 };
 
 const checkOptions = (where: string, rule: Rule, options: RuleOptions): void => {
@@ -68,8 +95,18 @@ const checkOptions = (where: string, rule: Rule, options: RuleOptions): void => 
       throw new RuleOptionError(where, rule.id, name, `rule "${rule.id}" has no option "${name}"; ${list}`);
     }
     if (typeOf(value) !== want) {
-      throw new RuleOptionError(where, rule.id, name, `option "${name}" of "${rule.id}" must be a ${want}`);
+      throw new RuleOptionError(where, rule.id, name, `option "${name}" of "${rule.id}" must be ${describeType(want)}`);
     }
+    if (want === "canvas") checkCanvas(where, rule, name, value as Record<Theme, unknown>);
+  }
+  // Material draws its own page, so a canvas has nothing to set there.
+  if (options.profile === "mkdocs-material" && options.canvas !== undefined && rule.options?.canvas === "canvas") {
+    throw new RuleOptionError(
+      where,
+      rule.id,
+      "canvas",
+      `option "canvas" of "${rule.id}" applies under the github profile only, and this rule sets profile mkdocs-material, whose page is Material's own`,
+    );
   }
   if (typeof options.preset === "string" && canonicalPreset(options.preset) === null) {
     throw new RuleOptionError(where, rule.id, "preset", `option "preset" of "${rule.id}" is not a known preset`);

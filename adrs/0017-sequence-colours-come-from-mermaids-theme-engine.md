@@ -14,6 +14,10 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-16T00:00:00Z }
 
 <!-- GENERATED from MJL-0017 by okf_render.py. Do not edit; edit the .yml and regenerate. -->
 
+## Relates to
+
+- See also [MJL-0018](0018-a-host-sets-the-page-canvas-under-github-only.md) (the sequence pairs on the page are scored on the canvas)
+
 ## Decision
 
 ### The lens

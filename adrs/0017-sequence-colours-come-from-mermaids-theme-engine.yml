@@ -13,7 +13,10 @@ enforced_in:
   - src/parse/contrast.ts, scoreSequence
   - package.json, the exact mermaid version
 
-relates_to: []
+relates_to:
+  - relation: see_also
+    target: MJL-0018
+    note: the sequence pairs on the page are scored on the canvas
 
 decision:
   given: a sequence diagram has no style directives, and its colours are theme variables that Mermaid derives from each other

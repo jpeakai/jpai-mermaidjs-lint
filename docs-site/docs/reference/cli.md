@@ -19,6 +19,8 @@ The text below is generated from `mermaidjs-lint --help` when this site is built
 | `--json` | | | off | Print one JSON object instead of text lines |
 | `--preset` | `-p` | a preset name or alias | `high-density` | Set the density for every complexity rule |
 | `--profile` | | `auto`, `github`, `mkdocs-material` | `auto` | Set how contrast is read |
+| `--canvas-light` | | an opaque CSS colour | `#ffffff` | Set the light page colour that page-backed pairs are scored on, under `github` only |
+| `--canvas-dark` | | an opaque CSS colour | `#0d1117` | Set the dark page colour that page-backed pairs are scored on, under `github` only |
 | `--config` | | a file path | the config at the project root | Read that config file instead |
 | `--no-plugins` | | | off | Load no plugin, refuse a `.mjs` config, and set aside config settings for plugin rules |
 | `--lenient-plugins` | | | off | Skip a plugin that fails to load, and say so |
@@ -31,6 +33,16 @@ Some flags cannot be combined, and the run exits 2 when they are:
 
 - `--no-plugins` with `--lenient-plugins`.
 - `--validate-plugins` with `--no-plugins`, `--fix`, `--list-rules` or any path.
+- `--canvas-light` or `--canvas-dark` with `--profile mkdocs-material`.
+
+A canvas colour that will not parse, or is translucent, is `error[flag]` with exit code 2.
+A file that `auto` or the config scores under `mkdocs-material` refuses a canvas flag with `error[canvas-profile]`.
+[A host with its own page sets a canvas](../concepts/contrast.md#a-host-with-its-own-page-sets-a-canvas) explains what the canvas changes.
+For example, a viewer with its own page colours runs:
+
+```sh
+mermaidjs-lint docs/ --canvas-light '#faf8f9' --canvas-dark '#101010'
+```
 
 A preset name or alias is matched without regard to case:
 
@@ -51,6 +63,9 @@ The first that applies wins:
 4. The default, which is `high-density` or `auto`.
 
 A flag therefore overrides a preset or profile the config sets, but not a threshold the config sets.
+
+A canvas side follows the same order: `--canvas-light` or `--canvas-dark`, then that side of the `canvas` option in the config, then GitHub's colour.
+A flag sets only its own side, so `--canvas-dark` alone keeps a light side the config sets.
 
 ## Plugins and untrusted repositories
 
@@ -110,7 +125,8 @@ A failure prints `error[code]: reason`, and the same `code` is on the exported e
 | `config-shape` | 2 | An unknown config key, or a key of the wrong type |
 | `rule-setting` | 2 | A rule setting that is not a severity, or a severity and options |
 | `unknown-rule` | 2 | A rule id that is not loaded. Outside strict mode, a plugin rule id is set aside instead. |
-| `rule-option` | 2 | An option the rule does not declare, a value of the wrong type, or a preset or profile name that does not exist |
+| `rule-option` | 2 | An option the rule does not declare, a value of the wrong type, a preset or profile name that does not exist, a canvas colour that is not an opaque CSS colour, or a canvas beside `profile` `mkdocs-material` |
+| `canvas-profile` | 2 | A canvas was set for a file scored under `mkdocs-material`, whose page is Material's own |
 | `fix-outside-root` | 2 | `--fix` was given a symbolic link whose target is outside the project root |
 | `package-json` | 1 | The project's `package.json` is not a JSON object. A run with plugins off, through `--no-plugins` or `"plugins": false` in the config, reads nothing from it, so it carries on. |
 | `fix-not-converging` | 1 | A fixer kept proposing edits for 1000 passes. The message names the rules still editing, and that file is not written. |

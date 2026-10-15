@@ -1,4 +1,4 @@
-import { CONTRAST_OPTIONS, contrastOf, fileLine, profileOf } from "./shared.ts";
+import { CONTRAST_OPTIONS, contrastOf, fileLine, settingsOf } from "./shared.ts";
 import { type Finding, RULE, type Rule } from "./types.ts";
 
 // A directive the profile requires to be scoreable but cannot be: a github fill
@@ -12,10 +12,10 @@ export const contrastDirectiveUnauditable: Rule = {
   summary: "a style directive whose contrast cannot be audited",
   options: CONTRAST_OPTIONS,
   check: async (ctx) => {
-    const profile = profileOf(ctx);
+    const settings = settingsOf(ctx);
     const found: Finding[] = [];
     for (const diagram of ctx.doc.diagrams) {
-      for (const s of (await contrastOf(diagram, profile)).skipped) {
+      for (const s of (await contrastOf(diagram, settings)).skipped) {
         if (!s.blocking) continue;
         const line = fileLine(diagram, s.line);
         found.push({

@@ -14,7 +14,8 @@ import type { Finding, RuleOptions } from "./rules/types.ts";
 export interface RunOptions {
   // The rule's own options, as a config would give them.
   options?: RuleOptions;
-  // The run flags, as --preset and --profile would give them.
+  // The run flags, as --preset, --profile, --canvas-light and --canvas-dark
+  // would give them.
   flags?: RunFlags;
   // The file name, which decides markdown or a standalone diagram. Default test.md.
   file?: string;

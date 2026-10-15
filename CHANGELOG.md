@@ -10,7 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- A rule that declares a `preset` option now receives the canonical preset name, such as `high-density`.
+  It no longer receives an alias such as `high` as typed.
 
 ## [0.4.1] - 2026-10-16
 

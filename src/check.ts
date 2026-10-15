@@ -35,13 +35,15 @@ export const checkRunFlags = (flags: RunFlags, prefix = ""): void => {
 };
 
 // The options a rule runs with: its configured options, then a flag for any
-// option the rule declares.
+// option the rule declares. A preset reaches the rule by its canonical name,
+// so a plugin rule never has to resolve an alias such as `high` or `H`.
 export const optionsFor = (rule: Rule, configured: RuleOptions | undefined, flags: RunFlags): RuleOptions => {
   const options: Record<string, unknown> = { ...configured };
   for (const name of ["preset", "profile"] as const) {
     const value = flags[name];
     if (value !== undefined && rule.options?.[name]) options[name] = value;
   }
+  if (typeof options.preset === "string") options.preset = canonicalPreset(options.preset) ?? options.preset;
   return options;
 };
 

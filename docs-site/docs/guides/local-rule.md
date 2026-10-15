@@ -115,7 +115,7 @@ Under Node, a `.js` or `.ts` rule loads only as the `"type"` field in the projec
 | `"type"` in `package.json` | A `.js` or `.ts` rule under Node |
 |---|---|
 | `"module"` | Loads |
-| No `"type"` field | Loads, and Node prints a `MODULE_TYPELESS_PACKAGE_JSON` warning on every run |
+| No `"type"` field | On Node 20.19 or newer, or 22.7 or newer, loads with a `MODULE_TYPELESS_PACKAGE_JSON` warning on every run. On older Node it fails with `error[plugin-import]`. |
 | `"commonjs"` | Fails with `error[plugin-import]`, `could not be imported: Unexpected token 'export'`, and exits 1 |
 
 `npm init -y` writes `"type": "commonjs"` in npm 11, so the npm route in [Get started](../get-started.md) makes a project where a `.js` rule fails.

@@ -55,7 +55,7 @@ With npm, use `npm install --save-dev` and `npx` in place of `bun add --dev` and
 
 Both runners call the linter installed in the project, and never download it.
 lint-staged finds `mermaidjs-lint` in `node_modules/.bin`.
-`--no-install` stops `npx` fetching the unscoped name `mermaidjs-lint`, which is not this package, on a clone that has not run `npm install` yet.
+`--no-install` stops `npx` fetching the unscoped name `mermaidjs-lint`, which this project does not own, on a clone that has not run `npm install` yet.
 The filters cover every extension the linter reads: `.md`, `.markdown`, `.mmd` and `.mermaid`.
 
 ## See a commit stopped

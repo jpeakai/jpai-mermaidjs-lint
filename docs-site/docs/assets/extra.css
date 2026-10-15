@@ -1,0 +1,96 @@
+/* Brand palette. Primary is a deep teal that clears 4.5:1 against white header
+   text; the accent is the same hue, lightened for dark mode. */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0f5257;
+  --md-primary-fg-color--light: #2c7a7f;
+  --md-primary-fg-color--dark: #0a3b3e;
+  --md-primary-bg-color: #ffffff;
+  --md-accent-fg-color: #0f7a80;
+  --ml-pass: #1b7a3a;
+  --ml-fail: #b42318;
+  --ml-card-border: #d7e3e4;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #0f5257;
+  --md-primary-fg-color--light: #2c7a7f;
+  --md-primary-fg-color--dark: #0a3b3e;
+  --md-accent-fg-color: #5fd0d6;
+  --md-typeset-a-color: #7fdbe0;
+  --ml-pass: #6fd38f;
+  --ml-fail: #ff8a80;
+  --ml-card-border: #2e3a40;
+}
+
+/* Landing hero. */
+.ml-hero {
+  padding: 1.2rem 0 0.4rem;
+}
+.ml-hero h1 {
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+.ml-hero p.ml-lede {
+  font-size: 1.15rem;
+  margin-top: 0;
+}
+
+/* Small inline badges for rule metadata. */
+.ml-badge {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  margin-right: 0.3rem;
+  border: 1px solid var(--ml-card-border);
+  border-radius: 1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ml-badge--fix {
+  border-color: var(--ml-pass);
+  color: var(--ml-pass);
+}
+.ml-badge--nofix {
+  border-color: var(--ml-fail);
+  color: var(--ml-fail);
+}
+
+/* Before and after panels: each grid cell is a bordered card with a caption. */
+.md-typeset .grid.ml-compare > div {
+  border: 1px solid var(--ml-card-border);
+  border-radius: 0.4rem;
+  padding: 0 0.8rem 0.4rem;
+}
+.md-typeset .ml-caption {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0.6rem 0 0;
+}
+.md-typeset .ml-caption--before {
+  color: var(--ml-fail);
+}
+.md-typeset .ml-caption--after {
+  color: var(--ml-pass);
+}
+
+/* Diagrams sit centred in their card. A GitHub-style diagram keeps GitHub's
+   white page behind it in both site themes, so its colours read as written. */
+.md-typeset .grid.ml-compare .mermaid,
+.md-typeset .mermaid-github {
+  text-align: center;
+}
+.md-typeset .mermaid-github {
+  background: #ffffff;
+  border-radius: 0.3rem;
+  padding: 0.6rem;
+  margin: 0.6rem 0;
+}
+
+/* Long report lines wrap rather than scroll inside a narrow card. */
+.md-typeset .grid.ml-compare pre code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}

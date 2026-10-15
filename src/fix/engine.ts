@@ -1,6 +1,6 @@
 // The fix engine: a fixpoint loop over splice edits. Each pass rebuilds the
-// model, asks the fixers for edits in priority order, and keeps the first edit
-// that survives verification. Offsets are only valid for the source they were
+// model, asks the fixers for edits in priority order, and keeps the first batch
+// or single edit that survives verification. Offsets are only valid for the source they were
 // computed from, so every accepted edit restarts the pass.
 
 import { optionsFor, type RunFlags } from "../check.ts";

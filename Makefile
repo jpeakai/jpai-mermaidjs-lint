@@ -49,7 +49,9 @@ ci: fix typecheck test-cov-ts docs-ci
 # the diagrams in them, using this repo's source and never a published copy.
 # The site's authored pages are scored under mkdocs-material, which the linter
 # reads from docs-site/mkdocs.yml.
-DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md) $(wildcard docs-site/docs/*.md) tests/fixtures/README.md
+SITE_GENERATED := docs-site/docs/reference/rules.md docs-site/docs/gallery/fixtures.md docs-site/docs/gallery/examples.md
+SITE_DOCS := $(filter-out $(SITE_GENERATED),$(wildcard docs-site/docs/*.md docs-site/docs/*/*.md)) $(wildcard docs-site/diagrams/*.md)
+DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md) $(SITE_DOCS) tests/fixtures/README.md
 
 # The docs site. The generator re-checks every example as it writes the
 # reference pages, then mkdocs builds in strict mode, so a drifted example or a

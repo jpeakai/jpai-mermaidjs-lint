@@ -1,4 +1,5 @@
-// The rule catalogue, in id order. To add a rule: write one module exporting a
+// The rule catalogue, in category order (parse, complexity, contrast), most
+// severe first within a ladder. To add a rule: write one module exporting a
 // Rule with its category, register it here, and add its section and examples to
 // RULES.md, which tests/rules-doc.test.ts holds to the code.
 

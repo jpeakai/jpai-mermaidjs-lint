@@ -26,7 +26,7 @@ export interface PluginMeta {
   name: string;
   namespace: string;
   apiVersion: number;
-  // A new category the plugin adds, as the word and a one-line description.
+  // New categories the plugin adds, each word mapped to a one-line description.
   categories?: Record<string, string>;
 }
 

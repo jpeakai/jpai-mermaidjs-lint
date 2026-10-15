@@ -88,8 +88,8 @@ const STYLE_RE = /^[ \t]*style\s+(\S+)\s+(.+?)\s*;?\s*$/di;
 const LINKSTYLE_RE = /^[ \t]*linkStyle\s+(\S+)\s+(.+?)\s*;?\s*$/di;
 const INLINE_CLASS_RE = /([A-Za-z_][\w-]*)(?:\[[^\]]*\]|\([^)]*\)|\{[^}]*\}|>[^<]*)?:::([A-Za-z_][\w-]*)/g;
 
-// Mermaid allows `,` and `;` between properties, and a value never contains
-// either in well-formed source, so a plain split is safe.
+// Mermaid allows `,` and `;` between properties. A plain split assumes no
+// value holds an escaped `\,`, which holds for well-formed source.
 const parseProperties = (
   raw: string,
   rawStart: number,

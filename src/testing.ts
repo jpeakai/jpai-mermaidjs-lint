@@ -1,7 +1,8 @@
 // A test helper for plugin authors: run one plugin rule over real strings, with
-// the same loader checks, the same context and the same verified fix engine as
-// a real run. It is a separate entry point so a plugin's tests import it and
-// production code never does.
+// the same contract checks as the loader, the same context and the same
+// verified fix engine as a real run. It skips the reserved `local` namespace
+// and cross-plugin conflict checks. It is a separate entry point so a plugin's
+// tests import it and production code never does.
 
 import { checkMarkdown, type RunFlags } from "./check.ts";
 import { type FixReport, fixSourceReport } from "./fix/engine.ts";

@@ -1,8 +1,10 @@
 // Contrast scoring of a diagram's style directives, by the context the diagram
 // is read in. Two kinds of pair are scored: text (fill x color, at least 4.5)
-// and border (fill x stroke, at least 3, the UI-component rule). Only pairs
-// whose both sides are declared are scored, because an unset property falls
-// back to a theme default that cannot be resolved without rendering.
+// and border (fill x stroke, at least 3, the UI-component rule). Under github a
+// flowchart pair is scored only when both sides are declared, because an unset
+// property falls back to a theme default that cannot be resolved without
+// rendering. mkdocs-material scores the host text colour instead, and
+// erDiagram substitutes known theme text when no color is set.
 //
 // Profiles, by who controls the label text:
 //   github           the author does, so the declared pairs are scored as written
@@ -57,7 +59,8 @@ export interface ContrastPair {
   passes: boolean;
   theme?: Theme;
   row?: ErRow;
-  // Reported by the original auditor but never gating: a border on a faint fill
+  // Set on border pairs under mkdocs-material and erDiagram. The pair is still
+  // scored but never gates: a border on a faint fill
   // cannot clear 3:1 in both themes for a saturated hue. There is no warning
   // level, so an advisory pair is not a finding.
   advisory?: boolean;
@@ -267,7 +270,8 @@ export const scoreForProfile = (
   return keyword === "erDiagram" ? scoreEr(directives) : scoreGithub(directives);
 };
 
-// An ancestor mkdocs.yml means the diagram is read through Material.
+// An ancestor mkdocs.yml or mkdocs.yaml, searched up to 20 levels, means the
+// diagram is read through Material.
 export const detectProfile = (filePath: string): Profile => {
   let dir = dirname(resolve(filePath));
   for (let i = 0; i < 20; i++) {

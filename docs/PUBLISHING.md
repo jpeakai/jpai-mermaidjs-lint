@@ -7,7 +7,7 @@ Releases are the only way a version reaches npm, and the workflow publishes with
 ## Speed run
 
 Use this for every release once the one-time setup below is done.
-Main is protected, so the version bump lands through a pull request like any other change.
+The version bump lands through a pull request like any other change.
 
 ```sh
 git switch main && git pull
@@ -18,8 +18,8 @@ git switch -c "release-v$VERSION"
 git commit -am "Release v$VERSION"
 git push -u origin "release-v$VERSION"
 gh pr create --fill
-gh pr merge --auto --merge               # merges once both CI checks pass
-gh pr checks --watch
+gh pr checks --watch                     # wait for both CI checks to pass
+gh pr merge --merge
 git switch main && git pull              # confirm the bump is on main
 gh workflow run publish.yml --ref main
 gh run watch "$(gh run list --workflow=publish.yml --limit 1 --json databaseId -q '.[0].databaseId')"
@@ -152,6 +152,6 @@ The package page on npmjs.com should show a provenance badge that links to the w
 
 ## Why the gates differ
 
-`make ci` also renders the decision bundle with the meta CLI, which lives in a private repo.
-GitHub Actions cannot install it without a credential, so CI and `prepublishOnly` run `make check` instead.
-Run `make ci` locally before every release, since it is the only gate that catches a stale bundle.
+`make ci` also regenerates the decision bundle and applies the biome autofix, which a gate must never do.
+CI and `prepublishOnly` therefore run `make check`, which only checks.
+Run `make ci` locally before every release, and commit any file it regenerates, since no other gate notices a stale bundle.

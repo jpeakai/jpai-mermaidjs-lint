@@ -1,4 +1,4 @@
-# Configuration file
+# Config file
 
 The optional file that switches rules off and sets their options.
 To learn the workflow, see [Configure the rules](../guides/configure.md).
@@ -12,6 +12,7 @@ To learn the workflow, see [Configure the rules](../guides/configure.md).
 
 The file is read from the project root.
 That is the first folder, searching upwards from the working directory, that holds a `package.json`, a config file or a `.mermaidjs-lint` folder.
+With no such folder, the project root is the working directory.
 `--config FILE` reads another file instead.
 Two config files at the root is an error.
 
@@ -24,6 +25,13 @@ Two config files at the root is an error.
 | `pluginLoading` | `"strict"` or `"lenient"` | `"strict"` | Whether a plugin that fails to load stops the run or is skipped |
 
 Any other key is an error.
+
+An entry in `plugins` that starts with `.` or is absolute is a path, resolved against the project root.
+Any other entry is a package name, resolved from the project root upwards:
+
+```json
+{ "plugins": ["./tools/diagram-rules.mjs", "@acme/mermaidjs-rules"] }
+```
 
 ## Rule settings
 
@@ -44,20 +52,26 @@ A rule id maps to a severity, or to a severity and options:
 | `"off"` | The rule does not run |
 
 Plugin rules are set the same way, by their `namespace/key` id.
+Under `--no-plugins` or a lenient run, a setting for a plugin rule that did not load is set aside, and standard error says so.
+A built-in id that does not exist always fails with `error[unknown-rule]`.
 
 ## Rule options
+
+Each rule declares the options it takes.
+
+### Contrast rules
 
 | Rules | Option | Type | Values |
 |---|---|---|---|
 | The three contrast rules | `profile` | string | `auto`, `github`, `mkdocs-material`. See [Contrast profiles](../concepts/contrast.md). |
 
-## Complexity options
+### Complexity rules
 
 Every complexity rule takes the same options.
 
 | Option | Type | Meaning |
 |---|---|---|
-| `preset` | string | `low-density`, `medium-density` or `high-density`, or the aliases `low`, `medium` and `high` |
+| `preset` | string | `low-density`, `medium-density` or `high-density`, or an alias from [Flags](cli.md#flags) |
 | `nodeAcceptable`, `nodeComplex`, `nodeHardLimit` | number | The node-count bands |
 | `vcsAcceptable`, `vcsComplex` | number | The score bands |
 | `nodeTarget`, `vcsTarget` | number | The size a finding suggests splitting down to |
@@ -72,13 +86,5 @@ The preset values are:
 ## Errors
 
 A bad config stops the run before any file is read, with exit code 2 and `error[code]`.
-
-| Code | Cause |
-|---|---|
-| `config-file` | The file cannot be read or parsed, or is neither `.json` nor `.mjs` |
-| `config-not-found` | The file given to `--config` does not exist |
-| `config-ambiguous` | More than one config file at the project root |
-| `config-shape` | An unknown key, or a key of the wrong type |
-| `rule-setting` | A setting that is not a severity, or a severity and options |
-| `unknown-rule` | A rule id that does not exist |
-| `rule-option` | An option the rule does not declare, or a value of the wrong type |
+The codes are `config-file`, `config-not-found`, `config-ambiguous`, `config-shape`, `rule-setting`, `unknown-rule` and `rule-option`.
+[Error codes](cli.md#error-codes) gives the cause of each.

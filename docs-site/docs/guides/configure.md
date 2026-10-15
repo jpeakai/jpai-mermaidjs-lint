@@ -16,7 +16,7 @@ Put `mermaidjs-lint.config.json` at the project root:
 ```
 
 The project root is found by searching upwards from where you run the command.
-It is the first folder holding a `package.json`, a config file or a `.mermaidjs-lint` folder.
+It is the first folder holding a `package.json`, a config file or a `.mermaidjs-lint` folder, or the working directory when none does.
 A config somewhere else is read with `--config path/to/file.json`.
 
 A rule id that does not exist fails the run with `error[unknown-rule]`, so a misspelt id never silently does nothing.
@@ -34,8 +34,8 @@ Pass `--preset` to set the density for every complexity rule at once:
 bunx mermaidjs-lint --preset low docs/
 ```
 
-The presets are `low-density`, `medium-density` and `high-density`, with the aliases `low`, `medium` and `high`.
-[Measuring complexity](../concepts/complexity.md) lists their thresholds.
+The presets are `low-density`, `medium-density` and `high-density`, with the short aliases `low`, `medium` and `high`.
+[Flags](../reference/cli.md#flags) lists every alias, and [Measuring complexity](../concepts/complexity.md) lists the thresholds.
 
 !!! warning "Set the preset for the whole ladder"
 
@@ -57,7 +57,7 @@ Give the rule a pair of severity and options:
 ```
 
 Each rule declares the options it accepts and their types, and a config that breaks them fails before any file is read.
-[Configuration file](../reference/configuration.md) lists every option.
+[Config file](../reference/configuration.md) lists every option.
 
 ## Use JavaScript for the config
 

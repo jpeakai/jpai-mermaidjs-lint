@@ -4,6 +4,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { relative } from "node:path";
 import { parseArgs } from "node:util";
+import pkg from "../package.json" with { type: "json" };
 import { checkModel, type RunFlags } from "./check.ts";
 import { FlagError, MermaidLintError, UsageError } from "./errors.ts";
 import { collectFiles } from "./files.ts";
@@ -21,6 +22,7 @@ const USAGE = `usage: mermaidjs-lint <path...> [--fix] [--json] [--preset NAME] 
                      [--no-plugins | --lenient-plugins]
        mermaidjs-lint --list-rules
        mermaidjs-lint --validate-plugins [--json] [--config FILE]
+       mermaidjs-lint --version | -h, --help
 
 Deterministic Mermaid diagram gates (* = autofixable):
 ${CATEGORIES.map((c) =>
@@ -31,12 +33,12 @@ ${CATEGORIES.map((c) =>
 
 A path is a .mmd file, a markdown file whose mermaid fences are checked, or a
 directory, which is walked for both.
-Examples of every rule, with fixes: RULES.md
+Examples of every rule, with fixes: https://jpeakai.github.io/jpai-mermaidjs-lint/reference/rules/
 
---preset NAME sets the density for every complexity rule: ${PRESET_NAMES.join(", ")}
+-p, --preset NAME sets the density for every complexity rule: ${PRESET_NAMES.join(", ")}
   (aliases low, medium, high). Rule options and the config can set it per rule.
 --profile NAME sets how contrast is read: ${PROFILES.join(", ")}.
-  auto reads mkdocs-material when an ancestor holds mkdocs.yml, else github.
+  auto reads mkdocs-material when any parent folder holds mkdocs.yml or mkdocs.yaml, else github.
 --fix applies every fix it can prove safe, then reports what remains.
 A fixer that is unsure leaves the text alone and the finding stays.
 --config FILE reads that config instead of mermaidjs-lint.config.json or .mjs at the project root.
@@ -45,6 +47,7 @@ Plugins load on their own from .mermaidjs-lint/rules and from dependencies named
 --lenient-plugins skips a plugin that fails to load and says so, instead of stopping the run.
 --validate-plugins loads and checks every plugin, reports every failure, and runs no check or fix.
 --list-rules prints every active rule by category, including plugin rules, and where each plugin came from.
+--version prints the version, to quote in a bug report.
 Exits 1 when findings remain or a plugin fails to load, 2 on usage error.`;
 
 interface Parsed {
@@ -59,6 +62,7 @@ interface Parsed {
     "lenient-plugins"?: boolean;
     "validate-plugins"?: boolean;
     "list-rules"?: boolean;
+    version?: boolean;
   };
   positionals: string[];
 }
@@ -77,6 +81,7 @@ const parse = (argv: string[]): Parsed =>
       "lenient-plugins": { type: "boolean", default: false },
       "validate-plugins": { type: "boolean", default: false },
       "list-rules": { type: "boolean", default: false },
+      version: { type: "boolean", default: false },
     },
     allowPositionals: true,
     strict: true,
@@ -169,6 +174,10 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
   const { values, positionals } = parsed;
   if (values.help) {
     console.log(USAGE);
+    return 0;
+  }
+  if (values.version) {
+    console.log(pkg.version);
     return 0;
   }
   const listing = values["list-rules"];

@@ -75,7 +75,10 @@ export const setUp = async ({
     categories: plugins.categories,
     sources: plugins.sources,
     config,
-    ignoreUnknownPluginIds: mode === "lenient" || mode === "collect",
+    // A plugin rule's setting names a rule that is not loaded in these modes,
+    // by choice (off) or by failure (lenient, collect), so it is set aside
+    // rather than failing the run. A built-in id never is.
+    ignoreUnknownPluginIds: mode !== "strict",
   });
   return { registry, skipped: plugins.skipped, failures: plugins.failures };
 };

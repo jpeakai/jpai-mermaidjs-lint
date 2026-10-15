@@ -9,11 +9,15 @@ It is the declared dialect and it outranks any general convention.
 
 Every change serves one of these, per [MJL-0015](adrs/0015-four-tenets-define-the-tool.md).
 A rule or feature that serves none of them does not belong.
+Three are guarantees about every diagram, and the fourth is a commitment about the tool.
 
-1. **Readable in light and dark.** Every label can be read against its fill, in both light and dark themes.
-2. **Renders.** Every diagram parses with mermaid's own parsers, and every fence is closed.
-3. **Simple enough to follow.** Visual complexity is scored, so an oversized diagram is flagged to be split.
-4. **Extensible.** A plugin system adds rules that load, run and fix exactly like the built-ins.
+- **Readable in light and dark.** The colours a diagram declares are scored against their fill as the host renders it, in both light and dark themes.
+- **Renders.** Every diagram parses with the mermaid parsers this package ships, and every fence is closed.
+- **Simple enough to follow.** Node count and visual complexity are scored against a density preset, so an oversized diagram is flagged to be split.
+- **Extensible.** A plugin adds rules of your own, which run through the same config, fix engine and verification as the built-ins.
+
+Never reword a tenet in one place.
+Change `docs-site/includes/tenets.md`, then the same line in `README.md`, `CONTRIBUTING.md` and here, as `tests/tenets.test.ts` asserts.
 
 ## Commands
 

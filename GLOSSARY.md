@@ -10,20 +10,24 @@ When a new domain term enters the code or the conversation, add it here in the s
 |---|---|
 | Diagram | One Mermaid source: a mermaid fence in a markdown file, or a whole `.mmd` file. |
 | Fence | The code block that holds a diagram in markdown. It is unterminated when it never closes. |
-| Tenet | One of the four guarantees the tool exists to make: readable in light and dark, renders, simple enough to follow, extensible. |
+| Tenet | One of the four things the tool exists for: three guarantees about every diagram (readable in light and dark, renders, simple enough to follow) and one commitment about the tool (extensible). Worded once in `docs-site/includes/tenets.md`. |
 | Rule | One deterministic check with a rule id, and optionally a fixer. |
 | Rule id | The name of a rule, written category-short-name, such as contrast-text-below-aa. |
 | Category | The group a rule belongs to: parse, complexity or contrast, or a one-word category a plugin declares. |
 | Finding | One reported violation, with a file, a line range, a rule id, a message and optionally a remediation. |
+| Remediation | The optional next step a rule attaches to a finding, shown in `--json` output. |
 | Parse engine | The code that reads a diagram's structure from mermaid's own parsers. |
 | Stats | The nodes, edges, subgraphs and nesting depth the parse engine reads from a diagram. |
 | Visual complexity score | Nodes plus half a point per edge plus three per subgraph, scaled by one tenth per level of nesting. Written VCS in finding messages. |
 | Preset | A named set of density thresholds: low-density, medium-density or high-density. |
 | Ladder | The ordered thresholds of one measure. A diagram lands in one band, so one rule of the ladder fires. |
-| Style directive | A classDef, style or linkStyle line, or an inline class application. |
-| Pair | A foreground and a background scored together: text is fill and color, border is fill and stroke. |
+| Band | The range between two thresholds of a ladder, such as above `nodeAcceptable` up to `nodeComplex`. Each band has one rule. |
+| Style directive | A `classDef`, `style` or `linkStyle` line, or an inline class application. |
+| Pair | A foreground and a background scored together: text is `fill` and `color`, border is `fill` and `stroke`. |
+| Advisory pair | A border pair scored under `mkdocs-material` or in an `erDiagram` that never produces a finding, because no border on a faint fill can pass in both themes. |
+| Host | Where a diagram is drawn for a reader, such as GitHub or a MkDocs Material site. The host may choose the label colour. |
 | Profile | How contrast is read: github scores declared pairs, mkdocs-material scores the host's forced text, and auto picks one from the file's folder. |
-| Unauditable | A directive the profile requires to be scoreable but cannot be, such as a fill with no color. |
+| Unauditable | A directive the profile requires to be scoreable but cannot be, such as a `fill` with no `color`. |
 | Fixer | The optional fix function of a rule. It proposes edits and never writes files itself. |
 | Edit | A proposed change: a start offset, an end offset, replacement text and an expectation. |
 | Expectation | What an edit claims about the reparsed document: same-diagrams or same-tree. |
@@ -33,7 +37,7 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Namespace | The word before the slash in a plugin rule id, such as acme in acme/parse-no-todo. A core id has none. |
 | Local rule | A plugin rule that is one file in `.mermaidjs-lint/rules`, under the reserved namespace local. |
 | Config file | The optional `mermaidjs-lint.config.json` or `.mjs` that switches rules off and sets their options. |
-| Project root | The nearest ancestor of the working directory with a package.json, a config file or a `.mermaidjs-lint` directory. |
+| Project root | The nearest ancestor of the working directory with a `package.json`, a config file or a `.mermaidjs-lint` directory, or the working directory when none has one. |
 | Registry | The rules a run uses: the built-ins plus loaded plugins, with the config applied. |
 | Plugin mode | How a plugin that fails to load is treated: off, strict, lenient or collect. Strict is the default. |
 | Error code | The stable kebab-case name of a failure, shown as error[code] and carried on the error class. |

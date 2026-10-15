@@ -11,7 +11,9 @@ const ratioOn = (fg: string, bg: string): number => wcagRatio(compositeOver(fg, 
 // scored in. The fix swaps a declared color: for black or white, whichever
 // reads better, and only when that clears 4.5:1 on every background the
 // directive is scored against. Choosing a brand colour is a design decision, so
-// anything else stays reported.
+// anything else stays reported. A linkStyle color: takes the same path, and it
+// never clears: its label box is #e8e8e8 in light and #585858 in dark, where
+// black and white each fail one theme, so edge label findings stay reported.
 export const contrastTextBelowAa: Rule = {
   id: RULE.TEXT,
   category: "contrast",
@@ -36,7 +38,9 @@ export const contrastTextBelowAa: Rule = {
           remediation:
             profile === "mkdocs-material"
               ? "The host theme forces the label text, so change the fill until the host text reads on it in both themes."
-              : "Darken or lighten the fill, or change color:, until the ratio reaches 4.5:1 in every theme.",
+              : p.directive.kind === "linkStyle"
+                ? "An edge label sits on Mermaid's own label box, light in one theme and grey in the other, and no one colour reads on both, so drop color: from the linkStyle and let the theme set the label text."
+                : "Darken or lighten the fill, or change color:, until the ratio reaches 4.5:1 in every theme.",
         });
       }
     }

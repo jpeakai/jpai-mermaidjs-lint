@@ -3,13 +3,22 @@
 In this tutorial you lint a diagram, fix one finding automatically, fix another by hand, and add the check to your project.
 It takes about five minutes.
 
-**Before you begin:** you need a project with a `package.json`, and [Bun](https://bun.sh) or Node 20 or newer.
+**Before you begin:** you need [Bun](https://bun.sh), or Node 20 or newer with npm.
+Any folder works, and step 1 creates a `package.json` if there is none.
 
 ## 1. Install
 
-```sh
-bun add --dev @jpeakai/mermaidjs-lint
-```
+=== "Bun"
+
+    ```sh
+    bun add --dev @jpeakai/mermaidjs-lint
+    ```
+
+=== "npm"
+
+    ```sh
+    npm install --save-dev @jpeakai/mermaidjs-lint
+    ```
 
 ## 2. Lint a diagram
 
@@ -28,9 +37,17 @@ flowchart LR
 
 Run the linter over the folder:
 
-```sh
-bunx mermaidjs-lint docs/
-```
+=== "Bun"
+
+    ```sh
+    bunx mermaidjs-lint docs/
+    ```
+
+=== "npm"
+
+    ```sh
+    npx mermaidjs-lint docs/
+    ```
 
 You should see one finding, and the command exits 1:
 
@@ -44,9 +61,17 @@ Here the label reaches 1.43 to 1 against its fill, and readable text needs 4.5 t
 
 ## 3. Fix it automatically
 
-```sh
-bunx mermaidjs-lint --fix docs/
-```
+=== "Bun"
+
+    ```sh
+    bunx mermaidjs-lint --fix docs/
+    ```
+
+=== "npm"
+
+    ```sh
+    npx mermaidjs-lint --fix docs/
+    ```
 
 ```text
 0 finding(s) in 1 file(s)
@@ -60,12 +85,21 @@ classDef warn fill:#ffd400,color:#000000
 
 ## 4. Fix one by hand
 
-Give the database its own colour, with a fill but no label colour:
+Give the database its own colour, with a fill but no label colour.
+The file now reads:
 
-```text
+````markdown
+# Architecture
+
+```mermaid
+flowchart LR
+  Client --> API --> DB
+  classDef warn fill:#ffd400,color:#000000
   classDef store fill:#1e3a5f
+  class API warn
   class DB store
 ```
+````
 
 Run with `--fix` again:
 

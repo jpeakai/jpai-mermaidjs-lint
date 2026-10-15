@@ -5,15 +5,17 @@ Read them away from the keyboard: none of them asks you to run anything.
 
 ## The four tenets
 
-The tool exists to make four guarantees about every diagram it passes.
-Each concept page explains how one of them is kept, and where its limits are.
+Three tenets are guarantees about every diagram the tool passes, and the fourth is a commitment about the tool itself.
+Each concept page explains how one of them is delivered, and where its limits are.
 
-| Tenet | The guarantee | Its limit | Explained in |
+--8<-- "tenets.md"
+
+| Tenet | Delivered by | Its limit | Explained in |
 |---|---|---|---|
-| **Readable in light and dark** | Every label can be read against its fill, in both light and dark themes, as the host renders it | It scores declared colours, so a diagram with no styling is not checked | [Contrast profiles](contrast.md) |
-| **Renders** | Every diagram parses with mermaid's own parsers, the ones its renderer runs, and every fence is closed | It parses rather than draws, so a layout that draws badly is not caught | [How a run works](how-it-works.md) |
-| **Simple enough to follow** | Visual complexity is scored against a density preset, so an oversized diagram is flagged to be split | It flags and suggests where to split, but never splits | [Measuring complexity](complexity.md) |
-| **Extensible** | A plugin system adds rules of your own, which load, run and fix exactly like the built-ins | A plugin is code that runs on your machine, so trust what you install | [The plugin model](plugin-model.md) |
+| **Readable in light and dark** | The contrast rules | Only declared colours are scored, so an unstyled node or a theme setting is not checked | [Contrast profiles](contrast.md) |
+| **Renders** | The parse rules | It parses rather than draws, and a host on another mermaid version may still fail to draw it | [How a run works](how-it-works.md) |
+| **Simple enough to follow** | The complexity rules | It flags and suggests where to split, but never splits | [Measuring complexity](complexity.md) |
+| **Extensible** | Local rules and plugin packages | A plugin is code that runs on your machine, so trust what you install | [The plugin model](plugin-model.md) |
 
 A rule that serves none of the four does not belong in the tool.
 

@@ -2,12 +2,12 @@
 
 <!-- llm: One 46-node diagram was too dense to read, so it became an overview of the eight layers plus five smaller diagrams, one per path through the system, which together keep every node and every connection. -->
 
-This document describes the production topology of the storefront platform: the
-edge, the API layer, the domain services, the data stores, the third-party
-integrations, the asynchronous pipeline, and the observability stack. The
-diagram below was exported from the infrastructure inventory and has grown with
-every service that was added; it is complete but no longer readable at a glance.
-The fix splits it into an overview of the layers and one diagram per path, so each reads on its own.
+This document describes the production topology of the storefront platform.
+It covers the edge, the API layer, the domain services, the data stores and the third-party integrations.
+It also covers the asynchronous pipeline and the observability stack.
+The original diagram was exported from the infrastructure inventory and had grown with every service added.
+The linter reported two findings on it: `complexity-node-count-acceptable-exceeded` for 46 nodes, and `complexity-visual-score-critical` for a score of 106.2.
+The fix splits it into an overview of the layers and one diagram per path, so each reads on its own and lints clean.
 
 ## Overview
 
@@ -208,5 +208,5 @@ flowchart LR
     BFF -.-> LOKI
 ```
 
-The diagram is used in onboarding, in architecture reviews, and in incident
-retrospectives. Each audience needs a different amount of it.
+The diagrams are used in onboarding, in architecture reviews, and in incident retrospectives.
+Each audience needs a different amount of them.

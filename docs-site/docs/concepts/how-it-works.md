@@ -35,6 +35,14 @@ For the rest, it reads them from mermaid's own core, under a DOM shim.
 A regular expression would miscount subgraphs, ports and multi-line labels, and the counts would differ from what a reader sees.
 The parse happens once per diagram, on first use, and every rule shares the result.
 
+A diagram that yields no nodes is reported as `parse-diagram-unparseable`.
+A one-line diagram, such as `pie title Pets`, may have no nodes and still be valid, so on one line only a parser error is reported.
+
+Two things are read from the text rather than the parser.
+The diagram keyword is the first word past any frontmatter and comments, and it picks which parser runs.
+Style directives are read line by line, with the position of each value, so a fixer can rewrite it in place.
+A style joined to other statements by a semicolon is therefore not seen.
+
 The [document model reference](../reference/document-model.md) lists every field.
 
 ## Checking runs every rule at once

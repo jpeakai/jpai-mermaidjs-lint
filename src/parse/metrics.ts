@@ -168,13 +168,14 @@ export const calculateComplexity = (stats: DiagramStats, config: ThresholdConfig
 };
 
 // A multi-line diagram that yielded no nodes is a silent parser failure, so its
-// metrics cannot be trusted. A diagram of only a keyword line has no structure
-// to extract and is fine.
+// metrics cannot be trusted. A one-line diagram may legitimately have no nodes,
+// such as `info` or `pie title Pets`, so on one line only a parser's own error
+// counts: that is what catches `graph TD; A-->; B[[[`.
 export const parseFailed = (content: string, stats: DiagramStats): boolean => {
   const lines = content.split("\n").filter((l) => {
     const t = l.trim();
     return t && !t.startsWith("%%") && t !== "---";
   });
-  if (lines.length <= 1) return false;
+  if (lines.length <= 1) return stats.nodes === 0 && stats.error !== null;
   return stats.nodes === 0;
 };

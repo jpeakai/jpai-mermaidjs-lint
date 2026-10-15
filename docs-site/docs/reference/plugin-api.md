@@ -115,3 +115,6 @@ A plugin that fails to load stops the run with exit code 1 and `error[code]`, un
 | `plugin-conflict` | Another plugin already claimed the namespace or a category word |
 | `plugin-not-installed` | A declared plugin package is not installed |
 | `plugin-source` | The source cannot be loaded, such as a `.cts` file, or TypeScript on a runtime that cannot import it |
+
+A fixer that misbehaves during a run stops it with `error[plugin-fixer]`, as [Edits](#edits) describes.
+[Error codes](cli.md#error-codes) lists every code the command can print.

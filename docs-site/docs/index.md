@@ -8,33 +8,15 @@
 
 </div>
 
-## Four guarantees
+## The four tenets
 
 Every rule and every design choice serves one of four tenets.
+Three are guarantees about every diagram, and the fourth is a commitment about the tool.
 
-<div class="grid cards" markdown>
+--8<-- "tenets.md"
 
-- :material-theme-light-dark: **Readable in light and dark**
-
-    Every label can be read against its fill, in both light and dark themes.
-    The [contrast rules](reference/rules.md#contrast) enforce it.
-
-- :material-check-decagram: **Renders**
-
-    Every diagram parses with mermaid's own parsers, the ones its renderer runs, and every fence is closed.
-    The [parse rules](reference/rules.md#parse) enforce it.
-
-- :material-chart-timeline-variant: **Simple enough to follow**
-
-    Visual complexity is scored against a density preset, so an oversized diagram is flagged to be split.
-    The [complexity rules](reference/rules.md#complexity) enforce it.
-
-- :material-puzzle: **Extensible**
-
-    A plugin system adds rules of your own, which load, run and fix exactly like the built-ins.
-    [The plugin model](concepts/plugin-model.md) explains it.
-
-</div>
+The [contrast](reference/rules.md#contrast), [parse](reference/rules.md#parse) and [complexity](reference/rules.md#complexity) rules deliver the first three, and [the plugin model](concepts/plugin-model.md) delivers the fourth.
+[Concepts](concepts/index.md) states the limit of each.
 
 Where a fix is safe, `--fix` writes it, parses the document again, and keeps it only when nothing else changed:
 
@@ -82,7 +64,21 @@ The run exits 1 while any finding remains, so it works as a gate in CI with no e
 
 ## What it does not do
 
-- **It does not draw diagrams.** "Renders" means mermaid's own parsers accept the diagram, so a diagram that parses but draws badly is not caught.
+- **It does not draw diagrams.** "Renders" means the mermaid parsers this package ships accept the diagram, so a diagram that parses but draws badly is not caught.
+- **It does not know your host's mermaid version.** A host on an older mermaid may fail to draw a diagram type that parses here.
+- **It does not score unstyled nodes or theme settings.** Only the colours a diagram declares are scored, and [Contrast profiles](concepts/contrast.md#what-is-not-scored) lists what is left out.
+- **It has no per-diagram suppression.** A rule is on for every diagram or off for all of them, and [Troubleshooting](guides/troubleshooting.md) gives the workarounds.
 - **It does not split diagrams.** A complexity finding names the subgraphs to split along, and a human or an LLM decides. The [fixture gallery](gallery/fixtures.md) shows what an LLM would do.
 - **It does not choose colours.** A contrast fix only swaps a declared label colour for black or white, and only when that passes every background it is scored on.
 - **It has no warnings.** Every finding fails the run, and a rule you do not want is switched off in the config.
+
+## Project
+
+| Topic | Where |
+|---|---|
+| Report a bug or ask a question | [GitHub issues](https://github.com/jpeakai/jpai-mermaidjs-lint/issues), with the output of `mermaidjs-lint --version` |
+| Report a vulnerability, and the plugin trust model | [SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) |
+| What counts as a breaking change | [Versioning](reference/index.md#versioning) |
+| What changed in each release | [GitHub Releases](https://github.com/jpeakai/jpai-mermaidjs-lint/releases) |
+| Licence | MIT, in [LICENSE](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/LICENSE) |
+| Contributing | [CONTRIBUTING.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CONTRIBUTING.md) |

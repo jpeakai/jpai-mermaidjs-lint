@@ -11,6 +11,35 @@ The text below is generated from `mermaidjs-lint --help` when this site is built
 --8<-- "cli-help.txt"
 ```
 
+## Flags
+
+| Flag | Short | Value | Default | Effect |
+|---|---|---|---|---|
+| `--fix` | | | off | Apply every fix proven safe, write the file, then report what remains |
+| `--json` | | | off | Print one JSON object instead of text lines |
+| `--preset` | `-p` | a preset name or alias | `high-density` | Set the density for every complexity rule |
+| `--profile` | | `auto`, `github`, `mkdocs-material` | `auto` | Set how contrast is read |
+| `--config` | | a file path | the config at the project root | Read that config file instead |
+| `--no-plugins` | | | off | Load no plugin, and set aside config settings for plugin rules |
+| `--lenient-plugins` | | | off | Skip a plugin that fails to load, and say so |
+| `--validate-plugins` | | | off | Load every plugin, report every failure, and check no file |
+| `--list-rules` | | | off | Print every active rule by category, then the plugins |
+| `--version` | | | | Print the version, for a bug report |
+| `--help` | `-h` | | | Print the help |
+
+Some flags cannot be combined, and the run exits 2 when they are:
+
+- `--no-plugins` with `--lenient-plugins`.
+- `--validate-plugins` with `--no-plugins`, `--fix`, `--list-rules` or any path.
+
+A preset name or alias is matched without regard to case:
+
+| Preset | Aliases |
+|---|---|
+| `low-density` | `low`, `l`, `strict` |
+| `medium-density` | `medium`, `med`, `m`, `balanced` |
+| `high-density` | `high`, `h`, `permissive`, `default` |
+
 ## Paths
 
 | Path | What is checked |
@@ -29,6 +58,27 @@ A file named explicitly is checked whatever its extension.
 | 1 | Findings remain, a plugin failed to load, or the run failed |
 | 2 | A usage error: an unknown flag, a missing path, or a bad config file |
 
+## Error codes
+
+A failure prints `error[code]: reason`, and the same `code` is on the exported error class.
+
+| Code | Exit code | Cause |
+|---|---|---|
+| `flag` | 2 | An unknown flag, a bad flag value, flags that contradict, no paths, or a path that cannot be read |
+| `config-file` | 2 | The config cannot be read or parsed, or is neither `.json` nor `.mjs` |
+| `config-not-found` | 2 | The file given to `--config` does not exist |
+| `config-ambiguous` | 2 | More than one config file at the project root |
+| `config-shape` | 2 | An unknown config key, or a key of the wrong type |
+| `rule-setting` | 2 | A rule setting that is not a severity, or a severity and options |
+| `unknown-rule` | 2 | A rule id that is not loaded. Under `--no-plugins` or a lenient run, a plugin rule id is set aside instead. |
+| `rule-option` | 2 | An option the rule does not declare, or a value of the wrong type |
+| `plugin-import` | 1 | A plugin module could not be imported |
+| `plugin-contract` | 1 | A plugin export breaks the contract, or targets another API version |
+| `plugin-conflict` | 1 | Another plugin already claimed the namespace or a category word |
+| `plugin-not-installed` | 1 | A declared plugin package is not installed |
+| `plugin-source` | 1 | A plugin source cannot be loaded, such as a `.cts` file, or TypeScript on a runtime that cannot import it |
+| `plugin-fixer` | 1 | A plugin fixer threw, returned something other than a list, or returned an edit with no valid expectation |
+
 ## Text output
 
 One line per finding, then a summary:
@@ -40,7 +90,15 @@ docs/architecture.md:6 contrast-text-below-aa classDef warn: text 1.43:1 < 4.5 (
 
 A line reads `file:line rule message`.
 A finding that spans a diagram prints its first and last line, as `file:3-7`.
-A line on standard error reports which plugins loaded, when any did.
+
+Standard error carries one line about plugins, when there are any:
+
+| Line | When |
+|---|---|
+| `mermaidjs-lint: loaded acme (1 rule)` | Plugins loaded |
+| `mermaidjs-lint: plugins off; skipped mermaidjs-lint-plugin-acme` | `--no-plugins` found plugins and loaded none |
+| `mermaidjs-lint: skipped plugin <source> [code]: reason` | A lenient run left a broken plugin out |
+| `mermaidjs-lint: ignored config setting for <id>, whose plugin did not load` | A config setting named a plugin rule that is not loaded |
 
 ## JSON output
 
@@ -66,7 +124,10 @@ A line on standard error reports which plugins loaded, when any did.
 
 | Key | Holds |
 |---|---|
-| `findings` | Each finding: file, first and last line, rule id, message, and a remediation when the rule gives one |
+| `findings` | Each finding: `file`, `line`, `endLine`, `rule`, `message`, and `remediation` when the rule gives one |
 | `files` | How many files were checked |
-| `plugins` | The plugins that loaded |
-| `skippedPlugins` | Plugins found but not loaded, as with `--no-plugins` |
+| `plugins` | Each loaded plugin: `kind` (`local`, `package` or `config`), `spec`, `namespace` and its `rules` ids |
+| `skippedPlugins` | Each plugin a lenient run left out: `source`, `kind`, `code` and `message` |
+
+Under `--no-plugins`, `skippedPlugins` is empty, and the skipped plugins appear only on standard error.
+`--validate-plugins --json` prints `{ valid, plugins, failures }` instead, where `failures` has the shape of `skippedPlugins`.

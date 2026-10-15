@@ -149,8 +149,12 @@ const ruleExample = async (id: string, src: string, after: string | null, llmSrc
     after === null
       ? [card("Reported, left for a human", "before", diagramOf(src))]
       : [card("Before", "before", diagramOf(src)), card("After --fix", "after", diagramOf(after))];
-  const llmDiagram = llm?.diagrams[0];
-  if (llmDiagram !== undefined) cards.push(card("LLM fix", "after", mermaid(llmDiagram)));
+  // An LLM fix may split one diagram into several, and each gets its own card.
+  const llmDiagrams = llm?.diagrams ?? [];
+  for (const [i, d] of llmDiagrams.entries()) {
+    const label = llmDiagrams.length > 1 ? `LLM fix ${i + 1} of ${llmDiagrams.length}` : "LLM fix";
+    cards.push(card(label, "after", mermaid(d)));
+  }
 
   const out = [
     compare(cards),
@@ -173,8 +177,8 @@ const optionsLine = (rule: Rule): string => {
   const names = Object.keys(rule.options ?? {});
   if (names.length === 0) return "";
   if (rule.category === "complexity")
-    return "Options: `preset` and every threshold, listed in [Configuration](configuration.md#complexity-options).";
-  return `Options: ${names.map((n) => `\`${n}\``).join(", ")}, listed in [Configuration](configuration.md#rule-options).`;
+    return "Options: `preset` and every threshold, listed in [Config file](configuration.md#complexity-rules).";
+  return `Options: ${names.map((n) => `\`${n}\``).join(", ")}, listed in [Config file](configuration.md#rule-options).`;
 };
 
 const rulesPage = async (): Promise<string> => {
@@ -329,7 +333,7 @@ const fixturesPage = async (): Promise<string> => {
     "The cases the test suite runs, drawn as GitHub renders them.",
     "Each file names the rules it must report, and a pinned fix holds the exact output of `--fix`.",
     "Where `--fix` leaves findings, an LLM fix shows the judgment fix an LLM would make, with its reason.",
-    "To add a case, see [Add a fixture](index.md#add-a-fixture).",
+    "To add a case, see [the fixtures README](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/tests/fixtures/README.md).",
     "",
   ];
   for (const folder of folders) {

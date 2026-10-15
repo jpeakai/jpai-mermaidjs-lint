@@ -2,8 +2,9 @@
 
 <!-- expect: none -->
 
-A customer places orders. Each order holds one or more lines, each line names a
-catalogue product, and an order is settled by one or more payments.
+A customer places orders.
+Each order holds one or more lines, and each line names a catalogue product.
+An order is settled by one or more payments.
 
 ```mermaid
 erDiagram

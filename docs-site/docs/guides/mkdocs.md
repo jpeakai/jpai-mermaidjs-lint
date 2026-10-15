@@ -2,8 +2,6 @@
 
 Score your site's diagrams the way Material renders them, where the theme sets the label colour.
 
-**Before you begin:** read [Contrast profiles](../concepts/contrast.md) if you want to know why this differs from GitHub.
-
 ## Run it on the docs folder
 
 ```sh
@@ -11,8 +9,23 @@ bunx mermaidjs-lint docs/
 ```
 
 There is nothing to configure.
-The default profile, `auto`, finds `mkdocs.yml` in a parent folder of each file, and scores those files as Material renders them.
-Files elsewhere in the repository are still scored as GitHub renders them.
+The default profile, `auto`, scores a file as Material renders it when any parent folder holds `mkdocs.yml` or `mkdocs.yaml`.
+Every other file is scored as GitHub renders it.
+
+## Keep README.md scored as GitHub renders it
+
+With `mkdocs.yml` at the repository root, every markdown file in the repository has it as a parent.
+`README.md` is then scored as Material, although GitHub is where it is read.
+
+Choose one of two fixes:
+
+- **Move the site into its own folder.** Put `mkdocs.yml` and its docs folder under a folder such as `docs-site/`, and the root files keep the `github` profile.
+- **Lint the root files in a second run.** Pass the profile for them:
+
+```sh
+bunx mermaidjs-lint --profile github README.md CONTRIBUTING.md
+bunx mermaidjs-lint docs/
+```
 
 ## Write fills that work in both themes
 
@@ -40,4 +53,8 @@ When a file renders through Material but its folder holds no `mkdocs.yml`, pass 
 bunx mermaidjs-lint --profile mkdocs-material site-content/
 ```
 
-To pin it for good, set `profile` on the three contrast rules in the [configuration file](../reference/configuration.md#rule-options).
+To pin it for good, set `profile` on the three contrast rules in the [config file](../reference/configuration.md#rule-options).
+
+## Why Material differs from GitHub
+
+[Contrast profiles](../concepts/contrast.md) explains why the same diagram can pass on GitHub and fail under Material.

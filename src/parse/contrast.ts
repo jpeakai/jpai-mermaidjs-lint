@@ -4,7 +4,8 @@
 // flowchart pair is scored only when both sides are declared, because an unset
 // property falls back to a theme default that cannot be resolved without
 // rendering. mkdocs-material scores the host text colour instead, and
-// erDiagram substitutes known theme text when no color is set.
+// erDiagram substitutes known theme text when no color is set. A linkStyle
+// color: is edge label text, scored on Mermaid's own label box under github.
 //
 // Profiles, by who controls the label text:
 //   github           the author does, so the declared pairs are scored as written
@@ -35,6 +36,30 @@ const MKDOCS_MATERIAL = {
 const GITHUB = { light: { bg: "#ffffff" }, dark: { bg: "#0d1117" } } as const;
 
 const THEMES: Theme[] = ["light", "dark"];
+
+// The box an edge label is drawn on, read off Mermaid 11's theme sources. A
+// linkStyle color: becomes an inline `color: ... !important` on the label's
+// div and span, and the text sits in a <p> inside them. Three layers paint the
+// box behind it: the div (.labelBkg, edgeLabelBackground faded to alpha 0.5),
+// the span and the p (both .edgeLabel, edgeLabelBackground as is). The theme's
+// edgeLabelBackground is rgba(232,232,232,0.8) in default (labelBackground)
+// and lighten(#181818, 25) = #585858 in dark, opaque. GitHub draws the default
+// theme in light mode and the dark theme in dark mode, the same assumption the
+// erDiagram rows make, so the stack is composited over the matching canvas:
+// #e8e8e8 in light and #585858 in dark. No one colour clears 4.5:1 on both, so
+// a fixed edge label colour always fails one theme. Under mkdocs-material the
+// host sets `.edgeLabel p { color: var(--md-mermaid-edge-color) }` on the p
+// itself, which beats the colour the p would inherit, so color: is ignored
+// there and nothing new is scored.
+const MERMAID_EDGE_LABEL = {
+  light: { box: "rgba(232,232,232,0.8)", backing: "rgba(232,232,232,0.5)" },
+  dark: { box: "#585858", backing: "rgba(88,88,88,0.5)" },
+} as const;
+
+export const edgeLabelBackground = (theme: Theme): string => {
+  const { box, backing } = MERMAID_EDGE_LABEL[theme];
+  return compositeOver(box, compositeOver(box, compositeOver(backing, GITHUB[theme].bg)));
+};
 
 // Mermaid's own erDiagram row surfaces under its default and dark themes. A
 // fill lands on the even attribute rows only, and a declared color lands on all
@@ -96,10 +121,28 @@ const scorePair = (kind: PairKind, d: StyleDirective, fg: string, bg: string): C
 
 const message = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
+// A linkStyle color: is edge label text, scored on the label box in both themes.
+// A linkStyle without one styles only the line, which has no label pair.
+const scoreEdgeLabel = (d: StyleDirective, pairs: ContrastPair[], skipped: SkippedDirective[]): void => {
+  const { color } = d.properties;
+  if (!color) return;
+  try {
+    pairs.push(...THEMES.map((t) => scoreHostPair("text", d, t, color, edgeLabelBackground(t))));
+  } catch (err) {
+    skipped.push({
+      selector: d.selector,
+      line: d.line,
+      reason: `edge label text unparseable: ${message(err)}`,
+      blocking: true,
+    });
+  }
+};
+
 export const scoreGithub = (directives: StyleDirective[]): ContrastResult => {
   const pairs: ContrastPair[] = [];
   const skipped: SkippedDirective[] = [];
   for (const d of directives) {
+    if (d.kind === "linkStyle") scoreEdgeLabel(d, pairs, skipped);
     if (d.kind !== "classDef" && d.kind !== "style") continue;
     const { fill, color, stroke } = d.properties;
     const note = (reason: string, blocking?: boolean): void => {
@@ -175,6 +218,13 @@ export const scoreMkdocs = (directives: StyleDirective[]): ContrastResult => {
   const pairs: ContrastPair[] = [];
   const skipped: SkippedDirective[] = [];
   for (const d of directives) {
+    if (d.kind === "linkStyle" && d.properties.color) {
+      skipped.push({
+        selector: d.selector,
+        line: d.line,
+        reason: "color: ignored, because the host theme forces edge label text",
+      });
+    }
     if (d.kind !== "classDef" && d.kind !== "style") continue;
     const { fill, stroke, color } = d.properties;
     const note = (reason: string): void => {

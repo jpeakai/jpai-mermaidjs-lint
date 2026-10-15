@@ -1,4 +1,4 @@
-import { CONTRAST_OPTIONS, contrastOf, fileLine, profileOf } from "./shared.ts";
+import { CONTRAST_OPTIONS, contrastOf, fileLine, settingsOf } from "./shared.ts";
 import { type Finding, RULE, type Rule } from "./types.ts";
 
 const AA_NON_TEXT = 3;
@@ -13,10 +13,10 @@ export const contrastBorderBelowUiMinimum: Rule = {
   summary: "a border below 3:1 against its fill",
   options: CONTRAST_OPTIONS,
   check: async (ctx) => {
-    const profile = profileOf(ctx);
+    const settings = settingsOf(ctx);
     const found: Finding[] = [];
     for (const diagram of ctx.doc.diagrams) {
-      for (const p of (await contrastOf(diagram, profile)).pairs) {
+      for (const p of (await contrastOf(diagram, settings)).pairs) {
         if (p.kind !== "border" || p.passes || p.advisory) continue;
         const line = fileLine(diagram, p.line);
         found.push({

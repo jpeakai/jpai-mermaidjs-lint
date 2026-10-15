@@ -41,7 +41,7 @@ Its default export is one `PluginRule`, its file name is the key, and it may exp
 |---|---|---|
 | `category` | `string` | A built-in category, or one the plugin declares |
 | `summary` | `string` | One line, shown by `--list-rules`. `--help` lists the built-in rules only. |
-| `options` | `Record<string, "number" \| "string" \| "boolean" \| "string[]">`, optional | The options the rule accepts, checked against the config before a run. `preset` and `profile` are reserved, as [Reserved options](#reserved-options) explains. |
+| `options` | `Record<string, "number" \| "string" \| "boolean" \| "string[]" \| "canvas">`, optional | The options the rule accepts, checked against the config before a run. `preset` and `profile` are reserved, as [Reserved options](#reserved-options) explains. A `canvas` option is `{ light?, dark? }` of opaque CSS colours, and receives `--canvas-light` and `--canvas-dark` side by side. |
 | `check(ctx)` | returns `PluginFinding[]` or a promise of it | Reports findings |
 | `fix(ctx)` | returns `PluginEdit[]` or a promise of it, optional | Proposes edits |
 

@@ -31,6 +31,7 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Advisory pair | A border pair scored under `mkdocs-material` or in an `erDiagram`, including a sequence diagram's lifeline, arrowhead or activation bar under `mkdocs-material`, that never produces a finding, because a saturated border on a faint fill cannot pass in both themes. |
 | Host | Where a diagram is drawn for a reader, such as GitHub or a MkDocs Material site. The host may choose the label colour. |
 | Profile | How contrast is read: github scores declared pairs, mkdocs-material scores the host's forced text, and auto picks one from the file's folder. |
+| Canvas | The page colour in each theme behind everything a diagram does not box, which translucent fills, edge label boxes and page-backed sequence pairs are scored on. It is GitHub's `#ffffff` and `#0d1117` unless `--canvas-light`, `--canvas-dark` or the `canvas` option sets a side, and it applies under github only. |
 | Unauditable | A directive the profile requires to be scoreable but cannot be, such as a `fill` with no `color`, or a sequence diagram config the tool does not model, such as `themeCSS`. |
 | Fixer | The optional fix function of a rule. It proposes edits and never writes files itself. |
 | Edit | A proposed change: a start offset, an end offset, replacement text and an expectation. |

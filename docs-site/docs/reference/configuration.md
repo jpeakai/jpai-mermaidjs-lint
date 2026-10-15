@@ -75,6 +75,29 @@ Each rule declares the options it takes.
 | Rules | Option | Type | Values |
 |---|---|---|---|
 | The three contrast rules | `profile` | string | `auto`, `github`, `mkdocs-material`. See [Contrast profiles](../concepts/contrast.md). |
+| The three contrast rules | `canvas` | canvas | An object with `light`, `dark` or both, each an opaque CSS colour. A side left out keeps GitHub's `#ffffff` or `#0d1117`. See [A host with its own page sets a canvas](../concepts/contrast.md#a-host-with-its-own-page-sets-a-canvas). |
+
+A canvas scores each rule on the page your host draws.
+Set it on all three contrast rules, so they score the same page:
+
+```json
+{
+  "rules": {
+    "contrast-text-below-aa": ["error", { "canvas": { "light": "#faf8f9", "dark": "#101010" } }],
+    "contrast-border-below-ui-minimum": ["error", { "canvas": { "light": "#faf8f9", "dark": "#101010" } }],
+    "contrast-directive-unauditable": ["error", { "canvas": { "light": "#faf8f9", "dark": "#101010" } }]
+  }
+}
+```
+
+A canvas is type-checked when the config loads, and each mistake is `error[rule-option]`:
+
+- A value that is not an object, an empty object, or a key other than `light` and `dark`.
+- A side that is not a string, will not parse as a CSS colour, or is translucent.
+- A `canvas` beside `"profile": "mkdocs-material"` on the same rule, because Material draws its own page.
+
+A file that `auto` scores under `mkdocs-material` refuses a canvas when it is checked, with `error[canvas-profile]`.
+A plugin rule may declare an option of type `canvas` too. It receives `--canvas-light` and `--canvas-dark` as the contrast rules do, and its value is checked the same way.
 
 ### Complexity rules
 
@@ -92,6 +115,7 @@ Every complexity rule accepts the same options.
 
 A threshold option overrides the preset's value.
 A `--preset` or `--profile` flag overrides the `preset` or `profile` option, but not a threshold option.
+A `--canvas-light` or `--canvas-dark` flag overrides its own side of the `canvas` option.
 [Precedence](cli.md#precedence) gives the full order.
 The preset values are:
 

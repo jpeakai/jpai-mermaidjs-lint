@@ -1,5 +1,5 @@
 import { compositeOver, wcagRatio } from "../parse/color.ts";
-import { CONTRAST_OPTIONS, contrastOf, fileLine, profileOf } from "./shared.ts";
+import { CONTRAST_OPTIONS, contrastOf, fileLine, settingsOf } from "./shared.ts";
 import { type Edit, type Finding, RULE, type Rule } from "./types.ts";
 
 const AA_NORMAL = 4.5;
@@ -12,7 +12,8 @@ const ratioOn = (fg: string, bg: string): number => wcagRatio(compositeOver(fg, 
 // reads better, and only when that clears 4.5:1 on every background the
 // directive is scored against. Choosing a brand colour is a design decision, so
 // anything else stays reported. A linkStyle color: takes the same path, and it
-// never clears: its label box is #e8e8e8 in light and #585858 in dark, where
+// never clears on GitHub's canvas: its label box is #e8e8e8 in light and
+// #585858 in dark, where
 // black and white each fail one theme, so edge label findings stay reported.
 export const contrastTextBelowAa: Rule = {
   id: RULE.TEXT,
@@ -20,10 +21,10 @@ export const contrastTextBelowAa: Rule = {
   summary: "label text below 4.5:1 against its fill",
   options: CONTRAST_OPTIONS,
   check: async (ctx) => {
-    const profile = profileOf(ctx);
+    const settings = settingsOf(ctx);
     const found: Finding[] = [];
     for (const diagram of ctx.doc.diagrams) {
-      for (const p of (await contrastOf(diagram, profile)).pairs) {
+      for (const p of (await contrastOf(diagram, settings)).pairs) {
         if (p.kind !== "text" || p.passes) continue;
         const where = [p.theme, p.row].filter(Boolean).join("/");
         const line = fileLine(diagram, p.line);
@@ -36,7 +37,7 @@ export const contrastTextBelowAa: Rule = {
             `${p.directive.kind} ${p.selector}: text ${p.assessment.ratio.toFixed(2)}:1 < ${AA_NORMAL} ` +
             `(${p.foreground} on ${p.background}${where ? `, ${where}` : ""})`,
           remediation:
-            profile === "mkdocs-material"
+            settings.profile === "mkdocs-material"
               ? "The host theme forces the label text, so change the fill until the host text reads on it in both themes."
               : p.directive.kind === "themeVariables"
                 ? "A sequence diagram colour is a theme variable, and text with no box of its own sits on the page, so set the variable to a colour that reads on its background in both themes, or remove it and let the theme set it."
@@ -49,12 +50,12 @@ export const contrastTextBelowAa: Rule = {
     return found;
   },
   fix: async (ctx) => {
-    const profile = profileOf(ctx);
+    const settings = settingsOf(ctx);
     // Under a host profile color: is ignored, so there is nothing to rewrite.
-    if (profile === "mkdocs-material") return [];
+    if (settings.profile === "mkdocs-material") return [];
     const edits: Edit[] = [];
     for (const diagram of ctx.doc.diagrams) {
-      const { pairs } = await contrastOf(diagram, profile);
+      const { pairs } = await contrastOf(diagram, settings);
       const failing = new Set(pairs.filter((p) => p.kind === "text" && !p.passes).map((p) => p.directive));
       for (const directive of failing) {
         const span = directive.spans.color;

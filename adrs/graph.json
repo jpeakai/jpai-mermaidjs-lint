@@ -307,6 +307,19 @@
     },
     {
       "data": {
+        "id": "MJL-0018",
+        "label": "0018",
+        "parent": "group-contrast",
+        "colour": "#0891b2",
+        "file": "0018-a-host-sets-the-page-canvas-under-github-only.md",
+        "title": "A host sets the page canvas, under the github profile only",
+        "description": "Page-backed colours are scored on a canvas the caller may set, and a canvas under mkdocs-material is refused",
+        "status": "accepted",
+        "tags": "contrast, accessibility, cli"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -343,6 +356,26 @@
         "label": "depends on",
         "relation": "depends_on",
         "note": "a refusal is the normal outcome of a failed proof"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0017-see_also-MJL-0018",
+        "source": "MJL-0017",
+        "target": "MJL-0018",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the sequence pairs on the page are scored on the canvas"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0018-see_also-MJL-0017",
+        "source": "MJL-0018",
+        "target": "MJL-0017",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the sequence pairs on the page are scored on the canvas"
       }
     }
   ],

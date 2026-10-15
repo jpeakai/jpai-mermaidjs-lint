@@ -23,7 +23,8 @@ A check that scored the declared `color:` on a Material site would pass diagrams
 | `mkdocs-material` | The fill against the host's forced text colour, in both the light and dark theme, for every diagram type except a `sequenceDiagram`, whose labels the host forces outright | The markdown renders through Material, which forces label text |
 | `auto` | `mkdocs-material` when any parent folder of the file holds `mkdocs.yml` or `mkdocs.yaml`, otherwise `github` | The default |
 
-Under `github`, a translucent fill is first composited over both of GitHub's page backgrounds, because a reader sees it blended with the page.
+Under `github`, a translucent fill is first composited over both page backgrounds, because a reader sees it blended with the page.
+The page is GitHub's unless you [set a canvas](#a-host-with-its-own-page-sets-a-canvas).
 
 A border pair is a `stroke:` scored against its fill, and it must reach 3 to 1.
 Under `github`, outside an `erDiagram`, a border pair that fails is reported as `contrast-border-below-ui-minimum`.
@@ -46,6 +47,29 @@ A profile scores against fixed page and text colours, taken from the host's stoc
 | `mkdocs-material` | Dark | `#1e2129` | `hsl(225 18% 86% / 0.82)` |
 
 A Material site that overrides `--md-default-fg-color` or the page background is not modelled, so its diagrams are scored as the stock theme draws them.
+
+### A host with its own page sets a canvas
+
+The canvas is the page colour behind everything a diagram does not box.
+Under `github` it defaults to GitHub's two page colours from the table above.
+A host that draws its own page sets the canvas to its own colours.
+A documentation viewer with its own light and dark theme is one such host.
+Every page-backed pair is then scored on that page:
+
+- **A translucent fill.** It is composited over the canvas in each theme.
+- **An edge label box.** Its translucent layers sit on the canvas, so the box shifts slightly with the page.
+- **A sequence diagram's page-backed elements.** These are the rows in the [sequence table](#a-sequence-diagram-is-scored-by-its-theme-colours) whose background is the page, such as message text and lifelines.
+
+An opaque fill, an `erDiagram` row and a sequence participant box draw their own surface, so the canvas does not change them.
+
+Set the canvas with `--canvas-light` and `--canvas-dark`, or with the `canvas` option in the [config file](../reference/configuration.md#rule-options).
+Each side is an opaque CSS colour, and a side you leave out keeps GitHub's.
+A translucent canvas is refused, because nothing shows through a page.
+
+A canvas applies under `github` only.
+Material draws its own page, and this tool models only Material's stock colours.
+So a file scored under `mkdocs-material` refuses a canvas with a usage error, rather than ignoring it and reporting a pass the canvas never affected.
+This holds when `auto` picks `mkdocs-material` for the file too.
 
 ### Edge labels
 

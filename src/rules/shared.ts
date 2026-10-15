@@ -2,8 +2,21 @@
 // contrast pairs, derived once per diagram and shared, so two rules can never
 // disagree about what the same diagram holds.
 
+import { CanvasProfileError } from "../errors.ts";
 import type { Diagram } from "../model.ts";
-import { type ContrastResult, detectProfile, PROFILES, type Profile, scoreDiagram } from "../parse/contrast.ts";
+import {
+  type Canvas,
+  type CanvasSetting,
+  type ContrastResult,
+  canvasColourProblem,
+  detectProfile,
+  GITHUB_CANVAS,
+  PROFILES,
+  type Profile,
+  resolveCanvas,
+  scoreDiagram,
+  THEMES,
+} from "../parse/contrast.ts";
 import { type ComplexityMetrics, calculateComplexity, parseFailed, type ThresholdConfig } from "../parse/metrics.ts";
 import type { DiagramStats } from "../parse/stats.ts";
 import type { Finding, OptionSpec, RuleContext, RuleId } from "./types.ts";
@@ -26,7 +39,7 @@ export const COMPLEXITY_OPTIONS: OptionSpec = {
   depthWeight: "number",
 };
 
-export const CONTRAST_OPTIONS: OptionSpec = { profile: "string" };
+export const CONTRAST_OPTIONS: OptionSpec = { profile: "string", canvas: "canvas" };
 
 export interface Measured {
   stats: DiagramStats;
@@ -77,20 +90,45 @@ export const profileOf = (ctx: RuleContext): Profile => {
   return wanted === "auto" ? detectProfile(ctx.file) : (wanted as Profile);
 };
 
-const scored = new WeakMap<Diagram, Map<Profile, Promise<ContrastResult>>>();
+// How a contrast rule scores a file: the profile, and the page canvas behind
+// anything page-backed.
+export interface ContrastSettings {
+  profile: Profile;
+  canvas: Canvas;
+}
 
-// Scored once per diagram and profile. A sequence diagram is scored by its
-// theme variables, which Mermaid resolves asynchronously.
-export const contrastOf = (diagram: Diagram, profile: Profile): Promise<ContrastResult> => {
-  let byProfile = scored.get(diagram);
-  if (!byProfile) {
-    byProfile = new Map();
-    scored.set(diagram, byProfile);
+// The profile and canvas a contrast rule scores under. A canvas is GitHub's
+// unless the canvas option sets a side. Under mkdocs-material the page is
+// Material's own, so a canvas there is refused rather than ignored.
+export const settingsOf = (ctx: RuleContext): ContrastSettings => {
+  const profile = profileOf(ctx);
+  const setting = ctx.options.canvas as CanvasSetting | undefined;
+  if (setting === undefined) return { profile, canvas: GITHUB_CANVAS };
+  for (const side of THEMES) {
+    if (!(side in setting)) continue;
+    const problem = canvasColourProblem(setting[side]);
+    if (problem) throw new Error(`canvas.${side} ${problem}: ${JSON.stringify(setting[side])}`);
   }
-  let result = byProfile.get(profile);
+  if (profile === "mkdocs-material") throw new CanvasProfileError(ctx.file);
+  return { profile, canvas: resolveCanvas(setting) };
+};
+
+const scored = new WeakMap<Diagram, Map<string, Promise<ContrastResult>>>();
+
+// Scored once per diagram, profile and canvas. A sequence diagram is scored by
+// its theme variables, which Mermaid resolves asynchronously.
+export const contrastOf = (diagram: Diagram, settings: ContrastSettings): Promise<ContrastResult> => {
+  const { profile, canvas } = settings;
+  const key = `${profile}\u0000${canvas.light}\u0000${canvas.dark}`;
+  let bySettings = scored.get(diagram);
+  if (!bySettings) {
+    bySettings = new Map();
+    scored.set(diagram, bySettings);
+  }
+  let result = bySettings.get(key);
   if (!result) {
-    result = scoreDiagram(diagram.source, diagram.directives, profile, diagram.keyword);
-    byProfile.set(profile, result);
+    result = scoreDiagram(diagram.source, diagram.directives, profile, diagram.keyword, canvas);
+    bySettings.set(key, result);
   }
   return result;
 };

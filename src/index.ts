@@ -8,6 +8,7 @@ export { type Collected, collectFiles } from "./files.ts";
 export { type FixReport, fixSource, fixSourceReport } from "./fix/engine.ts";
 export { buildDocModel, DIAGRAM_EXTS, type Diagram, type DocModel, documentKind } from "./model.ts";
 export type { ContrastAssessment, StyleDirective, ValueSpan } from "./parse/color.ts";
+export { type Canvas, type CanvasSetting, GITHUB_CANVAS } from "./parse/contrast.ts";
 export { PRESETS, type Preset, type ThresholdConfig, thresholdsFrom } from "./parse/metrics.ts";
 export { type DiagramStats, detectKeyword, extractStats } from "./parse/stats.ts";
 export type { Plugin, PluginEdit, PluginFinding, PluginMeta, PluginRule } from "./plugins/contract.ts";

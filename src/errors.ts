@@ -130,6 +130,21 @@ export class RuleOptionError extends UsageError {
   }
 }
 
+// A canvas was set for a file scored under mkdocs-material, whose page is
+// Material's own, so the canvas would change nothing. Ignoring it would report
+// a pass the caller did not ask for, so the run stops instead.
+export class CanvasProfileError extends UsageError {
+  readonly file: string;
+
+  constructor(file: string) {
+    super(
+      `${file}: a canvas applies under the github profile only, and this file is scored under mkdocs-material, whose page is Material's own; drop the canvas for it, or pass --profile github`,
+      "canvas-profile",
+    );
+    this.file = file;
+  }
+}
+
 // --fix would write through a symbolic link whose target sits outside the
 // project root, so the run stops before any file is written.
 export class FixOutsideRootError extends UsageError {

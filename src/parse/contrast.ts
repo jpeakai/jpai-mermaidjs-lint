@@ -8,7 +8,9 @@
 // color: is edge label text, scored on Mermaid's own label box under github.
 //
 // Profiles, by who controls the label text:
-//   github           the author does, so the declared pairs are scored as written
+//   github           the author does, so the declared pairs are scored as written,
+//                    and anything page-backed is scored on GitHub's canvas or
+//                    on the canvas the caller sets for its own host
 //   mkdocs-material  the host theme forces the text and ignores color:, so each
 //                    fill is composited over both theme backgrounds and the
 //                    host text is scored in light and dark
@@ -31,12 +33,38 @@ const MKDOCS_MATERIAL = {
   dark: { bg: "#1e2129", text: "hsl(225 18% 86% / 0.82)" },
 } as const;
 
-// GitHub's page canvas, which a translucent fill composites against. The dark
-// value is measured from a rendered diagram: the Mermaid container paints no
-// surface of its own, so the canvas is the true backdrop.
-const GITHUB = { light: { bg: "#ffffff" }, dark: { bg: "#0d1117" } } as const;
+// The page canvas in each theme: the colour behind everything the diagram does
+// not box. A translucent fill composites against it, and page-backed text, such
+// as an edge label's box or a sequence message, is scored on it.
+export type Canvas = Readonly<Record<Theme, string>>;
 
-const THEMES: Theme[] = ["light", "dark"];
+// A canvas as a caller sets it: either side, or both. A side left out keeps
+// GitHub's.
+export type CanvasSetting = Readonly<Partial<Record<Theme, string>>>;
+
+// GitHub's page canvas, the default under the github profile. The dark value is
+// measured from a rendered diagram: the Mermaid container paints no surface of
+// its own, so the canvas is the true backdrop. A host that draws its own page,
+// such as a documentation viewer with its own theme, sets its own canvas.
+export const GITHUB_CANVAS: Canvas = { light: "#ffffff", dark: "#0d1117" };
+
+export const THEMES: readonly Theme[] = ["light", "dark"];
+
+// Why a canvas colour cannot be used, or null when it can. A canvas is a page,
+// so it must be an opaque colour: nothing shows through it to composite onto.
+export const canvasColourProblem = (value: unknown): string | null => {
+  if (typeof value !== "string") return "is not a colour string";
+  let alpha: number;
+  try {
+    alpha = alphaOf(value);
+  } catch {
+    return "is not a CSS colour";
+  }
+  return alpha < 1 ? "is translucent, and a page canvas must be opaque" : null;
+};
+
+// The canvas a setting resolves to, with GitHub's for any side it leaves out.
+export const resolveCanvas = (setting: CanvasSetting | undefined): Canvas => ({ ...GITHUB_CANVAS, ...setting });
 
 // The box an edge label is drawn on, read off Mermaid 11's theme sources. A
 // linkStyle color: becomes an inline `color: ... !important` on the label's
@@ -47,7 +75,7 @@ const THEMES: Theme[] = ["light", "dark"];
 // and lighten(#181818, 25) = #585858 in dark, opaque. GitHub draws the default
 // theme in light mode and the dark theme in dark mode, the same assumption the
 // erDiagram rows make, so the stack is composited over the matching canvas:
-// #e8e8e8 in light and #585858 in dark. No one colour clears 4.5:1 on both, so
+// #e8e8e8 in light and #585858 in dark on GitHub's. No one colour clears 4.5:1 on both, so
 // a fixed edge label colour always fails one theme. Under mkdocs-material the
 // host sets `.edgeLabel p { color: var(--md-mermaid-edge-color) }` on the p
 // itself, which beats the colour the p would inherit, so color: is ignored
@@ -57,9 +85,9 @@ const MERMAID_EDGE_LABEL = {
   dark: { box: "#585858", backing: "rgba(88,88,88,0.5)" },
 } as const;
 
-export const edgeLabelBackground = (theme: Theme): string => {
+export const edgeLabelBackground = (theme: Theme, canvas: Canvas = GITHUB_CANVAS): string => {
   const { box, backing } = MERMAID_EDGE_LABEL[theme];
-  return compositeOver(box, compositeOver(box, compositeOver(backing, GITHUB[theme].bg)));
+  return compositeOver(box, compositeOver(box, compositeOver(backing, canvas[theme])));
 };
 
 // Mermaid's own erDiagram row surfaces under its default and dark themes. A
@@ -128,11 +156,16 @@ const message = (err: unknown): string => (err instanceof Error ? err.message : 
 
 // A linkStyle color: is edge label text, scored on the label box in both themes.
 // A linkStyle without one styles only the line, which has no label pair.
-const scoreEdgeLabel = (d: StyleDirective, pairs: ContrastPair[], skipped: SkippedDirective[]): void => {
+const scoreEdgeLabel = (
+  d: StyleDirective,
+  canvas: Canvas,
+  pairs: ContrastPair[],
+  skipped: SkippedDirective[],
+): void => {
   const { color } = d.properties;
   if (!color) return;
   try {
-    pairs.push(...THEMES.map((t) => scoreHostPair("text", d, t, color, edgeLabelBackground(t))));
+    pairs.push(...THEMES.map((t) => scoreHostPair("text", d, t, color, edgeLabelBackground(t, canvas))));
   } catch (err) {
     skipped.push({
       selector: d.selector,
@@ -143,11 +176,11 @@ const scoreEdgeLabel = (d: StyleDirective, pairs: ContrastPair[], skipped: Skipp
   }
 };
 
-export const scoreGithub = (directives: StyleDirective[]): ContrastResult => {
+export const scoreGithub = (directives: StyleDirective[], canvas: Canvas = GITHUB_CANVAS): ContrastResult => {
   const pairs: ContrastPair[] = [];
   const skipped: SkippedDirective[] = [];
   for (const d of directives) {
-    if (d.kind === "linkStyle") scoreEdgeLabel(d, pairs, skipped);
+    if (d.kind === "linkStyle") scoreEdgeLabel(d, canvas, pairs, skipped);
     if (d.kind !== "classDef" && d.kind !== "style") continue;
     const { fill, color, stroke } = d.properties;
     const note = (reason: string, blocking?: boolean): void => {
@@ -170,10 +203,10 @@ export const scoreGithub = (directives: StyleDirective[]): ContrastResult => {
       note("fill is fully transparent, so there is no box to anchor contrast");
       continue;
     }
-    // A translucent fill is scored on both GitHub canvases and the worse result
-    // gates. An opaque fill resolves the same on both and keeps one pair.
+    // A translucent fill is scored on both canvases and the worse result gates.
+    // An opaque fill resolves the same on both and keeps one pair.
     const boxes: Array<[string, Theme | undefined]> =
-      alpha < 1 ? THEMES.map((t): [string, Theme] => [compositeOver(fill, GITHUB[t].bg), t]) : [[fill, undefined]];
+      alpha < 1 ? THEMES.map((t): [string, Theme] => [compositeOver(fill, canvas[t]), t]) : [[fill, undefined]];
     if (!color) {
       note(
         "no color: declared beside fill:, and the github profile requires one " +
@@ -316,13 +349,17 @@ export const scoreEr = (directives: StyleDirective[]): ContrastResult => {
   return { pairs, skipped };
 };
 
+// The canvas applies under github only. Material draws its own page, so the
+// rules refuse a canvas under mkdocs-material before scoring (see shared.ts).
+// An erDiagram's rows are Mermaid's own opaque surfaces, so no canvas shows.
 export const scoreForProfile = (
   directives: StyleDirective[],
   profile: Profile,
   keyword: string | null,
+  canvas: Canvas = GITHUB_CANVAS,
 ): ContrastResult => {
   if (profile === "mkdocs-material") return scoreMkdocs(directives);
-  return keyword === "erDiagram" ? scoreEr(directives) : scoreGithub(directives);
+  return keyword === "erDiagram" ? scoreEr(directives) : scoreGithub(directives, canvas);
 };
 
 // ─── Sequence diagrams ───────────────────────────────────────────────────────
@@ -423,7 +460,11 @@ const themeVariable = (selector: string, line: number): ContrastSource => ({
   line,
 });
 
-export const scoreSequence = async (source: string, profile: Profile): Promise<ContrastResult> => {
+export const scoreSequence = async (
+  source: string,
+  profile: Profile,
+  canvas: Canvas = GITHUB_CANVAS,
+): Promise<ContrastResult> => {
   const pairs: ContrastPair[] = [];
   const skipped: SkippedDirective[] = [];
   const lines = source.split("\n");
@@ -472,7 +513,7 @@ export const scoreSequence = async (source: string, profile: Profile): Promise<C
   }
 
   for (const t of THEMES) {
-    const page = (host ? MKDOCS_MATERIAL : GITHUB)[t].bg;
+    const page = host ? MKDOCS_MATERIAL[t].bg : canvas[t];
     const vars = variables[t];
     const color = (key: string): string => {
       const value = vars[key];
@@ -542,10 +583,11 @@ export const scoreDiagram = (
   directives: StyleDirective[],
   profile: Profile,
   keyword: string | null,
+  canvas: Canvas = GITHUB_CANVAS,
 ): Promise<ContrastResult> =>
   keyword === "sequenceDiagram"
-    ? scoreSequence(source, profile)
-    : Promise.resolve(scoreForProfile(directives, profile, keyword));
+    ? scoreSequence(source, profile, canvas)
+    : Promise.resolve(scoreForProfile(directives, profile, keyword, canvas));
 
 // An ancestor mkdocs.yml or mkdocs.yaml, searched up to 20 levels, means the
 // diagram is read through Material.

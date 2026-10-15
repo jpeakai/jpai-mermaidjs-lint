@@ -47,7 +47,7 @@ const importModule = async (source: PluginSource, runtime?: RuntimeInfo): Promis
   }
 };
 
-const OPTION_TYPES = new Set<OptionType>(["number", "string", "boolean", "string[]"]);
+const OPTION_TYPES = new Set<OptionType>(["number", "string", "boolean", "string[]", "canvas"]);
 
 // Option names every rule shares with the built-ins. See checkRule.
 const RESERVED_OPTIONS = ["preset", "profile"] as const;
@@ -81,7 +81,10 @@ const checkRule = (spec: string, key: string, raw: unknown, own: ReadonlySet<str
   if (options !== undefined) {
     const valid = isRecord(options) && Object.values(options).every((t) => OPTION_TYPES.has(t as OptionType));
     if (!valid) {
-      throw new PluginContractError(spec, `${where} options must map names to number, string, boolean or string[]`);
+      throw new PluginContractError(
+        spec,
+        `${where} options must map names to number, string, boolean, string[] or canvas`,
+      );
     }
     // preset and profile keep their built-in meaning for every rule: the
     // config checks the value against the built-in names, and --preset and

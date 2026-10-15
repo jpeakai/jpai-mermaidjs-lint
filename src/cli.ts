@@ -21,7 +21,7 @@ import { CATEGORIES, type Finding, type Rule } from "./rules/types.ts";
 // The invocation forms, printed alone after a usage error so the error is not
 // buried, and first in --help.
 const SYNOPSIS = `usage: mermaidjs-lint <path...> [--fix] [--json] [--preset NAME] [--profile NAME] [--config FILE]
-                     [--no-plugins | --lenient-plugins]
+                     [--canvas-light COLOUR] [--canvas-dark COLOUR] [--no-plugins | --lenient-plugins]
        mermaidjs-lint --list-rules
        mermaidjs-lint --validate-plugins [--json] [--config FILE]
        mermaidjs-lint --version | -h, --help`;
@@ -52,6 +52,10 @@ Examples of every rule, with fixes: https://jpeakai.github.io/jpai-mermaidjs-lin
   numeric threshold set in the config overrides both.
 --profile NAME sets how contrast is read: ${PROFILES.join(", ")}. It overrides a profile set in the config.
   auto reads mkdocs-material when any parent folder holds mkdocs.yml or mkdocs.yaml, else github.
+--canvas-light COLOUR and --canvas-dark COLOUR set the page a host draws in each theme, under the github
+  profile only. A translucent fill, an edge label box and a sequence diagram's page-backed text are scored
+  on it. Each is an opaque CSS colour such as #faf8f9, and a side not given keeps the config's, or GitHub's
+  (#ffffff light, #0d1117 dark). A file scored under mkdocs-material refuses a canvas with a usage error.
 --json prints one JSON object instead of text lines.
 --fix applies every fix it can prove safe, then reports what remains.
 A fixer that is unsure leaves the text alone and the finding stays.
@@ -75,6 +79,8 @@ interface Parsed {
     help?: boolean;
     preset?: string;
     profile?: string;
+    "canvas-light"?: string;
+    "canvas-dark"?: string;
     config?: string;
     "no-plugins"?: boolean;
     "lenient-plugins"?: boolean;
@@ -94,6 +100,8 @@ const parse = (argv: string[]): Parsed =>
       help: { type: "boolean", short: "h", default: false },
       preset: { type: "string", short: "p" },
       profile: { type: "string" },
+      "canvas-light": { type: "string" },
+      "canvas-dark": { type: "string" },
       config: { type: "string" },
       "no-plugins": { type: "boolean", default: false },
       "lenient-plugins": { type: "boolean", default: false },
@@ -221,7 +229,16 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
   }
   const listing = values["list-rules"];
   const validating = values["validate-plugins"];
-  checkRunFlags({ preset: values.preset, profile: values.profile }, "--");
+  const canvas = {
+    ...(values["canvas-light"] !== undefined && { light: values["canvas-light"] }),
+    ...(values["canvas-dark"] !== undefined && { dark: values["canvas-dark"] }),
+  };
+  const flags: RunFlags = {
+    preset: values.preset,
+    profile: values.profile,
+    ...(Object.keys(canvas).length > 0 && { canvas }),
+  };
+  checkRunFlags(flags, "--");
   if (values["no-plugins"] && values["lenient-plugins"]) {
     throw new FlagError("--lenient-plugins", "--no-plugins and --lenient-plugins contradict each other");
   }
@@ -268,7 +285,6 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
   // rule that reads the path sees one form, and the auto profile is found
   // from the file's own folder whatever the process's working directory. The
   // report shows the path relative to cwd.
-  const flags: RunFlags = { preset: values.preset, profile: values.profile };
   const perFile = await Promise.all(
     files.map(async (file) => {
       let src = await readFile(file, "utf8");

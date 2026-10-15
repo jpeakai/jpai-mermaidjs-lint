@@ -10,7 +10,17 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- A host that draws its own page can set the canvas, so page-backed colours are scored on the page a reader sees.
+  `--canvas-light` and `--canvas-dark` set it for a run, and a `canvas` option of `{ light, dark }` sets it on the contrast rules in the config.
+  The library takes it as `RunFlags.canvas`.
+  Translucent fills, edge label boxes and a sequence diagram's page-backed text and lines are scored on it.
+  The default stays GitHub's `#ffffff` and `#0d1117`, so a run that sets no canvas reports what it did before.
+- The canvas applies under the `github` profile only.
+  A file scored under `mkdocs-material` refuses a canvas with the new `error[canvas-profile]` (`CanvasProfileError`), rather than ignoring it.
+- A canvas colour that will not parse, or is translucent, is `error[flag]` from a flag and `error[rule-option]` from the config.
+- A plugin rule may declare an option of the new type `canvas`. It receives the canvas flags as the contrast rules do, and its value is checked the same way.
 
 ## [0.5.0] - 2026-10-16
 

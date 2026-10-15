@@ -27,7 +27,9 @@ const findings = await checkMarkdown(src, "docs/architecture.md", {}, registry);
 |---|---|---|
 | `checkMarkdown` | `(src: string, file: string, flags: RunFlags = {}, registry: Registry = BUILTIN)` | `Promise<Finding[]>`, sorted by line then rule id |
 | `checkModel` | `(doc: DocModel, file: string, flags: RunFlags = {}, registry: Registry = BUILTIN)` | `Promise<Finding[]>` for a model you built |
-| `RunFlags` | `{ preset?: string; profile?: string }` | The run-level settings `--preset` and `--profile` give |
+| `RunFlags` | `{ preset?: string; profile?: string; canvas?: CanvasSetting }` | The run-level settings `--preset`, `--profile`, `--canvas-light` and `--canvas-dark` give |
+| `CanvasSetting` | `{ light?: string; dark?: string }` | The page colour in each theme. A side left out keeps the config's, or GitHub's. |
+| `GITHUB_CANVAS` | `{ light: "#ffffff", dark: "#0d1117" }` | The default canvas, as a `Canvas` with both sides set |
 
 A `file` ending in `.mmd` or `.mermaid` is read as one diagram, and any other name as markdown.
 The `file` also decides the `auto` contrast profile, so pass the real path when the profile matters.
@@ -35,6 +37,16 @@ A relative `file` resolves against `process.cwd()`, not the folder of the source
 So `checkMarkdown(src, "README.md")` looks for a `mkdocs.yml` above the working directory.
 Pass `{ profile: "github" }` or `{ profile: "mkdocs-material" }` as the flags to fix the profile instead.
 A check or a fix rejects an unknown `preset` or `profile` with a `FlagError`, whose `flag` is `preset` or `profile`.
+
+Pass `canvas` when the host draws its own page, as [A host with its own page sets a canvas](../concepts/contrast.md#a-host-with-its-own-page-sets-a-canvas) explains:
+
+```ts
+await checkMarkdown(src, "doc.md", { profile: "github", canvas: { light: "#faf8f9", dark: "#101010" } });
+```
+
+A canvas side that will not parse, or is translucent, is a `FlagError` whose `flag` is `canvas.light` or `canvas.dark`.
+So is a canvas beside `profile: "mkdocs-material"`.
+A file that `auto` or the config scores under `mkdocs-material` rejects a canvas with a `CanvasProfileError`.
 
 ## Fixing
 
@@ -134,6 +146,7 @@ Every class extends `MermaidLintError`, which carries `code` and `message`.
 | `RuleSettingError` | `rule-setting` | `UsageError` | `file`, `rule` |
 | `UnknownRuleError` | `unknown-rule` | `UsageError` | `file`, `rule`, `known` |
 | `RuleOptionError` | `rule-option` | `UsageError` | `file`, `rule`, `option` |
+| `CanvasProfileError` | `canvas-profile` | `UsageError` | `file` |
 | `FixOutsideRootError` | `fix-outside-root` | `UsageError` | `file`, `target` |
 | `PackageJsonError` | `package-json` | `MermaidLintError` | `file` |
 | `FixNotConvergingError` | `fix-not-converging` | `MermaidLintError` | `file`, `rules` |
@@ -154,6 +167,7 @@ Branch on a subclass code from the table, or on `instanceof` the parent class.
 
 The package also exports these types:
 
+- **Canvas:** `Canvas`, `CanvasSetting`.
 - **Run and config:** `RunFlags`, `Config`, `RuleSetting`, `Severity`, `PluginLoading`, `Registry`, `RegistryInput`, `LoadedSource`, `Setup`, `SetupOptions`, `Collected`.
 - **Complexity:** `Preset`, `ThresholdConfig`.
 - **Document:** `DocModel`, `Diagram`, `StyleDirective`, `ValueSpan`, `ContrastAssessment`, `DiagramStats`.

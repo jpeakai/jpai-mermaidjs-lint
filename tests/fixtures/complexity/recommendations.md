@@ -1,74 +1,67 @@
-# Mermaid Complexity — Failures & Recommended Fixes
+# Complexity failures and recommended fixes
 
 <!-- expect: complexity-node-count-acceptable-exceeded complexity-node-count-cognitive-limit complexity-node-count-hard-limit complexity-subgraph-nesting-too-deep complexity-visual-score-acceptable-exceeded complexity-visual-score-critical contrast-directive-unauditable parse-diagram-unparseable -->
 
-Companion to `test_complexity.md`. Each section pairs a **❌ failing diagram**
-(triggering one specific `LintCode`) with the **recommended remediation** and
-a **✅ fixed diagram** that passes under the default `high` preset. Every
-example uses realistic system content so the failure mode is recognizable
-from real projects, not abstract `n1, n2, n3` stand-ins.
-
-Run with:
+This is the companion to `bands.md`.
+Each section pairs a failing diagram with what the linter reports, a recommended remedy, and a passing diagram.
+The examples use realistic system content, so each failure looks like one from a real project.
+Check the file with the default `high-density` preset:
 
 ```bash
-bun run .claude/skills/mermaidjs-diagrams/scripts/mermaid_complexity.ts \
-  .claude/skills/mermaidjs-diagrams/resources/examples/test_complexity_recommend.md
+bunx @jpeakai/mermaidjs-lint tests/fixtures/complexity/recommendations.md
 ```
 
-Only the ❌ fences should produce findings. Each ✅ fence should be silent —
-if the tool flags a ✅ fence, the fix recipe has drifted and this file needs
-updating.
+From a clone of this repo, `bun run src/bin.ts tests/fixtures/complexity/recommendations.md` does the same.
 
-## At-a-glance recipe card
+Every failing diagram reports findings, and every finding fails the run.
+The passing diagrams report nothing, with one deliberate exception.
+The overview in section 8 reports `contrast-directive-unauditable`, because its `compound` class sets `fill:` with no `color:`.
+If any other passing diagram starts to report a finding, the recipe has drifted and this file needs updating.
 
-| Finding | First-line fix |
+## Recipe card
+
+| Rule | First fix to try |
 |---------|----------------|
-| `NodeCountExceedsAcceptable` | Group related nodes into a `subgraph` block, or collapse leaf clusters into one representative node. |
-| `NodeCountExceedsCognitiveLimit` | Split into an **overview** (<=12 nodes) plus **per-subsystem detail** diagrams — see `resources/diagram_organization.md` dual-density pattern. |
-| `NodeCountExceedsHardLimit` | Stop drawing. This is a dump, not a diagram. Redesign: pick a lens, pick a level of abstraction, start from scratch. |
-| `VisualComplexityExceedsAcceptable` | Delete redundant edges. Introduce a mediating node (API gateway, event bus, service mesh). Enable `elk.mergeEdges: true`. |
-| `VisualComplexityExceedsCritical` | Split by **lens** (architecture vs data-flow vs sequence), not just by component. Same nodes, different edge set per diagram. |
-| `SubgraphNestingTooDeep` | Flatten to depth <=2. Replace the innermost subgraph with a separate diagram referenced by link, or compound labels on the parent level. |
-| `ParserFailure` | Fix the syntax error. Cross-reference `test_complexity.md` §1–§2 and §11–§30 for the canonical syntax of each supported diagram kind. |
-| `ParserDegraded` | Warn that the canonical parser fell back to regex and metrics are approximate. Same fixes as `ParserFailure`; rewrite in a canonical form the parser handles. |
+| `complexity-node-count-acceptable-exceeded` | Group related nodes into a `subgraph`, or collapse a cluster of leaves into one node. |
+| `complexity-node-count-cognitive-limit` | Split into an overview of about 12 nodes plus one detail diagram per subsystem. |
+| `complexity-node-count-hard-limit` | Stop drawing. This is a dump, not a diagram. Pick a lens and a level of abstraction, then start again. |
+| `complexity-visual-score-acceptable-exceeded` | Delete redundant edges. Introduce a mediating node, such as an API gateway, event bus or service mesh. |
+| `complexity-visual-score-critical` | Split by lens (architecture, data flow, sequence), not just by component. Keep the nodes, and draw a different edge set per diagram. |
+| `complexity-subgraph-nesting-too-deep` | Flatten to two levels. Move the innermost subgraph to its own diagram, or fold its name into the parent's label. |
+| `parse-diagram-unparseable` | Fix the syntax error. `bands.md` holds a working diagram of each kind to compare against. |
 
-> **Alternative fix pattern** for `NodeCountExceedsCognitiveLimit` and
-> `NodeCountExceedsHardLimit` when you have multiple semi-independent
-> subsystems: **hierarchical decomposition with compound "See Sub-Diagram
-> X" pointers**. See [§8](#8-hierarchical-decomposition--see-sub-diagram-pointers)
-> below.
+The finding's own remediation also names the existing subgraphs to split along, when the diagram has any.
+
+> **Another fix** for the two higher node count rules suits a system with several loosely coupled subsystems.
+> Draw an overview whose nodes each point to one sub-diagram.
+> See [section 8](#8-hierarchical-decomposition-with-sub-diagram-pointers) below.
 
 ## Pick the right diagram kind first
 
-Half of the complexity findings below originate from using a `flowchart` for
-content that *wasn't* actually a flow. Before drawing, ask what the diagram
-is *for*:
+Many complexity findings come from using a `flowchart` for content that is not a flow.
+Before drawing, ask what the diagram is for:
 
 | Intent | Right diagram kind |
 |--------|-------------------|
 | Static component structure, service boundaries, module layout | `flowchart` or `architecture-beta` |
-| Temporal interaction between a small number of actors | `sequenceDiagram` |
-| Data-model entities and their relationships | `erDiagram` |
-| Finite states + transitions | `stateDiagram-v2` |
-| Hierarchical concepts radiating from a root | `mindmap` (with `layout: tidy-tree`) |
+| Interaction over time between a few actors | `sequenceDiagram` |
+| Data model entities and their relationships | `erDiagram` |
+| Finite states and transitions | `stateDiagram-v2` |
+| Concepts branching out from a root | `mindmap` |
 
-Every diagram kind above parses cleanly under the canonical mermaid parser
-in this skill's headless lint pipeline — see `test_complexity.md` §11–§30
-for a working fixture of each. Picking the wrong kind (e.g. drawing an ERD
-as a `flowchart` with 10 edges labelled "fk") produces a *complexity*
-finding, not a *parser* finding — because flowcharts balloon in VCS when
-they're asked to carry relational semantics.
+The linter parses every kind above, and `bands.md` holds a clean example of each.
+Picking the wrong kind still parses, so it shows up as a complexity finding instead.
+A data model drawn as a `flowchart`, with an edge for every foreign key, inflates the score quickly.
 
 ---
 
-## 1. NodeCountExceedsAcceptable — flat microservices catalogue
+## 1. Acceptable node count exceeded: a flat microservices catalogue
 
-### ❌ Negative example
+### Failing example
 
-Every microservice drawn alongside its owned store. 18 services × (service +
-store) = 36 nodes. The services are real; the flat layout is the problem —
-the reader can't tell what's a platform primitive vs. a domain service vs.
-a third-party integration.
+Every microservice is drawn beside the store it owns.
+That is 18 services and 18 stores, so 36 nodes.
+The services are real, but the flat layout hides which are platform pieces, domain services or third party integrations.
 
 ```mermaid
 flowchart LR
@@ -92,28 +85,28 @@ flowchart LR
   sms[sms-service] --> twilio[/Twilio API/]
 ```
 
-### Expected finding
+### What the linter reports
 
 ```text
-test_complexity_recommend.md:N-M: NodeCountExceedsAcceptable 36 nodes > 35 acceptable threshold
+complexity-node-count-acceptable-exceeded 36 nodes > 35 acceptable threshold
 ```
+
+The 18 edges bring the score to 45, under `vcsAcceptable`, so no score rule fires.
 
 ### Recommendation
 
-An 18-pair service→store catalogue is a *catalogue*, not an architecture
-diagram. The reader can't see structure at this density. Two canonical
-fixes:
+A list of 18 services and their stores is a catalogue, not an architecture diagram.
+A reader cannot see structure at this density.
+Two fixes work well:
 
-1. **Group by responsibility domain.** Most services fall into 3–5 business
-   domains (Identity, Commerce, Content, Fulfillment, Communications). Wrap
-   each in a `subgraph`.
-2. **Drop the per-service store when it's implied.** "Every service owns
-   its own DB" is the microservices convention; showing 18 copies of it
-   communicates nothing. Reserve store nodes for data that's *shared*
-   across services, or when a store type (queue vs. cache vs. RDBMS) is
-   itself a design point worth calling out.
+1. **Group by business domain**.
+   Most services fall into three to five domains, such as Identity, Commerce, Content, Fulfillment and Communications.
+   Wrap each domain in a `subgraph`.
+2. **Drop the store when it is implied**.
+   Each service owning its own database is the microservices norm, so 18 copies of it say nothing.
+   Draw a store only when services share it, or when its type is itself a design point.
 
-### ✅ Positive example
+### Passing example
 
 ```mermaid
 flowchart LR
@@ -152,13 +145,12 @@ flowchart LR
 
 ---
 
-## 2. NodeCountExceedsCognitiveLimit — per-source pipeline stages
+## 2. Cognitive limit exceeded: per-source pipeline stages
 
-### ❌ Negative example
+### Failing example
 
-A realistic ELT pipeline that forgot to abstract: every SaaS source gets
-its own landing table, its own normalizer, its own enricher, and its own
-publish destination. 10 sources × 5 stages + 1 orchestrator = 51 nodes.
+An ELT pipeline that forgot to abstract gives every SaaS source its own landing table, normaliser, enricher and publish target.
+Ten sources in five stages plus one orchestrator make 51 nodes.
 
 ```mermaid
 flowchart LR
@@ -210,36 +202,30 @@ flowchart LR
   airflow[Airflow DAG]
 ```
 
-### Expected findings
+### What the linter reports
 
 ```text
-test_complexity_recommend.md:N-M: NodeCountExceedsCognitiveLimit 51 nodes > 50 (Huang 2020 cognitive limit)
-test_complexity_recommend.md:N-M: VisualComplexityExceedsAcceptable VCS 76.0 > 60 acceptable threshold
+complexity-node-count-cognitive-limit 51 nodes > 50 (Huang 2020 cognitive limit)
+complexity-visual-score-acceptable-exceeded VCS 71.0 > 60 acceptable threshold
 ```
 
-Two codes co-fire: VCS codes do **not** waterfall under node-count codes
-because they measure different dimensions of cognitive load. A 51-node
-pipeline with 50 edges fails both the node cap and the edge-weight cap.
+Two rules fire because node count and score are separate measures, each with its own ladder.
+The 51 nodes and 40 edges cross the node limit and the score threshold at once.
 
 ### Recommendation
 
-Huang et al. (2020) identified **50 nodes as the cognitive load threshold**
-for comprehension of a node-link diagram. Past that, readers stop tracing
-paths and start pattern-matching. The fix for pipeline diagrams specifically
-is almost always the same: **collapse the fan-out**. If stage N does the
-same thing to every source, draw stage N as one box — don't replicate it
-per source.
+Huang and colleagues (2020) found that a node-link diagram gets hard to read at around 50 nodes.
+Past that point, readers stop tracing paths and start matching patterns.
+For pipeline diagrams the fix is nearly always the same: collapse the fan-out.
+If a stage does the same thing to every source, draw that stage as one box.
 
-Apply the dual-density pattern from
-`resources/diagram_organization.md`:
+Use two levels of detail:
 
-1. Keep this 51-node pipeline as a `## Data Pipeline — Detail` section
-   wrapped in a `<details>` collapsible for engineers doing a deep dive.
-2. Author a new **overview** (<=12 nodes) for the README that collapses
-   each per-source stage into one generalized stage. Place it *above* the
-   `<details>` block.
+1. Keep the 51-node pipeline in a detail section, inside a collapsed `<details>` block for engineers who need it.
+2. Write a new overview of about 12 nodes that collapses each per-source stage into one stage.
+   Place it above the `<details>` block.
 
-### ✅ Positive example
+### Passing example
 
 ```mermaid
 flowchart LR
@@ -255,13 +241,12 @@ flowchart LR
 
 ---
 
-## 3. NodeCountExceedsHardLimit — full AWS footprint dump
+## 3. Hard limit exceeded: a full AWS footprint dump
 
-### ❌ Negative example
+### Failing example
 
-An inventory-style dump of a mid-sized team's prod AWS account. Three tiers
-× three availability zones × realistic resource mix = 101 nodes. Mermaid
-will render it but the image is illegible at any screen size.
+An inventory of a mid-sized team's production AWS account, across tiers and availability zones, makes 101 nodes.
+Mermaid renders it, but the image cannot be read at any screen size.
 
 ```mermaid
 flowchart TD
@@ -292,36 +277,33 @@ flowchart TD
   s3_assets[(s3-assets)] & s3_backup[(s3-backup)] & s3_logs[(s3-logs)] & s3_data_lake[(s3-data-lake)]
 ```
 
-### Expected findings
+### What the linter reports
 
 ```text
-test_complexity_recommend.md:N-M: NodeCountExceedsHardLimit 101 nodes > 100 hard limit
-test_complexity_recommend.md:N-M: VisualComplexityExceedsCritical VCS ~105 > 100 critical threshold
+complexity-node-count-hard-limit 101 nodes > 100 hard limit
+complexity-visual-score-critical VCS 105.5 > 100 critical threshold
 ```
 
 ### Recommendation
 
-Beyond the hard limit, there is **no fix that preserves the diagram**. This
-is a signal that the *scope* is wrong: you've attempted to show an entire
-account's resource inventory at a single level of abstraction. That isn't
-architecture — it's `aws-cli describe-everything`.
+Past the hard limit, no fix keeps the diagram.
+The scope is wrong: it shows a whole account's resources at one level of abstraction.
+That is an inventory, not architecture.
 
-1. **Pick a lens.** Is this about request flow? Deployment topology? Cost
-   attribution? Blast radius? The lens narrows what to draw.
-2. **Pick a level.** Overview (<=12 nodes representing actors / tiers /
-   systems) or single-subsystem detail (<=35 nodes inside one boundary).
-   Don't mix.
-3. **Start over from an empty canvas** at the chosen lens × level. Do not
-   try to trim a 101-node inventory to 35 — you'll preserve the wrong
-   things.
+1. **Pick a lens**.
+   Is it about request flow, deployment topology, cost or blast radius?
+   The lens narrows what to draw.
+2. **Pick a level**.
+   Draw either an overview of about 12 actors, tiers or systems, or the detail of one subsystem in at most 35 nodes.
+   Do not mix the two.
+3. **Start again from an empty canvas** at the chosen lens and level.
+   Trimming a 101-node inventory to 35 tends to keep the wrong things.
 
-For the inventory itself, the right tool is a table or a resource-tagging
-report, not a diagram.
+For the inventory itself, use a table or a resource tagging report, not a diagram.
 
-### ✅ Positive example
+### Passing example
 
-The deployment lens at overview level — what actually *flows* through the
-stack, ignoring individual instances:
+The deployment lens at overview level shows what flows through the stack, and leaves out single instances:
 
 ```mermaid
 flowchart LR
@@ -337,13 +319,13 @@ flowchart LR
 
 ---
 
-## 4. VisualComplexityExceedsAcceptable — no-gateway microservice mesh
+## 4. Acceptable score exceeded: a microservice mesh with no gateway
 
-### ❌ Negative example
+### Failing example
 
-15 real microservices, each calling every other directly — the "polyglot
-microservices without a service mesh" anti-pattern. ~105 edges. Nodes stay
-under the acceptable cap, but edge density makes the diagram unreadable.
+Fifteen microservices each call every other one directly, which is the classic mesh without a service mesh.
+That is 105 edges.
+The 15 nodes stay under every node threshold, but the edges make the diagram unreadable.
 
 ```mermaid
 flowchart LR
@@ -363,32 +345,28 @@ flowchart LR
   catalog --> notifications
 ```
 
-### Expected finding
+### What the linter reports
 
 ```text
-test_complexity_recommend.md:N-M: VisualComplexityExceedsAcceptable VCS ~67.5 > 60 acceptable threshold
+complexity-visual-score-acceptable-exceeded VCS 67.5 > 60 acceptable threshold
 ```
 
 ### Recommendation
 
-A diagram where every service touches every other service is an adjacency
-matrix with arrows — the wrong tool for the shape. The fix mirrors the
-real architectural fix:
+When every service touches every other one, the diagram is an adjacency matrix drawn with arrows.
+The diagram fix mirrors the architecture fix:
 
-1. **Introduce a mediating node.** Reality: services shouldn't call each
-   other directly either. Drawing an **API gateway** or **service mesh**
-   (istio / linkerd / consul-connect) turns an N² mesh into two N-shaped
-   fans — same semantics, 1/7th the visual complexity.
-2. **Enable `elk.mergeEdges: true`.** If true peer-to-peer is the actual
-   topology, ELK will at least bundle parallel edges into single strokes.
-   See `resources/layout_algorithms.md`.
-3. **Replace with an event bus.** If the interactions are async, make that
-   explicit: services publish to / subscribe from an event stream rather
-   than call each other.
+1. **Introduce a mediating node**.
+   Services should not call each other directly either.
+   An API gateway or a service mesh such as Istio, Linkerd or Consul turns the full mesh into two fans.
+2. **Bundle parallel edges**.
+   If direct peer calls really are the topology, the ELK layout's `mergeEdges` option draws parallel edges as one stroke.
+3. **Use an event bus**.
+   If the calls are asynchronous, show services publishing to and subscribing from a stream instead.
 
-### ✅ Positive example
+### Passing example
 
-Introduce a mesh. Same 15 services, radically simpler diagram:
+The same 15 services behind a gateway and a mesh make 18 nodes and 17 edges:
 
 ```mermaid
 ---
@@ -406,13 +384,13 @@ flowchart LR
 
 ---
 
-## 5. VisualComplexityExceedsCritical — full-mesh monolith-in-progress
+## 5. Critical score exceeded: a full-mesh monolith in progress
 
-### ❌ Negative example
+### Failing example
 
-20 services, fully mutually coupled — the "monolith-being-broken-apart"
-state where every extraction still depends on every other. ~190 edges.
-VCS soars past the critical threshold.
+Twenty services are all coupled to each other.
+This is a monolith being broken apart, where every extracted service still depends on every other one.
+The 190 edges push the score past the critical threshold, though the 20 nodes are fine.
 
 ```mermaid
 flowchart LR
@@ -437,30 +415,27 @@ flowchart LR
   payments --> tax
 ```
 
-### Expected finding
+### What the linter reports
 
 ```text
-test_complexity_recommend.md:N-M: VisualComplexityExceedsCritical VCS ~115 > 100 critical threshold
+complexity-visual-score-critical VCS 115.0 > 100 critical threshold
 ```
 
 ### Recommendation
 
-"Critical" means a reader would bail before finishing. The answer is
-**split by lens**, not by component count. The same 20 services give you:
+A critical score means a reader would give up before finishing.
+Split by lens, not by component count.
+The same 20 services support three lenses:
 
-- **Architecture** lens: what the components *are*, hierarchically.
-  Minimal edges (parent-child only).
-- **Sequence** lens: how a specific interaction (e.g. checkout) traces
-  through a subset of them, temporally.
-- **Data flow** lens: how a specific entity (e.g. an order) moves between
-  stores.
+- **Architecture:** what the components are, grouped, with parent and child edges only.
+- **Sequence:** how one interaction, such as checkout, passes through some of them over time.
+- **Data flow:** how one entity, such as an order, moves between stores.
 
-Readers pick the lens that answers their question; no single diagram tries
-to show all three.
+Readers pick the lens that answers their question, and no single diagram tries to show all three.
 
-### ✅ Positive example — architecture lens
+### Passing example: architecture lens
 
-Six domains, 20 services hidden inside them. Tells the structural story:
+Six domains hold the 20 services and tell the structural story:
 
 ```mermaid
 flowchart LR
@@ -501,11 +476,10 @@ flowchart LR
   Platform -.-> Identity & Commerce & Content & Fulfillment
 ```
 
-### ✅ Positive example — sequence lens (companion diagram)
+### Passing example: sequence lens
 
-For the same 20-service system, the checkout interaction as a sequence
-diagram. One specific workflow, temporal, reads top-to-bottom — far
-clearer than trying to show all interactions on a single flowchart:
+For the same system, the checkout interaction as a sequence diagram.
+One workflow, read from top to bottom, is far clearer than every interaction on one flowchart:
 
 ```mermaid
 sequenceDiagram
@@ -536,14 +510,13 @@ sequenceDiagram
 
 ---
 
-## 6. SubgraphNestingTooDeep — AWS org / account / region nesting
+## 6. Subgraphs nested too deep: AWS organisation, account and region
 
-### ❌ Negative example
+### Failing example
 
-A realistic multi-account cloud topology drawn with 3 levels of nesting:
-AWS organization → account → region. Past 2 levels, Mermaid pads inner
-boundaries until the diagram is mostly whitespace and readers lose track
-of which container they're in.
+A multi-account cloud topology nests three levels: organisation, then account, then region.
+Past two levels, inner boundaries gain padding until the diagram is mostly white space.
+Readers lose track of which container they are in.
 
 ```mermaid
 flowchart TB
@@ -561,26 +534,24 @@ flowchart TB
   end
 ```
 
-### Expected finding
+### What the linter reports
 
 ```text
-test_complexity_recommend.md:N-M: SubgraphNestingTooDeep subgraph nesting depth 3 (≥3) hinders readability
+complexity-subgraph-nesting-too-deep subgraph nesting depth 3 (at least 3) hinders readability
 ```
 
 ### Recommendation
 
-Past 2 levels of nesting, both dagre and elk over-pad inner boundaries and
-the render becomes whitespace-heavy. Two fixes:
+Two fixes work well:
 
-1. **Promote the inner label onto the middle level.** `prod / us-east-1`
-   as a single label replaces a nested region subgraph with a labelled
-   node. The hierarchy is still communicated, just without the extra box.
-2. **Separate diagrams per leaf.** For genuinely important per-region
-   detail (e.g. when regions diverge architecturally), make each region
-   its own diagram, linked from a parent overview that shows just
-   Organization → Account.
+1. **Fold the inner level into the middle label**.
+   A label such as `prod / us-east-1` replaces a nested region subgraph.
+   The hierarchy still reads, without the extra box.
+2. **Give each leaf its own diagram**.
+   When regions differ in architecture, draw each region separately.
+   Link them from a parent overview that shows only the organisation and its accounts.
 
-### ✅ Positive example — compound labels, depth 2
+### Passing example: compound labels, two levels deep
 
 ```mermaid
 flowchart TB
@@ -598,12 +569,11 @@ flowchart TB
 
 ---
 
-## 7. ParserFailure — genuinely unparseable fence
+## 7. Unparseable diagram: an unknown keyword
 
-### ❌ Negative example — unknown diagram keyword
+### Failing example
 
-The canonical `@mermaid-js/parser` doesn't recognise the diagram kind and
-the fence yields 0 nodes, firing `ParserFailure` (error).
+Mermaid does not recognise the diagram keyword, so the parser reads zero nodes.
 
 ```mermaid
 not_a_known_diagram_type
@@ -611,45 +581,32 @@ not_a_known_diagram_type
   beta
 ```
 
-### Expected finding
+### What the linter reports
 
 ```text
-test_complexity_recommend.md:N-M: ParserFailure not_a_known_diagram_type yielded 0 nodes from multi-line source (parser: mermaid-core)
+parse-diagram-unparseable not_a_known_diagram_type yielded 0 nodes from multi-line source (parser: mermaid-core): No diagram type detected matching given configuration for text: not_a_known_diagram_type
 ```
 
-`ParserFailure` short-circuits every other check for the fence — when the
-parser returns 0 nodes, node-count and VCS metrics would be meaningless, so
-the linter suppresses all other codes for that block.
-
-A sibling code, `ParserDegraded` (warning), fires when the canonical
-parser extracted *something* via regex fallback but not a real AST. Treat
-its numbers as approximate.
+The complexity rules skip a diagram that fails to parse.
+Counts from a failed parse mean nothing, so any threshold check against them would mislead.
 
 ### Recommendation
 
-Every mermaid diagram kind the skill supports parses cleanly via canonical
-parsers — see `test_complexity.md` §1–§2 and §11–§30 for working fixtures
-of each (`flowchart`, `architecture-beta`, `classDiagram`, `sequenceDiagram`,
-`stateDiagram-v2`, `erDiagram`, `journey`, `mindmap`, `gantt`, `pie`,
-`timeline`, `xychart-beta`, `sankey-beta`, `quadrantChart`, `block-beta`,
-`C4Context`, `kanban`, `gitGraph`, `packet-beta`, `radar-beta`,
-`treemap-beta`, `requirementDiagram`). If one of these trips
-`ParserFailure` in your diagram but not in the fixture, the difference is
-syntax-level — your fence has an author error, not a tooling limitation.
+Every diagram kind in `bands.md` parses cleanly, from `flowchart` to `requirementDiagram`.
+If your diagram of one of those kinds fails and the fixture does not, the cause is in your syntax, not in the tool.
 
-Common author-error causes:
+Common causes:
 
 | Cause | Fix |
 |-------|-----|
-| Typo in the diagram keyword (`flochart` → `flowchart`) | Spell it right |
-| Unterminated `subgraph` / `end` blocks | Match them up |
-| Grammar-level syntax error (e.g. hyphen in a `requirementDiagram` id like `REQ-001` — grammar allows alphanumerics + `_` only) | Use the canonical syntax — cross-reference with the `test_complexity.md` fixture for the diagram kind |
-| Mermaid version mismatch — fence uses syntax newer than `@mermaid-js/parser` in `scripts/package.json` | Update the package, or revise the fence |
+| A typo in the diagram keyword, such as `flochart` | Spell it correctly |
+| A `subgraph` with no matching `end` | Match them up |
+| A grammar error, such as a hyphen in a `requirementDiagram` id like `REQ-001` | Follow the grammar, using the matching example in `bands.md` |
+| Syntax newer than the mermaid version this tool bundles | Update the tool, or revise the diagram |
 
-### ✅ Positive example — canonical flowchart
+### Passing example: a valid flowchart
 
-The same intent as the unknown-keyword fence, expressed as a valid
-flowchart:
+The same intent as the unknown keyword, written as a valid flowchart:
 
 ```mermaid
 flowchart LR
@@ -658,22 +615,17 @@ flowchart LR
 
 ---
 
-## 8. Hierarchical decomposition — "See Sub-Diagram" pointers
+## 8. Hierarchical decomposition with sub-diagram pointers
 
-An alternative to the dual-density pattern (§2's "overview +
-`<details>`-collapsed detail"). When a system has **multiple
-semi-independent subsystems**, each deserving its own reference diagram,
-the cleaner shape is an **overview full of dotted-border compound nodes**,
-each of which links to its own dedicated sub-diagram section below.
+This is an alternative to the two-level pattern in section 2.
+When a system has several loosely coupled subsystems, each worth its own diagram, use an overview of compound nodes.
+Each compound node has a dotted border and points to its own sub-diagram section below.
+It works like a UML package diagram, drawn in mermaid.
 
-Think UML package diagrams, but Mermaid-native and clickable in rendered
-HTML.
+### Failing example
 
-### ❌ Negative example
-
-Full e-commerce platform drawn as one diagram with every subsystem
-exploded. 54 nodes, modest edge density, but no reader can hold all of
-this in working memory — they'd give up before finishing the trace.
+A whole e-commerce platform is drawn as one diagram with every subsystem expanded.
+It has 51 nodes and 25 edges, more than a reader can hold in mind.
 
 ```mermaid
 flowchart LR
@@ -713,33 +665,30 @@ flowchart LR
   events --> metrics --> dashboards
 ```
 
-### Expected finding
+### What the linter reports
 
 ```text
-test_complexity_recommend.md:N-M: NodeCountExceedsCognitiveLimit 51 nodes > 50 (Huang 2020 cognitive limit)
-test_complexity_recommend.md:N-M: VisualComplexityExceedsAcceptable VCS 63.5 > 60 acceptable threshold
+complexity-node-count-cognitive-limit 51 nodes > 50 (Huang 2020 cognitive limit)
+complexity-visual-score-acceptable-exceeded VCS 63.5 > 60 acceptable threshold
 ```
 
 ### Recommendation
 
-When the system decomposes into **≥4 subsystems, each meaningful on its
-own**, don't collapse them into a `<details>` block together — break each
-out into its own reference diagram and have the parent **point at them**.
+When a system splits into four or more subsystems that each make sense alone, do not hide them together in one `<details>` block.
+Give each its own diagram, and have the overview point at them.
 
-Three Mermaid features make this work:
+Three mermaid features make this work:
 
 | Feature | Purpose | Snippet |
 |---------|---------|---------|
-| `classDef` with `stroke-dasharray` | Dotted-border visual cue that a node represents "something elaborated elsewhere" | `classDef compound stroke-dasharray:5 5,stroke-width:2px,fill:#f5f5f5` |
-| Markdown node labels (Mermaid ≥ 10.7) | In-label italic "_See Sub-Diagram X_" signalling the pointer intent | `commerce["\`**Commerce**<br/>*See Sub-Diagram 2*\`"]` |
-| `click` directive | Makes the compound node a hyperlink in GitHub/GitLab rendering, jumping to the sub-diagram's anchor | `click commerce "#sub-diagram-2-commerce" "Commerce detail"` |
+| `classDef` with `stroke-dasharray` | A dotted border that marks a node as detailed elsewhere | `classDef compound stroke-dasharray:5 5,stroke-width:2px,fill:#f5f5f5` |
+| Markdown string labels | An italic "See Sub-Diagram X" line inside the label | `commerce["\`**Commerce**<br/>*See Sub-Diagram 2*\`"]` |
+| `click` directive | Where the renderer allows it, makes the node a link to the sub-diagram's heading | `click commerce "#sub-diagram-2--commerce" "Commerce detail"` |
 
-Each sub-diagram lives in its own `### Sub-Diagram N — {name}` section and
-has its own complexity budget (<=35 nodes, VCS <=60). Readers navigate
-top-down: see the parent, click the compound node they care about, land on
-a self-contained detail diagram.
+Each sub-diagram sits in its own section and has its own budget of at most 35 nodes and a score of at most 60.
+Readers work top down: they see the overview, follow the node they care about, and land on a self-contained diagram.
 
-### ✅ Overview — compound-node pointers
+### Passing overview: compound node pointers
 
 ```mermaid
 flowchart LR
@@ -781,13 +730,16 @@ flowchart LR
   click fulfillment "#sub-diagram-4--fulfillment" "Fulfillment subsystem detail"
 ```
 
-Nine nodes, well under every budget. Dotted-border compound nodes
-visually distinguish "this box represents a separately-documented
-subsystem" from concrete entities like the gateway or actor nodes. The
-`click` directives turn the rendered diagram into a clickable table of
-contents.
+The overview has nine nodes, well under every threshold.
+Dotted borders set the subsystem nodes apart from concrete nodes such as the gateway and the actors.
+The `click` directives turn the rendered diagram into a table of contents.
 
-### Sub-Diagram 1 — Identity
+This overview reports `contrast-directive-unauditable`.
+The `compound` class sets `fill:` but no `color:`, so the label colour depends on the renderer's theme.
+Under the `github` profile the linter cannot score it, and says so rather than pass it unchecked.
+Adding a `color:` that reads on the fill clears the finding.
+
+### Sub-Diagram 1 / Identity
 
 ```mermaid
 flowchart LR
@@ -802,7 +754,7 @@ flowchart LR
   users --> users_db[(users_auth)]
 ```
 
-### Sub-Diagram 2 — Commerce
+### Sub-Diagram 2 / Commerce
 
 ```mermaid
 flowchart LR
@@ -820,7 +772,7 @@ flowchart LR
   billing --> billing_db[(billing_ledger)]
 ```
 
-### Sub-Diagram 3 — Content
+### Sub-Diagram 3 / Content
 
 ```mermaid
 flowchart LR
@@ -836,7 +788,7 @@ flowchart LR
   catalog --> cms[cms-service]
 ```
 
-### Sub-Diagram 4 — Fulfillment
+### Sub-Diagram 4 / Fulfillment
 
 ```mermaid
 flowchart LR
@@ -851,18 +803,17 @@ flowchart LR
   shipping --> shipping_db[(shipments)]
 ```
 
-### Tradeoffs vs. dual-density
+### Trade-offs against two levels of detail
 
-| Criterion | Dual-density (§2 fix) | Hierarchical decomposition (§8 fix) |
+| Criterion | Two levels (section 2 fix) | Hierarchical decomposition (section 8 fix) |
 |-----------|----------------------|--------------------------------------|
-| When to pick | One diagram has one natural overview ↔ detail axis | Several semi-independent subsystems, each worth its own focused diagram |
-| Maintenance cost | Low — two fences in one section | Higher — N+1 sub-sections, each with its own budget, anchors to keep in sync |
-| Readability | Reader sees the whole detail if they expand | Reader follows clickable breadcrumbs, never sees "all detail at once" |
-| README suitability | Excellent — collapsed detail keeps the page short | Excellent for dedicated `docs/architecture.md`; heavy for README landing page |
-| Complexity analyzer behaviour | Each fence scored independently; both budgeted | Each sub-diagram scored independently; overview stays tiny by design |
-| Breaks when… | The "detail" exceeds 35 nodes even after collapsing | You add a new subsystem and forget to also author its Sub-Diagram section |
+| When to pick | One diagram with one natural overview and detail split | Several loosely coupled subsystems, each worth its own diagram |
+| Upkeep | Low: two diagrams in one section | Higher: one section per subsystem, each with its own budget, and anchors to keep in sync |
+| Reading | The reader sees all the detail on expanding it | The reader follows links and never sees all the detail at once |
+| Fit for a README | Excellent, since the collapsed detail keeps the page short | Better in a dedicated architecture page than on a README landing page |
+| How the linter scores it | Each diagram on its own, both within budget | Each sub-diagram on its own, with a deliberately tiny overview |
+| Breaks when | The detail passes 35 nodes even after collapsing | A new subsystem is added without its own sub-diagram section |
 
-Use dual-density as the default. Reach for hierarchical decomposition
-when the "detail" side of dual-density is itself past 35 nodes or covers
-≥4 clearly-separable subsystems — that's the signal the diagram has
-outgrown the single-section pattern.
+Use two levels of detail by default.
+Reach for hierarchical decomposition when the detail diagram passes 35 nodes, or covers four or more clearly separate subsystems.
+Either signal means the diagram has outgrown a single section.

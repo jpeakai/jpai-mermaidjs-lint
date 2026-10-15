@@ -9,3 +9,4 @@ Each guide reaches one goal in a real project, and assumes you have done [Get st
 | Score diagrams the way a Material theme renders them | [Lint a MkDocs Material site](mkdocs.md) |
 | Add a rule for your own project in one file | [Write a local rule](local-rule.md) |
 | Share rules between projects as an npm package | [Publish a plugin package](plugin-package.md) |
+| Get past a common error or question | [Troubleshooting](troubleshooting.md) |

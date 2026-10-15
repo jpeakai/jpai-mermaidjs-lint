@@ -32,6 +32,7 @@ Discovery reads three places, in this order:
 `node_modules` is never scanned.
 Only code the project chose to depend on can run, which matters because a plugin is code that runs on your machine.
 For a repository you do not trust, `--no-plugins` gives a run with the built-in rules only.
+[SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) states the full trust model, including why `--no-plugins` is not a boundary in CI.
 
 ## Loading checks the contract before anything runs
 
@@ -45,13 +46,9 @@ Each source is imported, and its default export is checked against the plugin co
 
     --8<-- "plugin-loading-detail.md"
 
-The contract check covers:
-
-- The plugin's `apiVersion`, which must equal the version the tool implements. A mismatch fails with both numbers.
-- The namespace, which must be lower-case and must not be `local`.
-- Each rule key, which must start with its category, as `category-short-name`.
-- Each category, which must be built in or declared by the plugin in `meta.categories`.
-- Each rule's `summary`, `check` and optional `fix` and `options`.
+The contract is versioned by `apiVersion`, so a plugin built for another version fails at load with both numbers, not halfway through a run.
+Checking every field up front means a typo in a plugin stops the run with its reason, before any file is read.
+[Plugin API](../reference/plugin-api.md) lists every field the check covers.
 
 ## Namespaces and categories are global
 
@@ -70,6 +67,8 @@ Without that rule, two plugins could produce identical rule ids, and a config li
 | off | `--no-plugins`, or `"plugins": false` | Nothing is loaded, and every discovered plugin is reported as skipped |
 
 Strict is the default because a gate that silently drops a rule would pass files it never checked.
+Outside strict mode, a config setting for a plugin rule that did not load is set aside, and the run says so.
+A setting for a built-in id that does not exist still fails with `error[unknown-rule]`.
 
 ## A broken check is a finding, a broken fixer stops the run
 

@@ -1,85 +1,95 @@
-# Mermaid Complexity — Lint Test Fixtures
+# Complexity bands
 
 <!-- llm: Each oversized scenario is split into smaller diagrams that keep every node and edge, with an overview where the parts connect, and the three-deep nesting is merged to two levels. -->
 
-Each ```mermaid fence below is a named scenario designed to exercise one
-specific `LintCode` produced by `scripts/mermaid_complexity.ts`. Run with the
-**high-density preset** (the default) to see the expected findings:
+This file is the LLM fix for `bands.md`.
+Each section keeps the description of what the linter reports on the original diagram, then shows the fix.
+The fix splits a diagram rather than trim it, so every node and edge survives.
+Every diagram in this file lints clean:
 
 ```bash
-bun run .claude/skills/mermaidjs-diagrams/scripts/mermaid_complexity.ts \
-  .claude/skills/mermaidjs-diagrams/resources/examples/test_complexity.md
+bunx @jpeakai/mermaidjs-lint tests/fixtures/complexity/bands.llm.md
 ```
 
-## Expected lint output
+From a clone of this repo, `bun run src/bin.ts tests/fixtures/complexity/bands.llm.md` does the same, and exits 0.
 
-Under the default (high-density) preset — `node_acceptable=35`,
-`node_complex=50`, `node_hard_limit=100`, `vcs_acceptable=60`,
-`vcs_complex=100`:
+## What the linter reports on the original
 
-| Scenario                            | Expected code                          | Severity |
-|-------------------------------------|----------------------------------------|----------|
-| Clean flowchart                     | *(no finding)*                         | —        |
-| Clean architecture-beta             | *(no finding)*                         | —        |
-| Nodes just over acceptable (36)     | `NodeCountExceedsAcceptable`           | warning  |
-| Nodes at cognitive limit (51)       | `NodeCountExceedsCognitiveLimit`       | error    |
-| Nodes beyond hard limit (120)       | `NodeCountExceedsHardLimit`            | error    |
-| VCS over acceptable (edge-heavy)    | `VisualComplexityExceedsAcceptable`    | warning  |
-| VCS beyond critical (very dense)    | `VisualComplexityExceedsCritical`      | error    |
-| Subgraph nested 3 deep              | `SubgraphNestingTooDeep`               | warning  |
-| JISON diagram with no DOM (block)   | `ParserFailure`                        | error    |
-| Subdivision with named boundaries   | `NodeCountExceedsCognitiveLimit` +     | error    |
-|                                     | boundaries populated                   |          |
+The `high-density` preset sets these thresholds:
 
-Short-circuit rule: when `ParserFailure` fires on a diagram, no other codes
-are emitted for that diagram — the parser couldn't read it, so threshold
-checks against garbage metrics would be misleading.
+| Threshold | Value |
+|---|---|
+| `nodeAcceptable` | 35 |
+| `nodeComplex` | 50 |
+| `nodeHardLimit` | 100 |
+| `vcsAcceptable` | 60 |
+| `vcsComplex` | 100 |
+
+The visual complexity score (VCS) weighs edges, subgraphs and nesting as well as nodes:
+
+```text
+score = (nodes + 0.5 × edges + 3 × subgraphs) × (1 + 0.1 × nesting depth)
+```
+
+| Section | Original diagram | Nodes | Score | Rules reported |
+|---|---|---:|---:|---|
+| 3 | 36 loose nodes | 36 | 36.5 | `complexity-node-count-acceptable-exceeded` |
+| 4 | 51 nodes, no edges | 51 | 51 | `complexity-node-count-cognitive-limit` |
+| 5 | 120 nodes, no edges | 120 | 120 | `complexity-node-count-hard-limit`, `complexity-visual-score-critical` |
+| 6 | 10 nodes, 40 edges | 10 | 30 | none |
+| 7 | Six linked chains | 60 | 100 | `complexity-node-count-cognitive-limit`, `complexity-visual-score-acceptable-exceeded` |
+| 8 | Subgraphs three deep | 2 | 15 | `complexity-subgraph-nesting-too-deep` |
+| 9 | A `block` diagram | 6 | 7.5 | none |
+| 10 | Four named subgraphs | 52 | 98.5 | `complexity-node-count-cognitive-limit`, `complexity-visual-score-acceptable-exceeded` |
+
+Sections 1, 2 and 11 to 30 report nothing.
+
+Each measure is a ladder of bands, and a diagram lands in one band per measure.
+So a diagram gets at most one node count rule and at most one score rule.
+Nesting has its own rule, which fires whatever the counts are.
+
+A diagram the parser cannot read is reported as `parse-diagram-unparseable` instead.
+The complexity rules skip it, because counts from a failed parse mean nothing.
 
 ---
 
-## Canonical diagram-kind support matrix
+## Diagram kinds in the clean sections
 
-Every Mermaid diagram kind the canonical parser supports has a clean fixture
-in the file:
+Sections 1, 2 and 11 to 30 each hold a small diagram of one kind.
+The linter must report nothing for them.
+If one starts to report a finding, either mermaid's parser changed or the adapter that reads its result drifted.
 
-- **§1–§2** and **§11–§30**: clean, below-threshold — the linter MUST emit
-  **no findings** for these fences. If any of them start flagging, either
-  the upstream parser regressed or our extraction adapter drifted.
-- **§3–§10**: threshold-violation scenarios — each is designed to trigger
-  one specific `LintCode`. Expected findings are enumerated in the "Expected
-  lint output" table above.
-
-| Fence | Diagram kind | Parser path | Extraction adapter |
+| Section | Diagram kind | Parser | Adapter in `src/parse/stats.ts` |
 |-------|--------------|-------------|--------------------|
-| §1    | `flowchart`          | mermaid-core | `adaptFlowchart` |
-| §2    | `architecture-beta`  | langium      | `extractLangiumStats` |
-| §11   | `classDiagram`       | mermaid-core | `adaptClass` |
-| §12   | `sequenceDiagram`    | mermaid-core | `adaptSequence` |
-| §13   | `stateDiagram-v2`    | mermaid-core | `adaptState` |
-| §14   | `erDiagram`          | mermaid-core | `adaptEr` |
-| §15   | `journey`            | mermaid-core | `adaptJourney` |
-| §16   | `mindmap`            | mermaid-core | `adaptMindmap` |
-| §17   | `gantt`              | mermaid-core | `adaptGantt` |
-| §18   | `pie`                | langium      | `extractLangiumStats` |
-| §19   | `timeline`           | mermaid-core | `adaptTimeline` |
-| §20   | `xychart-beta`       | mermaid-core | `adaptXychart` |
-| §21   | `sankey-beta`        | mermaid-core | `adaptSankey` |
-| §22   | `quadrantChart`      | mermaid-core | `adaptQuadrantChart` |
-| §23   | `block-beta`         | mermaid-core | `adaptBlock` |
-| §24   | `C4Context`          | mermaid-core | `adaptC4` |
-| §25   | `kanban`             | mermaid-core | `adaptKanban` |
-| §26   | `gitGraph`           | langium      | `extractLangiumStats` |
-| §27   | `packet-beta`        | langium      | `extractLangiumStats` |
-| §28   | `radar-beta`         | langium      | `extractLangiumStats` |
-| §29   | `treemap-beta`       | langium      | `extractLangiumStats` |
-| §30   | `requirementDiagram` | mermaid-core | `adaptRequirement` |
+| 1    | `flowchart`          | mermaid-core | `adaptFlowchart` |
+| 2    | `architecture-beta`  | langium      | `extractLangiumStats` |
+| 11   | `classDiagram`       | mermaid-core | `adaptClass` |
+| 12   | `sequenceDiagram`    | mermaid-core | `adaptSequence` |
+| 13   | `stateDiagram-v2`    | mermaid-core | `adaptState` |
+| 14   | `erDiagram`          | mermaid-core | `adaptEr` |
+| 15   | `journey`            | mermaid-core | `adaptJourney` |
+| 16   | `mindmap`            | mermaid-core | `adaptMindmap` |
+| 17   | `gantt`              | mermaid-core | `adaptGantt` |
+| 18   | `pie`                | langium      | `extractLangiumStats` |
+| 19   | `timeline`           | mermaid-core | `adaptTimeline` |
+| 20   | `xychart-beta`       | mermaid-core | `adaptXychart` |
+| 21   | `sankey-beta`        | mermaid-core | `adaptSankey` |
+| 22   | `quadrantChart`      | mermaid-core | `adaptQuadrantChart` |
+| 23   | `block-beta`         | mermaid-core | `adaptBlock` |
+| 24   | `C4Context`          | mermaid-core | `adaptC4` |
+| 25   | `kanban`             | mermaid-core | `adaptKanban` |
+| 26   | `gitGraph`           | langium      | `extractLangiumStats` |
+| 27   | `packet-beta`        | langium      | `extractLangiumStats` |
+| 28   | `radar-beta`         | langium      | `extractLangiumStats` |
+| 29   | `treemap-beta`       | langium      | `extractLangiumStats` |
+| 30   | `requirementDiagram` | mermaid-core | `adaptRequirement` |
 
 ---
 
 ## 1. Clean flowchart (no findings)
 
-A small, readable diagram well under every threshold. The linter should emit
-no findings for this fence.
+A small, readable diagram well under every threshold.
+The linter reports nothing for it.
 
 ```mermaid
 flowchart LR
@@ -90,8 +100,8 @@ flowchart LR
 
 ## 2. Clean architecture-beta (no findings)
 
-Langium-parsed, small. Proves the architecture-beta path is quiet when the
-diagram is within limits.
+The Langium grammar parses this one.
+It is small, so the linter reports nothing for it.
 
 ```mermaid
 architecture-beta
@@ -101,11 +111,11 @@ architecture-beta
   web:R -- L:api
 ```
 
-## 3. NodeCountExceedsAcceptable — 36 nodes, loosely connected
+## 3. Just over the acceptable node count
 
-Just above the `node_acceptable=35` threshold. Expected: one
-`NodeCountExceedsAcceptable` (warning). No VCS finding because edges are
-sparse enough to keep VCS under `vcs_acceptable=60`.
+The diagram has 36 nodes and one edge, one node over `nodeAcceptable`.
+The linter reports `complexity-node-count-acceptable-exceeded` with the message `36 nodes > 35 acceptable threshold`.
+The edges are sparse, so the score of 36.5 stays under `vcsAcceptable` and no score rule fires.
 
 The fix splits the 36 nodes into two diagrams of 18.
 
@@ -152,11 +162,12 @@ flowchart LR
   N36[n36]
 ```
 
-## 4. NodeCountExceedsCognitiveLimit — 51 nodes
+## 4. Just over the cognitive limit
 
-Just above the 50-node Huang 2020 cognitive limit. Expected: one
-`NodeCountExceedsCognitiveLimit` (error). Note the waterfall rule —
-`NodeCountExceedsAcceptable` is NOT also emitted.
+The diagram has 51 nodes and no edges, one node over `nodeComplex`.
+That threshold follows Huang 2020, which found that a network diagram gets hard to read at around 50 nodes.
+The linter reports `complexity-node-count-cognitive-limit` alone.
+It does not also report `complexity-node-count-acceptable-exceeded`, because a node count lands in one band.
 
 The fix splits the 51 nodes into two diagrams of 26 and 25.
 
@@ -219,14 +230,13 @@ flowchart LR
   N51[n51]
 ```
 
-## 5. NodeCountExceedsHardLimit — 120 nodes
+## 5. Over the hard limit
 
-Beyond any comprehensible diagram size. Expected:
-`NodeCountExceedsHardLimit` (error) with remediation "split immediately".
-Also fires `VisualComplexityExceedsCritical` because VCS = 120 > 100.
+The diagram has 120 nodes, beyond any readable size.
+The linter reports `complexity-node-count-hard-limit`, and its remediation starts with "Split immediately".
+With no edges the score is also 120, above `vcsComplex`, so `complexity-visual-score-critical` fires too.
 
-The fix gives the 120 nodes an overview of four blocks, then one diagram of
-30 nodes per block.
+The fix gives the 120 nodes an overview of four blocks, then one diagram of 30 nodes per block.
 
 ```mermaid
 flowchart TD
@@ -372,11 +382,12 @@ flowchart TD
   N120[n120]
 ```
 
-## 6. VisualComplexityExceedsAcceptable — edge-heavy, node-light
+## 6. Many edges on few nodes, still under the score threshold
 
-Node count (10) is fine, but 40 interconnecting edges push VCS past 60.
-Expected: one `VisualComplexityExceedsAcceptable` (warning). No node-count
-finding.
+The diagram has 10 nodes and 40 edges.
+Each edge weighs half a node, so the score is 30, well under `vcsAcceptable`.
+The linter reports nothing.
+The case shows that a small diagram needs far more edges than this to fail on edges alone.
 
 ```mermaid
 flowchart LR
@@ -422,14 +433,14 @@ flowchart LR
   J --> E
 ```
 
-## 7. VisualComplexityExceedsCritical — very dense graph
+## 7. Six linked chains, a score of exactly 100
 
-Many nodes plus many edges. Expected: `VisualComplexityExceedsCritical`
-(error), probably alongside `NodeCountExceedsCognitiveLimit` and
-`NodeCountExceedsHardLimit` depending on size.
+The diagram has 60 nodes and 80 edges, for a score of exactly 100.
+The critical score rule fires only above `vcsComplex`, so the score lands in the acceptable band.
+The linter reports `complexity-node-count-cognitive-limit` and `complexity-visual-score-acceptable-exceeded`.
 
-The fix draws an overview of the six chains, then the spine and each pair of
-linked chains on its own. Nodes shared between diagrams are where they join.
+The fix draws an overview of the six chains, then the spine and each pair of linked chains on its own.
+Nodes shared between diagrams are where they join.
 
 ```mermaid
 flowchart LR
@@ -492,13 +503,13 @@ flowchart LR
   E5 --> F5
 ```
 
-## 8. SubgraphNestingTooDeep — 3 levels deep
+## 8. Subgraphs nested three deep
 
-Structure is small (node count under any threshold) but subgraphs are
-nested 3 deep. Expected: one `SubgraphNestingTooDeep` (warning).
+The diagram has two nodes inside three nested subgraphs.
+Its counts are far under every threshold, but nesting has its own rule.
+The linter reports `complexity-subgraph-nesting-too-deep` alone.
 
-The fix merges the inner level into the middle one, so the nesting is two
-levels deep.
+The fix merges the inner level into the middle one, so the nesting is two levels deep.
 
 ```mermaid
 flowchart TB
@@ -509,12 +520,13 @@ flowchart TB
   end
 ```
 
-## 9. ParserFailure — JISON block diagram without DOM
+## 9. A `block` diagram that parses
 
-`block` is a JISON-parsed diagram type that needs a real DOM to extract
-structure. Headless Bun + happy-dom can't parse it → 0 nodes → ParserFailure.
-Expected: one `ParserFailure` (error) and **no other codes** for this fence
-(short-circuit rule).
+This diagram opens with the `block` keyword rather than `block-beta`.
+The mermaid-core parser reads it through a happy-dom shim, so no browser is needed.
+It finds six blocks and three edges, and the linter reports nothing.
+The case guards that parser path.
+If it broke, the diagram would read as zero nodes and be reported as `parse-diagram-unparseable`.
 
 ```mermaid
 block
@@ -530,15 +542,19 @@ columns 3
   c --> f
 ```
 
-## 10. Subdivision with named boundaries — NodeCountExceedsCognitiveLimit + boundaries[]
+## 10. Four named subgraphs to split along
 
-Large flowchart with 4 named subgraphs. Expected:
-`NodeCountExceedsCognitiveLimit` (error) where `boundaries` contains
-["Ingress", "Web", "App", "Data"] so an LLM receiving the JSON can pick
-split anchors by name, not by guesswork.
+The diagram has 52 nodes in four subgraphs named Ingress, Web, App and Data.
+The linter reports `complexity-node-count-cognitive-limit`, and `complexity-visual-score-acceptable-exceeded` for a score of 98.5.
+Both remediations name the subgraphs to split along:
 
-The fix uses those four boundaries: an overview of how they hand off, then
-one diagram per subgraph.
+```text
+Split into sub-diagrams along existing subgraph boundaries: Ingress, Web, App, Data. Target at most 25 nodes and 40 VCS per sub-diagram.
+```
+
+A human or an LLM reading the finding can split on those names rather than guess.
+
+The fix uses those four boundaries: an overview of how they hand off, then one diagram per subgraph.
 
 ```mermaid
 flowchart LR
@@ -591,7 +607,7 @@ flowchart LR
 
 ## 11. Clean classDiagram (no findings)
 
-`adaptClass` reads `db.classes` (Map) and `db.relations` (Array).
+`adaptClass` reads `db.classes` (a Map) and `db.relations` (an Array).
 
 ```mermaid
 classDiagram
@@ -613,7 +629,7 @@ classDiagram
 
 ## 12. Clean sequenceDiagram (no findings)
 
-`adaptSequence` reads `db.state.records.actors` (Map) and `db.state.records.messages` (Array).
+`adaptSequence` reads `db.state.records.actors` (a Map) and `db.state.records.messages` (an Array).
 
 ```mermaid
 sequenceDiagram
@@ -632,7 +648,7 @@ sequenceDiagram
 
 ## 13. Clean stateDiagram-v2 (no findings)
 
-`adaptState` reads the stateDiagram DB's nodes and links.
+`adaptState` reads the state diagram's nodes and edges.
 
 ```mermaid
 stateDiagram-v2
@@ -647,9 +663,8 @@ stateDiagram-v2
 
 ## 14. Clean erDiagram (no findings)
 
-`adaptEr` reads `db.entities` (Map) and `db.relationships` (Array). ERDs parse
-cleanly under headless Bun + happy-dom — the adapter extracts the entities
-directly from the populated DB.
+`adaptEr` reads `db.entities` (a Map) and `db.relationships` (an Array).
+The mermaid-core parser fills both under the happy-dom shim, so no browser is needed.
 
 ```mermaid
 erDiagram
@@ -706,7 +721,7 @@ gantt
 
 ## 18. Clean pie (no findings)
 
-Langium-parsed.
+The Langium grammar parses this one.
 
 ```mermaid
 pie title Traffic by source
@@ -769,8 +784,8 @@ quadrantChart
 
 ## 23. Clean block-beta (no findings)
 
-`adaptBlock` walks the block tree recursively; synthetic `space`/`composite`
-wrappers are excluded from the user-visible node count.
+`adaptBlock` walks the block tree.
+It leaves the synthetic `space` and `composite` wrappers out of the node count.
 
 ```mermaid
 block-beta
@@ -788,7 +803,7 @@ block-beta
 
 ## 24. Clean C4Context (no findings)
 
-`adaptC4` excludes the synthetic top-level `global` boundary.
+`adaptC4` leaves out the synthetic top-level `global` boundary.
 
 ```mermaid
 C4Context
@@ -816,7 +831,7 @@ kanban
 
 ## 26. Clean gitGraph (no findings)
 
-Langium-parsed.
+The Langium grammar parses this one.
 
 ```mermaid
 gitGraph
@@ -832,7 +847,7 @@ gitGraph
 
 ## 27. Clean packet-beta (no findings)
 
-Langium-parsed.
+The Langium grammar parses this one.
 
 ```mermaid
 packet-beta
@@ -845,7 +860,7 @@ packet-beta
 
 ## 28. Clean radar-beta (no findings)
 
-Langium-parsed.
+The Langium grammar parses this one.
 
 ```mermaid
 radar-beta
@@ -856,7 +871,7 @@ radar-beta
 
 ## 29. Clean treemap-beta (no findings)
 
-Langium-parsed.
+The Langium grammar parses this one.
 
 ```mermaid
 treemap-beta
@@ -870,8 +885,7 @@ treemap-beta
 
 ## 30. Clean requirementDiagram (no findings)
 
-`adaptRequirement` reads `db.requirements` + `db.elements` (both Maps) and
-`db.relations` (Array).
+`adaptRequirement` reads `db.requirements` and `db.elements` (both Maps) and `db.relations` (an Array).
 
 ```mermaid
 requirementDiagram

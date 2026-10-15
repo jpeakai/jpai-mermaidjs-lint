@@ -93,3 +93,32 @@ describe("cli", () => {
     expect(r.stdout).toContain("  parse-fence-unterminated*");
   });
 });
+
+describe("cli additions", () => {
+  test("--version prints the package version", async () => {
+    const root = tempProject({});
+    const r = await runCli(root, ["--version"]);
+    const pkg = JSON.parse(readFileSync(join(import.meta.dir, "..", "package.json"), "utf8")) as { version: string };
+    expect(r.code).toBe(0);
+    expect(r.stdout.trim()).toBe(pkg.version);
+  });
+
+  test("--no-plugins sets aside a config setting for a plugin rule", async () => {
+    const root = tempProject({
+      "mermaidjs-lint.config.json": JSON.stringify({ rules: { "acme/house-left-to-right": "off" } }),
+      "a.md": fence("flowchart LR\n  A --> B"),
+    });
+    const r = await runCli(root, ["a.md", "--no-plugins"]);
+    expect(r.code).toBe(0);
+  });
+
+  test("--no-plugins still fails on an unknown built-in id", async () => {
+    const root = tempProject({
+      "mermaidjs-lint.config.json": JSON.stringify({ rules: { "contrast-no-such-rule": "off" } }),
+      "a.md": fence("flowchart LR\n  A --> B"),
+    });
+    const r = await runCli(root, ["a.md", "--no-plugins"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("unknown-rule");
+  });
+});

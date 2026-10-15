@@ -23,7 +23,7 @@ The rule loads on its own, with the id `local/parse-no-todo`.
 
 ## Run it
 
-Given a diagram with a TODO comment:
+Create `docs/flow.md` holding a diagram with a TODO comment:
 
 ````markdown
 ```mermaid
@@ -39,7 +39,7 @@ bunx mermaidjs-lint docs/
 
 ```text
 mermaidjs-lint: loaded local (1 rule)
-docs/flow.md:3-7 local/parse-no-todo TODO left in a diagram
+docs/flow.md:1-5 local/parse-no-todo TODO left in a diagram
 1 finding(s) in 1 file(s)
 ```
 
@@ -65,5 +65,5 @@ test("reports a TODO in a diagram", async () => {
 
 - **Add a fixer** by returning edits from a `fix` function. Each edit must declare what stays the same, and the engine refuses any edit that breaks it. See [Plugin API](../reference/plugin-api.md#edits).
 - **Use a new category** by exporting `categories` from the file, as `export const categories = { house: "Our house style" }`, and naming the file `house-<name>.mjs`.
-- **Write it in TypeScript** as `.ts` or `.mts`. That needs Bun or Node 22.18 or newer, and anything else fails with a message saying so.
+- **Write it in TypeScript** as `.ts` or `.mts`. The command starts on Node even under `bunx`, so run `bunx --bun mermaidjs-lint docs/` to use Bun, or use Node 22.18 or newer. Anything else fails with `error[plugin-source]`.
 - **Check every rule loads** with `bunx mermaidjs-lint --validate-plugins`.

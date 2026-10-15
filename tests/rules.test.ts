@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { checkMarkdown, RULE } from "../src/index.ts";
+import { checkMarkdown, fixSource, RULE } from "../src/index.ts";
+import { edgeLabelBackground, scoreMkdocs } from "../src/parse/contrast.ts";
 import { chain, fence, rules } from "./helpers.ts";
 
 describe("parse rules", () => {
@@ -153,5 +154,58 @@ describe("contrast rules", () => {
 
   test("inline class applications are not scored", async () => {
     expect(await rules(fence("flowchart LR\n  A[Start]:::x --> B"))).toEqual([]);
+  });
+});
+
+describe("edge label contrast", () => {
+  const withLink = (props: string): string => fence(`flowchart LR\n  A -- label --> B\n  linkStyle 0 ${props}`);
+
+  test("white edge label text fails on the light label box", async () => {
+    const found = await checkMarkdown(withLink("color:#ffffff,stroke:#ffffff"), "doc.md", { profile: "github" });
+    expect(found.map((f) => [f.rule, f.line])).toEqual([[RULE.TEXT, 4]]);
+    expect(found[0]?.message).toBe("linkStyle 0: text 1.23:1 < 4.5 (#ffffff on #e8e8e8, light)");
+    expect(found[0]?.remediation).toContain("drop color:");
+  });
+
+  test("dark edge label text reads in light but fails on the dark label box", async () => {
+    const found = await checkMarkdown(withLink("color:#000000"), "doc.md", { profile: "github" });
+    expect(found.map((f) => f.message)).toEqual(["linkStyle 0: text 2.95:1 < 4.5 (#000000 on #585858, dark)"]);
+  });
+
+  test("the label box is Mermaid's edgeLabelBackground stacked on each GitHub canvas", () => {
+    expect([edgeLabelBackground("light"), edgeLabelBackground("dark")]).toEqual(["#e8e8e8", "#585858"]);
+  });
+
+  test("a linkStyle with no color: has no label pair", async () => {
+    expect(await rules(withLink("stroke:#ff0000,stroke-width:2px"), { profile: "github" })).toEqual([]);
+  });
+
+  test("an unparseable edge label colour is unauditable", async () => {
+    expect(await rules(withLink("color:notacolour"), { profile: "github" })).toEqual([RULE.UNAUDITABLE]);
+  });
+
+  test("mkdocs-material forces edge label text, so color: is not scored", async () => {
+    expect(await rules(withLink("color:#ffffff"), { profile: "mkdocs-material" })).toEqual([]);
+    const { skipped } = scoreMkdocs([
+      { kind: "linkStyle", selector: "0", properties: { color: "#ffffff" }, spans: {}, line: 3 },
+    ]);
+    expect(skipped).toEqual([
+      { selector: "0", line: 3, reason: "color: ignored, because the host theme forces edge label text" },
+    ]);
+  });
+
+  test("the fixer leaves an edge label colour, since neither black nor white reads in both themes", async () => {
+    const src = withLink("color:#ffffff");
+    expect(await fixSource(src, "doc.md", { profile: "github" })).toBe(src);
+  });
+});
+
+describe("one-line diagrams", () => {
+  test("a one-line diagram with a syntax error is unparseable", async () => {
+    expect(await rules(fence("graph TD; A-->; B[[["))).toContain(RULE.UNPARSEABLE);
+  });
+
+  test.each(["info", "pie title Pets", "graph TD; A-->B", "sequenceDiagram"])("%s on one line parses", async (src) => {
+    expect(await rules(fence(src))).not.toContain(RULE.UNPARSEABLE);
   });
 });

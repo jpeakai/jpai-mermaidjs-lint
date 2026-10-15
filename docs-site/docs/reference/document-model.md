@@ -69,7 +69,7 @@ Where a property value sits in the diagram source.
 | Field | Type | Meaning |
 |---|---|---|
 | `line` | `number` | The line within the diagram, from 1 |
-| `start`, `end` | `number` | The column range of the value on that line |
+| `start`, `end` | `number` | The column range of the value on that line, from 0, with `end` exclusive |
 
 ## DiagramStats
 

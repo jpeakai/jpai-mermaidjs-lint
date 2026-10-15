@@ -1,22 +1,28 @@
-# Mermaid Diagram Test Gallery
+# Diagram type gallery
 
 <!-- expect: none -->
 
-A curated, single-example-per-type fixture for every diagram supported by
-mermaid-js. Examples are drawn from the canonical demo HTML pages at
-`/demos/*.html` in the mermaid monorepo (or the syntax docs at
-`packages/mermaid/src/docs/syntax/*.md` when the demo was too large).
+One example of each diagram type the linter can measure.
+Most examples are adapted from mermaid's own demo pages and syntax docs.
+Every diagram here must lint clean:
+
+```bash
+bunx @jpeakai/mermaidjs-lint tests/fixtures/gallery/diagram-types.md
+```
+
+From a clone of this repo, `bun run src/bin.ts tests/fixtures/gallery/diagram-types.md` does the same, and exits 0.
 
 **Purpose**
-- Serves as a regression fixture for `scripts/find_mermaid_fences.ts`.
-- Documents which diagrams parse via the Langium grammar package
-  (`@mermaid-js/parser`) versus the legacy JISON grammars bundled inside
-  `packages/mermaid/src/diagrams/*/parser/*.jison`.
-- Gives consumers a one-page visual index of what mermaid can draw.
+
+- It guards the parse engine: if mermaid stops parsing a type, its diagram here reports `parse-diagram-unparseable`.
+- It records which types parse through the Langium grammars in `@mermaid-js/parser`, and which through the older JISON grammars in mermaid core.
+- It gives readers a one-page index of what mermaid can draw.
 
 ---
 
-## Langium-parsed diagrams (AST available headlessly)
+## Langium-parsed diagrams
+
+These grammars return a typed syntax tree and need no DOM.
 
 ### architecture-beta
 
@@ -41,6 +47,9 @@ gitGraph LR:
 ```
 
 ### info
+
+`info` draws no nodes.
+The parse rule flags only a multi-line diagram that reads as zero nodes, so this one-line diagram passes.
 
 ```mermaid
 info
@@ -109,7 +118,10 @@ wardley-beta
 
 ---
 
-## JISON-parsed diagrams (legacy; AST needs DOM / jsdom)
+## JISON-parsed diagrams
+
+The older grammars in mermaid core expect a browser.
+The linter runs them under a happy-dom shim, then reads each type's parsed result.
 
 ### block
 

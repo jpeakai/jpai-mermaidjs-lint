@@ -2,11 +2,11 @@
 
 <!-- expect: complexity-node-count-acceptable-exceeded complexity-visual-score-critical -->
 
-This document describes the production topology of the storefront platform: the
-edge, the API layer, the domain services, the data stores, the third-party
-integrations, the asynchronous pipeline, and the observability stack. The
-diagram below was exported from the infrastructure inventory and has grown with
-every service that was added; it is complete but no longer readable at a glance.
+This document describes the production topology of the storefront platform.
+It covers the edge, the API layer, the domain services, the data stores and the third-party integrations.
+It also covers the asynchronous pipeline and the observability stack.
+The diagram below was exported from the infrastructure inventory and has grown with every service added.
+It is complete, but no longer readable at a glance.
 
 ```mermaid
 flowchart LR
@@ -126,5 +126,8 @@ flowchart LR
     BFF -.-> LOKI
 ```
 
-The diagram is used in onboarding, in architecture reviews, and in incident
-retrospectives. Each audience needs a different amount of it.
+The linter reports two findings on this diagram.
+Its 46 nodes give `complexity-node-count-acceptable-exceeded`, and its score of 106.2 gives `complexity-visual-score-critical`.
+
+The diagram is used in onboarding, in architecture reviews, and in incident retrospectives.
+Each audience needs a different amount of it.

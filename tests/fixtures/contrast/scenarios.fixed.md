@@ -1,44 +1,54 @@
-# Mermaid Contrast — WCAG Audit Test Fixtures
+# Contrast scenarios
 
 <!-- expect: contrast-border-below-ui-minimum contrast-text-below-aa parse-diagram-unparseable -->
 
-Each ```mermaid fence below is a named scenario for
-`scripts/mermaid_contrast.ts`. The tool scores every `classDef` and `style`
-directive against WCAG AA:
+Each mermaid fence below is a named scenario for the contrast rules.
+They score every `classDef` and `style` directive against WCAG AA:
 
-- **Text pairs** (fill × color): must pass **≥ 4.5 : 1**
-- **Border pairs** (fill × stroke): must pass **≥ 3.0 : 1**
+- **Label text** (`color:` on `fill:`) must reach 4.5:1, or `contrast-text-below-aa` fires.
+- **Borders** (`stroke:` on `fill:`) must reach 3:1, or `contrast-border-below-ui-minimum` fires.
 
-Run with:
+No `mkdocs.yml` sits above this folder, so the default `auto` profile reads it as `github`.
+Under that profile, the declared `color:` is the label colour a reader sees.
+Check the file with:
 
 ```bash
-bun run .claude/skills/mermaidjs-diagrams/scripts/mermaid_contrast.ts \
-  .claude/skills/mermaidjs-diagrams/resources/examples/test_contrast.md
+bunx @jpeakai/mermaidjs-lint tests/fixtures/contrast/scenarios.md
 ```
 
-Exit code is 0 if every pair passes AA, 1 if any fail.
+From a clone of this repo, `bun run src/bin.ts tests/fixtures/contrast/scenarios.md` does the same.
+Every finding fails the run, so the command exits 1, and it exits 0 only when nothing is reported.
 
-## Expected contrast outcomes
+## What the linter reports
 
-| Scenario                               | Text pair  | Border pair | Overall |
-|----------------------------------------|-----------:|------------:|---------|
-| AAA-level contrast (white on navy)     |  AAA (>7)  | AAA         | pass    |
-| AA-passing dark text on pastel         |  AA (≥4.5) | AA (≥3)     | pass    |
-| AA-failing light grey on white (text)  |  FAIL      | *(n/a)*     | fail    |
-| AA-failing low-contrast border         |  *(n/a)*   | FAIL        | fail    |
-| Borderline AA Large only (≥3 <4.5)     |  AA Large  | AA (≥3)     | fail    |
-| Classic red-on-green (colorblind trap) |  FAIL      | FAIL        | fail    |
-| Multiple classDefs — some pass, some fail | mixed   | mixed       | fail    |
-| No style directives — nothing to check | n/a        | n/a         | pass    |
-| Valid link-line styling (linkStyle)    | skipped    | skipped     | pass    |
-| Semi-transparent fill (alpha channel)  | depends    | depends     | varies  |
+| Section | Scenario | Text | Border |
+|---|---|---|---|
+| 1 | White on navy | passes | passes |
+| 2 | Dark text on pastel, beside orange on cream | `accent` fails, 3.46:1 | passes |
+| 3 | Light grey on white | fails, 2.85:1 | passes |
+| 4 | Pale stroke on white | passes | fails, 1.16:1 |
+| 5 | Mid grey on white | fails, 3.95:1 | passes |
+| 6 | Red on green | fails, 1.28:1 | fails, 1.00:1 |
+| 7 | Four classes, two failing | `badText` fails, 1.07:1 | `badBorder` fails, 1.09:1 |
+| 8 | No style directives | nothing to score | nothing to score |
+| 9 | `linkStyle` with no `color:` | not scored | not scored |
+| 10 | Translucent white fill | passes | passes |
+| 11 | Per-node `style` | node A fails, 1.36:1 | node A fails, 1.16:1 |
+| 12 | Named colours, red on green | fails, 1.29:1 | fails, 1.00:1 |
+| 13 | `oklch()` colours | not scored | not scored |
+
+Section 13 reports `parse-diagram-unparseable` instead, because mermaid's parser rejects the diagram.
+
+`--fix` rewrites a failing `color:` to black or white when that choice reaches 4.5:1.
+It fixes every text finding here.
+It leaves the border findings and the parse finding, because those need a person to choose.
 
 ---
 
-## 1. AAA-level contrast — white text on navy background
+## 1. Well above AA: white text on navy
 
-Both text and border comfortably exceed all thresholds. Expected: all pairs
-rated AAA. Zero findings.
+Both the text and the border clear every threshold by a wide margin.
+The linter reports nothing.
 
 ```mermaid
 flowchart LR
@@ -46,10 +56,11 @@ flowchart LR
   A[Start]:::primary --> B[End]:::primary
 ```
 
-## 2. AA-passing — dark text on pastel background
+## 2. One class passes, one fails: pastel blue and cream orange
 
-Body text is dark enough on a soft pastel to clear the 4.5 : 1 text bar.
-Expected: text AA, border AA.
+The `soft` class sets dark blue text on a pale blue fill, and passes both checks.
+The `accent` class sets orange text on a cream fill, at 3.46:1.
+The linter reports `contrast-text-below-aa` for `accent` alone.
 
 ```mermaid
 flowchart LR
@@ -58,10 +69,10 @@ flowchart LR
   A[Info]:::soft --> B[Warning]:::accent
 ```
 
-## 3. AA-failing text — light grey on white
+## 3. Text fails AA: light grey on white
 
-A light grey body text (#999999) on a white fill is around 2.85:1, which
-fails the 4.5 text threshold. Expected: FAIL on the text pair.
+Light grey text (`#999999`) on a white fill reaches only 2.85:1, under the 4.5:1 bar.
+The linter reports `contrast-text-below-aa`.
 
 ```mermaid
 flowchart LR
@@ -69,10 +80,11 @@ flowchart LR
   A[Barely readable]:::whisper --> B[Also dim]:::whisper
 ```
 
-## 4. AA-failing border — low-contrast stroke
+## 4. Border fails: a pale stroke
 
-Border (fill × stroke) sits around 1.3 : 1, well under the 3.0 minimum for
-non-text UI. Text pair is fine. Expected: FAIL on the border pair only.
+The stroke (`#EEEEEE`) on a white fill reaches only 1.16:1, under the 3:1 minimum for a border.
+The text is black on white and passes.
+The linter reports `contrast-border-below-ui-minimum` alone.
 
 ```mermaid
 flowchart LR
@@ -80,11 +92,11 @@ flowchart LR
   A[Readable text]:::ghostly --> B[Invisible border]:::ghostly
 ```
 
-## 5. AA Large only — in the 3–4.5 : 1 gap
+## 5. Large text only: between 3:1 and 4.5:1
 
-Text ratio is between 3.0 and 4.5 — passes AA Large (big/bold text only)
-but fails AA for normal body text. Expected: FAIL (the linter enforces AA,
-not AA Large).
+The text reaches 3.95:1.
+That passes WCAG AA for large text, but labels are not large text.
+The linter holds every label to 4.5:1, so it reports `contrast-text-below-aa`.
 
 ```mermaid
 flowchart LR
@@ -92,10 +104,12 @@ flowchart LR
   A[Medium grey]:::borderline --> B[Still medium]:::borderline
 ```
 
-## 6. Red-on-green — colorblind trap AND poor contrast
+## 6. Red on green: a colour blindness trap with poor contrast
 
-Classic low-contrast / deuteranopia-unfriendly combo. Red text on green
-fill is around 2 : 1. Expected: FAIL for both text and border.
+Red text on a green fill is hard to tell apart for people with red-green colour blindness.
+Its contrast is also poor, at 1.28:1.
+The stroke is the same green as the fill, so the border reaches 1:1.
+The linter reports both `contrast-text-below-aa` and `contrast-border-below-ui-minimum`.
 
 ```mermaid
 flowchart LR
@@ -103,11 +117,11 @@ flowchart LR
   A[Go?]:::danger --> B[Stop?]:::danger
 ```
 
-## 7. Mixed classDefs — some pass, some fail
+## 7. Mixed classes: some pass, some fail
 
-Four classes in one diagram: two compliant, two non-compliant. The linter
-should emit findings only for the failing pairs, keeping compliant classes
-silent. Useful for verifying the tool doesn't conflate classes.
+Four classes share one diagram, and two of them fail.
+The linter reports `contrast-text-below-aa` for `badText` and `contrast-border-below-ui-minimum` for `badBorder`.
+The passing classes stay silent, which shows that the rules score each class on its own.
 
 ```mermaid
 flowchart LR
@@ -120,21 +134,21 @@ flowchart LR
   C --> D[border fails]:::badBorder
 ```
 
-## 8. No style directives — nothing to audit
+## 8. No style directives: nothing to score
 
-Default mermaid styling; no `classDef` or `style`. Expected: zero findings,
-exit 0, no work done by the contrast linter.
+The diagram uses mermaid's default styling, with no `classDef` or `style`.
+The contrast rules have nothing to score, and the linter reports nothing.
 
 ```mermaid
 flowchart LR
   A[Default] --> B[Styling] --> C[Only]
 ```
 
-## 9. linkStyle — should be skipped
+## 9. A `linkStyle` with no label colour is not scored
 
-`linkStyle` colors edges, not nodes. The contrast linter only evaluates
-`classDef` and `style` fill/color/stroke, so this fence should produce no
-findings even though it defines a dim link color.
+`linkStyle` colours edges, not nodes.
+The contrast rules score a `linkStyle` only when it declares `color:`, the edge label text.
+This one sets only the stroke, so it reports nothing, even though its edges are a pale grey.
 
 ```mermaid
 flowchart LR
@@ -143,11 +157,11 @@ flowchart LR
   linkStyle 1 stroke:#CCCCCC,stroke-width:1px
 ```
 
-## 10. Semi-transparent fill — alpha channel
+## 10. Translucent fill: an alpha channel
 
-Hex with alpha (`#FFFFFF80` = 50% white). The contrast calculation composites
-against an assumed background, so results may vary. Expected: a finding is
-produced either way; this is a regression probe, not a pass/fail assertion.
+`#FFFFFF80` is white at 50% opacity, so a reader sees it blended with the page.
+Under the `github` profile, the linter blends the fill over GitHub's light and dark page backgrounds, then scores each result.
+Black text and a black border pass on both, so the linter reports nothing.
 
 ```mermaid
 flowchart LR
@@ -155,11 +169,12 @@ flowchart LR
   A[Ghost]:::translucent --> B[Ghost]:::translucent
 ```
 
-## 11. `style` directive (per-node, not classDef)
+## 11. A `style` directive on one node
 
-`style` applies to a single node rather than a reusable class. The linter
-must evaluate `style` directives the same as `classDef`. Expected: a finding
-per failing pair, independent of classDef coverage.
+`style` styles a single node rather than a reusable class.
+The rules score it the same way as a `classDef`.
+Node A fails both checks, at 1.36:1 for text and 1.16:1 for the border.
+Node B passes both, so only node A is reported.
 
 ```mermaid
 flowchart LR
@@ -168,11 +183,12 @@ flowchart LR
   style B fill:#000000,color:#FFFFFF,stroke:#FFFFFF,stroke-width:2px
 ```
 
-## 12. Named CSS colors — not just hex
+## 12. Named CSS colours, not just hex
 
-`color: red` is valid CSS and must resolve to the same #FF0000 pair the hex
-form resolves to. This probes the colorjs.io parser. Expected: the same
-red-on-green finding as fence 6.
+`color:red` is valid CSS, and the rules resolve it like a hex value.
+Named `green` is `#008000`, darker than the `#00AA00` in section 6.
+So the ratios differ slightly: 1.29:1 for the text, and 1:1 for the border.
+The linter reports `contrast-text-below-aa` and `contrast-border-below-ui-minimum`.
 
 ```mermaid
 flowchart LR
@@ -180,11 +196,13 @@ flowchart LR
   A[Go]:::trap --> B[Stop]:::trap
 ```
 
-## 13. oklch — modern perceptual space
+## 13. `oklch()` colours: the parser rejects them
 
-OKLCH is the preferred CSS color space for accessible palettes. A high-L
-oklch text on a low-L oklch fill should easily clear AA. Expected: text
-AAA, border AAA.
+OKLCH is a good colour space for building accessible palettes.
+But mermaid's flowchart parser rejects the parentheses of `oklch()` inside a `classDef`.
+The diagram reads as zero nodes, so the linter reports `parse-diagram-unparseable`.
+No contrast finding is reported for it.
+To use these colours, write them as hex.
 
 ```mermaid
 flowchart LR

@@ -19,7 +19,8 @@ The three weights are options: `edgeWeight`, `subgraphWeight` and `depthWeight`.
 ## Presets set the thresholds
 
 A preset is a named set of thresholds for one density of diagram.
-The default is `high-density`, which follows the research finding that around 50 nodes is where a network diagram becomes hard to read.
+The default is `high-density`, which follows [Huang et al. 2020](https://arxiv.org/abs/2008.07944).
+That study found that around 50 nodes is where a network diagram becomes hard to read, and that 100 is the limit.
 
 --8<-- "presets-table.md"
 

@@ -26,7 +26,8 @@ An unparseable diagram skips every complexity rule, because thresholds mean noth
 
 A multi-line diagram that mermaid's parser reads as zero nodes.
 The message carries the parser's own reason.
-A diagram of one keyword line is not a failure, because it has no structure to read.
+A one-line diagram may legitimately have no nodes, such as `info` or `pie title Pets`.
+So on one line it fails only when the parser itself reports an error, as for `graph TD; A-->; B[[[`.
 There is no fixer, since a syntax error needs an author.
 
 ````text reported
@@ -72,17 +73,107 @@ No complexity rule has a fixer, because splitting a diagram changes what it says
 
 ### complexity-node-count-hard-limit
 
-More nodes than any diagram can hold.
+More nodes than the preset's hard limit.
 The limit is 100 under `high-density`, and the message names existing subgraph boundaries to split along.
 
 ### complexity-node-count-cognitive-limit
 
-More nodes than a reader can follow, following the research that 50 nodes is where a network diagram becomes hard to read.
+More nodes than a reader can follow.
+Under `high-density` the limit is 50 nodes, following [Huang et al. 2020](https://arxiv.org/abs/2008.07944) on where a network diagram becomes hard to read.
 It fires above the cognitive limit and up to the hard limit.
 
 ### complexity-node-count-acceptable-exceeded
 
 More nodes than the preset's readable threshold, up to the cognitive limit.
+Under `high-density` that is more than 35 nodes, so this chain of 36 fires it.
+
+````text reported
+```mermaid
+flowchart LR
+  N0 --> N1
+  N1 --> N2
+  N2 --> N3
+  N3 --> N4
+  N4 --> N5
+  N5 --> N6
+  N6 --> N7
+  N7 --> N8
+  N8 --> N9
+  N9 --> N10
+  N10 --> N11
+  N11 --> N12
+  N12 --> N13
+  N13 --> N14
+  N14 --> N15
+  N15 --> N16
+  N16 --> N17
+  N17 --> N18
+  N18 --> N19
+  N19 --> N20
+  N20 --> N21
+  N21 --> N22
+  N22 --> N23
+  N23 --> N24
+  N24 --> N25
+  N25 --> N26
+  N26 --> N27
+  N27 --> N28
+  N28 --> N29
+  N29 --> N30
+  N30 --> N31
+  N31 --> N32
+  N32 --> N33
+  N33 --> N34
+  N34 --> N35
+```
+````
+
+````text llm
+<!-- llm: A 36-step chain reads as two stages, so it splits at the midpoint into two diagrams of 18 nodes, and the second starts where the first ends. -->
+
+```mermaid
+flowchart LR
+  N0 --> N1
+  N1 --> N2
+  N2 --> N3
+  N3 --> N4
+  N4 --> N5
+  N5 --> N6
+  N6 --> N7
+  N7 --> N8
+  N8 --> N9
+  N9 --> N10
+  N10 --> N11
+  N11 --> N12
+  N12 --> N13
+  N13 --> N14
+  N14 --> N15
+  N15 --> N16
+  N16 --> N17
+```
+
+```mermaid
+flowchart LR
+  N17 --> N18
+  N18 --> N19
+  N19 --> N20
+  N20 --> N21
+  N21 --> N22
+  N22 --> N23
+  N23 --> N24
+  N24 --> N25
+  N25 --> N26
+  N26 --> N27
+  N27 --> N28
+  N28 --> N29
+  N29 --> N30
+  N30 --> N31
+  N31 --> N32
+  N32 --> N33
+  N33 --> N34
+  N34 --> N35
+```
+````
 
 ### complexity-visual-score-critical
 
@@ -99,12 +190,38 @@ A visual complexity score above the preset's readable threshold, up to `vcsCompl
 Subgraphs nested three or more levels deep.
 Flatten the nesting, or promote a deep group into its own diagram.
 
+````text reported
+```mermaid
+flowchart LR
+  subgraph L1[Level one]
+    subgraph L2[Level two]
+      subgraph L3[Level three]
+        A --> B
+      end
+    end
+  end
+```
+````
+
+````text llm
+<!-- llm: The third level held a single edge, so it merges into the second and the diagram keeps two levels of nesting. -->
+
+```mermaid
+flowchart LR
+  subgraph L1[Level one]
+    subgraph L2[Levels two and three]
+      A --> B
+    end
+  end
+```
+````
+
 ## Contrast
 
 Contrast is read through a profile.
 Under `github` the declared pairs are scored as written, and a translucent fill is composited over both GitHub canvases.
 Under `mkdocs-material` the host forces the label text, so `color:` is ignored and the host text is scored in both themes.
-`auto` reads `mkdocs-material` when an ancestor directory holds `mkdocs.yml`.
+`auto` reads `mkdocs-material` when any parent folder holds `mkdocs.yml` or `mkdocs.yaml`.
 
 ### contrast-text-below-aa
 
@@ -150,6 +267,27 @@ erDiagram
   CAR ||--o{ WHEEL : has
   classDef c stroke:#1d4ed8,stroke-width:2px
   class CAR c
+```
+````
+
+Under `github`, a `linkStyle` `color:` is scored on Mermaid's edge label box, `#e8e8e8` in light and `#585858` in dark.
+No one colour clears 4.5 to 1 on both, so the finding stays for a human.
+
+````text reported
+```mermaid
+flowchart LR
+  A -- label --> B
+  linkStyle 0 color:#ffffff,stroke:#2563eb
+```
+````
+
+````text llm
+<!-- llm: An edge label sits on a light box in one theme and a grey box in the other, and no one colour reads on both, so the linkStyle keeps its stroke and leaves the label text to the theme. -->
+
+```mermaid
+flowchart LR
+  A -- label --> B
+  linkStyle 0 stroke:#2563eb
 ```
 ````
 

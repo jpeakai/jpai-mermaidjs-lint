@@ -50,7 +50,7 @@ ci: fix typecheck test-cov-ts docs-ci
 # The site's authored pages are scored under mkdocs-material, which the linter
 # reads from docs-site/mkdocs.yml.
 SITE_GENERATED := docs-site/docs/reference/rules.md docs-site/docs/gallery/fixtures.md docs-site/docs/gallery/examples.md
-SITE_DOCS := $(filter-out $(SITE_GENERATED),$(wildcard docs-site/docs/*.md docs-site/docs/*/*.md)) $(wildcard docs-site/diagrams/*.md)
+SITE_DOCS := $(filter-out $(SITE_GENERATED),$(wildcard docs-site/docs/*.md docs-site/docs/*/*.md)) $(wildcard docs-site/diagrams/*.md docs-site/includes/*.md)
 SKILL_DOCS := $(wildcard skills/*/*.md skills/*/evals/*.md)
 DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md) $(SITE_DOCS) $(SKILL_DOCS) tests/fixtures/README.md
 

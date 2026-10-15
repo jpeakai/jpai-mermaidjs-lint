@@ -76,7 +76,8 @@ Without that rule, two plugins could produce identical rule ids, and a config li
 | off | `--no-plugins`, or `"plugins": false` | Nothing is loaded. Discovery still runs, and every plugin it found is reported as skipped. |
 
 Strict is the default because a gate that silently drops a rule would pass files it never checked.
-Outside strict mode, a config setting for a plugin rule that did not load is set aside, and the run says so.
+Outside strict mode, a config setting for a plugin rule that did not load is set aside.
+A run that checks files or lists rules says so on standard error.
 A setting for a built-in id that does not exist still fails with `error[unknown-rule]`.
 
 ## A broken check is a finding, a broken fixer stops the run

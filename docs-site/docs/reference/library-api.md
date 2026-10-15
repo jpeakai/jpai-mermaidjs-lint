@@ -46,8 +46,9 @@ await checkMarkdown(src, "doc.md", { profile: "github", canvas: { light: "#faf8f
 ```
 
 A canvas side that will not parse, or is translucent, is a `FlagError` whose `flag` is `canvas.light` or `canvas.dark`.
-So is a canvas beside `profile: "mkdocs-material"`.
+So is a canvas in `flags` beside `profile: "mkdocs-material"` in `flags`.
 A file that `auto` or the config scores under `mkdocs-material` rejects a canvas from `flags` with a `CanvasProfileError`.
+A canvas from the registry's config beside `profile: "mkdocs-material"` in `flags` is a `CanvasProfileError` too.
 A canvas from the registry's config is set aside for a file that `auto` scores under `mkdocs-material`, with no error and no note.
 Call `canvasSetAside(file, flags, registry)` to learn when that happens, since the library gives no other signal.
 

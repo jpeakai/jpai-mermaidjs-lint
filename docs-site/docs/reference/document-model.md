@@ -12,9 +12,21 @@ A markdown file is parsed to one mdast tree, then flattened to the diagrams in i
 
 ??? info "Detailed: every field of the document model"
 
-    Each entity carries the fields its TypeScript interface declares, and the contrast rules score a directive into pairs that each hold one assessment.
+    Each exported type carries the fields its TypeScript interface declares, and the contrast rules score a directive into pairs that each hold one assessment.
+    `ContrastPair` is internal and not exported, so the diagram shows it abridged.
 
     --8<-- "document-model-detail.md"
+
+    `ContrastPair` also holds these fields, which the diagram leaves out:
+
+    | Field | Type | Meaning |
+    |---|---|---|
+    | `selector` | `string` | The class, node or variable the pair was scored for |
+    | `directive` | `StyleDirective`, or a `themeVariables` source | What the pair was scored from |
+    | `line` | `number` | The line within the diagram text |
+    | `theme` | `"light"` or `"dark"`, optional | The theme the pair was scored in |
+    | `row` | `"odd"` or `"even"`, optional | The `erDiagram` row the pair was scored on |
+    | `advisory` | `boolean`, optional | A border pair that is scored but never gates |
 
 ## DocModel
 

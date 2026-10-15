@@ -3,7 +3,9 @@
 The contract a plugin or a local rule implements.
 For a walkthrough, see [Write a local rule](../guides/local-rule.md) or [Publish a plugin package](../guides/plugin-package.md).
 [The plugin model](../concepts/plugin-model.md) explains how plugins are found and loaded.
-The types are exported from `@jpeakai/mermaidjs-lint`, as `.d.ts` declarations in `dist/types/`, so a TypeScript project needs no extra compiler options.
+The types are exported from `@jpeakai/mermaidjs-lint`, as `.d.ts` declarations in `dist/types/`.
+A TypeScript project needs no extra compiler options for the main entry.
+The `@jpeakai/mermaidjs-lint/testing` entry is found through the package's `exports` map, so it needs `moduleResolution` set to `node16`, `nodenext` or `bundler`.
 
 ## Overview
 

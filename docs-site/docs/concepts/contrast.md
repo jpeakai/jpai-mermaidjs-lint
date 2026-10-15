@@ -70,10 +70,11 @@ The canvas changes the page only.
 Scoring still assumes the host draws Mermaid's `default` theme in light and its `dark` theme in dark.
 That assumption sets the edge label box, the `erDiagram` rows and every sequence theme variable.
 A host that draws another theme, or the same theme in both modes, is not modelled, so its scores are approximate.
-For a sequence diagram on such a host, pin the theme the host draws, so both modes are scored with it.
+For a sequence diagram on a host that draws one theme in both modes, pin that theme, so both modes are scored with it.
 On the host's canvas that pin can pass, though a pinned theme fails on GitHub's own page, as [the sequence section](#a-sequence-diagram-is-scored-by-its-theme-colours) explains.
 Run the check with `--canvas-light` and `--canvas-dark` set to the host's page to confirm it.
-For any other diagram, check the scores against the host by eye in both modes.
+A host that draws a different theme in each mode has no single theme to pin.
+For a sequence diagram on that host, and for any other diagram, check the scores against the host by eye in both modes.
 
 A canvas applies under `github` only.
 Material draws its own page, and this tool models only Material's stock colours.
@@ -83,7 +84,7 @@ How a file under `mkdocs-material` treats a canvas depends on where the canvas c
 |---|---|---|
 | The config | `auto`, by default or set | The canvas is set aside for that file, which is scored under `mkdocs-material`. One stderr line names every such file, and `--json` lists them under `canvasSetAside`. |
 | `--canvas-light` or `--canvas-dark` | `auto` | Usage error `canvas-profile`, exit 2 |
-| Any | `--profile mkdocs-material`, or the rule's `profile` option set to `mkdocs-material` | Usage error, exit 2 |
+| Any | `--profile mkdocs-material`, or the rule's `profile` option set to `mkdocs-material` | Usage error, exit 2: `flag` when both are flags, `rule-option` when both are on one config rule, otherwise `canvas-profile` |
 
 The config covers the whole tree.
 So a repo with a Material site keeps one config with a canvas, and its Material files set it aside.

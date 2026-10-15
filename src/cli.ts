@@ -22,7 +22,7 @@ import { CATEGORIES, type Finding, type Rule } from "./rules/types.ts";
 // buried, and first in --help.
 const SYNOPSIS = `usage: mermaidjs-lint <path...> [--fix] [--json] [--preset NAME] [--profile NAME] [--config FILE]
                      [--canvas-light COLOUR] [--canvas-dark COLOUR] [--no-plugins | --lenient-plugins]
-       mermaidjs-lint --list-rules
+       mermaidjs-lint --list-rules [--config FILE] [--no-plugins | --lenient-plugins]
        mermaidjs-lint --validate-plugins [--json] [--config FILE]
        mermaidjs-lint --version | -h, --help`;
 
@@ -68,7 +68,7 @@ Plugins load on their own from .mermaidjs-lint/rules, from dependencies named me
 --lenient-plugins skips a plugin that fails to load and says so, instead of stopping the run.
 --validate-plugins imports and checks every plugin, reports every failure, and runs no check or fix.
 --list-rules prints every active rule by category, including plugin rules, and where each plugin came from.
-  It imports the plugins to list them.
+  It imports the plugins to list them, and takes no path or other flag.
 --version prints the version, to quote in a bug report.
 Exits 0 when no findings remain, 1 when findings remain, a plugin fails to load or the run fails (a lenient run
 skips a broken plugin, so it alone does not exit 1), and 2 on a usage error.`;
@@ -245,6 +245,22 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
   }
   if (validating && (values["no-plugins"] || values.fix || listing)) {
     throw new FlagError("--validate-plugins", "--validate-plugins takes no --no-plugins, --fix or --list-rules");
+  }
+  // --list-rules prints the rules the config and the plugin flags leave
+  // active. Any other flag or a path would be silently ignored, so it is refused.
+  if (listing && !validating) {
+    const ignored = [
+      ...(["fix", "json", "preset", "profile", "canvas-light", "canvas-dark"] as const)
+        .filter((name) => values[name] !== undefined && values[name] !== false)
+        .map((name) => `--${name}`),
+      ...(positionals.length > 0 ? ["a path"] : []),
+    ];
+    if (ignored.length > 0) {
+      throw new FlagError(
+        "--list-rules",
+        `--list-rules takes only --config and --no-plugins or --lenient-plugins, not ${ignored.join(", ")}`,
+      );
+    }
   }
   if (validating && positionals.length > 0) {
     throw new FlagError("files", "--validate-plugins runs no check, so it takes no files");

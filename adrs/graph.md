@@ -8,7 +8,7 @@ description: Every typed edge between the bundle's decision records
 
 # Decision relationship graph
 
-18 decision records, 6 typed edges, in 12 groups.
+19 decision records, 8 typed edges, in 12 groups.
 Every edge comes from a record's `relates_to` block, so this view cannot drift from the records.
 
 For an interactive view of the same graph, open [graph.html](graph.html).

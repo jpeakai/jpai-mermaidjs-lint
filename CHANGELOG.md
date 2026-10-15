@@ -10,7 +10,21 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- A canvas from the config no longer stops a run over a file that `auto` scores under `mkdocs-material`.
+  The canvas is set aside for that file, which is scored under `mkdocs-material`, and one stderr line names every such file.
+  A canvas flag on such a file, or a canvas beside an explicit `mkdocs-material` profile, is still `error[canvas-profile]`.
+- The `error[canvas-profile]` hint names the way out of the setting that caused it.
+
+### Added
+
+- `canvasSetAside(file, flags, registry)` in the library says whether a file sets its config canvas aside.
+
+### Fixed
+
+- `--canvas-light` and `--canvas-dark` reach every rule option of type `canvas`, whatever its name.
+  Before, a plugin option of that type received them only when it was named `canvas`.
 
 ## [0.6.0] - 2026-10-16
 
@@ -38,12 +52,11 @@ Nothing yet.
 ### Changed
 
 - `mermaid` is pinned to exactly 11.17.2, because the sequence colours it resolves change between releases.
+- The `error[plugin-source]` message for a TypeScript local rule says Node 23 needs 23.6 or newer. Node 23.0 to 23.5 cannot import TypeScript.
 
 ### Upgrading from 0.4.2
 
 - **A sequence diagram that passed before may now fail.** One likely cause is a fixed message colour that fades on a dark page. Another is a note with no colours set, which Mermaid's dark theme draws at 4.49 to 1. Set `noteBkgColor` and `noteTextColor` to one readable pair, and leave colours on the page to the theme.
-
-- The `error[plugin-source]` message for a TypeScript local rule says Node 23 needs 23.6 or newer. Node 23.0 to 23.5 cannot import TypeScript.
 
 ## [0.4.2] - 2026-10-16
 

@@ -45,8 +45,8 @@ export interface Finding {
 }
 
 // "canvas" is an object { light?, dark? } of opaque CSS colours: the page a
-// diagram is drawn on. A rule that declares it receives --canvas-light and
-// --canvas-dark, as the contrast rules do.
+// diagram is drawn on. Every option of this type, whatever its name, receives
+// --canvas-light and --canvas-dark, as the contrast rules do.
 export type OptionType = "number" | "string" | "boolean" | "string[]" | "canvas";
 
 export type OptionSpec = Readonly<Record<string, OptionType>>;

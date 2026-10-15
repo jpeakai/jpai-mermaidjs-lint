@@ -22,6 +22,7 @@
 | [MJL-0016](0016-a-back-edge-may-be-appended-to-an-accepted-record.md) | A back-edge may be appended to an accepted record | accepted |
 | [MJL-0017](0017-sequence-colours-come-from-mermaids-theme-engine.md) | Sequence colours come from Mermaid's own theme engine | accepted |
 | [MJL-0018](0018-a-host-sets-the-page-canvas-under-github-only.md) | A host sets the page canvas, under the github profile only | accepted |
+| [MJL-0019](0019-a-material-file-sets-a-config-canvas-aside.md) | A Material file sets a config canvas aside | accepted |
 # By group
 
 ## config
@@ -32,6 +33,7 @@
 * [MJL-0011](0011-profile-decides-who-owns-label-text.md) - github scores the declared pairs, and mkdocs-material scores the host's forced text in both themes
 * [MJL-0017](0017-sequence-colours-come-from-mermaids-theme-engine.md) - A sequence diagram is scored by theme variables Mermaid resolves on a pinned version
 * [MJL-0018](0018-a-host-sets-the-page-canvas-under-github-only.md) - Page-backed colours are scored on a canvas the caller may set, and a canvas under mkdocs-material is refused
+* [MJL-0019](0019-a-material-file-sets-a-config-canvas-aside.md) - A config canvas is set aside, with a note, for a file the auto profile reads as mkdocs-material
 ## decisions
 
 * [MJL-0016](0016-a-back-edge-may-be-appended-to-an-accepted-record.md) - The one edit an accepted record allows is adding the inverse of a relation a newer record declares
@@ -77,3 +79,5 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0006 --depends_on--> MJL-0005
 * MJL-0017 --see_also--> MJL-0018
 * MJL-0018 --see_also--> MJL-0017
+* MJL-0018 --excepted_by--> MJL-0019
+* MJL-0019 --excepts--> MJL-0018

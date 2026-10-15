@@ -4,7 +4,15 @@
 
 import { describe, expect, test } from "bun:test";
 import { optionsFor } from "../src/check.ts";
-import { checkMarkdown, GITHUB_CANVAS as EXPORTED, FlagError, type RunFlags } from "../src/index.ts";
+import {
+  CanvasProfileError,
+  canvasSetAside,
+  checkMarkdown,
+  GITHUB_CANVAS as EXPORTED,
+  FlagError,
+  type RunFlags,
+  setUp,
+} from "../src/index.ts";
 import { extractStyleDirectives } from "../src/parse/color.ts";
 import { edgeLabelBackground, GITHUB_CANVAS, scoreGithub, scoreSequence } from "../src/parse/contrast.ts";
 import { checkRule, localPlugin } from "../src/testing.ts";
@@ -105,6 +113,21 @@ describe("library flags", () => {
     const other = { options: { canvas: "string" } } as unknown as Parameters<typeof optionsFor>[0];
     expect(optionsFor(other, undefined, { canvas: OSAKA }).canvas).toBeUndefined();
   });
+
+  test("a flag reaches every option of the canvas type, whatever its name", () => {
+    const rule = { options: { canvas: "canvas", page: "canvas", label: "string" } } as unknown as Parameters<
+      typeof optionsFor
+    >[0];
+    const options = optionsFor(rule, { page: { light: "#eeeeee" } }, { canvas: { dark: "#222222" } });
+    expect(options.canvas).toEqual({ dark: "#222222" });
+    expect(options.page).toEqual({ light: "#eeeeee", dark: "#222222" });
+    expect(options.label).toBeUndefined();
+  });
+
+  test("a canvas profile error names the way out of the setting that caused it", () => {
+    expect(new CanvasProfileError("a.md").message).toContain("over the GitHub-rendered paths only");
+    expect(new CanvasProfileError("a.md", "profile").message).toContain("remove the mkdocs-material profile setting");
+  });
 });
 
 describe("command flags", () => {
@@ -138,6 +161,7 @@ describe("command flags", () => {
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("error[canvas-profile]");
     expect(r.stderr).toContain("whose page is Material's own");
+    expect(r.stderr).toContain("set the canvas in the config, which a Material file sets aside");
   });
 
   test("--help documents the canvas flags", async () => {
@@ -196,6 +220,7 @@ describe("config", () => {
     ]);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("error[canvas-profile]");
+    expect(r.stderr).toContain("remove the mkdocs-material profile setting");
   });
 });
 
@@ -219,9 +244,87 @@ describe("plugin rules", () => {
     expect(found.map((f) => f.message)).toEqual(['{"light":"#c0c0c0","dark":"#101010"}']);
   });
 
+  test("a plugin rule's canvas option of another name receives the flags too", async () => {
+    const page = localPlugin("diagram-page", {
+      default: {
+        category: "diagram",
+        summary: "echoes its page",
+        options: { page: "canvas" },
+        check: (ctx) => [{ line: 1, message: JSON.stringify(ctx.options.page ?? null) }],
+      },
+      categories: { diagram: "d" },
+    });
+    const found = await checkRule(page, "diagram-page", DOC, {
+      options: { page: { light: "#eeeeee" } },
+      flags: { canvas: { dark: "#222222" } },
+    });
+    expect(found.map((f) => f.message)).toEqual(['{"light":"#eeeeee","dark":"#222222"}']);
+  });
+
   test("a plugin rule's canvas option is checked like a built-in's", async () => {
     expect(() => checkRule(echo, "diagram-canvas", DOC, { options: { canvas: { dark: "nope" } } })).toThrow(
       'option "canvas.dark" of "local/diagram-canvas" is not a CSS colour',
     );
+  });
+});
+
+describe("a config canvas in a repo with a Material site", () => {
+  // The config sets a canvas on every contrast rule, and the auto profile reads
+  // site/docs/flow.md as mkdocs-material because site/mkdocs.yml is present.
+  const canvasRules = {
+    "contrast-text-below-aa": ["error", { canvas: { dark: "#3a3a3a" } }],
+    [BORDER]: ["error", { canvas: { dark: "#3a3a3a" } }],
+    "contrast-directive-unauditable": ["error", { canvas: { dark: "#3a3a3a" } }],
+  };
+  const repo = (): string =>
+    tempProject({
+      "mermaidjs-lint.config.json": JSON.stringify({ rules: canvasRules }),
+      "docs/flow.md": DOC,
+      "site/mkdocs.yml": "site_name: x\n",
+      "site/docs/flow.md": DOC,
+      "site/docs/plain.md": "# No diagram\n",
+    });
+
+  test("sets the canvas aside for the Material files, says so once, and scores the rest on it", async () => {
+    const root = repo();
+    const r = await runCli(root, ["docs", "site/docs"]);
+    expect(r.code).toBe(1);
+    expect(r.stdout).toContain("docs/flow.md");
+    expect(r.stdout).toContain("#777777 on #3a3a3a, dark");
+    expect(r.stdout).not.toContain("site/docs/flow.md");
+    expect(r.stdout).toContain("1 finding(s) in 3 file(s)");
+    const notes = r.stderr.split("\n").filter((line) => line.includes("config canvas set aside"));
+    expect(notes).toEqual([
+      "mermaidjs-lint: config canvas set aside for 2 files scored under mkdocs-material: site/docs/flow.md, site/docs/plain.md",
+    ]);
+  });
+
+  test("the set-aside file scores as it does with no canvas, in check and in fix", async () => {
+    const root = repo();
+    const r = await runCli(root, ["site/docs/flow.md", "--fix"]);
+    expect(r.code).toBe(0);
+    expect(r.stderr).toContain("set aside for 1 file scored under mkdocs-material: site/docs/flow.md");
+  });
+
+  test("a canvas flag over the Material files is still refused", async () => {
+    const r = await runCli(repo(), ["site/docs", "--canvas-dark", "#101010"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("error[canvas-profile]");
+  });
+
+  test("an explicit --profile mkdocs-material with a config canvas is still refused", async () => {
+    const r = await runCli(repo(), ["docs", "--profile", "mkdocs-material"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("error[canvas-profile]");
+    expect(r.stderr).toContain("remove the mkdocs-material profile setting");
+  });
+
+  test("the library reports which files set the canvas aside", async () => {
+    const root = repo();
+    const { registry } = await setUp({ cwd: root });
+    expect(canvasSetAside(`${root}/site/docs/flow.md`, {}, registry)).toBe(true);
+    expect(canvasSetAside(`${root}/docs/flow.md`, {}, registry)).toBe(false);
+    expect(canvasSetAside(`${root}/site/docs/flow.md`, { canvas: { dark: "#101010" } }, registry)).toBe(false);
+    expect(canvasSetAside(`${root}/site/docs/flow.md`)).toBe(false);
   });
 });

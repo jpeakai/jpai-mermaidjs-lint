@@ -19,9 +19,10 @@ bunx @jpeakai/mermaidjs-lint <file>
 npx -y @jpeakai/mermaidjs-lint <file>
 ```
 
-It exits `0` with no findings, `1` when findings remain, and `2` on a usage error.
+It exits `0` with no findings, `1` when findings remain or the run fails, and `2` on a usage error.
 Add `--json` for machine-readable findings, each with its `remediation`.
 A directory is walked for markdown, `.mmd` and `.mermaid` files.
+The walk skips a symbolic link and names it, so name a link as a path to check it.
 
 ## 2. Apply the safe fixes
 

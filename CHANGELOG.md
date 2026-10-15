@@ -7,16 +7,53 @@ While the package is at `0.x`, a minor release may break the public surface that
 The docs site and the README describe the `main` branch.
 Anything under `Unreleased` is on `main` but not yet on npm.
 
-## Unreleased
+## [Unreleased]
 
-Nothing yet.
+### Added
 
-## 0.2.0 - 2026-10-15
+- The package ships `.d.ts` type declarations in `dist/types/`, so a TypeScript project type-checks a plugin with no extra compiler options.
+- `error[package-json]`, exit 1, for a project `package.json` that is not a JSON object. A `--no-plugins` run carries on past it.
+- `error[fix-not-converging]`, exit 1, names the rules whose fixers never stop proposing edits.
+- `error[fix-outside-root]`, exit 2, stops `--fix` before it writes through a symbolic link whose target is outside the project root.
+- The library exports the types `Preset`, `ThresholdConfig`, `PluginFailure`, `SourceKind`, `Setup`, `SetupOptions` and `Collected`. `setUp` also returns the project `root`.
+
+### Changed
+
+- A directory walk names each symbolic link it skips on standard error. A link named as a path is still checked.
+- `quadrantChart` counts each plotted point as a node, with each quadrant that has a label.
+- `timeline` counts each event as a node, and an `xychart` with a numeric x-axis counts the points of its longest series.
+- A composite state in `stateDiagram` also counts as a subgraph, so its nesting depth is measured.
+- A rule's `ctx.file` is the absolute path in both `check` and `fix` in a command run.
+- `main(argv, cwd)` finds the `auto` profile from each file's own folder, whatever the process's working directory.
+- `same-tree` on a `.mmd` or `.mermaid` file also requires the diagram's structure to be unchanged, as `same-diagrams` does.
+- Two local rule files with one name, such as `house-x.js` and `house-x.mjs`, fail the load with `error[plugin-contract]`.
+- A plugin rule may declare the options `preset` and `profile` only as `"string"`, and they keep their built-in meaning.
+- A rule key or namespace may not end in a hyphen or hold two in a row.
+- A config `plugins` entry that is not installed reports `kind` `config`, not `package`.
+- `--help` names every plugin source, says which flags import plugins, and lists exit 1 for a failed run.
+
+### Upgrading from 0.2.0
+
+- **A plugin may fail to load.** Rename a rule key or namespace with a trailing or doubled hyphen. Rename a `preset` or `profile` option that is not a string.
+- **A diagram may newly exceed a complexity limit.** `quadrantChart`, `timeline`, `xychart` and `stateDiagram` now count more nodes, and nested composite states can exceed the nesting limit.
+
+## [0.2.0] - 2026-10-15
+
+### Upgrading from 0.1.1
+
+A project that passed on 0.1.1 can fail on 0.2.0.
+
+- **Every `linkStyle` `color:` is now reported.** No one colour reads on the edge label box in both themes, and `--fix` cannot clear it. Remove the `color:` from the `linkStyle` line.
+- **A one-line diagram that does not parse is now reported.** For example, `graph TD; A-->; B[[[` passed on 0.1.1. Repair the syntax.
+- **A caret range does not reach 0.2.0.** Under 0.x, `^0.1.1` accepts only 0.1.x releases, so change the range to `^0.2.0`.
 
 ### Added
 
 - `--version` prints the version, to quote in a bug report.
 - A `.mermaid` file is read as a raw diagram, as a `.mmd` file is.
+- The library exports `DIAGRAM_EXTS`, the raw diagram extensions, and `documentKind`, which says how a file name is read.
+- The library exports `ConfigCodeError`, the error behind `error[config-code]`.
+- `checkMarkdown` and `fixSource` read a file name ending in `.mermaid` as a raw diagram, as they read `.mmd`.
 - A `linkStyle` `color:` is scored as edge label text, against Mermaid's own label box in light and dark, under the `github` profile.
 - Profile `auto` also reads `mkdocs.yaml`, not only `mkdocs.yml`, as a sign that the site renders through Material.
 - `skills/mermaidjs-lint/` is an agent skill that drives the linter, with a live eval suite.
@@ -32,13 +69,22 @@ Nothing yet.
 - `--help` lists the folders a directory walk skips.
 - The npm page links the docs site as the package's homepage.
 - `--no-plugins` sets aside a config setting for a plugin rule, instead of failing on it as an unknown rule.
-- A usage error prints the error and a short usage line, rather than the whole help.
+- A usage error prints the error, the synopsis and a pointer to `--help`, rather than the whole help.
 - `--help` links the rules page on the docs site instead of `RULES.md`.
 
 ### Security
 
 - `--no-plugins` no longer imports a `mermaidjs-lint.config.mjs`, which is code. The run stops with `error[config-code]` and exit 2 instead, and `--config` with a `.json` config lets it run.
 
-## 0.1.1 and earlier
+## [0.1.1] - 2026-10-15
 
-The notes for these releases are on [GitHub Releases](https://github.com/jpeakai/jpai-mermaidjs-lint/releases).
+The same code as 0.1.0, published again under the next version number.
+
+## [0.1.0] - 2026-10-15
+
+The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
+
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/releases/tag/v0.1.0

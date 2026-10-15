@@ -24,7 +24,7 @@ One parsed file.
 |---|---|---|
 | `src` | `string` | The whole file, as read. Edit offsets index into it. |
 | `kind` | `"markdown"` or `"diagram"` | `diagram` for a `.mmd` or `.mermaid` file, otherwise `markdown` |
-| `tree` | mdast `Root` | The markdown tree, parsed with GFM and YAML or TOML frontmatter |
+| `tree` | mdast `Root` | The markdown tree, parsed with GFM and YAML or TOML frontmatter. For kind `diagram`, an empty root. |
 | `diagrams` | `Diagram[]` | Every mermaid fence in document order, or the one diagram of a raw diagram file |
 
 ## Diagram
@@ -83,6 +83,18 @@ What mermaid's parser reads from a diagram.
 | `parser_used` | `"langium"` or `"mermaid-core"` | Which parser produced the result, or on a failure, the parser whose reason `error` carries |
 | `diagram_type` | `string` | The type the parser recognised |
 | `error` | `string` or `null` | The parser's reason on one line, when no parser produced structure. Its line numbers count from the diagram's first line. |
+
+## ContrastAssessment
+
+How the contrast rules score one foreground on one background.
+A rule does not receive it, but the type is exported for code that scores colours the same way.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `foreground`, `background` | `string` | The two colours, as scored |
+| `ratio` | `number` | The WCAG 2.x contrast ratio, from 1 to 21, rounded to two decimal places |
+| `rating` | `"AAA"`, `"AA"`, `"AA Large"` or `"Fail"` | The WCAG level the ratio reaches |
+| `apca_lc` | `number` | The APCA lightness contrast, for reference |
 
 ## Building a model yourself
 

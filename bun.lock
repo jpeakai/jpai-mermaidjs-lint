@@ -6,6 +6,7 @@
       "name": "@jpeakai/mermaidjs-lint",
       "dependencies": {
         "@mermaid-js/parser": "^1.1.0",
+        "@types/mdast": "^4",
         "colorjs.io": "^0.6.1",
         "happy-dom": "^20.9.0",
         "mdast-util-from-markdown": "^2.0.3",
@@ -19,7 +20,6 @@
         "@biomejs/biome": "^2",
         "@jpeakai/prose-gates": "^0.2.0",
         "@types/bun": "latest",
-        "@types/mdast": "^4",
         "typescript": "^5",
       },
     },

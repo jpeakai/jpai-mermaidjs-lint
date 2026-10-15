@@ -24,8 +24,8 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Ladder | The ordered thresholds of one measure. A diagram lands in one band, so one rule of the ladder fires. |
 | Band | The range between two thresholds of a ladder, such as above `nodeAcceptable` up to `nodeComplex`. Each band has one rule. |
 | Style directive | A `classDef`, `style` or `linkStyle` line, or an inline class application. |
-| Pair | A foreground and a background scored together: text is `fill` and `color`, border is `fill` and `stroke`. |
-| Advisory pair | A border pair scored under `mkdocs-material` or in an `erDiagram` that never produces a finding, because no border on a faint fill can pass in both themes. |
+| Pair | A foreground and a background scored together. Text is `fill` and `color`, a border is `fill` and `stroke`, an edge label is a `linkStyle` `color` and the label box, and host text is the host's forced label colour and `fill`. |
+| Advisory pair | A border pair scored under `mkdocs-material` or in an `erDiagram` that never produces a finding, because a saturated border on a faint fill cannot pass in both themes. |
 | Host | Where a diagram is drawn for a reader, such as GitHub or a MkDocs Material site. The host may choose the label colour. |
 | Profile | How contrast is read: github scores declared pairs, mkdocs-material scores the host's forced text, and auto picks one from the file's folder. |
 | Unauditable | A directive the profile requires to be scoreable but cannot be, such as a `fill` with no `color`. |

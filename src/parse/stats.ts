@@ -599,17 +599,20 @@ function adaptMindmap(db: AnyDb): Structure {
   return { nodeIds: labels, edges: Math.max(0, labels.length - 1), subgraphNames: [], maxDepth };
 }
 
+type QuadrantText = { text?: string } | string | undefined;
 interface QuadrantData {
-  quadrants?: Array<{ text?: { text?: string } | string }>;
+  quadrants?: Array<{ text?: QuadrantText }>;
+  points?: Array<{ text?: QuadrantText }>;
 }
+// A node is every plotted point, plus every quadrant that carries a label. The
+// four quadrant boxes are always drawn, so an unlabelled one adds nothing to
+// read, while every point is a mark the reader must place.
 function adaptQuadrantChart(db: AnyDb): Structure {
   const data = callGetter<QuadrantData | null>(db, "getQuadrantData");
-  const quadrants = data?.quadrants ?? [];
-  const labels = quadrants.map((q) => {
-    const t = q.text;
-    return typeof t === "string" ? t : (t?.text ?? "");
-  });
-  return { nodeIds: labels, edges: 0, subgraphNames: [], maxDepth: 0 };
+  const textOf = (t: QuadrantText): string => (typeof t === "string" ? t : (t?.text ?? ""));
+  const quadrants = (data?.quadrants ?? []).map((q) => textOf(q.text)).filter((t) => t.trim() !== "");
+  const points = (data?.points ?? []).map((p, i) => textOf(p.text) || `point_${i}`);
+  return { nodeIds: [...quadrants, ...points], edges: 0, subgraphNames: [], maxDepth: 0 };
 }
 
 function adaptRequirement(db: AnyDb): Structure {
@@ -639,36 +642,56 @@ function adaptSankey(db: AnyDb): Structure {
 interface StateNode {
   id?: string;
   type?: string;
+  isGroup?: boolean;
+  parentId?: string;
 }
 interface StateEdge {
   id1?: string;
   id2?: string;
 }
+// A composite state (`state A { ... }`) is a group that holds other states,
+// so it counts as a subgraph too, and its nesting depth is read from each
+// state's parentId chain. It stays a node as well, because it is drawn as a
+// labelled state.
 function adaptState(db: AnyDb): Structure {
   // stateDiagram db exposes data on direct properties.
   const nodes = (db.nodes as StateNode[] | undefined) ?? [];
   const edges = (db.edges as StateEdge[] | undefined) ?? [];
+  const groups = nodes.filter((n) => n.isGroup === true);
+  const parentOf = new Map(nodes.map((n) => [n.id ?? "", n.parentId]));
+  let maxDepth = 0;
+  for (const g of groups) {
+    let depth = 1;
+    const seen = new Set<string>();
+    for (let cur = g.parentId; cur && !seen.has(cur); cur = parentOf.get(cur)) {
+      seen.add(cur);
+      depth++;
+    }
+    maxDepth = Math.max(maxDepth, depth);
+  }
   return {
     nodeIds: nodes.map((n) => n.id ?? ""),
     edges: edges.length,
-    subgraphNames: [],
-    maxDepth: 0,
+    subgraphNames: groups.map((g) => g.id ?? ""),
+    maxDepth,
   };
 }
 
 interface TimelineTask {
   task?: string;
   section?: string;
+  events?: string[];
 }
 interface TimelineSection {
   sectionName?: string;
   section?: string;
 }
 function adaptTimeline(db: AnyDb): Structure {
+  // Every period and every event under it is a box on the page.
   const tasks = callGetter<TimelineTask[]>(db, "getTasks") ?? [];
   const sections = callGetter<TimelineSection[]>(db, "getSections") ?? [];
   return {
-    nodeIds: tasks.map((t) => t.task ?? ""),
+    nodeIds: tasks.flatMap((t) => [t.task ?? "", ...(t.events ?? []).map((e) => `${t.task ?? ""}: ${e}`)]),
     edges: 0,
     subgraphNames: sections.map((s) => s.sectionName ?? s.section ?? ""),
     maxDepth: sections.length > 0 ? 1 : 0,
@@ -714,11 +737,16 @@ function adaptVenn(db: AnyDb): Structure {
 
 interface XYChartData {
   xAxis?: { categories?: string[] };
+  plots?: Array<{ data?: unknown[] }>;
 }
+// A node is an x position: a category, or, on a numeric x-axis, a point of the
+// longest series.
 function adaptXychart(db: AnyDb): Structure {
   const data = callGetter<XYChartData | null>(db, "getXYChartData");
   const categories = data?.xAxis?.categories ?? [];
-  return { nodeIds: categories, edges: 0, subgraphNames: [], maxDepth: 0 };
+  if (categories.length > 0) return { nodeIds: categories, edges: 0, subgraphNames: [], maxDepth: 0 };
+  const longest = Math.max(0, ...(data?.plots ?? []).map((p) => p.data?.length ?? 0));
+  return { nodeIds: Array.from({ length: longest }, (_, i) => `x_${i}`), edges: 0, subgraphNames: [], maxDepth: 0 };
 }
 
 function subgraphNestingDepth(subGraphs: Array<{ id?: string; nodes?: string[] }>): number {

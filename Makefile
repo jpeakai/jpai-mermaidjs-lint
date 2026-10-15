@@ -7,13 +7,16 @@ install:
 # Bundle the CLI and the library for Node, which will not strip types from a
 # package inside node_modules. The mermaid parsers stay external dependencies,
 # because bundling mermaid inlines its whole renderer. Bun consumers import src
-# directly, and dist is built again when the package is packed.
+# directly, and dist is built again when the package is packed. The type
+# declarations go to dist/types, so a TypeScript consumer type-checks against
+# .d.ts files, never this package's source.
 build:
 	bun build src/bin.ts --target=node --format=esm --packages=external --outfile dist/bin.js
 	bun build src/index.ts --target=node --format=esm --packages=external --outfile dist/index.js
 	bun build src/testing.ts --target=node --format=esm --packages=external --outfile dist/testing.js
+	bunx --bun tsc --project tsconfig.build.json
 
-# Autofix formatting and lint, then regenerate the decision bundle.
+# Regenerate the decision bundle, then autofix formatting and lint.
 fix: adrs
 	bunx --bun @biomejs/biome check --write src tests scripts
 
@@ -22,7 +25,9 @@ adrs:
 	uv run adrs/okf_render.py adrs --schema adrs/record.schema.json --author jpai-mermaidjs-lint
 
 # The package gates, with no autofix and no private tooling, so GitHub Actions
-# and npm prepublishOnly can run them with Bun alone.
+# and npm prepublishOnly can run them with Bun and Node (the Node tests run
+# dist/bin.js). The docs site build needs uv as well, so it is `make site`,
+# which CI runs beside this.
 check: typecheck test-cov-ts docs-ci
 	bunx --bun @biomejs/biome check src tests scripts
 
@@ -44,7 +49,8 @@ test-cov-ts: build
 	awk -F'|' '/^All files/ { if ($$2 + 0 < 90 || $$3 + 0 < 90) { print "ERROR: coverage below 90%"; exit 1 } found = 1 } \
 		END { if (!found) { print "ERROR: no coverage summary"; exit 1 } }' tmp/coverage.txt
 
-# Regenerate, gate, then assert the tree is clean.
+# Regenerate, then gate. It does not check that the tree is clean, so read
+# git status after it.
 ci: fix typecheck test-cov-ts docs-ci
 
 # Prose gates over every markdown file, and this repo's own diagram gates over

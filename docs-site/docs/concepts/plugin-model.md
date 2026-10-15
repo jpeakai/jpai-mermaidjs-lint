@@ -37,8 +37,10 @@ A plugin is not the only code a run can execute.
 A `mermaidjs-lint.config.mjs` is a module, so reading it runs it, and each `plugins` entry in the config names more code to load.
 `--no-plugins` loads no plugin and never imports a `.mjs` config, so a run uses the built-in rules and at most a `.json` config.
 Faced with a `.mjs` config, it stops with `error[config-code]`, and `--config` with a `.json` config of your own lets it run.
-It does not make a repository you do not trust safe, because installing its dependencies has already run their code.
-[SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) states the full trust model.
+It does not make a repository you do not trust safe.
+Installing its dependencies has already run their code.
+A package runner started inside it reads its `bunfig.toml` or `.npmrc`, which can run code before the linter starts.
+[SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) states the full trust model, and how to lint such a repository from a folder you control.
 
 ## Loading checks the contract before anything runs
 

@@ -70,17 +70,19 @@ It does not compare edge endpoints, edge labels or node text, so review the diff
 
 [`skills/mermaidjs-lint/`](skills/mermaidjs-lint/SKILL.md) is an agent skill that runs the linter, applies the safe fixes, then fixes what remains by judgement.
 It is not in the npm package, so copy it from this repository.
+The skill is the one file `SKILL.md`.
+Its `evals/` folder holds deliberately failing fixtures for this repository's own tests, so never copy it.
 For Claude Code, run these in your project:
 
 ```sh
-git clone --depth 1 https://github.com/jpeakai/jpai-mermaidjs-lint.git mermaidjs-lint-src
-mkdir -p .claude/skills
-cp -R mermaidjs-lint-src/skills/mermaidjs-lint .claude/skills/
+mkdir -p .claude/skills/mermaidjs-lint
+curl -fsSL https://raw.githubusercontent.com/jpeakai/jpai-mermaidjs-lint/main/skills/mermaidjs-lint/SKILL.md \
+  -o .claude/skills/mermaidjs-lint/SKILL.md
 ```
 
-Copy it to `~/.claude/skills/` instead to use it in every project, then delete the clone.
+Use `~/.claude/skills/mermaidjs-lint` instead to use it in every project.
 Another agent can follow `SKILL.md` as plain instructions.
-[Agent evals](https://jpeakai.github.io/jpai-mermaidjs-lint/gallery/agent-evals/) shows how well agents fix the fixtures with it.
+[Agent evals](https://jpeakai.github.io/jpai-mermaidjs-lint/gallery/agent-evals/) shows how well agents fixed the failing fixtures it lists, and which skill revision they used.
 
 ## Library use
 

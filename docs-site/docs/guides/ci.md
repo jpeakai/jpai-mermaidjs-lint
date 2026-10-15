@@ -23,7 +23,7 @@ Create `.github/workflows/diagrams.yml`:
           - uses: actions/checkout@v6
           - uses: oven-sh/setup-bun@v2
           - run: bun install --frozen-lockfile
-          - run: bunx --bun mermaidjs-lint README.md docs/
+          - run: bunx --bun --no-install mermaidjs-lint README.md docs/
     ```
 
 === "npm"
@@ -43,12 +43,13 @@ Create `.github/workflows/diagrams.yml`:
             with:
               node-version: "24"
           - run: npm ci
-          - run: npx mermaidjs-lint README.md docs/
+          - run: npx --no-install mermaidjs-lint README.md docs/
     ```
 
 The step fails while any finding remains, which fails the check.
 
 - **Name your own paths.** Replace `README.md docs/` with the files and folders that hold your diagrams. A path that does not exist stops the run with exit code 2.
+- **Keep `--no-install`.** It runs only the copy the install step put in `node_modules`. Without it, a project that does not declare the package makes the runner fetch the unscoped name `mermaidjs-lint`, which is not this package.
 - **Keep `--bun` in the Bun workflow.** The installed command starts on the runner's Node, even under `bunx`. `--bun` runs it on Bun, which a [TypeScript local rule](local-rule.md#go-further) needs unless Node is 22.18 or newer.
 - **Use another CI service the same way.** Install the dependencies, then run the same command. Exit code 1 fails the job on any CI service.
 

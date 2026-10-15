@@ -1,0 +1,26 @@
+id: MJL-0016
+slug: a-back-edge-may-be-appended-to-an-accepted-record
+plan_id: null
+title: A back-edge may be appended to an accepted record
+description: The one edit an accepted record allows is adding the inverse of a relation a newer record declares
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [decisions, process]
+
+provenance: Every typed relation needs its inverse on the target record for the graph to be checkable, which collides with the rule that an accepted record is never rewritten
+enforced_in:
+  - CONTRIBUTING.md, Recording a decision
+  - CLAUDE.md, Decisions
+relates_to: []
+
+decision:
+  given: a new record declares a typed relation, such as supersedes, to an older accepted record
+  we_prefer: appending the inverse relation to the older record's relates_to, over leaving the relation one-way
+  because: the graph is only checkable when both ends agree, and the append adds a fact without changing what the older record decided
+  unless: the edit would change any other field of the older record, which still needs a new superseding record
+consequences:
+  pros:
+    - Every relation can be read from either end, and the generator can check the pair.
+  cons:
+    - Accepted records are no longer byte-for-byte frozen, so review must check an edit touches relates_to only.

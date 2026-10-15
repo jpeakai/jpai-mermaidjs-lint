@@ -36,6 +36,7 @@ Accepted decisions live in [`adrs/`](adrs/), covering how the gates parse, fix a
 Check them before raising an open question, and self-answer from an existing record where one applies.
 Record a new binding decision as a new `.yml` record in the same change that makes it.
 An accepted record is never rewritten, and a later decision supersedes it through a typed relation.
+The one allowed edit is appending the back-edge of a new record's typed relation, per [MJL-0016](adrs/0016-a-back-edge-may-be-appended-to-an-accepted-record.md).
 
 ## Language
 
@@ -48,7 +49,9 @@ When a new domain term enters the code or the conversation, add it to the glossa
 - Never edit a generated file.
   Everything in `adrs/` except the `.yml` records is generated.
   So is `dist/`, which `make build` bundles from `src/` for Node and git ignores.
-  So are the docs site's rules page, gallery pages and snippets, which `make site` writes from `RULES.md`, `tests/fixtures` and `examples/`.
+  So are the docs site's rules page, its fixtures and examples gallery pages, and its snippets.
+  `make site` writes them from `RULES.md`, `tests/fixtures`, `examples/` and the CLI help.
+  The gallery's `index.md` and `agent-evals.md` are hand-written.
 - Never let the docs describe unreleased behaviour without an `Unreleased` entry in `CHANGELOG.md`.
   The site deploys from main, and npm readers run the latest release.
 - Never add a warning level.

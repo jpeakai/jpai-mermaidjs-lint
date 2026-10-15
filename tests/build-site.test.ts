@@ -6,8 +6,16 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import pkg from "../package.json" with { type: "json" };
-import { FIXTURE_GROUPS, failures, homeCompare, reportLines, undescribedFolders } from "../scripts/build-site.ts";
+import {
+  FIXTURE_GROUPS,
+  failures,
+  fixtureFolders,
+  homeCompare,
+  reportLines,
+  undescribedFolders,
+} from "../scripts/build-site.ts";
 import { checkMarkdown } from "../src/index.ts";
+import { type Fixture, loadFixtures } from "./fixture-loader.ts";
 import { fence, PROJECT_ROOT, runCli, tempProject } from "./helpers.ts";
 
 const FIXTURES = join(PROJECT_ROOT, "tests", "fixtures");
@@ -44,5 +52,17 @@ describe("build-site", () => {
     expect(failures).toEqual([]);
     expect(snippet).toContain("docs/flow.md:4 contrast-text-below-aa");
     expect(snippet).not.toContain("contrast-text-fixable.md");
+  });
+});
+
+describe("fixture placement", () => {
+  test("every test fixture sits in a described folder, as the fixtures page groups them", () => {
+    expect(undescribedFolders(fixtureFolders(loadFixtures()))).toEqual([]);
+  });
+
+  test("a fixture loose in tests/fixtures/ would fail, not only make site", () => {
+    const [first] = loadFixtures();
+    const loose = { ...(first as Fixture), rel: "tests/fixtures/loose.md" };
+    expect(undescribedFolders(fixtureFolders([...loadFixtures(), loose]))).toEqual(["fixtures"]);
   });
 });

@@ -54,7 +54,8 @@ The fix adds the closing fence at the end of the file, using the opening fence's
 At the top level an unclosed fence runs to the end of the file, so any prose after the diagram ends up inside the fence.
 That prose stays diagram source after the fix, and `parse-diagram-unparseable` then reports it for a human to move.
 A fence inside a quote or a list item ends with its container.
-There the fixer leaves it alone, because the closing line would be a guess.
+There the fixer closes it only when nothing follows the container, using the container's prefix.
+When content follows, the fixer leaves it alone, because the closing line would be a guess.
 Only mermaid fences are checked: a diagram after an unclosed fence of another language is read as that fence's code, and is never seen.
 
 ````text before

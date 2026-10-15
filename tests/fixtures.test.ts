@@ -1,4 +1,4 @@
-// The fixture corpus: every .md and .mmd under tests/fixtures and examples is a
+// The fixture corpus: every .md, .mmd and .mermaid under tests/fixtures and examples is a
 // case. See tests/fixtures/README.md for how to add one.
 
 import { describe, expect, test } from "bun:test";

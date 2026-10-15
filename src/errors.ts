@@ -130,6 +130,52 @@ export class RuleOptionError extends UsageError {
   }
 }
 
+// --fix would write through a symbolic link whose target sits outside the
+// project root, so the run stops before any file is written.
+export class FixOutsideRootError extends UsageError {
+  readonly file: string;
+  readonly target: string;
+
+  constructor(file: string, target: string, root: string) {
+    super(
+      `${file} is a symbolic link to ${target}, outside the project root ${root}; --fix does not write through it. Fix the target in its own project, or name it directly`,
+      "fix-outside-root",
+    );
+    this.file = file;
+    this.target = target;
+  }
+}
+
+// --- runtime: the project or a fixer is in a state the run cannot use -------
+
+// A package.json the run reads, the project's own or an installed plugin's, is
+// not a JSON object. Exits 1, like any runtime failure.
+export class PackageJsonError extends MermaidLintError {
+  readonly file: string;
+
+  constructor(file: string) {
+    super("package-json", `${file} is not a JSON object; fix or remove it`);
+    this.file = file;
+  }
+}
+
+// A fixer, built-in or plugin, kept proposing edits that verified, so the fix
+// never reached a fixpoint. A fixer must be idempotent: once its edit is
+// applied, it proposes nothing for the same text. Nothing is written.
+export class FixNotConvergingError extends MermaidLintError {
+  readonly file: string;
+  readonly rules: string[];
+
+  constructor(file: string, passes: number, rules: string[]) {
+    super(
+      "fix-not-converging",
+      `${file}: --fix did not converge after ${passes} passes; ${rules.join(", ")} kept proposing edits. A fixer must propose nothing once its edit is applied`,
+    );
+    this.file = file;
+    this.rules = rules;
+  }
+}
+
 // --- plugins: a source could not be loaded --------------------------------
 
 // A source that failed to load. `source` is what the user would recognise, a

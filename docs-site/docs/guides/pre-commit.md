@@ -29,7 +29,7 @@ Both runners below pass only the staged files to the linter.
     ```json
     {
       "lint-staged": {
-        "*.{md,mmd}": "mermaidjs-lint --fix"
+        "*.{md,markdown,mmd,mermaid}": "mermaidjs-lint --fix"
       }
     }
     ```
@@ -44,21 +44,30 @@ Both runners below pass only the staged files to the linter.
         hooks:
           - id: mermaidjs-lint
             name: mermaidjs-lint
-            entry: npx mermaidjs-lint
+            entry: npx --no-install mermaidjs-lint
             language: system
-            files: \.(md|mmd)$
+            files: \.(md|markdown|mmd|mermaid)$
     ```
 
     Then install the hook with `pre-commit install`.
 
 With npm, use `npm install --save-dev` and `npx` in place of `bun add --dev` and `bunx`.
 
+Both runners call the linter installed in the project, and never download it.
+lint-staged finds `mermaidjs-lint` in `node_modules/.bin`.
+`--no-install` stops `npx` fetching the unscoped name `mermaidjs-lint`, which is not this package, on a clone that has not run `npm install` yet.
+The filters cover every extension the linter reads: `.md`, `.markdown`, `.mmd` and `.mermaid`.
+
 ## See a commit stopped
 
 Stage the white-on-yellow diagram from [Get started](../get-started.md#3-lint-a-diagram), then commit.
-The report-only hook prints the finding, and the commit does not happen:
+The report-only hook prints its status, then the finding, and the commit does not happen:
 
 ```text
+mermaidjs-lint...........................................................Failed
+- hook id: mermaidjs-lint
+- exit code: 1
+
 docs/architecture.md:6 contrast-text-below-aa classDef warn: text 1.43:1 < 4.5 (#ffffff on #ffd400)
 1 finding(s) in 1 file(s)
 ```

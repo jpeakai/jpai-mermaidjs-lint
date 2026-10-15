@@ -4,12 +4,14 @@
 // computed from, so every accepted edit restarts the pass.
 
 import { optionsFor, type RunFlags } from "../check.ts";
+import { FixNotConvergingError } from "../errors.ts";
 import { buildDocModel, documentKind } from "../model.ts";
 import { BUILTIN, HELPERS, type Registry } from "../rules/registry.ts";
 import type { Edit } from "../rules/types.ts";
 import { verify } from "./verify.ts";
 
 const MAX_PASSES = 1_000;
+const RECENT_PASSES = 50;
 
 export interface FixReport {
   output: string;
@@ -51,6 +53,10 @@ export const fixSourceReport = async (
   const refusedKeys = new Set<string>();
   let current = src;
 
+  // The rule whose edit each pass kept, so a run that never converges can name
+  // the rules still proposing edits at the end.
+  const keptBy: string[] = [];
+
   for (let pass = 0; pass < MAX_PASSES; pass++) {
     const doc = buildDocModel(current, kind);
     const keyOf = (e: Edit): string => `${e.rule}\u0000${current.slice(e.start, e.end)}\u0000${e.text}`;
@@ -85,21 +91,27 @@ export const fixSourceReport = async (
       // the rest.
       if (edits.length > 1 && !overlaps(edits) && (await attempt(edits))) {
         progressed = true;
+      } else {
+        for (const edit of edits) {
+          if (await attempt([edit])) {
+            progressed = true;
+            break;
+          }
+          refusedKeys.add(keyOf(edit));
+          refused.push(edit);
+        }
+      }
+      if (progressed) {
+        keptBy.push(rule.id);
         break;
       }
-      for (const edit of edits) {
-        if (await attempt([edit])) {
-          progressed = true;
-          break;
-        }
-        refusedKeys.add(keyOf(edit));
-        refused.push(edit);
-      }
-      if (progressed) break;
     }
     if (!progressed) return { output: current, applied, refused };
   }
-  throw new Error(`fix did not converge after ${MAX_PASSES} passes; a fixer keeps proposing edits`);
+  // The last passes show who was still editing: a fixer that never converges
+  // keeps one in every pass.
+  const lingering = [...new Set(keptBy.slice(-RECENT_PASSES))].sort();
+  throw new FixNotConvergingError(file, MAX_PASSES, lingering);
 };
 
 export const fixSource = async (

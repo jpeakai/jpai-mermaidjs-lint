@@ -17,15 +17,30 @@ export const SKIP_DIRS = new Set(["node_modules", "vendor", "dist", "build", "tm
 
 const skipDir = (name: string): boolean => name.startsWith(".") || SKIP_DIRS.has(name);
 
+// Whether a link resolves to a directory. A dangling link resolves to nothing.
+const linksToDir = (path: string): boolean => {
+  try {
+    return statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
+};
+
 export interface Collected {
   files: string[];
   // Paths that could not be read, which the caller reports as usage errors.
   unreadable: string[];
+  // Symbolic links a directory walk passed over, to files or folders alike.
+  // A walk never follows a link, so it cannot leave the tree it was given or
+  // loop, and the caller says which it skipped so a gate never passes in
+  // silence over a file it did not read. A link named as a path is followed.
+  symlinks: string[];
 }
 
 export const collectFiles = (paths: string[]): Collected => {
   const files: string[] = [];
   const unreadable: string[] = [];
+  const symlinks: string[] = [];
   const seen = new Set<string>();
 
   const walk = (dir: string): void => {
@@ -38,7 +53,11 @@ export const collectFiles = (paths: string[]): Collected => {
     }
     for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
       const abs = join(dir, entry.name);
-      if (entry.isDirectory()) {
+      if (entry.isSymbolicLink()) {
+        if (!skipDir(entry.name) && (DIAGRAM_FILE_EXTS.has(extname(entry.name).toLowerCase()) || linksToDir(abs))) {
+          symlinks.push(abs);
+        }
+      } else if (entry.isDirectory()) {
         if (!skipDir(entry.name)) walk(abs);
       } else if (entry.isFile() && DIAGRAM_FILE_EXTS.has(extname(entry.name).toLowerCase())) {
         if (!seen.has(abs)) {
@@ -64,5 +83,5 @@ export const collectFiles = (paths: string[]): Collected => {
       unreadable.push(p);
     }
   }
-  return { files, unreadable };
+  return { files, unreadable, symlinks };
 };

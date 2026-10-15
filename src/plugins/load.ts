@@ -49,6 +49,9 @@ const importModule = async (source: PluginSource, runtime?: RuntimeInfo): Promis
 
 const OPTION_TYPES = new Set<OptionType>(["number", "string", "boolean", "string[]"]);
 
+// Option names every rule shares with the built-ins. See checkRule.
+const RESERVED_OPTIONS = ["preset", "profile"] as const;
+
 // Checks one rule's declaration and returns it, so a bad rule fails at load
 // rather than the first time it runs.
 const checkRule = (spec: string, key: string, raw: unknown, own: ReadonlySet<string>): PluginRule => {
@@ -79,6 +82,18 @@ const checkRule = (spec: string, key: string, raw: unknown, own: ReadonlySet<str
     const valid = isRecord(options) && Object.values(options).every((t) => OPTION_TYPES.has(t as OptionType));
     if (!valid) {
       throw new PluginContractError(spec, `${where} options must map names to number, string, boolean or string[]`);
+    }
+    // preset and profile keep their built-in meaning for every rule: the
+    // config checks the value against the built-in names, and --preset and
+    // --profile overwrite it. A rule may declare one to follow the run's
+    // setting, as a string, but cannot give the name another meaning.
+    for (const name of RESERVED_OPTIONS) {
+      if (name in options && (options as Record<string, unknown>)[name] !== "string") {
+        throw new PluginContractError(
+          spec,
+          `${where} declares option "${name}" as ${String((options as Record<string, unknown>)[name])}, but "${name}" is reserved for the built-in ${name}, which is a string set by --${name}; declare it as "string" to follow the run's ${name}, or pick another name`,
+        );
+      }
     }
   }
   return raw as unknown as PluginRule;
@@ -148,7 +163,23 @@ export const loadLocal = async (sources: PluginSource[], runtime?: RuntimeInfo):
   const categories: Record<string, string> = {};
   const owner: Record<string, string> = {};
   const loaded: { key: string; source: PluginSource; raw: unknown }[] = [];
+  // A rule's key is its file's base name, so two files with one base name
+  // (house-x.js and house-x.mjs) would claim one rule. Neither is imported,
+  // and the failure names both, rather than one silently replacing the other.
+  const keyOf = (source: PluginSource): string => basename(source.path, extname(source.path));
+  const byKey = new Map<string, PluginSource[]>();
+  for (const source of sources) byKey.set(keyOf(source), [...(byKey.get(keyOf(source)) ?? []), source]);
+  for (const [key, group] of byKey) {
+    if (group.length < 2) continue;
+    fail(
+      new PluginContractError(
+        (group[0] as PluginSource).spec,
+        `rule "${key}" is defined by more than one file: ${group.map((s) => s.spec).join(", ")}; each rule comes from exactly one file, so rename or remove all but one`,
+      ),
+    );
+  }
   for (const source of sources) {
+    if ((byKey.get(keyOf(source))?.length ?? 0) > 1) continue;
     try {
       const mod = await importModule(source, runtime);
       if (mod.default === undefined) {
@@ -166,7 +197,7 @@ export const loadLocal = async (sources: PluginSource[], runtime?: RuntimeInfo):
         categories[word] = description;
         owner[word] = source.spec;
       }
-      loaded.push({ key: basename(source.path, extname(source.path)), source, raw: mod.default });
+      loaded.push({ key: keyOf(source), source, raw: mod.default });
     } catch (err) {
       fail(err);
     }

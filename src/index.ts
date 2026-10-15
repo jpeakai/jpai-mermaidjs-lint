@@ -4,14 +4,16 @@ export { checkMarkdown, checkModel, type RunFlags } from "./check.ts";
 export { main } from "./cli.ts";
 export { type Config, loadConfig, type PluginLoading, parseConfig, type RuleSetting, type Severity } from "./config.ts";
 export * from "./errors.ts";
-export { collectFiles } from "./files.ts";
+export { type Collected, collectFiles } from "./files.ts";
 export { type FixReport, fixSource, fixSourceReport } from "./fix/engine.ts";
 export { buildDocModel, DIAGRAM_EXTS, type Diagram, type DocModel, documentKind } from "./model.ts";
 export type { ContrastAssessment, StyleDirective, ValueSpan } from "./parse/color.ts";
-export { PRESETS, thresholdsFrom } from "./parse/metrics.ts";
+export { PRESETS, type Preset, type ThresholdConfig, thresholdsFrom } from "./parse/metrics.ts";
 export { type DiagramStats, detectKeyword, extractStats } from "./parse/stats.ts";
 export type { Plugin, PluginEdit, PluginFinding, PluginMeta, PluginRule } from "./plugins/contract.ts";
-export { findProjectRoot, setUp } from "./project.ts";
+export type { SourceKind } from "./plugins/discover.ts";
+export type { PluginFailure } from "./plugins/index.ts";
+export { findProjectRoot, type Setup, type SetupOptions, setUp } from "./project.ts";
 export { FIX_ORDER, RULES } from "./rules/index.ts";
 export {
   BUILTIN,

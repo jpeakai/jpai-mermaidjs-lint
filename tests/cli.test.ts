@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { chain, fence, runCli, tempProject } from "./helpers.ts";
 
@@ -218,5 +218,83 @@ describe("cli additions", () => {
     const r = await runCli(root, ["a.md", "--no-plugins"]);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("unknown-rule");
+  });
+});
+
+describe("what a rule sees as ctx.file", () => {
+  // A local rule that reports the path its check saw, and whose fixer writes
+  // the path it saw to a file beside the project, so both can be compared.
+  const RULE = `import { writeFileSync } from "node:fs";
+export default {
+  category: "diagram",
+  summary: "records ctx.file",
+  check: ({ file }) => [{ line: 1, message: "check saw " + file }],
+  fix: ({ file }) => { writeFileSync(new URL("../../fix-saw.txt", import.meta.url), file); return []; },
+};
+export const categories = { diagram: "d" };`;
+
+  test("is the same absolute path in check and in fix, while the report stays relative", async () => {
+    const root = tempProject({
+      "docs/a.md": fence("flowchart LR\n  A --> B"),
+      ".mermaidjs-lint/rules/diagram-path.mjs": RULE,
+    });
+    const r = await runCli(root, ["--fix", "docs/"]);
+    const fixSaw = readFileSync(join(root, "fix-saw.txt"), "utf8");
+    expect(fixSaw).toBe(join(root, "docs", "a.md"));
+    expect(r.stdout).toContain(`docs/a.md:1 local/diagram-path check saw ${fixSaw}`);
+  });
+});
+
+describe("symbolic links", () => {
+  const linked = (): string => {
+    const root = tempProject({ "docs/real.md": BAD, "outside/target.md": BAD, "outside/inner/deep.md": BAD });
+    symlinkSync(join(root, "outside", "target.md"), join(root, "docs", "link.md"));
+    symlinkSync(join(root, "outside"), join(root, "docs", "linkdir"));
+    return root;
+  };
+
+  test("a directory walk skips each link and names it", async () => {
+    const root = linked();
+    const r = await runCli(root, ["docs/"]);
+    expect(r.stdout).toContain("1 finding(s) in 1 file(s)");
+    expect(r.stderr).toContain("skipped symbolic link docs/link.md");
+    expect(r.stderr).toContain("skipped symbolic link docs/linkdir");
+  });
+
+  test("a link named as a path is read", async () => {
+    const r = await runCli(linked(), ["docs/link.md"]);
+    expect(r.stdout).toContain("docs/link.md:4 contrast-text-below-aa");
+  });
+
+  test("--fix refuses to write through a link whose target is outside the project root", async () => {
+    const outer = tempProject({ "target.md": BAD });
+    const root = tempProject({ "docs/real.md": BAD });
+    symlinkSync(join(outer, "target.md"), join(root, "docs", "link.md"));
+    const r = await runCli(root, ["--fix", "docs/link.md", "docs/real.md"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("error[fix-outside-root]: docs/link.md is a symbolic link to");
+    // Nothing is written, not even the file that is not a link.
+    expect(readFileSync(join(outer, "target.md"), "utf8")).toBe(BAD);
+    expect(readFileSync(join(root, "docs", "real.md"), "utf8")).toBe(BAD);
+  });
+
+  test("--fix writes through a link whose target is inside the project root", async () => {
+    const root = tempProject({ "docs/real.md": BAD, "shared/target.md": BAD });
+    symlinkSync(join(root, "shared", "target.md"), join(root, "docs", "link.md"));
+    const r = await runCli(root, ["--fix", "docs/link.md"]);
+    expect(r.code).toBe(0);
+    expect(readFileSync(join(root, "shared", "target.md"), "utf8")).toContain("color:#000000");
+  });
+});
+
+describe("help layout", () => {
+  test("every rule summary starts in one column, autofixable or not", async () => {
+    const { stdout } = await runCli(tempProject({}), ["--help"]);
+    const rows = stdout.split("\n").filter((l) => /^ {4}[a-z]+-[a-z-]+\*? +\S/.test(l));
+    expect(rows.length).toBeGreaterThan(5);
+    const column = (l: string): number => (/^ {4}\S+ +/.exec(l) as RegExpExecArray)[0].length;
+    expect(new Set(rows.map(column)).size).toBe(1);
+    expect(stdout).toContain("1 when findings remain, a plugin fails to load or the run fails");
+    expect(stdout).toContain("and from the config's plugins list");
   });
 });

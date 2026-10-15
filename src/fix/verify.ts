@@ -57,9 +57,14 @@ const sameDiagrams = async (before: DocModel, after: DocModel): Promise<boolean>
   return true;
 };
 
+// A raw diagram file (.mmd, .mermaid) has no markdown around its diagram, so
+// its tree is an empty root and comparing trees would prove nothing. There,
+// same-tree also demands what same-diagrams does: the diagram is still there
+// and parses to the same structure.
 export const verify = async (edit: Edit, before: DocModel, after: DocModel): Promise<Verdict> => {
   if (edit.expect.kind === "same-tree") {
-    return sameTree(before.tree, after.tree, {}) ? "accept" : "refuse";
+    if (!sameTree(before.tree, after.tree, {})) return "refuse";
+    if (before.kind === "markdown" && after.kind === "markdown") return "accept";
   }
   return (await sameDiagrams(before, after)) ? "accept" : "refuse";
 };

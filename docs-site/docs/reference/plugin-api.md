@@ -3,7 +3,7 @@
 The contract a plugin or a local rule implements.
 For a walkthrough, see [Write a local rule](../guides/local-rule.md) or [Publish a plugin package](../guides/plugin-package.md).
 [The plugin model](../concepts/plugin-model.md) explains how plugins are found and loaded.
-The types are exported from `@jpeakai/mermaidjs-lint`.
+The types are exported from `@jpeakai/mermaidjs-lint`, as `.d.ts` declarations in `dist/types/`, so a TypeScript project needs no extra compiler options.
 
 ## Overview
 
@@ -25,7 +25,7 @@ The default export of a plugin package.
 | Field | Type | Meaning |
 |---|---|---|
 | `meta.name` | `string` | The plugin's name, shown when it loads |
-| `meta.namespace` | `string` | Prefix of every rule id. Lower-case letters, digits and hyphens, starting with a letter. `local` is reserved. |
+| `meta.namespace` | `string` | Prefix of every rule id. Lower-case words of letters and digits, joined by single hyphens, starting with a letter. `local` is reserved. |
 | `meta.apiVersion` | `number` | The contract version the plugin targets. It must be `1`. |
 | `meta.categories` | `Record<string, string>`, optional | New category words, each a single lower-case word, mapped to a one-line description |
 | `rules` | `Record<string, PluginRule>` | Each rule key to its rule |
@@ -39,12 +39,23 @@ Its default export is one `PluginRule`, its file name is the key, and it may exp
 |---|---|---|
 | `category` | `string` | A built-in category, or one the plugin declares |
 | `summary` | `string` | One line, shown by `--list-rules`. `--help` lists the built-in rules only. |
-| `options` | `Record<string, "number" \| "string" \| "boolean" \| "string[]">`, optional | The options the rule accepts, checked against the config before a run |
+| `options` | `Record<string, "number" \| "string" \| "boolean" \| "string[]">`, optional | The options the rule accepts, checked against the config before a run. `preset` and `profile` are reserved, as [Reserved options](#reserved-options) explains. |
 | `check(ctx)` | returns `PluginFinding[]` or a promise of it | Reports findings |
 | `fix(ctx)` | returns `PluginEdit[]` or a promise of it, optional | Proposes edits |
 
-The rule key matches `^[a-z][a-z0-9-]*$`, and must start with its category, as `category-short-name`.
+The rule key matches `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`, and must start with its category, as `category-short-name`.
+So `house-` and `house--x` fail the contract check.
 The rule runs under the id `namespace/key`.
+
+### Reserved options
+
+The option names `preset` and `profile` keep their built-in meaning for every rule.
+
+- **A config value must be a built-in name.** A `profile` in the config is checked against `auto`, `github` and `mkdocs-material`, and a `preset` against the preset names.
+- **The flags overwrite them.** `--preset` and `--profile` replace the configured value for the run.
+- **Declare one only as `"string"`.** The rule then reads the run's preset or profile. Any other type fails the load with `error[plugin-contract]`.
+
+Give a rule's own setting another name, such as `mode`.
 
 ## Context
 
@@ -53,7 +64,7 @@ The rule runs under the id `namespace/key`.
 | Field | Type | Meaning |
 |---|---|---|
 | `doc` | `DocModel` | The parsed file. See [Document model](document-model.md). |
-| `file` | `string` | The path being checked |
+| `file` | `string` | The file's path, the same in `check` and `fix`. The command passes an absolute path, and a library call passes the `file` it was given. |
 | `options` | `Record<string, unknown>` | The rule's options from the config, already type-checked |
 | `helpers.detectKeyword` | function | The keyword of a diagram source |
 | `helpers.wcagRatio(fg, bg)` | function | The WCAG 2 contrast ratio of two colours |
@@ -88,8 +99,8 @@ An edit outside those bounds is refused, and the finding stays.
 
 | Expectation | Holds when |
 |---|---|
-| `same-diagrams` | The markdown is unchanged outside the mermaid fences, and the document holds the same number of diagrams. Each diagram keeps its keyword, its diagram type, its node, edge and subgraph counts, its deepest nesting, its node ids and its subgraph names. |
-| `same-tree` | The markdown tree is unchanged once whitespace in text is collapsed, mermaid fence bodies included |
+| `same-diagrams` | The markdown is unchanged outside the mermaid fences, once whitespace in text is collapsed, and the document holds the same number of diagrams. Each diagram keeps its keyword, its diagram type, its node, edge and subgraph counts, its deepest nesting, its node ids and its subgraph names. |
+| `same-tree` | The markdown tree is identical, except for whitespace in prose text. Mermaid fence bodies must match exactly. In a `.mmd` or `.mermaid` file the tree is empty, so the diagram must also pass the `same-diagrams` check. |
 
 `same-diagrams` does not compare the edge list, so an edge's endpoints, direction and arrow type can change.
 It does not compare labels, node text or style directives either.
@@ -97,6 +108,10 @@ A fixer that declares it must therefore keep those intact itself, because the en
 
 The engine applies an edit, parses the document again, and keeps the edit only when its expectation holds.
 A fixer that throws, returns something other than a list, or returns an edit with no valid expectation stops the run with `error[plugin-fixer]`.
+
+A fixer must be idempotent: once its edit is applied, it proposes nothing for the same text.
+The engine runs every fixer again after each kept edit, until none proposes a change.
+A fixer that keeps proposing edits stops the run after 1000 passes with `error[fix-not-converging]`, naming its rule, and that file is not written.
 
 ## Testing helpers
 
@@ -118,10 +133,10 @@ A plugin that fails to load stops the run with exit code 1 and `error[code]`, un
 | Code | Cause |
 |---|---|
 | `plugin-import` | The module could not be imported |
-| `plugin-contract` | The export breaks the contract: a field is missing or of the wrong type, or the API version differs |
+| `plugin-contract` | The export breaks the contract: a field is missing or of the wrong type, the API version differs, or two local rule files share one name |
 | `plugin-conflict` | Another plugin already claimed the namespace or a category word |
 | `plugin-not-installed` | A declared plugin package is not installed |
-| `plugin-source` | The source cannot be loaded, such as a `.cts` file, or TypeScript on a runtime that cannot import it |
+| `plugin-source` | The source cannot be loaded, such as a `.cts` file, TypeScript on a runtime that cannot import it, or a plugin package whose `package.json` is not a JSON object |
 
 A fixer that misbehaves during a run stops it with `error[plugin-fixer]`, as [Edits](#edits) describes.
 [Error codes](cli.md#error-codes) lists every code the command can print.

@@ -40,7 +40,7 @@ SKILL = re.search(r"^name:\s*(\S+)", (SKILL_DIR / "SKILL.md").read_text(encoding
 #: directory. Anything else the agent adds is still flagged.
 LINT_SCRATCH = (".*_cache/*",)
 
-#: What a user types after naming the skill (ADR 0044). One sentence for every case, so a
+#: What a user types after naming the skill. One sentence for every case, so a
 #: difference between cells is the fixture's and never the wording's.
 TASK = "{target}: fix every finding the linter reports on its diagram, editing the file in place."
 

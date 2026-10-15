@@ -2,6 +2,7 @@
 // is captured by swapping console.log and console.error for the one call.
 
 import { afterEach, describe, expect, test } from "bun:test";
+import { optionsFor } from "../src/check.ts";
 import { describeError, main } from "../src/cli.ts";
 import {
   ConfigFileError,
@@ -194,5 +195,15 @@ describe("main(argv, cwd)", () => {
     expect(r.out).toContain("contrast-text-below-aa");
     const plain = tempProject({ "a.md": doc });
     expect((await run(plain, ["a.md"])).out).toContain("contrast-directive-unauditable");
+  });
+});
+
+describe("options a rule receives", () => {
+  test("a preset reaches the rule by its canonical name, whatever alias was given", async () => {
+    const rule = { options: { preset: "string", profile: "string" } } as unknown as Parameters<typeof optionsFor>[0];
+    expect(optionsFor(rule, undefined, { preset: "H" }).preset).toBe("high-density");
+    expect(optionsFor(rule, { preset: "low" }, {}).preset).toBe("low-density");
+    expect(optionsFor(rule, undefined, {}).preset).toBeUndefined();
+    expect(optionsFor(rule, undefined, { profile: "github" }).profile).toBe("github");
   });
 });

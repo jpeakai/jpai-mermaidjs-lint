@@ -55,7 +55,8 @@ The option names `preset` and `profile` keep their built-in meaning for every ru
 
 - **A config value must be a built-in name.** A `profile` in the config is checked against `auto`, `github` and `mkdocs-material`, and a `preset` against the preset names.
 - **The flags overwrite them.** `--preset` and `--profile` replace the configured value for the run.
-- **Declare one only as `"string"`.** The rule then reads the run's preset or profile. Any other type fails the load with `error[plugin-contract]`.
+- **Declare one only as `"string"`.** Any other type fails the load with `error[plugin-contract]`.
+- **The rule reads what was set, not a default.** `ctx.options.preset` is the canonical preset name, such as `high-density`, even when the user typed an alias. `ctx.options.profile` is the profile as given. Each is absent when neither the flag nor the config sets it, so treat absent as `high-density` and `auto`.
 
 Give a rule's own setting another name, such as `mode`.
 

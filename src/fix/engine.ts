@@ -73,7 +73,7 @@ export const fixSourceReport = async (
 
     let progressed = false;
     for (const rule of registry.fixOrder) {
-      const options = optionsFor(rule, registry.options.get(rule.id), flags);
+      const options = optionsFor(rule, registry.options.get(rule.id), flags, file);
       const proposed = (await rule.fix?.({ doc, file, options, helpers: HELPERS })) ?? [];
       const sound = proposed.filter((e) => {
         if (wellFormed(e, current.length)) return true;

@@ -5,7 +5,7 @@ import { lstat, readFile, realpath, writeFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import pkg from "../package.json" with { type: "json" };
-import { checkModel, checkRunFlags, type RunFlags } from "./check.ts";
+import { canvasSetAside, checkModel, checkRunFlags, type RunFlags } from "./check.ts";
 import { FixOutsideRootError, FlagError, MermaidLintError, UsageError } from "./errors.ts";
 import { collectFiles, DIAGRAM_FILE_EXTS, SKIP_DIRS } from "./files.ts";
 import { fixSourceReport } from "./fix/engine.ts";
@@ -55,7 +55,8 @@ Examples of every rule, with fixes: https://jpeakai.github.io/jpai-mermaidjs-lin
 --canvas-light COLOUR and --canvas-dark COLOUR set the page a host draws in each theme, under the github
   profile only. A translucent fill, an edge label box and a sequence diagram's page-backed text are scored
   on it. Each is an opaque CSS colour such as #faf8f9, and a side not given keeps the config's, or GitHub's
-  (#ffffff light, #0d1117 dark). A file scored under mkdocs-material refuses a canvas with a usage error.
+  (#ffffff light, #0d1117 dark). A file scored under mkdocs-material refuses a canvas flag with a usage
+  error, and sets a config canvas aside when auto picked the profile.
 --json prints one JSON object instead of text lines.
 --fix applies every fix it can prove safe, then reports what remains.
 A fixer that is unsure leaves the text alone and the finding stays.
@@ -280,6 +281,16 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
   }
   if (files.length === 0) throw new FlagError("files", "no matching files");
   if (values.fix) await refuseOutsideLinks(files, root, cwd);
+
+  // A config canvas is set aside for a file the auto profile reads as
+  // mkdocs-material, and one line names every such file, so the run says what
+  // it scored without the canvas.
+  const setAside = files.filter((file) => canvasSetAside(file, flags, registry));
+  if (setAside.length > 0) {
+    console.error(
+      `mermaidjs-lint: config canvas set aside for ${plural(setAside.length, "file")} scored under mkdocs-material: ${setAside.map((f) => display(f, cwd)).join(", ")}`,
+    );
+  }
 
   // Every rule, in check and in fix, sees the file as an absolute path, so a
   // rule that reads the path sees one form, and the auto profile is found

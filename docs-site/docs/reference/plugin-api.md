@@ -41,7 +41,7 @@ Its default export is one `PluginRule`, its file name is the key, and it may exp
 |---|---|---|
 | `category` | `string` | A built-in category, or one the plugin declares |
 | `summary` | `string` | One line, shown by `--list-rules`. `--help` lists the built-in rules only. |
-| `options` | `Record<string, "number" \| "string" \| "boolean" \| "string[]" \| "canvas">`, optional | The options the rule accepts, checked against the config before a run. `preset` and `profile` are reserved, as [Reserved options](#reserved-options) explains. A `canvas` option is `{ light?, dark? }` of opaque CSS colours, and receives `--canvas-light` and `--canvas-dark` side by side. |
+| `options` | `Record<string, "number" \| "string" \| "boolean" \| "string[]" \| "canvas">`, optional | The options the rule accepts, checked against the config before a run. `preset` and `profile` are reserved, as [Reserved options](#reserved-options) explains. An option of type `canvas`, under any name, is `{ light?, dark? }` of opaque CSS colours, and receives `--canvas-light` and `--canvas-dark` side by side. |
 | `check(ctx)` | returns `PluginFinding[]` or a promise of it | Reports findings |
 | `fix(ctx)` | returns `PluginEdit[]` or a promise of it, optional | Proposes edits |
 
@@ -70,7 +70,7 @@ Give a rule's own setting another name, such as `mode`.
 |---|---|---|
 | `doc` | `DocModel` | The parsed file. See [Document model](document-model.md). |
 | `file` | `string` | The file's path, the same in `check` and `fix`. The command passes an absolute path, and a library call passes the `file` it was given. |
-| `options` | `Record<string, unknown>` | The rule's options from the config, already type-checked, plus the `--preset` or `--profile` flag for either it declares. A preset arrives by its canonical name. |
+| `options` | `Record<string, unknown>` | The rule's options from the config, already type-checked. The `--preset` or `--profile` flag replaces either one the rule declares. `--canvas-light` and `--canvas-dark` set their side of every option of type `canvas`. A preset arrives by its canonical name. A rule that declares `profile` and a canvas loses its config canvas for a file the auto profile reads as `mkdocs-material`. |
 | `helpers.detectKeyword` | function | The keyword of a diagram source |
 | `helpers.wcagRatio(fg, bg)` | function | The WCAG 2 contrast ratio of two colours |
 | `helpers.compositeOver(fg, bg)` | function | A translucent colour blended over a background |

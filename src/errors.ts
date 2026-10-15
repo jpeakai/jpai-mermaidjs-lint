@@ -132,13 +132,22 @@ export class RuleOptionError extends UsageError {
 
 // A canvas was set for a file scored under mkdocs-material, whose page is
 // Material's own, so the canvas would change nothing. Ignoring it would report
-// a pass the caller did not ask for, so the run stops instead.
+// a pass the caller did not ask for, so the run stops instead. A config canvas
+// on a file the auto profile reads as mkdocs-material is set aside, not
+// refused (MJL-0019), so this error comes from one of two explicit settings,
+// and its hint names the way out of each.
 export class CanvasProfileError extends UsageError {
   readonly file: string;
 
-  constructor(file: string) {
+  // "flag": a canvas flag met a file the auto profile reads as mkdocs-material.
+  // "profile": a canvas met an explicitly set mkdocs-material profile.
+  constructor(file: string, cause: "flag" | "profile" = "flag") {
+    const hint =
+      cause === "flag"
+        ? "run --canvas-light and --canvas-dark over the GitHub-rendered paths only, or set the canvas in the config, which a Material file sets aside"
+        : "remove the mkdocs-material profile setting for this run, or remove the canvas";
     super(
-      `${file}: a canvas applies under the github profile only, and this file is scored under mkdocs-material, whose page is Material's own; drop the canvas for it, or pass --profile github`,
+      `${file}: a canvas applies under the github profile only, and this file is scored under mkdocs-material, whose page is Material's own; ${hint}`,
       "canvas-profile",
     );
     this.file = file;

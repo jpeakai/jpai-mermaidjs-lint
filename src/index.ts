@@ -1,6 +1,6 @@
 // Public API.
 
-export { checkMarkdown, checkModel, type RunFlags } from "./check.ts";
+export { canvasSetAside, checkMarkdown, checkModel, type RunFlags } from "./check.ts";
 export { main } from "./cli.ts";
 export { type Config, loadConfig, type PluginLoading, parseConfig, type RuleSetting, type Severity } from "./config.ts";
 export * from "./errors.ts";

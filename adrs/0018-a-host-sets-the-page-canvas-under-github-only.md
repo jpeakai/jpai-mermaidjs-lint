@@ -19,6 +19,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-16T00:00:00Z }
 ## Relates to
 
 - See also [MJL-0017](0017-sequence-colours-come-from-mermaids-theme-engine.md) (the sequence pairs on the page are scored on the canvas)
+- Excepted by [MJL-0019](0019-a-material-file-sets-a-config-canvas-aside.md) (a config canvas on a file the auto profile reads as mkdocs-material is set aside rather than refused)
 
 ## Decision
 

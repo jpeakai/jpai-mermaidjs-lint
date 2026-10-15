@@ -67,7 +67,7 @@ export default {
 - **`categories`** declares any new category word the rules use, and each rule key starts with its category word. A built-in category needs no declaration.
   A category word is global, so no other plugin or local rule in the project may declare it, as [the plugin model](../concepts/plugin-model.md#namespaces-and-categories-are-global) explains.
   This guide uses `acme` because [Write a local rule](local-rule.md) already declares `house`.
-- **`options`** declares each option the rule accepts, as a name mapped to `number`, `string`, `boolean` or `string[]`. The rule reads them from `options`.
+- **`options`** declares each option the rule accepts, as a name mapped to one of the types in [PluginRule](../reference/plugin-api.md#pluginrule), such as `number` or `canvas`. The rule reads them from `options`.
 
 A flowchart opens with either `flowchart` or `graph`, so the rule checks both keywords.
 

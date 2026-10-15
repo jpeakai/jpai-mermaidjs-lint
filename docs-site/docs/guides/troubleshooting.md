@@ -17,6 +17,7 @@ The first line of standard error names the cause as `error[code]`, and the usage
 | `error[flag]: Unknown option '--x'` | A misspelt flag, or one newer than your installed version | Check the flag in `--help` |
 | `error[unknown-rule]` | The config names a rule that is not loaded | See [A plugin rule id is unknown](#a-plugin-rule-id-is-unknown) |
 | `error[rule-option]` | A rule option has the wrong name or type | Match the option to [Config file](../reference/configuration.md#rule-options) |
+| `error[canvas-profile]` | A `--canvas-light` or `--canvas-dark` flag met a file scored under `mkdocs-material`, or a canvas met an explicit `mkdocs-material` profile | Run the canvas flags over the GitHub-rendered paths only, or set the canvas in the config, which a Material file sets aside. See [A host with its own page sets a canvas](../concepts/contrast.md#a-host-with-its-own-page-sets-a-canvas). |
 | `error[config-code]` | A `.mjs` config under `--no-plugins` | Pass `--config` with a `.json` config, or drop `--no-plugins` |
 | `error[config-file]`, `error[config-shape]` or another `config-` code | The config cannot be read or has the wrong shape | Fix the file the error names |
 

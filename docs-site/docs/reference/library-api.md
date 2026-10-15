@@ -30,6 +30,7 @@ const findings = await checkMarkdown(src, "docs/architecture.md", {}, registry);
 | `RunFlags` | `{ preset?: string; profile?: string; canvas?: CanvasSetting }` | The run-level settings `--preset`, `--profile`, `--canvas-light` and `--canvas-dark` give |
 | `CanvasSetting` | `{ light?: string; dark?: string }` | The page colour in each theme. A side left out keeps the config's, or GitHub's. |
 | `GITHUB_CANVAS` | `{ light: "#ffffff", dark: "#0d1117" }` | The default canvas, as a `Canvas` with both sides set |
+| `canvasSetAside` | `(file: string, flags: RunFlags = {}, registry: Registry = BUILTIN)` | `boolean`: whether a check of `file` sets a config canvas aside, because `auto` scores it under `mkdocs-material` |
 
 A `file` ending in `.mmd` or `.mermaid` is read as one diagram, and any other name as markdown.
 The `file` also decides the `auto` contrast profile, so pass the real path when the profile matters.

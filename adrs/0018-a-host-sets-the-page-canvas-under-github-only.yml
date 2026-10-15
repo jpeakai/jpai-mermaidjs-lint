@@ -19,6 +19,9 @@ relates_to:
   - relation: see_also
     target: MJL-0017
     note: the sequence pairs on the page are scored on the canvas
+  - relation: excepted_by
+    target: MJL-0019
+    note: a config canvas on a file the auto profile reads as mkdocs-material is set aside rather than refused
 
 decision:
   given: translucent fills, edge label boxes and page-backed sequence elements are scored on the page colour. A host other than GitHub draws its own page.

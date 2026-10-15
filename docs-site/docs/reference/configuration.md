@@ -96,8 +96,16 @@ A canvas is type-checked when the config loads, and each mistake is `error[rule-
 - A side that is not a string, will not parse as a CSS colour, or is translucent.
 - A `canvas` beside `"profile": "mkdocs-material"` on the same rule, because Material draws its own page.
 
-A file that `auto` scores under `mkdocs-material` refuses a canvas when it is checked, with `error[canvas-profile]`.
-A plugin rule may declare an option of type `canvas` too. It receives `--canvas-light` and `--canvas-dark` as the contrast rules do, and its value is checked the same way.
+A file that `auto` scores under `mkdocs-material` sets a config canvas aside, and is scored under `mkdocs-material`.
+The run prints one stderr line naming every such file, so one config serves a repo that holds a Material site beside its GitHub-rendered markdown.
+A canvas flag on such a file still stops the run with `error[canvas-profile]`, as [A host with its own page sets a canvas](../concepts/contrast.md#a-host-with-its-own-page-sets-a-canvas) explains.
+
+A plugin rule may declare an option of type `canvas` too, under any name.
+Every option of that type receives `--canvas-light` and `--canvas-dark` as the contrast rules do, and its value is checked the same way.
+
+A `--profile` flag overrides the `profile` option.
+A `--canvas-light` or `--canvas-dark` flag overrides its own side of the `canvas` option.
+[Precedence](cli.md#precedence) gives the full order.
 
 ### Complexity rules
 
@@ -114,8 +122,7 @@ Every complexity rule accepts the same options.
 | `nodeIdeal`, `vcsIdeal`, `vcsCritical` | number | Accepted, but no rule reads them yet |
 
 A threshold option overrides the preset's value.
-A `--preset` or `--profile` flag overrides the `preset` or `profile` option, but not a threshold option.
-A `--canvas-light` or `--canvas-dark` flag overrides its own side of the `canvas` option.
+A `--preset` flag overrides the `preset` option, but not a threshold option.
 [Precedence](cli.md#precedence) gives the full order.
 The preset values are:
 

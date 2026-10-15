@@ -320,6 +320,19 @@
     },
     {
       "data": {
+        "id": "MJL-0019",
+        "label": "0019",
+        "parent": "group-contrast",
+        "colour": "#0891b2",
+        "file": "0019-a-material-file-sets-a-config-canvas-aside.md",
+        "title": "A Material file sets a config canvas aside",
+        "description": "A config canvas is set aside, with a note, for a file the auto profile reads as mkdocs-material",
+        "status": "accepted",
+        "tags": "contrast, accessibility, cli"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -376,6 +389,26 @@
         "label": "see also",
         "relation": "see_also",
         "note": "the sequence pairs on the page are scored on the canvas"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0018-excepted_by-MJL-0019",
+        "source": "MJL-0018",
+        "target": "MJL-0019",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a config canvas on a file the auto profile reads as mkdocs-material is set aside rather than refused"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0019-excepts-MJL-0018",
+        "source": "MJL-0019",
+        "target": "MJL-0018",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a config canvas on a file the auto profile reads as mkdocs-material is set aside rather than refused"
       }
     }
   ],

@@ -470,7 +470,8 @@ flowchart LR
 ## Contrast
 
 Contrast is read through a profile.
-Under `github` the declared pairs are scored as written, and a translucent fill is composited over both GitHub canvases.
+Under `github` the declared pairs are scored as written, and a translucent fill is composited over both page canvases.
+The canvases are GitHub's unless a run sets its own, as [A host with its own page sets a canvas](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/contrast/#a-host-with-its-own-page-sets-a-canvas) explains.
 Under `mkdocs-material` the host forces the label text, so `color:` is ignored and the host text is scored in both themes.
 `auto` reads `mkdocs-material` when any parent folder holds `mkdocs.yml` or `mkdocs.yaml`.
 A `sequenceDiagram` is scored by the theme colours Mermaid resolves for it, in both themes, as [Contrast profiles](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/contrast/#a-sequence-diagram-is-scored-by-its-theme-colours) explains.

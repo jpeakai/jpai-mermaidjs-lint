@@ -66,10 +66,27 @@ Set the canvas with `--canvas-light` and `--canvas-dark`, or with the `canvas` o
 Each side is an opaque CSS colour, and a side you leave out keeps GitHub's.
 A translucent canvas is refused, because nothing shows through a page.
 
+The canvas changes the page only.
+Scoring still assumes the host draws Mermaid's `default` theme in light and its `dark` theme in dark.
+That assumption sets the edge label box, the `erDiagram` rows and every sequence theme variable.
+A host that draws another theme, or the same theme in both modes, is not modelled, so its scores are approximate.
+For a sequence diagram on such a host, pin the theme the host draws, so both modes are scored with it.
+For any other diagram, check the scores against the host by eye in both modes.
+
 A canvas applies under `github` only.
 Material draws its own page, and this tool models only Material's stock colours.
-So a file scored under `mkdocs-material` refuses a canvas with a usage error, rather than ignoring it and reporting a pass the canvas never affected.
-This holds when `auto` picks `mkdocs-material` for the file too.
+How a file under `mkdocs-material` treats a canvas depends on where the canvas comes from:
+
+| Canvas from | Profile from | Result |
+|---|---|---|
+| The config | `auto` | The canvas is set aside for that file, which is scored under `mkdocs-material`. One stderr line names every such file. |
+| `--canvas-light` or `--canvas-dark` | `auto` | Usage error `canvas-profile`, exit 2 |
+| Any | `--profile mkdocs-material` or the rule's `profile` option | Usage error, exit 2 |
+
+The config covers the whole tree.
+So a repo with a Material site keeps one config with a canvas, and its Material files set it aside.
+A flag is an explicit setting for the run, so the run stops rather than ignore it and report a pass the canvas never affected.
+To pass the flags in such a repo, run them over the GitHub-rendered paths only.
 
 ### Edge labels
 
@@ -106,7 +123,8 @@ Under `mkdocs-material`, an `erDiagram` is scored like any other diagram.
 A `sequenceDiagram` has no style lines.
 Its colours are theme variables, some set in frontmatter or an `%%{init}%%` directive and the rest derived by Mermaid's theme.
 The tool reads the config with Mermaid's own parser and resolves every variable with Mermaid's own theme engine, in both themes.
-Under `github` that is the `default` theme in light and the `dark` theme in dark. A theme the config pins applies to both.
+Under `github` that is the `default` theme in light and the `dark` theme in dark.
+A theme the config pins applies to both, because GitHub draws a pinned theme in light and in dark.
 
 The SVG has no background, so anything without a box of its own sits on the page.
 A `themeVariables.background` paints nothing behind it.
@@ -125,10 +143,19 @@ Under `github`, each element is scored against this background:
 | `autonumber` number | `sequenceNumberColor` | `signalColor` | Text |
 | Messages and frame text inside a `rect` | `signalTextColor`, `signalColor`, `loopTextColor` | The `rect` colour | Text, border |
 
-A row is scored only when the diagram draws that element.
+A row is scored when the diagram uses that kind of element.
+Two rows are scored more widely.
+The participant label row is scored even when every participant is a human `actor`.
+Frame text inside a `rect` is scored whenever the diagram has a frame, even one outside the `rect`.
 A translucent background is composited over the page first.
-Mermaid's own themes pass, with one exception. The `dark` theme draws note text at 4.49 to 1, so a note with no colours set fails in dark.
+With no theme pinned, Mermaid's `default` and `dark` themes pass, except notes in dark.
+The `dark` theme draws note text at 4.49 to 1, so a note with no colours set fails in dark.
 A note draws its own box, so setting `noteBkgColor` and `noteTextColor` to one readable pair fixes it in both themes.
+
+A pinned theme draws both light and dark, so its page-backed text fails on one of the two pages.
+`theme: default` puts its dark message text on GitHub's dark page, and `theme: dark` puts its light message text on the white page.
+Setting the page-backed colours yourself does not help under `github`: no text colour reaches 4.5 to 1 on both `#ffffff` and `#0d1117`.
+So under `github`, leave the theme unpinned and let Mermaid draw `default` in light and `dark` in dark.
 
 Under `mkdocs-material`, Material draws Mermaid's `default` theme in both of its schemes.
 Its own CSS replaces every sequence label, box, note, frame, `rect` and number colour. So no sequence text pair is the author's, and none is scored.
@@ -139,7 +166,7 @@ A config the tool cannot model is reported as `contrast-directive-unauditable`:
 
 - **`themeCSS`.** CSS can restyle anything, and under Material it replaces the host's own CSS.
 - **A theme other than `base`, `default`, `dark`, `forest` or `neutral`.** The other themes colour each actor from palettes of their own.
-- **A colour Mermaid cannot read.** The theme derives colours from each other, so one bad value stops the whole theme.
+- **A colour Mermaid cannot read.** A bad colour that others derive from, such as `primaryColor`, stops the whole theme. Any other bad colour, such as `signalTextColor`, is reported for each pair it is in, and the rest of the diagram is still scored.
 
 The colours change between Mermaid releases, so the package pins the exact Mermaid version it resolves them with.
 

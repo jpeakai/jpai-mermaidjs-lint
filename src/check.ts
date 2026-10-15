@@ -6,7 +6,14 @@
 
 import { FlagError } from "./errors.ts";
 import { buildDocModel, type DocModel, documentKind } from "./model.ts";
-import { type CanvasSetting, canvasColourProblem, PROFILES, THEMES, type Theme } from "./parse/contrast.ts";
+import {
+  type CanvasSetting,
+  canvasColourProblem,
+  detectProfile,
+  PROFILES,
+  THEMES,
+  type Theme,
+} from "./parse/contrast.ts";
 import { canonicalPreset, PRESET_NAMES } from "./parse/metrics.ts";
 import { BUILTIN, HELPERS, type Registry } from "./rules/registry.ts";
 import type { Finding, Rule, RuleOptions } from "./rules/types.ts";
@@ -57,10 +64,36 @@ export const checkRunFlags = (flags: RunFlags, prefix = ""): void => {
   }
 };
 
+// Every option the rule declares with the canvas type, whatever its name.
+const canvasOptions = (rule: Rule): string[] =>
+  Object.entries(rule.options ?? {})
+    .filter(([, type]) => type === "canvas")
+    .map(([name]) => name);
+
+const hasFlagCanvas = (flags: RunFlags): boolean => THEMES.some((side) => flags.canvas?.[side] !== undefined);
+
+// A canvas from the config is set aside, rather than refused, for a file the
+// auto profile reads as mkdocs-material. The config covers the whole tree and
+// has no per-path setting, so refusing it would stop every run over a repo
+// that holds a Material site beside its GitHub-rendered markdown. A canvas
+// flag, or an explicit mkdocs-material profile, still refuses (MJL-0019).
+const setsAside = (rule: Rule, options: Record<string, unknown>, flags: RunFlags, file: string): boolean =>
+  !hasFlagCanvas(flags) &&
+  rule.options?.profile !== undefined &&
+  (options.profile ?? "auto") === "auto" &&
+  canvasOptions(rule).some((name) => options[name] !== undefined) &&
+  detectProfile(file) === "mkdocs-material";
+
 // The options a rule runs with: its configured options, then a flag for any
 // option the rule declares. A preset reaches the rule by its canonical name,
-// so a plugin rule never has to resolve an alias such as `high` or `H`.
-export const optionsFor = (rule: Rule, configured: RuleOptions | undefined, flags: RunFlags): RuleOptions => {
+// so a plugin rule never has to resolve an alias such as `high` or `H`. Given
+// the file, a config canvas the file sets aside is dropped.
+export const optionsFor = (
+  rule: Rule,
+  configured: RuleOptions | undefined,
+  flags: RunFlags,
+  file?: string,
+): RuleOptions => {
   const options: Record<string, unknown> = { ...configured };
   for (const name of ["preset", "profile"] as const) {
     const value = flags[name];
@@ -68,19 +101,35 @@ export const optionsFor = (rule: Rule, configured: RuleOptions | undefined, flag
   }
   if (typeof options.preset === "string") options.preset = canonicalPreset(options.preset) ?? options.preset;
   // A canvas flag sets one side over the configured canvas, so --canvas-dark
-  // alone keeps a configured light side.
+  // alone keeps a configured light side. It reaches every option of the
+  // canvas type, not only one named canvas.
   const canvas = flags.canvas;
-  if (canvas && THEMES.some((side) => canvas[side] !== undefined) && rule.options?.canvas === "canvas") {
-    const configured = typeof options.canvas === "object" && options.canvas !== null ? options.canvas : {};
-    const merged: Record<string, string> = { ...(configured as Record<string, string>) };
-    for (const side of THEMES) {
-      const value = canvas[side];
-      if (value !== undefined) merged[side] = value;
+  if (canvas && hasFlagCanvas(flags)) {
+    for (const name of canvasOptions(rule)) {
+      const current = options[name];
+      const merged: Record<string, string> = {
+        ...(typeof current === "object" && current !== null ? (current as Record<string, string>) : {}),
+      };
+      for (const side of THEMES) {
+        const value = canvas[side];
+        if (value !== undefined) merged[side] = value;
+      }
+      options[name] = merged;
     }
-    options.canvas = merged;
+  }
+  if (file !== undefined && setsAside(rule, options, flags, file)) {
+    for (const name of canvasOptions(rule)) delete options[name];
   }
   return options;
 };
+
+// Whether any rule sets its config canvas aside for this file, so the command
+// can say which files were scored without it.
+export const canvasSetAside = (file: string, flags: RunFlags = {}, registry: Registry = BUILTIN): boolean =>
+  registry.rules.some((rule) => {
+    const options = optionsFor(rule, registry.options.get(rule.id), flags);
+    return setsAside(rule, options as Record<string, unknown>, flags, file);
+  });
 
 export const checkModel = async (
   doc: DocModel,
@@ -90,7 +139,7 @@ export const checkModel = async (
 ): Promise<Finding[]> => {
   checkRunFlags(flags);
   const perRule = registry.rules.map((rule) =>
-    rule.check({ doc, file, options: optionsFor(rule, registry.options.get(rule.id), flags), helpers: HELPERS }),
+    rule.check({ doc, file, options: optionsFor(rule, registry.options.get(rule.id), flags, file), helpers: HELPERS }),
   );
   const findings = (await Promise.all(perRule)).flat();
   return findings.sort((a, b) => a.line - b.line || a.rule.localeCompare(b.rule));

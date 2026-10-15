@@ -37,6 +37,8 @@ Some flags cannot be combined, and the run exits 2 when they are:
 
 A canvas colour that will not parse, or is translucent, is `error[flag]` with exit code 2.
 A file that `auto` or the config scores under `mkdocs-material` refuses a canvas flag with `error[canvas-profile]`.
+A canvas from the config is set aside, not refused, for a file that `auto` scores under `mkdocs-material`.
+One stderr line names those files.
 [A host with its own page sets a canvas](../concepts/contrast.md#a-host-with-its-own-page-sets-a-canvas) explains what the canvas changes.
 For example, a viewer with its own page colours runs:
 
@@ -126,7 +128,7 @@ A failure prints `error[code]: reason`, and the same `code` is on the exported e
 | `rule-setting` | 2 | A rule setting that is not a severity, or a severity and options |
 | `unknown-rule` | 2 | A rule id that is not loaded. Outside strict mode, a plugin rule id is set aside instead. |
 | `rule-option` | 2 | An option the rule does not declare, a value of the wrong type, a preset or profile name that does not exist, a canvas colour that is not an opaque CSS colour, or a canvas beside `profile` `mkdocs-material` |
-| `canvas-profile` | 2 | A canvas was set for a file scored under `mkdocs-material`, whose page is Material's own |
+| `canvas-profile` | 2 | A canvas flag met a file scored under `mkdocs-material`, or a canvas met an explicit `mkdocs-material` profile. Material's page is its own. |
 | `fix-outside-root` | 2 | `--fix` was given a symbolic link whose target is outside the project root |
 | `package-json` | 1 | The project's `package.json` is not a JSON object. A run with plugins off, through `--no-plugins` or `"plugins": false` in the config, reads nothing from it, so it carries on. |
 | `fix-not-converging` | 1 | A fixer kept proposing edits for 1000 passes. The message names the rules still editing, and that file is not written. |

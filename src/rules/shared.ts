@@ -109,7 +109,9 @@ export const settingsOf = (ctx: RuleContext): ContrastSettings => {
     const problem = canvasColourProblem(setting[side]);
     if (problem) throw new Error(`canvas.${side} ${problem}: ${JSON.stringify(setting[side])}`);
   }
-  if (profile === "mkdocs-material") throw new CanvasProfileError(ctx.file);
+  if (profile === "mkdocs-material") {
+    throw new CanvasProfileError(ctx.file, ctx.options.profile === "mkdocs-material" ? "profile" : "flag");
+  }
   return { profile, canvas: resolveCanvas(setting) };
 };
 

@@ -11,7 +11,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 - **ADR layout:** `okf-yaml`, with records authored in `adrs/NNNN-slug.yml` and markdown generated from them
 - **Record ids:** prefixed `MJL-` in this repo, so a citation is unambiguous across bundles
 - **Generated paths:** `adrs/*.md`, `adrs/index.md`, `adrs/graph.md`, `adrs/graph.json`, `adrs/graph.html`
-- **Regenerate:** `make fix`, and `make ci` asserts the tree is clean afterwards
+- **Regenerate:** `make adrs`, which `make fix` runs, and `make ci` asserts the tree is clean afterwards
 - **Agent files:** `CLAUDE.md` at root, with no nested agent files
 - **Prose gates:** every markdown file is gated by `make docs-ci`, and so are its diagrams
 - **Changelog:** not used

@@ -1,3 +1,9 @@
+---
+type: Decision Graph
+title: Decision relationship graph
+description: Every typed edge between the bundle's decision records
+---
+
 <!-- GENERATED from the bundle's *.yml by okf_render.py. Do not edit; regenerate. -->
 
 # Decision relationship graph

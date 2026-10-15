@@ -1,4 +1,4 @@
-.PHONY: install build fix check ci typecheck test test-cov-ts docs-ci clean
+.PHONY: install build fix adrs check ci typecheck test test-cov-ts docs-ci clean
 
 install:
 	uv sync
@@ -14,9 +14,12 @@ build:
 	bun build src/testing.ts --target=node --format=esm --packages=external --outfile dist/testing.js
 
 # Autofix formatting and lint, then regenerate the decision bundle.
-fix:
+fix: adrs
 	bunx --bun @biomejs/biome check --write src tests
-	uv run meta adr render
+
+# Validate the records against adrs/record.schema.json, then render the bundle.
+adrs:
+	uv run adrs/okf_render.py adrs --schema adrs/record.schema.json --author jpai-mermaidjs-lint
 
 # The package gates, with no autofix and no private tooling, so GitHub Actions
 # and npm prepublishOnly can run them with Bun alone.
@@ -40,11 +43,7 @@ test-cov-ts: build
 		END { if (!found) { print "ERROR: no coverage summary"; exit 1 } }' tmp/coverage.txt
 
 # Regenerate, gate, then assert the tree is clean.
-ci: fix typecheck test-cov-ts
-	@test -z "$$(git status --porcelain)" || { \
-		git status --short; \
-		echo "ERROR: regenerate left the tree dirty - commit the generated files"; \
-		exit 1; }
+ci: fix typecheck test-cov-ts docs-ci
 
 # Prose gates over every markdown file, and this repo's own diagram gates over
 # the diagrams in them, using this repo's source and never a published copy.

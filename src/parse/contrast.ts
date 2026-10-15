@@ -16,6 +16,7 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { alphaOf, type ContrastAssessment, compositeOver, type StyleDirective, wcagAssess } from "./color.ts";
+import { getMermaidCore, type MermaidCore } from "./stats.ts";
 
 export type Profile = "github" | "mkdocs-material";
 export type Theme = "light" | "dark";
@@ -73,10 +74,14 @@ const MERMAID_ER = {
 const AA_NORMAL = 4.5;
 const AA_NON_TEXT = 3.0;
 
+// What a pair was scored from: a style directive, or, in a sequence diagram,
+// a theme variable, which has no directive and no value span to rewrite.
+export type ContrastSource = StyleDirective | (Omit<StyleDirective, "kind"> & { kind: "themeVariables" });
+
 export interface ContrastPair {
   kind: PairKind;
   selector: string;
-  directive: StyleDirective;
+  directive: ContrastSource;
   foreground: string;
   background: string;
   line: number; // line within the diagram text
@@ -105,7 +110,7 @@ export interface ContrastResult {
   skipped: SkippedDirective[];
 }
 
-const scorePair = (kind: PairKind, d: StyleDirective, fg: string, bg: string): ContrastPair => {
+const scorePair = (kind: PairKind, d: ContrastSource, fg: string, bg: string): ContrastPair => {
   const assessment = wcagAssess(fg, bg);
   return {
     kind,
@@ -196,7 +201,7 @@ export const scoreGithub = (directives: StyleDirective[]): ContrastResult => {
   return { pairs, skipped };
 };
 
-const scoreHostPair = (kind: PairKind, d: StyleDirective, theme: Theme, fgRaw: string, box: string): ContrastPair => {
+const scoreHostPair = (kind: PairKind, d: ContrastSource, theme: Theme, fgRaw: string, box: string): ContrastPair => {
   // The foreground may itself be translucent, so it composites onto the box.
   const fg = compositeOver(fgRaw, box);
   const assessment = wcagAssess(fg, box);
@@ -319,6 +324,228 @@ export const scoreForProfile = (
   if (profile === "mkdocs-material") return scoreMkdocs(directives);
   return keyword === "erDiagram" ? scoreEr(directives) : scoreGithub(directives);
 };
+
+// ─── Sequence diagrams ───────────────────────────────────────────────────────
+//
+// A sequence diagram has no style directives. Its colours are theme variables:
+// some set in YAML frontmatter or an %%{init}%% directive, the rest derived by
+// Mermaid's own theme calculation. So the config is read with mermaid.parse,
+// which merges both the way the renderer does, and every variable is resolved
+// by Mermaid's theme engine, never by a copy of its palettes. The features a
+// diagram uses (human actors, notes, loops, activations, numbering, rect
+// backgrounds) are read from the parsed sequence DB. The variables changed
+// between Mermaid releases, so package.json pins the exact version.
+//
+// The SVG is transparent: message text, arrows, lifelines and loop text sit on
+// the host page, and themeVariables.background paints nothing behind them.
+//
+// github: the default theme in light and the dark theme in dark, as GitHub
+// draws them, unless the config pins a theme, which then applies to both.
+//
+// mkdocs-material: Material renders with Mermaid's default theme in both of its
+// schemes and appends its own themeCSS, which wins over Mermaid's styles. That
+// CSS sets every sequence label, box, actor, message line, note, loop frame,
+// rect and number from its own --md-mermaid-* variables, so no text pair is
+// the author's. Three surfaces escape it and keep the diagram's variables, as
+// measured in a browser on Material 9.7 with Mermaid 11.17: lifelines
+// (.actor-line beats Material's bare `line`), arrowheads (Material targets
+// #arrowhead, but Mermaid 11 names it <id>-arrowhead) and activation bars.
+// Each is a border, so under this profile, as for every other diagram, it is
+// scored but advisory.
+
+// The themes Mermaid resolves without per-actor colour arrays or a look of its own.
+const SEQUENCE_THEMES = ["base", "default", "dark", "forest", "neutral"];
+
+// The sequence DB's message types, from Mermaid's LINETYPE table.
+const LINE = { NOTE: 2, ACTIVE_START: 17, RECT_START: 22, AUTONUMBER: 26 } as const;
+// loop, alt, opt, par, critical, break and par over each open a frame.
+const FRAME_STARTS = new Set([10, 12, 15, 19, 27, 30, 32]);
+
+interface SequenceDb {
+  getActors: () => Map<string, { type: string }>;
+  getMessages: () => Array<{ type: number; message: unknown }>;
+}
+
+// What a sequence diagram draws that brings its own colour pairs.
+export interface SequenceFeatures {
+  humanActor: boolean;
+  note: boolean;
+  frame: boolean;
+  activation: boolean;
+  numbered: boolean;
+  rects: string[];
+}
+
+export const sequenceFeatures = (db: SequenceDb): SequenceFeatures => {
+  const messages = db.getMessages();
+  const has = (type: number): boolean => messages.some((m) => m.type === type);
+  return {
+    humanActor: [...db.getActors().values()].some((a) => a.type === "actor"),
+    note: has(LINE.NOTE),
+    frame: messages.some((m) => FRAME_STARTS.has(m.type)),
+    activation: has(LINE.ACTIVE_START),
+    numbered: messages.some(
+      (m) => m.type === LINE.AUTONUMBER && (m.message as { visible?: boolean } | null)?.visible !== false,
+    ),
+    rects: messages.filter((m) => m.type === LINE.RECT_START).map((m) => String(m.message)),
+  };
+};
+
+type Variables = Record<string, unknown>;
+
+// Mermaid's theme variables for a config in each theme, as its own engine
+// resolves them. The site config is restored inside the same synchronous
+// block, so a parse elsewhere never sees it changed. The site config is read
+// rather than getConfig(), which mixes in the last parsed diagram's directives.
+const resolveVariables = (
+  mermaid: MermaidCore,
+  config: Variables,
+  themes: Record<Theme, string>,
+): Record<Theme, Variables> => {
+  const prior = mermaid.mermaidAPI.getSiteConfig();
+  try {
+    const out = {} as Record<Theme, Variables>;
+    for (const t of THEMES) {
+      mermaid.initialize({ ...structuredClone(config), theme: themes[t] });
+      out[t] = { ...(mermaid.mermaidAPI.getSiteConfig().themeVariables as Variables) };
+    }
+    return out;
+  } finally {
+    mermaid.initialize(prior);
+  }
+};
+
+const themeVariable = (selector: string, line: number): ContrastSource => ({
+  kind: "themeVariables",
+  selector,
+  properties: {},
+  spans: {},
+  line,
+});
+
+export const scoreSequence = async (source: string, profile: Profile): Promise<ContrastResult> => {
+  const pairs: ContrastPair[] = [];
+  const skipped: SkippedDirective[] = [];
+  const lines = source.split("\n");
+  const keywordLine = lines.findIndex((l) => /^\s*sequenceDiagram\b/.test(l)) + 1;
+  // The line that sets a variable, or the keyword line when it is inherited.
+  const lineOf = (key: string): number => {
+    const found = lines.findLastIndex((l) => new RegExp(`\\b${key}["']?\\s*:`).test(l));
+    return found < 0 ? keywordLine : found + 1;
+  };
+  const rectLines = lines.flatMap((l, i) => (/^\s*rect\s/.test(l) ? [i + 1] : []));
+
+  const mermaid = await getMermaidCore();
+  let config: Variables;
+  let db: SequenceDb;
+  try {
+    config = (await mermaid.parse(source)).config;
+    db = (await mermaid.mermaidAPI.getDiagramFromText(source)).db as SequenceDb;
+  } catch {
+    // parse-diagram-unparseable reports it. As for complexity, a diagram the
+    // parser cannot read has no colours to trust.
+    return { pairs, skipped };
+  }
+
+  const block = (selector: string, reason: string): ContrastResult => {
+    skipped.push({ selector, line: lineOf(selector), reason, blocking: true });
+    return { pairs, skipped };
+  };
+  // Under mkdocs-material a diagram's themeCSS replaces Material's own, so
+  // neither profile can say what it draws.
+  if (config.themeCSS !== undefined)
+    return block("themeCSS", "themeCSS restyles the diagram with CSS the audit cannot model");
+  const pinned = config.theme;
+  if (pinned !== undefined && !SEQUENCE_THEMES.includes(String(pinned))) {
+    return block("theme", `the ${String(pinned)} theme is not modelled, only ${SEQUENCE_THEMES.join(", ")}`);
+  }
+
+  const features = sequenceFeatures(db);
+  const host = profile === "mkdocs-material";
+  const theme = (fallback: string): string => (pinned === undefined ? fallback : String(pinned));
+  let variables: Record<Theme, Variables>;
+  try {
+    variables = resolveVariables(mermaid, config, { light: theme("default"), dark: theme(host ? "default" : "dark") });
+  } catch (err) {
+    // A colour the theme derives others from, such as actorBorder, fails here.
+    return block("themeVariables", `Mermaid could not resolve the theme: ${message(err)}`);
+  }
+
+  for (const t of THEMES) {
+    const page = (host ? MKDOCS_MATERIAL : GITHUB)[t].bg;
+    const vars = variables[t];
+    const color = (key: string): string => {
+      const value = vars[key];
+      if (typeof value !== "string") throw new Error(`${key} is not a resolved colour`);
+      return value;
+    };
+    // fgKey drawn on a background: a variable, or a colour such as the page.
+    const pair = (
+      kind: PairKind,
+      fgKey: string,
+      bg: { key: string } | { colour: string },
+      suffix = "",
+      at?: number,
+    ) => {
+      const selector = fgKey + suffix;
+      const line = at ?? lineOf(fgKey);
+      try {
+        const box = compositeOver("key" in bg ? color(bg.key) : bg.colour, page);
+        pairs.push({ ...scoreHostPair(kind, themeVariable(selector, line), t, color(fgKey), box), advisory: host });
+      } catch (err) {
+        skipped.push({ selector, line, reason: `${t} sequence pair unparseable: ${message(err)}`, blocking: true });
+      }
+    };
+    const onPage = { colour: page };
+
+    if (host) {
+      pair("border", "actorLineColor", onPage);
+      pair("border", "signalColor", onPage, " (arrowhead)");
+      if (features.activation) pair("border", "activationBorderColor", { key: "activationBkgColor" });
+      continue;
+    }
+
+    pair("text", "actorTextColor", { key: "actorBkg" });
+    pair("border", "actorBorder", { key: "actorBkg" });
+    // A human actor's name and stick figure sit outside the box fill.
+    if (features.humanActor) {
+      pair("text", "actorTextColor", onPage, " (human actor label)");
+      pair("border", "actorBorder", onPage, " (human actor glyph)");
+    }
+    pair("border", "actorLineColor", onPage);
+    pair("text", "signalTextColor", onPage);
+    pair("border", "signalColor", onPage);
+    if (features.note) pair("text", "noteTextColor", { key: "noteBkgColor" });
+    if (features.frame) {
+      pair("text", "labelTextColor", { key: "labelBoxBkgColor" });
+      pair("text", "loopTextColor", onPage);
+      pair("border", "labelBoxBorderColor", onPage, " (loop frame)");
+    }
+    if (features.activation) pair("border", "activationBorderColor", { key: "activationBkgColor" });
+    if (features.numbered) pair("text", "sequenceNumberColor", { key: "signalColor" });
+    // Messages and frame text inside a rect sit on its colour, not the page.
+    for (const [i, rect] of features.rects.entries()) {
+      const fill = { colour: rect };
+      const at = rectLines[i];
+      pair("text", "signalTextColor", fill, " (rect)", at);
+      pair("border", "signalColor", fill, " (rect)", at);
+      if (features.frame) pair("text", "loopTextColor", fill, " (rect)", at);
+    }
+  }
+  return { pairs, skipped };
+};
+
+// Scores a diagram by its keyword: a sequence diagram by its theme variables,
+// any other by its style directives.
+export const scoreDiagram = (
+  source: string,
+  directives: StyleDirective[],
+  profile: Profile,
+  keyword: string | null,
+): Promise<ContrastResult> =>
+  keyword === "sequenceDiagram"
+    ? scoreSequence(source, profile)
+    : Promise.resolve(scoreForProfile(directives, profile, keyword));
 
 // An ancestor mkdocs.yml or mkdocs.yaml, searched up to 20 levels, means the
 // diagram is read through Material.

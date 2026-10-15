@@ -10,7 +10,20 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+### Added
+
+- Sequence diagrams are scored for contrast in light and dark, so the tenet "Readable in light and dark" now covers them.
+  Their theme colours are read from frontmatter and `%%{init}%%` directives and resolved by Mermaid's own theme engine.
+  Labels, arrows, lifelines, actors, notes, frames, activation bars, numbers and `rect` backgrounds are scored, and messages are scored against the page.
+  Findings use the existing contrast rules, and `themeCSS` or an unmodelled theme is reported as `contrast-directive-unauditable`.
+
 ### Changed
+
+- `mermaid` is pinned to exactly 11.17.2, because the sequence colours it resolves change between releases.
+
+### Upgrading from 0.4.2
+
+- **A sequence diagram that passed before may now fail.** One likely cause is a fixed message colour that fades on a dark page. Another is a note with no colours set, which Mermaid's dark theme draws at 4.49 to 1. Set `noteBkgColor` and `noteTextColor` to one readable pair, and leave colours on the page to the theme.
 
 - The `error[plugin-source]` message for a TypeScript local rule says Node 23 needs 23.6 or newer. Node 23.0 to 23.5 cannot import TypeScript.
 

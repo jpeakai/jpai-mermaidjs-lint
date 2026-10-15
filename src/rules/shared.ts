@@ -3,7 +3,7 @@
 // disagree about what the same diagram holds.
 
 import type { Diagram } from "../model.ts";
-import { type ContrastResult, detectProfile, PROFILES, type Profile, scoreForProfile } from "../parse/contrast.ts";
+import { type ContrastResult, detectProfile, PROFILES, type Profile, scoreDiagram } from "../parse/contrast.ts";
 import { type ComplexityMetrics, calculateComplexity, parseFailed, type ThresholdConfig } from "../parse/metrics.ts";
 import type { DiagramStats } from "../parse/stats.ts";
 import type { Finding, OptionSpec, RuleContext, RuleId } from "./types.ts";
@@ -77,9 +77,11 @@ export const profileOf = (ctx: RuleContext): Profile => {
   return wanted === "auto" ? detectProfile(ctx.file) : (wanted as Profile);
 };
 
-const scored = new WeakMap<Diagram, Map<Profile, ContrastResult>>();
+const scored = new WeakMap<Diagram, Map<Profile, Promise<ContrastResult>>>();
 
-export const contrastOf = (diagram: Diagram, profile: Profile): ContrastResult => {
+// Scored once per diagram and profile. A sequence diagram is scored by its
+// theme variables, which Mermaid resolves asynchronously.
+export const contrastOf = (diagram: Diagram, profile: Profile): Promise<ContrastResult> => {
   let byProfile = scored.get(diagram);
   if (!byProfile) {
     byProfile = new Map();
@@ -87,7 +89,7 @@ export const contrastOf = (diagram: Diagram, profile: Profile): ContrastResult =
   }
   let result = byProfile.get(profile);
   if (!result) {
-    result = scoreForProfile(diagram.directives, profile, diagram.keyword);
+    result = scoreDiagram(diagram.source, diagram.directives, profile, diagram.keyword);
     byProfile.set(profile, result);
   }
   return result;

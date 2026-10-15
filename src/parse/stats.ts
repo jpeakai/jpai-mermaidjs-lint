@@ -32,6 +32,20 @@ const getMermaid = async (): Promise<typeof import("mermaid").default> => {
   return mermaidCore;
 };
 
+// The slice of mermaid core the contrast scorer reads: the config a diagram
+// declares, its parsed DB, and the theme engine. Typed here without mermaid's
+// own types, so the published declarations never need them.
+export interface MermaidCore {
+  parse: (text: string) => Promise<{ config: Record<string, unknown> }>;
+  initialize: (config: Record<string, unknown>) => void;
+  mermaidAPI: {
+    getSiteConfig: () => Record<string, unknown>;
+    getDiagramFromText: (text: string) => Promise<{ db: unknown }>;
+  };
+}
+
+export const getMermaidCore = async (): Promise<MermaidCore> => (await getMermaid()) as unknown as MermaidCore;
+
 export interface DiagramStats {
   nodes: number;
   edges: number;

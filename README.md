@@ -28,7 +28,7 @@ Installed as a dev dependency, the command is `mermaidjs-lint`, and `--help` lis
 
 Three tenets are guarantees about every diagram the tool passes, and the fourth is a commitment about the tool.
 
-- **Readable in light and dark.** Declared fills, label colours and borders are scored as the host draws them, on nodes, erDiagram rows and edge labels, in both themes.
+- **Readable in light and dark.** Declared fills, label colours and borders are scored as the host draws them, on nodes, erDiagram rows, edge labels and sequence diagrams, in both themes.
 - **Renders.** Every diagram parses with the mermaid parsers this package ships, and every mermaid fence is closed.
 - **Simple enough to follow.** Node count and visual complexity are scored against a density preset, so an oversized diagram is flagged to be split.
 - **Extensible.** A plugin adds rules of your own, which run through the same config, fix engine and verification as the built-ins.
@@ -54,7 +54,7 @@ It does not compare edge endpoints, edge labels or node text, so review the diff
 ## Requirements and compatibility
 
 - **Runtime:** Bun, or Node `>=20` as the `engines` field of `package.json` states.
-- **Mermaid:** the parse rules use the `mermaid` package, at `^11.14.0`, and `@mermaid-js/parser`, both installed with this package.
+- **Mermaid:** the parse and contrast rules use the `mermaid` package at exactly `11.17.2`, and `@mermaid-js/parser`, both installed with this package. The pin holds sequence diagram colours, which change between mermaid releases.
 - **Your host's mermaid may differ.** GitHub and other hosts draw diagrams with their own mermaid version. A diagram type newer than the host's may parse here and still fail to draw there.
 
 `npm ls mermaid` in your project prints the mermaid version a run uses.

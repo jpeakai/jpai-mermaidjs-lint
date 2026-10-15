@@ -66,7 +66,7 @@ Plugins are discovered from the project root's `package.json` and `.mermaidjs-li
 
 ## A plugin rule id is unknown
 
-`error[unknown-rule]` for an id such as `acme/house-direction` means no loaded plugin has that rule.
+`error[unknown-rule]` for an id such as `acme/acme-direction` means no loaded plugin has that rule.
 
 - **Check the plugin is declared.** Its package must be in the project's `dependencies`, `devDependencies` or `optionalDependencies`, and installed.
 - **Check the id.** `mermaidjs-lint --list-rules` prints every loaded rule under its real id.

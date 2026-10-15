@@ -36,7 +36,14 @@ export interface DiagramStats {
   nodes: number;
   edges: number;
   subgraphs: number;
+  // How deep real containers nest: flowchart subgraphs, composite states,
+  // architecture groups and the like.
   max_subgraph_depth: number;
+  // How far a tree-shaped diagram (mindmap, treemap, treeView, ishikawa)
+  // reaches below its root. Those types draw no subgraphs, so their depth is
+  // kept apart from max_subgraph_depth and the nesting rule never reads it.
+  // It is 0 for every other type.
+  max_tree_depth: number;
   node_ids: string[];
   subgraph_names: string[];
   // The parser that read the diagram, or, on a failure, the one whose reason
@@ -137,6 +144,7 @@ export async function extractStats(content: string): Promise<MermaidStats> {
     edges: 0,
     subgraphs: 0,
     max_subgraph_depth: 0,
+    max_tree_depth: 0,
     node_ids: [],
     subgraph_names: [],
     parser_used: langium ? "langium" : "mermaid-core",
@@ -200,6 +208,7 @@ async function extractLangiumStats(content: string, keyword: string): Promise<Me
   const subgraphNames: string[] = [];
   let edges = 0;
   let maxDepth = 0;
+  let treeDepth = 0;
 
   switch (mapped) {
     case "architecture": {
@@ -246,7 +255,7 @@ async function extractLangiumStats(content: string, keyword: string): Promise<Me
       const stats = indentTreeStats(nodes.map((n, i) => ({ label: n.name ?? `node_${i}`, indent: n.indent ?? 0 })));
       nodeIds.push(...stats.labels);
       edges = stats.edges;
-      maxDepth = stats.depth;
+      treeDepth = stats.depth;
       break;
     }
     case "treemap": {
@@ -255,7 +264,7 @@ async function extractLangiumStats(content: string, keyword: string): Promise<Me
       const stats = indentTreeStats(rows.map((r, i) => ({ label: r.item?.name ?? `row_${i}`, indent: r.indent ?? 0 })));
       nodeIds.push(...stats.labels);
       edges = stats.edges;
-      maxDepth = stats.depth;
+      treeDepth = stats.depth;
       break;
     }
     case "wardley": {
@@ -277,6 +286,7 @@ async function extractLangiumStats(content: string, keyword: string): Promise<Me
     edges,
     subgraphs: subgraphNames.length,
     max_subgraph_depth: maxDepth,
+    max_tree_depth: treeDepth,
     node_ids: [...new Set(nodeIds.filter(Boolean))].sort(),
     subgraph_names: subgraphNames,
     parser_used: "langium",
@@ -340,6 +350,8 @@ interface Structure {
   edges: number;
   subgraphNames: string[];
   maxDepth: number;
+  // Set only by the tree-shaped types: see max_tree_depth.
+  treeDepth?: number;
 }
 type CoreAdapter = (db: AnyDb) => Structure;
 
@@ -362,13 +374,14 @@ async function extractCoreStats(content: string, keyword: string): Promise<Merma
   if (!adapter) {
     throw new Error(`no core adapter for diagram.type="${diagramType}" (keyword="${keyword}")`);
   }
-  const { nodeIds, edges, subgraphNames, maxDepth } = adapter(diagram.db);
+  const { nodeIds, edges, subgraphNames, maxDepth, treeDepth = 0 } = adapter(diagram.db);
 
   return {
     nodes: nodeIds.length,
     edges,
     subgraphs: subgraphNames.length,
     max_subgraph_depth: maxDepth,
+    max_tree_depth: treeDepth,
     node_ids: [...nodeIds].sort(),
     subgraph_names: subgraphNames,
     parser_used: "mermaid-core",
@@ -386,6 +399,9 @@ async function extractCoreStats(content: string, keyword: string): Promise<Merma
 const CORE_ADAPTERS: Record<string, CoreAdapter> = {
   "flowchart-v2": adaptFlowchart,
   flowchart: adaptFlowchart,
+  // `flowchart-elk` is a flowchart drawn with the ELK layout. Mermaid parses it
+  // with the flowchart grammar into the same DB, and only the layout differs.
+  "flowchart-elk": adaptFlowchart,
   graph: adaptFlowchart,
   classDiagram: adaptClass,
   "classDiagram-v2": adaptClass,
@@ -557,7 +573,13 @@ function adaptIshikawa(db: AnyDb): Structure {
     for (const c of node.children ?? []) walk(c, depth + 1);
   };
   walk(root, 0);
-  return { nodeIds: labels, edges: Math.max(0, labels.length - 1), subgraphNames: [], maxDepth };
+  return {
+    nodeIds: labels,
+    edges: Math.max(0, labels.length - 1),
+    subgraphNames: [],
+    maxDepth: 0,
+    treeDepth: maxDepth,
+  };
 }
 
 interface KanbanNode {
@@ -596,7 +618,13 @@ function adaptMindmap(db: AnyDb): Structure {
     for (const c of node.children ?? []) walk(c, depth + 1);
   };
   walk(root, 0);
-  return { nodeIds: labels, edges: Math.max(0, labels.length - 1), subgraphNames: [], maxDepth };
+  return {
+    nodeIds: labels,
+    edges: Math.max(0, labels.length - 1),
+    subgraphNames: [],
+    maxDepth: 0,
+    treeDepth: maxDepth,
+  };
 }
 
 type QuadrantText = { text?: string } | string | undefined;

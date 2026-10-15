@@ -276,6 +276,11 @@ describe("symbolic links", () => {
     // Nothing is written, not even the file that is not a link.
     expect(readFileSync(join(outer, "target.md"), "utf8")).toBe(BAD);
     expect(readFileSync(join(root, "docs", "real.md"), "utf8")).toBe(BAD);
+    // The message's advice works: the target named as its own path is fixed.
+    expect(r.stderr).toContain("or run on the target path itself");
+    const direct = await runCli(root, ["--fix", join(outer, "target.md")]);
+    expect(direct.code).toBe(0);
+    expect(readFileSync(join(outer, "target.md"), "utf8")).toContain("color:#000000");
   });
 
   test("--fix writes through a link whose target is inside the project root", async () => {

@@ -73,7 +73,8 @@ flowchart LR
 
 ## Complexity
 
-Every complexity rule except `complexity-subgraph-nesting-too-deep` takes a `preset` option and any of the numeric thresholds, such as `nodeAcceptable`.
+Every complexity rule takes a `preset` option and any of the numeric thresholds, such as `nodeAcceptable`.
+`complexity-subgraph-nesting-too-deep` accepts them but reads none.
 The node count rules form one ladder, and the two visual score rules form another.
 A diagram lands in one band of each ladder, so only the most severe rule of a ladder fires.
 A threshold such as `nodeHardLimit` is the boundary between two neighbouring bands, so set it on both rules that read it.
@@ -435,6 +436,8 @@ flowchart LR
 
 Subgraphs nested three or more levels deep.
 The limit is fixed at three, and no preset, flag or option changes it.
+Only real subgraphs count, such as a flowchart `subgraph` or a composite state.
+The depth of a `mindmap`, `treemap`, `treeView` or `ishikawa` never fires it.
 Flatten the nesting, or promote a deep group into its own diagram.
 
 ````text reported

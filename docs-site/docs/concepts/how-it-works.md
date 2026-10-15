@@ -41,6 +41,7 @@ Having no nodes is not an error on its own, so a valid `pie` with only a title l
 Mermaid's core can read a multi-line diagram into an empty structure without complaint.
 For the types it reads, a multi-line diagram with no nodes is therefore reported as a silent parse failure.
 A `zenuml` diagram is always reported, because it is drawn by a mermaid add-on this package does not include.
+A diagram that opens with the `flowchart-elk` keyword is a flowchart drawn with the ELK layout, so it is read and measured as a flowchart.
 
 Two things are read from the text rather than the parser.
 The diagram keyword is the first word past any frontmatter and comments, and it picks which parser runs.
@@ -62,10 +63,11 @@ A fixer proposes edits: a span of the source, its replacement, and an expectatio
 
 | Expectation | What must hold after the edit |
 |---|---|
-| `same-diagrams` | The markdown is unchanged outside the mermaid fences, once whitespace in text is collapsed, and the document holds the same number of diagrams. Each keeps its keyword, type, counts, deepest nesting, node ids and subgraph names. |
-| `same-tree` | The markdown tree is identical, except for whitespace in prose text. Mermaid fence bodies must match exactly. A raw diagram file has an empty tree, so there the diagram must also pass the `same-diagrams` check. |
+| `same-diagrams` | The markdown is unchanged outside the mermaid fences, once whitespace in text is collapsed, and the document holds the same number of diagrams. Each keeps its keyword, whether it parses, its type, counts, deepest nesting and tree depth, node ids and subgraph names. |
+| `same-tree` | The markdown tree is identical, except for whitespace in prose text. Mermaid fence bodies must match exactly, and no diagram that parsed may stop parsing. A raw diagram file has an empty tree, so there the diagram must also pass the `same-diagrams` check. |
 
 The engine splices the edits, parses the whole document again, and keeps the change only when every expectation holds.
+Neither expectation lets an edit turn a diagram that parses into one that does not.
 `same-diagrams` is a structural check, and it does not show that nothing else changed.
 It does not compare edges, labels, node text or styles, so a fixer that declares it must keep those intact itself.
 [Edits](../reference/plugin-api.md#edits) lists exactly what each expectation compares.
@@ -75,6 +77,7 @@ An edit that fails is refused, remembered, and never proposed again for the same
 
 After any accepted change the engine starts a new pass on the new source, because every offset a fixer computed belongs to the old one.
 The loop ends when no fixer makes progress.
+A fixer that never stops proposing edits stops the run after 1000 passes with [`error[fix-not-converging]`](../reference/cli.md#error-codes), and that file is not written.
 The file is then written, and checked like any other.
 
 !!! warning "A refused edit leaves the finding in place"

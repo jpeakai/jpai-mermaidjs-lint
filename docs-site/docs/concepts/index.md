@@ -12,7 +12,7 @@ Each concept page explains how one of them is delivered, and where its limits ar
 
 | Tenet | Delivered by | Its limit | Explained in |
 |---|---|---|---|
-| **Readable in light and dark** | The contrast rules | Only declared colours are scored. An unstyled node, a theme setting, a `linkStyle` `stroke:`, a fill-less `stroke:` and a fill-less `color:` outside an `erDiagram` are not. A border under `mkdocs-material` or in an `erDiagram` is scored but never reported. | [Contrast profiles](contrast.md) |
+| **Readable in light and dark** | The contrast rules | Only declared colours are scored. An unstyled node, a theme setting, a `linkStyle` `stroke:`, a fill-less `stroke:`, a fill-less `color:` outside an `erDiagram`, and the `color:` and `stroke:` on a fully transparent fill are not. A border under `mkdocs-material` or in an `erDiagram` is scored but never reported. | [Contrast profiles](contrast.md) |
 | **Renders** | The parse rules | It parses rather than draws, and a host on another mermaid version may still fail to draw it. A diagram after an unclosed fence of another language is not seen. | [How a run works](how-it-works.md) |
 | **Simple enough to follow** | The complexity rules | It flags and suggests where to split, but never splits | [Measuring complexity](complexity.md) |
 | **Extensible** | Local rules and plugin packages | A plugin is code that runs on your machine, so trust what you install | [The plugin model](plugin-model.md) |

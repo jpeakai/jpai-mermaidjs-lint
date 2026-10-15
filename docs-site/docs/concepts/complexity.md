@@ -15,6 +15,7 @@ score = (nodes + 0.5 × edges + 3 × subgraphs) × (1 + 0.1 × nesting depth)
 ```
 
 Edges add clutter, each subgraph adds a boundary to track, and each level of nesting makes all of it harder to follow.
+For a `mindmap`, `treemap`, `treeView` or `ishikawa`, the nesting depth in the score is the tree's depth below its root.
 The three weights are options: `edgeWeight`, `subgraphWeight` and `depthWeight`.
 
 ## Presets set the thresholds
@@ -45,6 +46,9 @@ Only the rule for that band fires, so one diagram never gets three findings for 
 
 Nesting has its own rule: subgraphs nested three or more levels deep fire `complexity-subgraph-nesting-too-deep`.
 That limit is fixed at three, and no preset or option changes it.
+The rule reads only real subgraphs, such as a flowchart `subgraph` or a composite state.
+A deep `mindmap`, `treemap`, `treeView` or `ishikawa` draws no subgraphs, so the rule never fires on it.
+Its depth counts only toward the score.
 
 !!! warning "Some threshold options have no effect yet"
 
@@ -63,7 +67,7 @@ Each diagram type has its own unit, read from mermaid's parser result.
 
 | Diagram type | A node is | A subgraph is |
 |---|---|---|
-| `flowchart`, `graph` | A vertex | A `subgraph` |
+| `flowchart`, `flowchart-elk`, `graph` | A vertex | A `subgraph` |
 | `classDiagram` | A class | None |
 | `sequenceDiagram` | A participant or actor | None |
 | `stateDiagram` | A state, including a composite state | A composite state |

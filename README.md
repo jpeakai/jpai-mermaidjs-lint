@@ -5,8 +5,9 @@ Deterministic checks and verified fixes for Mermaid diagrams in markdown.
 
 **[Docs](https://jpeakai.github.io/jpai-mermaidjs-lint/)** | **[Rules](https://jpeakai.github.io/jpai-mermaidjs-lint/reference/rules/)** | **[Changelog](CHANGELOG.md)** | **[GitHub](https://github.com/jpeakai/jpai-mermaidjs-lint)** | **[npm](https://www.npmjs.com/package/@jpeakai/mermaidjs-lint)**
 
-This README and the docs site describe the `main` branch.
-A feature on `main` but not yet on npm is listed under `Unreleased` in the [changelog](CHANGELOG.md).
+The docs site describes the latest release on npm.
+This README, read on GitHub, describes the `main` branch.
+A change on `main` that is not yet released is listed under `Unreleased` in the [changelog](CHANGELOG.md).
 
 ## Usage
 
@@ -40,14 +41,14 @@ Three tenets are guarantees about every diagram the tool passes, and the fourth 
 | Extensible | Local rules and plugin packages |
 
 The [concepts page](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/) states the limit of each tenet.
-`mermaidjs-lint --list-rules` prints every rule.
+`bunx @jpeakai/mermaidjs-lint --list-rules` prints every rule.
 The [rules page](https://jpeakai.github.io/jpai-mermaidjs-lint/reference/rules/) draws each one before and after `--fix`, and [RULES.md](RULES.md) holds the same examples as plain markdown.
 
 Every finding fails the run, and a rule you do not want is switched off in the config.
 Node, edge and subgraph counts come from mermaid's own parsers.
 Style directives are read line by line, so a style joined to other statements by a semicolon is not seen.
 Every fix is verified by parsing the document again, and a fix that fails the check is refused, so the finding stays for a human.
-The check holds the markdown outside the diagrams unchanged, and each diagram's type, node ids, subgraph names and counts.
+The check holds the markdown outside the diagrams unchanged, and each diagram's type, node ids, subgraph names and counts, and whether it parses.
 It does not compare edge endpoints, edge labels or node text, so review the diff a fix writes.
 
 ## Requirements and compatibility

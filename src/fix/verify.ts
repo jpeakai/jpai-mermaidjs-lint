@@ -4,6 +4,7 @@
 
 import type { Node, Root } from "mdast";
 import type { DocModel } from "../model.ts";
+import { parseFailed } from "../parse/metrics.ts";
 import type { Edit } from "../rules/types.ts";
 
 type Plain = { [k: string]: unknown };
@@ -43,28 +44,50 @@ const sameDiagrams = async (before: DocModel, after: DocModel): Promise<boolean>
     const now = after.diagrams[i];
     if (!now || was.keyword !== now.keyword) return false;
     const [a, b] = await Promise.all([was.stats(), now.stats()]);
-    const shape = (s: typeof a): unknown => [
+    const shape = (s: typeof a, source: string): unknown => [
+      parseFailed(source, s),
       s.diagram_type,
       s.nodes,
       s.edges,
       s.subgraphs,
       s.max_subgraph_depth,
+      s.max_tree_depth,
       s.node_ids,
       s.subgraph_names,
     ];
-    if (!sameJson(shape(a), shape(b))) return false;
+    if (!sameJson(shape(a, was.source), shape(b, now.source))) return false;
   }
   return true;
+};
+
+// Whether a diagram that parsed before the edit fails to parse after it. The
+// diagrams are matched by position, which same-tree's identical tree already
+// pins. Asked of same-tree edits as a belt to the tree comparison's braces: a
+// diagram's text sits in the tree, so an unchanged tree cannot break it today,
+// but no edit may ever trade a parseable diagram for an unparseable one.
+const breaksAParse = async (before: DocModel, after: DocModel): Promise<boolean> => {
+  for (const [i, was] of before.diagrams.entries()) {
+    const now = after.diagrams[i];
+    if (!now) continue;
+    const [a, b] = await Promise.all([was.stats(), now.stats()]);
+    if (!parseFailed(was.source, a) && parseFailed(now.source, b)) return true;
+  }
+  return false;
 };
 
 // A raw diagram file (.mmd, .mermaid) has no markdown around its diagram, so
 // its tree is an empty root and comparing trees would prove nothing. There,
 // same-tree also demands what same-diagrams does: the diagram is still there
-// and parses to the same structure.
+// and parses to the same structure. same-diagrams compares parse success too
+// (parseFailed, the test parse-diagram-unparseable applies), so an edit can
+// neither break a diagram that parsed nor claim to have kept the diagrams the
+// same while making an unparseable one parse.
 export const verify = async (edit: Edit, before: DocModel, after: DocModel): Promise<Verdict> => {
   if (edit.expect.kind === "same-tree") {
     if (!sameTree(before.tree, after.tree, {})) return "refuse";
-    if (before.kind === "markdown" && after.kind === "markdown") return "accept";
+    if (before.kind === "markdown" && after.kind === "markdown") {
+      return (await breaksAParse(before, after)) ? "refuse" : "accept";
+    }
   }
   return (await sameDiagrams(before, after)) ? "accept" : "refuse";
 };

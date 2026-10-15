@@ -1,28 +1,53 @@
 name: Docs
 
+# The live site documents the latest release, so it deploys only once npm has
+# that release: when the Publish workflow finishes successfully, or by hand.
+# A pull request or a push to main only builds the site, as a check. Publish
+# flips its release with the workflow's own token, and GitHub starts no
+# workflow from an event that token raises, so `release: published` would
+# never fire here; workflow_run does.
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_run:
+    workflows: [Publish]
+    types: [completed]
   workflow_dispatch:
 
+# A check run gives way to a newer one on the same ref. A deploy is never
+# cancelled part way, so it queues behind any deploy already running.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
 
 jobs:
   # Generates the reference pages, re-checking every example against the tool,
-  # then builds in strict mode. A pull request only builds, so a drifted example
-  # or a broken link fails the check before it reaches main.
+  # then builds in strict mode, so a drifted example or a broken link fails the
+  # check before it reaches main. After a release it builds the commit Publish
+  # released, not whatever main holds by then.
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     name: Build site
     timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      deploy: ${{ steps.mode.outputs.deploy }}
     steps:
+      - name: Decide whether this run deploys
+        id: mode
+        env:
+          DEPLOY: ${{ github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}
+        run: |
+          echo "deploy=$DEPLOY" >> "$GITHUB_OUTPUT"
+          echo "::notice::deploy=$DEPLOY (event ${{ github.event_name }})"
+
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -40,15 +65,15 @@ jobs:
         run: make site
 
       - uses: actions/configure-pages@v6
-        if: github.event_name != 'pull_request'
+        if: steps.mode.outputs.deploy == 'true'
 
       - uses: actions/upload-pages-artifact@v5
-        if: github.event_name != 'pull_request'
+        if: steps.mode.outputs.deploy == 'true'
         with:
           path: tmp/docs-site
 
   deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: needs.build.outputs.deploy == 'true'
     needs: build
     runs-on: ubuntu-latest
     name: Deploy to GitHub Pages

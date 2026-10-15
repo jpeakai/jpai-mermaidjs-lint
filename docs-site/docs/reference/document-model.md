@@ -78,7 +78,8 @@ What mermaid's parser reads from a diagram.
 | Field | Type | Meaning |
 |---|---|---|
 | `nodes`, `edges`, `subgraphs` | `number` | Counts of each |
-| `max_subgraph_depth` | `number` | The deepest subgraph nesting |
+| `max_subgraph_depth` | `number` | The deepest subgraph nesting, such as a `subgraph` inside a `subgraph` or a composite state inside another |
+| `max_tree_depth` | `number` | How far a `mindmap`, `treemap`, `treeView` or `ishikawa` reaches below its root, and 0 for every other type. Tree depth is not subgraph nesting. |
 | `node_ids`, `subgraph_names` | `string[]` | Identifiers, used to suggest where to split |
 | `parser_used` | `"langium"` or `"mermaid-core"` | Which parser produced the result, or on a failure, the parser whose reason `error` carries |
 | `diagram_type` | `string` | The type the parser recognised |

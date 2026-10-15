@@ -19,7 +19,8 @@ The [contrast](reference/rules.md#contrast), [parse](reference/rules.md#parse) a
 [Concepts](concepts/index.md) states the limit of each.
 
 Where a fix is safe, `--fix` writes it and parses the document again.
-It keeps the fix only when the markdown around the diagrams is unchanged, and each diagram keeps its type, node ids, subgraph names and counts:
+It keeps the fix only when the markdown around the diagrams is unchanged.
+Each diagram must also keep its type, node ids, subgraph names and counts, and a diagram that parsed must still parse:
 
 --8<-- "home-compare.md"
 
@@ -49,8 +50,8 @@ The run exits 1 while any finding remains, so it works as a gate in CI with no e
 
 !!! info "Which version these pages describe"
 
-    This site is built from the `main` branch.
-    A feature on `main` but not yet on npm is listed under `Unreleased` in the [changelog](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CHANGELOG.md).
+    This site is published with each release, so it describes the latest release on npm.
+    A change on `main` that is not yet released is listed under `Unreleased` in the [changelog](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CHANGELOG.md).
     `mermaidjs-lint --version` prints the version you run.
 
 ## Where to go next

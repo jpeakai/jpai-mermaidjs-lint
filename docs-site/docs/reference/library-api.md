@@ -68,7 +68,7 @@ The `setUp` options mirror the flags:
 | `collect` | `--validate-plugins` |
 
 `root` is the project root the config and plugins were found from.
-`skipped` names the plugins discovered but not loaded under `noPlugins`.
+`skipped` names the plugins discovered but not loaded under `noPlugins`, or under `"plugins": false` in the config.
 `failures` holds the plugins a lenient or collecting run left out, each a `PluginFailure` of `{ source, kind, error }`.
 
 ## Running the command
@@ -118,12 +118,36 @@ PRESETS["high-density"].node_hard_limit; // the hard limit nodeHardLimit overrid
 
 ## Errors
 
-Every error class in [Error codes](cli.md#error-codes) is exported, so code can branch on the class or on its `code`.
-`UsageError` is the parent of every usage error, and `PluginLoadError` the parent of every load error.
-Both extend `MermaidLintError`, which carries the `code`.
-The runtime errors `PackageJsonError` and `FixNotConvergingError` extend `MermaidLintError` directly, and the command exits 1 on them.
-Their own codes, `usage` and `plugin`, are base-class defaults, and the command never prints either one alone.
+Every error class behind [Error codes](cli.md#error-codes) is exported, so code can branch on the class or on its `code`.
+Every class extends `MermaidLintError`, which carries `code` and `message`.
+
+| Class | `code` | Parent | Extra fields |
+|---|---|---|---|
+| `UsageError` | `usage` | `MermaidLintError` | None |
+| `FlagError` | `flag` | `UsageError` | `flag` |
+| `ConfigFileError` | `config-file` | `UsageError` | `file` |
+| `ConfigNotFoundError` | `config-not-found` | `UsageError` | `path` |
+| `ConfigCodeError` | `config-code` | `UsageError` | `file` |
+| `AmbiguousConfigError` | `config-ambiguous` | `UsageError` | `files` |
+| `ConfigShapeError` | `config-shape` | `UsageError` | `file`, `key` (or `null`) |
+| `RuleSettingError` | `rule-setting` | `UsageError` | `file`, `rule` |
+| `UnknownRuleError` | `unknown-rule` | `UsageError` | `file`, `rule`, `known` |
+| `RuleOptionError` | `rule-option` | `UsageError` | `file`, `rule`, `option` |
+| `FixOutsideRootError` | `fix-outside-root` | `UsageError` | `file`, `target` |
+| `PackageJsonError` | `package-json` | `MermaidLintError` | `file` |
+| `FixNotConvergingError` | `fix-not-converging` | `MermaidLintError` | `file`, `rules` |
+| `PluginLoadError` | `plugin` | `MermaidLintError` | `source` |
+| `PluginImportError` | `plugin-import` | `PluginLoadError` | `source` |
+| `PluginContractError` | `plugin-contract` | `PluginLoadError` | `source` |
+| `PluginConflictError` | `plugin-conflict` | `PluginLoadError` | `source`, `other` |
+| `PluginNotInstalledError` | `plugin-not-installed` | `PluginLoadError` | `source`, `root` |
+| `PluginSourceError` | `plugin-source` | `PluginLoadError` | `source` |
+| `PluginFixerError` | `plugin-fixer` | `MermaidLintError` | `rule` |
+
+The command exits 2 on a `UsageError` and 1 on every other class.
+The base classes' own codes, `usage` on `UsageError` and `plugin` on `PluginLoadError`, are defaults, and the command never prints either one alone.
 Branch on a subclass code from the table, or on `instanceof` the parent class.
+`src/errors.ts` is the authority when this table and the code disagree.
 
 ## Types
 

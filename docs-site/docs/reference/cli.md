@@ -80,7 +80,7 @@ When the paths match no file at all, the run stops with `error[flag]: no matchin
 Name a skipped file explicitly to check it.
 
 A directory walk never follows a symbolic link, to a file or to a folder.
-It names each link it skipped on standard error, as `mermaidjs-lint: skipped symbolic link <path>`, so a gate never passes a file in silence.
+It names each link it skipped on standard error, as `mermaidjs-lint: skipped symbolic link <path>; name it as a path to check it`, so a gate never passes a file in silence.
 A link named as a path is followed and checked.
 `--fix` refuses to write through a named link whose target is outside the project root, with `error[fix-outside-root]` and exit code 2.
 It refuses before it writes any file.
@@ -118,7 +118,7 @@ A failure prints `error[code]: reason`, and the same `code` is on the exported e
 | `plugin-contract` | 1 | A plugin export breaks the contract, or targets another API version |
 | `plugin-conflict` | 1 | Another plugin already claimed the namespace or a category word |
 | `plugin-not-installed` | 1 | A declared plugin package is not installed |
-| `plugin-source` | 1 | A plugin source cannot be loaded, such as a `.cts` file, or TypeScript on a runtime that cannot import it |
+| `plugin-source` | 1 | A plugin source cannot be loaded, such as a `.cts` file, TypeScript on a runtime that cannot import it, or an installed plugin whose `package.json` is not a JSON object |
 | `plugin-fixer` | 1 | A plugin fixer threw, returned something other than a list, or returned an edit with no valid expectation |
 
 ## Text output
@@ -138,7 +138,7 @@ Standard error carries one line about plugins, when there are any:
 | Line | When |
 |---|---|
 | `mermaidjs-lint: loaded acme (1 rule)` | Plugins loaded |
-| `mermaidjs-lint: plugins off; skipped mermaidjs-lint-plugin-acme` | `--no-plugins` found plugins and loaded none |
+| `mermaidjs-lint: plugins off; skipped mermaidjs-lint-plugin-acme` | `--no-plugins`, or `"plugins": false` in the config, found plugins and loaded none |
 | `mermaidjs-lint: skipped plugin <source> [code]: reason` | A lenient run left a broken plugin out |
 | `mermaidjs-lint: ignored config setting for <id>, whose plugin did not load` | A config setting named a plugin rule that is not loaded |
 

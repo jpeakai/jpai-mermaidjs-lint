@@ -78,11 +78,13 @@ docs-ci:
 	bun run src/bin.ts $(DOCS)
 
 # The agent eval suite for the mermaidjs-lint skill, run by pytest-xharness-eval.
-# evals-dry lists the matrix of cells and invokes nothing. evals runs it live:
-# every live cell is a billed agent session (claude and codex CLIs), so narrow
-# the spend with ARGS, for example ARGS="--harness claude -k label_colour".
+# evals-dry lists the matrix of cells and invokes nothing. It writes its report
+# under tmp/evals-dry, so the last live run's report in .xharness_eval_cache
+# stays as it was. evals runs it live: every live cell is a billed agent
+# session (claude and codex CLIs), so narrow the spend with ARGS, for example
+# ARGS="--harness claude -k label_colour".
 evals-dry:
-	uv run pytest skills/mermaidjs-lint/evals --dry-run
+	uv run pytest skills/mermaidjs-lint/evals --dry-run -o xharness_cache_dir=tmp/evals-dry
 
 evals:
 	uv run pytest skills/mermaidjs-lint/evals -v $(ARGS)

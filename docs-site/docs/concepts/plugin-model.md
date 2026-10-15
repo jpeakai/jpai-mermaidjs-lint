@@ -7,7 +7,7 @@ This page explains where plugin rules come from, how they are checked, and how t
 ## A plugin rule is a built-in with a namespace
 
 A plugin rule receives exactly the context a built-in rule receives, and returns the same findings and edits.
-When it loads, it becomes an ordinary rule whose id is `namespace/key`, such as `acme/house-no-todo`.
+When it loads, it becomes an ordinary rule whose id is `namespace/key`, such as `acme/acme-direction`.
 From then on the config, the fix engine and the output treat it like a built-in.
 
 --8<-- "plugin-model.md"
@@ -61,6 +61,7 @@ Checking every field up front means a typo in a plugin stops the run with its re
 ## Namespaces and categories are global
 
 Two plugins cannot share a namespace, and two plugins cannot declare the same new category word.
+The local rule files count as one plugin here, so a package cannot declare a category word a local rule already declares.
 The first plugin to claim one keeps it.
 A later claimant fails to load, and the error names both.
 Without that rule, two plugins could produce identical rule ids, and a config line could switch off the wrong one.

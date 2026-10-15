@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { checkMarkdown, fixSource, RULE, RULES } from "../src/index.ts";
+import { buildDocModel, checkMarkdown, fixSource, RULE, RULES } from "../src/index.ts";
 import { edgeLabelBackground, scoreMkdocs } from "../src/parse/contrast.ts";
-import { parseFailed } from "../src/parse/metrics.ts";
+import { calculateComplexity, configFromPreset, DEFAULT_PRESET, parseFailed } from "../src/parse/metrics.ts";
 import { parserReason } from "../src/parse/stats.ts";
+import { MAX_NESTING } from "../src/rules/complexity-subgraph-nesting-too-deep.ts";
 import { chain, fence, rules } from "./helpers.ts";
 
 describe("parse rules", () => {
@@ -94,6 +95,25 @@ describe("complexity rules", () => {
       ].join("\n"),
     );
     expect(await rules(src)).toContain(RULE.NESTING);
+  });
+
+  // A tree draws no subgraphs, so its depth is not nesting: the remedy,
+  // flattening subgraphs, cannot apply. Its depth still weighs on the score.
+  test.each([
+    ["mindmap", "mindmap\n  root\n    a\n      b\n        c\n          d"],
+    ["treemap", 'treemap-beta\n  "A"\n    "B"\n      "C"\n        "D": 10'],
+    ["treeView", "treeView-beta\n  A\n    B\n      C\n        D"],
+  ])("a four-level %s is not nesting", async (_, source) => {
+    const doc = buildDocModel(fence(source));
+    const stats = await doc.diagrams[0]?.stats();
+    expect(stats?.error).toBeNull();
+    expect(stats?.max_subgraph_depth).toBe(0);
+    expect(stats?.max_tree_depth).toBeGreaterThanOrEqual(MAX_NESTING);
+    expect(await rules(fence(source))).not.toContain(RULE.NESTING);
+    if (!stats) return;
+    const cfg = configFromPreset(DEFAULT_PRESET);
+    const flat = calculateComplexity({ ...stats, max_tree_depth: 0 }, cfg).visual_complexity_score;
+    expect(calculateComplexity(stats, cfg).visual_complexity_score).toBeGreaterThan(flat);
   });
 
   test("a finding carries the remediation and names subgraph boundaries", async () => {
@@ -240,6 +260,7 @@ describe("zero-node diagrams", () => {
       edges: 0,
       subgraphs: 0,
       max_subgraph_depth: 0,
+      max_tree_depth: 0,
       node_ids: [],
       subgraph_names: [],
       parser_used: "mermaid-core" as const,

@@ -17,7 +17,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 - **Agent files:** `CLAUDE.md` at root, with no nested agent files
 - **Prose gates:** `make docs-ci` gates every authored markdown file and its diagrams. That is the root files, `docs/`, `adrs/`, the site's authored pages, diagrams and includes, the skill's markdown and `tests/fixtures/README.md`. Inputs under test are outside it: the fixtures, `examples/` and the skill's eval fixtures in `skills/mermaidjs-lint/evals/fixtures/`. The site's generated pages are checked by `make site` instead.
 - **Changelog:** `CHANGELOG.md` at root, in Keep a Changelog style, curated by hand. A user-visible change adds a line under `Unreleased` in the same change, and a release renames that section to its version. The Publish workflow copies that section into the GitHub release notes.
-- **Documented version:** the README and the docs site describe `main`. Anything not yet on npm is listed under `Unreleased` in `CHANGELOG.md`.
+- **Documented version:** the docs site describes the latest release. The Docs workflow deploys it only after a Publish run succeeds, or when run by hand. The README on GitHub describes `main`. Anything on `main` but not yet released is listed under `Unreleased` in `CHANGELOG.md`.
 - **Proposals and RFCs:** not used
 
 ## Layout map
@@ -36,7 +36,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 | `docs/CONVENTIONS.md` | This dialect declaration | Both | A documentation convention changes |
 | `docs/plugins.md` | A pointer to the plugin pages on the docs site, kept so old links resolve | Plugin authors | A plugin page moves |
 | `docs/PUBLISHING.md` | The release speed run and the one-time npm setup | Maintainers | The release workflow changes |
-| `.github/workflows/` | CI on pushes and pull requests to main, the Docs build and Pages deploy, and the manually triggered Publish workflow | Maintainers | The gate, the site or the release process changes |
+| `.github/workflows/` | CI on pushes and pull requests to main, the Docs build on pull requests and main with its Pages deploy after each successful Publish run, and the manually triggered Publish workflow | Maintainers | The gate, the site or the release process changes |
 | `docs-site/mkdocs.yml` | The site's config and navigation | Consumers | A page is added, moved or renamed |
 | `docs-site/docs/` | The site's authored pages, scored under `mkdocs-material` | Consumers | Behaviour, flags, config or the plugin contract changes |
 | `docs-site/diagrams/` | One diagram per file, included into site pages | Consumers | The model, the plugin loader or the run pipeline changes |

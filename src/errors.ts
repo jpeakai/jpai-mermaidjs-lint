@@ -138,7 +138,7 @@ export class FixOutsideRootError extends UsageError {
 
   constructor(file: string, target: string, root: string) {
     super(
-      `${file} is a symbolic link to ${target}, outside the project root ${root}; --fix does not write through it. Fix the target in its own project, or name it directly`,
+      `${file} is a symbolic link to ${target}, outside the project root ${root}; --fix does not write through it. Fix the target in its own project, or run on the target path itself`,
       "fix-outside-root",
     );
     this.file = file;

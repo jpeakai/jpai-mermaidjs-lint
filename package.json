@@ -1,6 +1,6 @@
 {
   "name": "@jpeakai/mermaidjs-lint",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "description": "Deterministic lint gates and verified fixers for Mermaid diagrams in markdown",
   "license": "MIT",

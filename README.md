@@ -17,13 +17,16 @@ Installed as a dev dependency, the command is `mermaidjs-lint`, and `--help` lis
 
 [Get started](https://jpeakai.github.io/jpai-mermaidjs-lint/get-started/) walks through a first run, a fix, and adding the check to a project.
 
-## What it checks
+## Four guarantees
 
-| Category | What it guards |
-|---|---|
-| Parse | Whether mermaid can read the diagram, and whether its fence is whole |
-| Complexity | How much a reader must hold in mind at once, measured against a density preset |
-| Contrast | Whether labels and borders can be read against their fills, as the host renders them |
+Every rule and every design choice serves one of four tenets.
+
+| Tenet | What it guarantees | Enforced by |
+|---|---|---|
+| **Readable in light and dark** | Every label can be read against its fill, in both light and dark themes | The contrast rules |
+| **Renders** | Every diagram parses with mermaid's own parsers, the ones its renderer runs, and every fence is closed | The parse rules |
+| **Simple enough to follow** | Visual complexity is scored against a density preset, so an oversized diagram is flagged to be split into simpler ones | The complexity rules |
+| **Extensible** | A plugin system adds rules of your own, which load, run and fix exactly like the built-ins | Local rules and plugin packages |
 
 `mermaidjs-lint --list-rules` prints every rule.
 The [rules page](https://jpeakai.github.io/jpai-mermaidjs-lint/reference/rules/) draws each one before and after `--fix`, and [RULES.md](RULES.md) holds the same examples as plain markdown.

@@ -5,6 +5,16 @@ Operating instructions for agents working in `jpai-mermaidjs-lint`, the determin
 Read [docs/CONVENTIONS.md](docs/CONVENTIONS.md) before creating, moving or renaming any document.
 It is the declared dialect and it outranks any general convention.
 
+## The four tenets
+
+Every change serves one of these, per [MJL-0015](adrs/0015-four-tenets-define-the-tool.md).
+A rule or feature that serves none of them does not belong.
+
+1. **Readable in light and dark.** Every label can be read against its fill, in both light and dark themes.
+2. **Renders.** Every diagram parses with mermaid's own parsers, and every fence is closed.
+3. **Simple enough to follow.** Visual complexity is scored, so an oversized diagram is flagged to be split.
+4. **Extensible.** A plugin system adds rules that load, run and fix exactly like the built-ins.
+
 ## Commands
 
 ```sh

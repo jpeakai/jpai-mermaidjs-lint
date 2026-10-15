@@ -27,3 +27,7 @@ docs-site/docs/reference/rules.md
 docs-site/docs/gallery/fixtures.md
 docs-site/docs/gallery/examples.md
 docs-site/snippets/
+
+# pytest-xharness-eval build workspaces, session logs and report (make evals)
+.xharness_eval_cache/
+.pytest_cache/

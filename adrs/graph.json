@@ -65,9 +65,16 @@
     },
     {
       "data": {
+        "id": "group-scope",
+        "label": "scope",
+        "colour": "#0891b2"
+      }
+    },
+    {
+      "data": {
         "id": "group-testing",
         "label": "testing",
-        "colour": "#0891b2"
+        "colour": "#059669"
       }
     },
     {
@@ -218,7 +225,7 @@
         "id": "MJL-0012",
         "label": "0012",
         "parent": "group-testing",
-        "colour": "#0891b2",
+        "colour": "#059669",
         "file": "0012-a-fixture-declares-its-own-expectation.md",
         "title": "A fixture declares what it must report in its own file",
         "description": "Each fixture names its expected rule ids in an expect comment, and a .fixed sibling pins its fix output",
@@ -244,12 +251,25 @@
         "id": "MJL-0014",
         "label": "0014",
         "parent": "group-testing",
-        "colour": "#0891b2",
+        "colour": "#059669",
         "file": "0014-an-llm-fix-is-committed-and-verified.md",
         "title": "An LLM fix is committed beside its fixture and verified clean",
         "description": "Judgment fixes for what --fix leaves are authored once as .llm siblings, never generated at build time",
         "status": "accepted",
         "tags": "testing, fixtures, docs"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0015",
+        "label": "0015",
+        "parent": "group-scope",
+        "colour": "#0891b2",
+        "file": "0015-four-tenets-define-the-tool.md",
+        "title": "Four tenets define what the tool guarantees",
+        "description": "Readable in light and dark, renders, simple enough to follow, and extensible, and nothing else belongs in the core",
+        "status": "accepted",
+        "tags": "scope, architecture"
       }
     },
     {

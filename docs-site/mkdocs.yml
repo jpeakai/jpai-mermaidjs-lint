@@ -21,8 +21,10 @@ theme:
   name: material
   logo: assets/logo.svg
   favicon: assets/logo.svg
+  # OsakaNights: Fira Sans to read, JetBrains Mono for code, and Fraunces on
+  # headings, loaded by assets/extra.css.
   font:
-    text: Inter
+    text: Fira Sans
     code: JetBrains Mono
   icon:
     repo: fontawesome/brands/github
@@ -36,21 +38,22 @@ theme:
     - navigation.top
     - search.suggest
     - toc.follow
+  # Night first, as OsakaNights is dark-native. The reader's system setting still wins.
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/weather-night
-        name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: custom
       accent: custom
       toggle:
         icon: material/weather-sunny
-        name: Switch to light mode
+        name: Switch to Day
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to Night
 
 extra_css:
   - assets/extra.css

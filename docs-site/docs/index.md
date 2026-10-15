@@ -8,9 +8,35 @@
 
 </div>
 
-`mermaidjs-lint` reads every diagram with mermaid's own parsers.
-It fails a diagram that will not parse, one too complex to follow, or one whose labels cannot be read against their fills.
-Where a fix is safe, `--fix` writes it, parses the document again, and keeps it only when nothing else changed.
+## Four guarantees
+
+Every rule and every design choice serves one of four tenets.
+
+<div class="grid cards" markdown>
+
+- :material-theme-light-dark: **Readable in light and dark**
+
+    Every label can be read against its fill, in both light and dark themes.
+    The [contrast rules](reference/rules.md#contrast) enforce it.
+
+- :material-check-decagram: **Renders**
+
+    Every diagram parses with mermaid's own parsers, the ones its renderer runs, and every fence is closed.
+    The [parse rules](reference/rules.md#parse) enforce it.
+
+- :material-chart-timeline-variant: **Simple enough to follow**
+
+    Visual complexity is scored against a density preset, so an oversized diagram is flagged to be split.
+    The [complexity rules](reference/rules.md#complexity) enforce it.
+
+- :material-puzzle: **Extensible**
+
+    A plugin system adds rules of your own, which load, run and fix exactly like the built-ins.
+    [The plugin model](concepts/plugin-model.md) explains it.
+
+</div>
+
+Where a fix is safe, `--fix` writes it, parses the document again, and keeps it only when nothing else changed:
 
 --8<-- "home-compare.md"
 
@@ -56,7 +82,7 @@ The run exits 1 while any finding remains, so it works as a gate in CI with no e
 
 ## What it does not do
 
-- **It does not render.** It reads structure from mermaid's parsers, so a diagram that parses but draws badly is not caught.
-- **It does not split diagrams.** A complexity finding names the subgraphs to split along, and a human decides.
+- **It does not draw diagrams.** "Renders" means mermaid's own parsers accept the diagram, so a diagram that parses but draws badly is not caught.
+- **It does not split diagrams.** A complexity finding names the subgraphs to split along, and a human or an LLM decides. The [fixture gallery](gallery/fixtures.md) shows what an LLM would do.
 - **It does not choose colours.** A contrast fix only swaps a declared label colour for black or white, and only when that passes every background it is scored on.
 - **It has no warnings.** Every finding fails the run, and a rule you do not want is switched off in the config.

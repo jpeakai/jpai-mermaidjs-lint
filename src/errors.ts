@@ -178,9 +178,10 @@ export class PluginSourceError extends PluginLoadError {
 
 // --- plugins: a loaded plugin misbehaved while running --------------------
 
-// A fixer threw or returned something that is not a list of valid edits.
-// Unlike a check, this stops the run, because carrying on after a corrupt edit
-// is worse than stopping.
+// A fixer threw, returned a non-list, or returned an edit with no valid expect.
+// An edit with bad offsets is not this error: the engine refuses it and the
+// finding stays. Unlike a check, this stops the run, because carrying on after
+// a corrupt edit is worse than stopping.
 export class PluginFixerError extends MermaidLintError {
   readonly rule: string;
 

@@ -1,8 +1,8 @@
 // Loading: import a plugin module, check it has the shape the contract
 // promises, and turn its rules into ordinary Rules. Every failure is a named
 // PluginLoadError that says which source and why. These functions never skip
-// anything themselves: they return or throw, and the caller decides whether a
-// failed source stops the run (strict) or is reported and left out (lenient).
+// anything themselves: they return, throw, or (loadLocal) return failures. The
+// caller's mode (strict, lenient, collect) decides what a failure does.
 
 import { basename, extname } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -201,7 +201,9 @@ const EXPECTATIONS = new Set(["same-diagrams", "same-tree"]);
 // be synchronous or return a promise, and the wrapper awaits it. Its check cannot
 // take the run down: a throw, a rejection or a malformed finding becomes a finding for that
 // rule, and the other rules carry on. Its fixer is held to the same proof as a
-// built-in, so a fixer that throws or returns nonsense stops the run loudly.
+// built-in. A fixer that throws, returns a non-list, or returns an edit with no
+// valid expect stops the run. An edit with bad offsets is refused by the engine
+// and the finding stays.
 export const toRule = (namespace: string, key: string, rule: PluginRule): Rule => {
   const id = `${namespace}/${key}` as RuleId;
   const check: Rule["check"] = async (ctx) => {

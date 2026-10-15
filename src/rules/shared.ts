@@ -93,5 +93,5 @@ export const contrastOf = (diagram: Diagram, profile: Profile): ContrastResult =
   return result;
 };
 
-// A directive line as a file line.
+// Maps a diagram-relative line to a file line.
 export const fileLine = (diagram: Diagram, line: number): number => diagram.firstLine + line - 1;

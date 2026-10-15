@@ -10,18 +10,18 @@ When a new domain term enters the code or the conversation, add it here in the s
 |---|---|
 | Diagram | One Mermaid source: a mermaid fence in a markdown file, or a whole `.mmd` file. |
 | Fence | The code block that holds a diagram in markdown. It is unterminated when it never closes. |
-| Rule | One deterministic check with a rule id, and optionally a fixer. Also called a gate. |
+| Rule | One deterministic check with a rule id, and optionally a fixer. |
 | Rule id | The name of a rule, written category-short-name, such as contrast-text-below-aa. |
 | Category | The group a rule belongs to: parse, complexity or contrast, or a one-word category a plugin declares. |
-| Finding | One reported violation, with a file, a line range, a rule id, a message and a remediation. |
+| Finding | One reported violation, with a file, a line range, a rule id, a message and optionally a remediation. |
 | Parse engine | The code that reads a diagram's structure from mermaid's own parsers. |
 | Stats | The nodes, edges, subgraphs and nesting depth the parse engine reads from a diagram. |
-| Visual complexity score | Nodes plus half a point per edge plus three per subgraph, scaled by one tenth per level of nesting. Also called VCS. |
+| Visual complexity score | Nodes plus half a point per edge plus three per subgraph, scaled by one tenth per level of nesting. Written VCS in finding messages. |
 | Preset | A named set of density thresholds: low-density, medium-density or high-density. |
 | Ladder | The ordered thresholds of one measure. A diagram lands in one band, so one rule of the ladder fires. |
 | Style directive | A classDef, style or linkStyle line, or an inline class application. |
 | Pair | A foreground and a background scored together: text is fill and color, border is fill and stroke. |
-| Profile | How contrast is read: github scores declared pairs, mkdocs-material scores the host's forced text. |
+| Profile | How contrast is read: github scores declared pairs, mkdocs-material scores the host's forced text, and auto picks one from the file's folder. |
 | Unauditable | A directive the profile requires to be scoreable but cannot be, such as a fill with no color. |
 | Fixer | The optional fix function of a rule. It proposes edits and never writes files itself. |
 | Edit | A proposed change: a start offset, an end offset, replacement text and an expectation. |

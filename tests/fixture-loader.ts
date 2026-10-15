@@ -1,5 +1,5 @@
 // Discovers the fixture corpus: every .md and .mmd file under tests/fixtures
-// and examples. A fixture declares what the tool must report in a comment on
+// and examples, except README.md and .fixed siblings. A fixture declares what the tool must report in a comment on
 // any line of the file, so adding a case is adding one file and nothing else:
 //
 //   <!-- expect: contrast-text-below-aa contrast-border-below-ui-minimum -->   (.md)

@@ -1,5 +1,5 @@
-// Proof obligations for a fix. The engine applies one edit, re-parses, and
-// checks that the document changed exactly as the edit declared. An edit that
+// Proof obligations for a fix. The engine applies edits, re-parses, and checks
+// that the document still satisfies each edit's declared expectation. An edit that
 // cannot be proven is refused, the source is left alone, and the finding stays.
 
 import type { Node, Root } from "mdast";

@@ -1,0 +1,74 @@
+# How a run works
+
+A diagram linter has two hard problems.
+Text patterns disagree with the renderer about what a diagram contains, and an automatic fix can quietly break a document.
+This page explains how a run avoids both.
+
+## One setup, then one model per file
+
+A run sets up once, then reads each file into a document model that every rule shares.
+
+--8<-- "run-pipeline.md"
+
+??? info "Detailed: setup, the fixpoint loop and the check"
+
+    Every accepted edit restarts the pass on a fresh model, because offsets only hold for the source they came from.
+
+    --8<-- "run-pipeline-detail.md"
+
+Setup happens before any file is read.
+The run first finds the project root.
+That is the nearest ancestor of the working directory holding a `package.json`, a config file or a `.mermaidjs-lint` folder.
+It reads the config there, loads the plugins, and builds one registry of active rules.
+A bad config or a broken plugin therefore stops the run before it touches a document.
+
+## Structure comes from mermaid's own parsers
+
+Each file is parsed to a markdown tree once.
+The mermaid fences in that tree become the diagrams every rule reads.
+A check and a fix therefore never disagree about which text is a diagram.
+A `.mmd` file is one diagram with no markdown around it.
+
+A rule that needs structure asks the diagram for its stats.
+For the newer diagram types, the parse engine reads them from mermaid's Langium grammars.
+For the rest, it reads them from mermaid's own core, under a DOM shim.
+A regular expression would miscount subgraphs, ports and multi-line labels, and the counts would differ from what a reader sees.
+The parse happens once per diagram, on first use, and every rule shares the result.
+
+The [document model reference](../reference/document-model.md) lists every field.
+
+## Checking runs every rule at once
+
+No rule reads another rule's result, so a check starts every rule together and waits for all of them.
+A rule may return its findings directly or as a promise.
+The findings are then sorted by line and rule id, so output is stable from run to run.
+
+## Fixing is a loop with a proof
+
+`--fix` does not trust a fixer.
+A fixer proposes edits: a span of the source, its replacement, and an expectation of what must stay the same.
+
+| Expectation | What must hold after the edit |
+|---|---|
+| `same-diagrams` | The markdown is unchanged outside the mermaid fences, every diagram is still there, and each one parses to the same structure |
+| `same-tree` | The markdown tree is unchanged once whitespace in text is collapsed |
+
+The engine splices the edits, parses the whole document again, and keeps the change only when every expectation holds.
+A rule's edits are first tried as one batch.
+When the batch fails, each edit is tried alone, so one bad edit never blocks the others.
+An edit that fails is refused, remembered, and never proposed again for the same text.
+
+After any accepted change the engine starts a new pass on the new source, because every offset a fixer computed belongs to the old one.
+The loop ends when no fixer makes progress.
+The file is then written, and checked like any other.
+
+!!! warning "A refused edit leaves the finding in place"
+
+    When a fixer is unsure, or its edit fails the proof, the text is left alone and the finding is still reported.
+    That is deliberate: a fix that might change what a diagram says needs a human.
+
+## What a run does not do
+
+- It never renders a diagram, so layout problems a renderer would show are out of reach.
+- It never splits or restructures a diagram, because that changes what the diagram says.
+- It never picks a brand colour. The only colour fix swaps a declared label colour for black or white.

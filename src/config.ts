@@ -1,7 +1,8 @@
 // The config file: which rules are off, what options each takes, and how
 // strictly plugins load. It is optional, because everything auto-detected loads
 // without it. A mistake in it is a named usage error, so a stale or misspelt
-// rule id fails the run instead of silently doing nothing.
+// built-in rule id fails the run instead of silently doing nothing. A lenient
+// or collect (validating) run drops a setting for an unloaded plugin rule.
 
 import { access, readFile } from "node:fs/promises";
 import { extname, join } from "node:path";
@@ -76,7 +77,7 @@ export const parseConfig = (file: string, raw: unknown): Config => {
   };
 };
 
-// The first config file at the root, or null. Two at once is ambiguous, so it
+// The config file at the root, or null. Two at once is ambiguous, so it
 // is an error rather than a pick.
 export const findConfig = async (root: string): Promise<string | null> => {
   const found: string[] = [];

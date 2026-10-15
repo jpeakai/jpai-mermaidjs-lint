@@ -72,7 +72,8 @@ export function detectKeyword(content: string): string | null {
   // A leading "---" opens a YAML frontmatter block that runs to the next "---".
   // Everything between is config, not diagram source: returning its first key
   // (typically "config:") would miss the Langium dispatch table and mis-report a
-  // valid frontmatter-prefixed diagram (e.g. architecture-beta) as ParserFailure.
+  // valid frontmatter-prefixed diagram (e.g. architecture-beta) as unparseable
+  // (parseFailed in metrics.ts, reported as parse-diagram-unparseable).
   let seenContent = false;
   let inFrontmatter = false;
 
@@ -122,8 +123,8 @@ export async function extractStats(content: string): Promise<MermaidStats> {
     error = (err instanceof Error ? err.message : String(err)).split("\n")[0] ?? null;
   }
 
-  // 3. Neither canonical parser produced stats. Return a tagged failure
-  // so assessParseQuality flags ParserFailure.
+  // 3. Neither canonical parser produced stats. Return a tagged failure so
+  // parseFailed (metrics.ts) flags it, reported as parse-diagram-unparseable.
   return {
     nodes: 0,
     edges: 0,
@@ -233,7 +234,6 @@ async function extractLangiumStats(content: string, keyword: string): Promise<Me
     }
     case "wardley": {
       // AST shape: ast.anchors[], ast.components[], ast.links[] — NOT ast.edges.
-      // The old code looked for `ast.edges` and returned 0.
       const components = (ast.components as Array<{ name?: string }> | undefined) ?? [];
       const anchors = (ast.anchors as Array<{ name?: string }> | undefined) ?? [];
       const links = (ast.links as Array<unknown> | undefined) ?? [];
@@ -278,9 +278,8 @@ function architectureDepth(groups: Array<{ id?: string; in?: string }>): number 
 }
 
 // Compute tree structure from a flat, indent-ordered node list.
-// Used for treemap, treeView, mindmap, ishikawa, kanban — every diagram
-// type where parent-child is encoded via indentation rather than explicit
-// edges. `labels` preserves the node names for VCS bookkeeping; `edges` is
+// Used for treemap and treeView, where parent-child is encoded via
+// indentation rather than explicit edges. `labels` preserves the node names for VCS bookkeeping; `edges` is
 // the number of parent-child links (nodes - number_of_roots); `depth` is
 // the maximum number of indent-steps past the root level.
 export function indentTreeStats(items: Array<{ label: string; indent: number }>): {
@@ -302,9 +301,10 @@ export function indentTreeStats(items: Array<{ label: string; indent: number }>)
 // ── mermaid-core extraction via .db after parse ─────────────────────────────
 //
 // Every diagram type's canonical DB has a different shape. Some expose data
-// via getter methods (flowchart's getVertices/getEdges, kanban's getSections,
-// block's getBlocksFlat). Others expose it via direct properties (er.entities,
-// state.nodes, requirement.requirements). We dispatch on diagram.type and
+// via getter methods (kanban's getData, block's getBlocks, sankey's
+// getNodes/getLinks). Others expose it via direct properties (flowchart's
+// vertices/edges/subGraphs, er.entities, state.nodes,
+// requirement.requirements). We dispatch on diagram.type and
 // each adapter reads ONLY that type's canonical surface — no text parsing,
 // no regex. The parser did the work; we just read the result.
 

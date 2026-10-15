@@ -75,12 +75,13 @@ More nodes than the preset's readable threshold, up to the cognitive limit.
 
 ### complexity-visual-score-critical
 
-A visual complexity score above the critical threshold.
+A visual complexity score above the preset's `vcsComplex` threshold, which is 100 under `high-density`.
 The score is nodes plus half a point per edge plus three per subgraph, scaled by one tenth per level of nesting.
+The `vcsCritical` option is accepted but not read by this rule.
 
 ### complexity-visual-score-acceptable-exceeded
 
-A visual complexity score above the preset's readable threshold, up to the critical threshold.
+A visual complexity score above the preset's readable threshold, up to `vcsComplex`.
 
 ### complexity-subgraph-nesting-too-deep
 
@@ -118,7 +119,8 @@ flowchart LR
 ```
 ````
 
-A fill with no declared `color:` is reported by `contrast-directive-unauditable` instead, because choosing a colour is a design decision.
+In an `erDiagram`, a class is scored against every row background the entity draws, in both themes.
+When neither black nor white clears 4.5 to 1 on all of them, the finding stays for a human.
 
 ````text reported
 ```mermaid
@@ -128,6 +130,8 @@ erDiagram
   class CAR c
 ```
 ````
+
+A fill with no declared `color:` is reported by `contrast-directive-unauditable` instead, because choosing a colour is a design decision.
 
 ### contrast-border-below-ui-minimum
 

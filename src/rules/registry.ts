@@ -1,7 +1,8 @@
 // The registry: the rules a run actually uses. It starts from the built-in
 // catalogue, adds whatever plugins loaded, then applies the config, so a rule
-// that is off loses its check and its fixer together. Nothing else reads the
-// catalogue directly, which is what lets a plugin rule behave as a built-in.
+// that is off loses its check and its fixer together. Every check and fix reads
+// the registry, which is what lets a plugin rule behave as a built-in. The CLI
+// help reads the built-in catalogue directly.
 
 import type { Config } from "../config.ts";
 import { RuleOptionError, UnknownRuleError } from "../errors.ts";
@@ -45,7 +46,8 @@ export interface RegistryInput {
   categories: ReadonlyMap<string, string>;
   sources?: LoadedSource[];
   config?: Config;
-  // A lenient run drops a setting for an unknown plugin rule instead of failing.
+  // A lenient or collect (validating) run drops a setting for an unloaded
+  // plugin rule instead of failing. A built-in id always fails.
   ignoreUnknownPluginIds?: boolean;
 }
 
@@ -92,7 +94,8 @@ export const buildRegistry = (input: RegistryInput): Registry => {
     const rule = rules.find((r) => r.id === id);
     if (!rule) {
       // A plugin that was skipped cannot have its rules configured, so a lenient
-      // run drops the setting and says so. A built-in id is never forgiven.
+      // or collect (validating) run drops the setting and says so. A built-in id
+      // always fails.
       if (ignoreUnknownPluginIds && isPluginRuleId(id)) {
         ignored.push(id);
         continue;

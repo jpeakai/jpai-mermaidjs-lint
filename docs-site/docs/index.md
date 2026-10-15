@@ -1,40 +1,62 @@
+<div class="ml-hero" markdown>
+
 # mermaidjs-lint
 
-Deterministic lint gates and verified fixers for Mermaid diagrams in markdown.
+<p class="ml-lede">Lint the Mermaid diagrams in your markdown, and fix what can be fixed safely.</p>
 
-It reads each diagram with mermaid's own parsers.
-It then gates whether the diagram parses and how complex it is.
-It also gates whether labels and borders can be read against their fills.
-Where a fix is safe, `--fix` applies it and re-parses the result before keeping it.
+[Get started](get-started.md){ .md-button .md-button--primary } [Browse the rules](reference/rules.md){ .md-button }
 
-```mermaid
-flowchart LR
-  Source[Markdown or .mmd] --> Parse[Mermaid parsers]
-  Parse --> Rules[Parse, complexity and contrast rules]
-  Rules --> Findings[Findings]
-  Rules --> Fix[Verified fixes]
-```
+</div>
+
+`mermaidjs-lint` reads every diagram with mermaid's own parsers.
+It fails a diagram that will not parse, one too complex to follow, or one whose labels cannot be read against their fills.
+Where a fix is safe, `--fix` writes it, parses the document again, and keeps it only when nothing else changed.
+
+--8<-- "home-compare.md"
 
 ## Install
 
-```sh
-bun add --dev @jpeakai/mermaidjs-lint
-```
+=== "Bun"
 
-## Use
+    ```sh
+    bun add --dev @jpeakai/mermaidjs-lint
+    bunx mermaidjs-lint README.md docs/
+    ```
 
-```sh
-bunx mermaidjs-lint docs/            # report findings, exit 1 on any
-bunx mermaidjs-lint --fix docs/      # apply verified fixes, then report what is left
-```
+=== "npm"
 
-## This site is a test suite
+    ```sh
+    npm install --save-dev @jpeakai/mermaidjs-lint
+    npx mermaidjs-lint README.md docs/
+    ```
 
-Every page under Reference is generated from the files the test suite runs:
+The run exits 1 while any finding remains, so it works as a gate in CI with no extra flags.
 
-- [Rules](reference/rules.md) draws each example from `RULES.md` before and after `--fix`.
-- [Fixtures](reference/fixtures.md) shows every file in `tests/fixtures` with what it reports.
-- [Examples](reference/examples.md) shows the layout and icon examples, each linted clean.
+## Where to go next
 
-The build checks every example as it writes the page, and fails when one has drifted from the tool.
-This page itself renders through Material, so the linter scores its diagram under the `mkdocs-material` profile.
+<div class="grid cards" markdown>
+
+- :material-rocket-launch: **[Get started](get-started.md)**
+
+    Lint a file, read a finding, fix it, and add the check to your project.
+
+- :material-hammer-wrench: **[Guides](guides/index.md)**
+
+    Gate CI, configure the rules, lint a MkDocs site, and write rules of your own.
+
+- :material-lightbulb-on: **[Concepts](concepts/index.md)**
+
+    How a run works, how plugins load, and why contrast and complexity are measured the way they are.
+
+- :material-book-open-variant: **[Reference](reference/index.md)**
+
+    Every rule, flag, config key, and the types a rule receives.
+
+</div>
+
+## What it does not do
+
+- **It does not render.** It reads structure from mermaid's parsers, so a diagram that parses but draws badly is not caught.
+- **It does not split diagrams.** A complexity finding names the subgraphs to split along, and a human decides.
+- **It does not choose colours.** A contrast fix only swaps a declared label colour for black or white, and only when that passes every background it is scored on.
+- **It has no warnings.** Every finding fails the run, and a rule you do not want is switched off in the config.

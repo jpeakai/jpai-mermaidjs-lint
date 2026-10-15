@@ -8,10 +8,11 @@ It is the declared dialect and it outranks any general convention.
 ## Commands
 
 ```sh
-make fix       # biome autofix, then regenerate the ADR bundle
-make check     # the gate GitHub Actions and npm publish run, with no private tooling
-make ci        # fix, typecheck, tests at 90% coverage, then assert the tree is clean
-make docs-ci   # run the prose gates and the diagram gates over every markdown file
+make fix       # regenerate the ADR bundle, then biome autofix
+make check     # the gate GitHub Actions and npm publish run, which only checks
+make ci        # fix, typecheck, tests at 90% coverage, then docs-ci
+make docs-ci   # run the prose gates and the diagram gates over every authored markdown file
+make site      # generate and build the docs site in strict mode
 ```
 
 ## Decisions
@@ -32,6 +33,7 @@ When a new domain term enters the code or the conversation, add it to the glossa
 - Never edit a generated file.
   Everything in `adrs/` except the `.yml` records is generated.
   So is `dist/`, which `make build` bundles from `src/` for Node and git ignores.
+  So are the docs site's rules page, gallery pages and snippets, which `make site` writes from `RULES.md`, `tests/fixtures` and `examples/`.
 - Never add a warning level.
   A finding fails the run or the rule is off, per [MJL-0003](adrs/0003-findings-fail-or-the-rule-is-off.md).
 - Never let a fixer guess.
@@ -50,7 +52,7 @@ When a new domain term enters the code or the conversation, add it to the glossa
   The Node bundle must run without Bun.
 - Never use mocks in tests.
   Tests run the real parsers over real strings and files.
-- Never push to main once the first version is out.
+- Never push to main.
   Every change lands through a pull request that passes CI.
 
 ## More

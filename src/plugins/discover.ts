@@ -4,9 +4,9 @@
 // names a config lists. A directory of node_modules is never scanned, so only
 // what the project chose to depend on can run.
 //
-// A source that cannot be resolved is a failure the caller decides how to
-// treat, not an exception, so a lenient run can skip it and a validating run
-// can report every one.
+// A declared package that is not installed is a failure the caller decides
+// how to treat, not an exception, so a lenient run can skip it and a
+// validating run can report every one. A malformed package.json throws.
 
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, extname, isAbsolute, join, resolve } from "node:path";
@@ -69,8 +69,8 @@ const localSources = async (root: string): Promise<PluginSource[]> => {
     .map((name) => ({ kind: "local", spec: join(LOCAL_RULES, name), path: join(dir, name) }));
 };
 
-// The file Node would import for a package, read from its package.json the
-// way a resolver does: the exports entry, then main, then index.js.
+// An approximation of Node resolution, read from a package's package.json:
+// exports "." by node, import, default priority, then main, then index.js.
 const pick = (target: unknown): string | null => {
   if (typeof target === "string") return target;
   if (Array.isArray(target)) {

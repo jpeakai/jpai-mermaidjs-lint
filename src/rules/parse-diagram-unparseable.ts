@@ -3,8 +3,9 @@ import { finding } from "./shared.ts";
 import { RULE, type Rule } from "./types.ts";
 
 // A multi-line diagram whose parser yields no nodes is a silent parse failure.
-// It short-circuits the complexity rules, because thresholds are meaningless
-// against structure the parser never read.
+// Rules never read each other: the complexity rules skip the same diagrams
+// themselves through measure() in shared.ts, because thresholds are
+// meaningless against structure the parser never read.
 export const parseDiagramUnparseable: Rule = {
   id: RULE.UNPARSEABLE,
   category: "parse",

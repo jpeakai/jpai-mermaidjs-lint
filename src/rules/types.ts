@@ -20,14 +20,14 @@ export const RULE = {
   UNAUDITABLE: "contrast-directive-unauditable",
 } as const;
 
-// A core id has no slash. A plugin id is always namespace/name, so the slash
-// is what tells the two apart.
 export type CoreRuleId = (typeof RULE)[keyof typeof RULE];
 
 export type Awaitable<T> = T | Promise<T>;
 
 export type PluginRuleId = `${string}/${string}`;
 
+// A core id has no slash. A plugin id is always namespace/name, so the slash
+// is what tells the two apart.
 export const isPluginRuleId = (id: string): id is PluginRuleId => id.includes("/");
 
 export type RuleId = CoreRuleId | PluginRuleId;

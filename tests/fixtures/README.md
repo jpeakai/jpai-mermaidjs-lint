@@ -1,6 +1,6 @@
 # Fixtures
 
-Every `.md` and `.mmd` file here, and under `examples/`, is run by `tests/fixtures.test.ts`.
+Every `.md` and `.mmd` file here, and under `examples/`, is run by `tests/fixtures.test.ts`, except this README and the `.fixed` siblings.
 Adding a case is adding one file, with no test code to write.
 
 ## Declare what the tool must report
@@ -24,8 +24,8 @@ Without one, the suite still checks that fixing is idempotent and never adds a r
 
 | Folder | Holds |
 |---|---|
-| `rules/` | One small file per behaviour, named for the rule |
+| `rules/` | One small file per behaviour, named for what it shows |
 | `clean/` | Files that must report nothing |
 | `contrast/`, `complexity/`, `gallery/` | Larger scenario files ported from the original skill |
 | `skill-evals/` | The fixtures the original skill graded its output against |
-| `regressions/` | A file for every bug found in the wild, added with the fix |
+| `regressions/` | A file for every bug found in the wild, added with the fix. Create the folder with the first one. |

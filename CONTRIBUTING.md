@@ -14,11 +14,11 @@ make install   # uv sync, then bun install
 ## Making a change
 
 ```sh
-make fix       # biome autofix, then regenerate the ADR bundle
+make fix       # regenerate the ADR bundle, then biome autofix
 make check     # typecheck, coverage, docs-ci and lint, with Bun alone, as GitHub Actions runs it
 make build     # bundle src into dist for Node, which git ignores
 make test      # build, then run the test suite once
-make ci        # fix, typecheck, coverage gate, then assert the tree is clean
+make ci        # fix, typecheck, coverage gate, then docs-ci
 make docs-ci   # gate every markdown file with this repo's own source
 make site      # generate the reference pages, then build the docs site in strict mode
 make site-serve  # the same, served locally with live reload
@@ -47,7 +47,6 @@ The test suite and the docs site both pick it up, with no code to write.
 
 ## Landing a change
 
-Main is protected once the first version is published.
 Every change lands through a pull request, and nobody pushes to main directly.
 
 ```sh

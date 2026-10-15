@@ -50,7 +50,7 @@ The step fails while any finding remains, which fails the check.
 
 - **Name your own paths.** Replace `README.md docs/` with the files and folders that hold your diagrams. A path that does not exist stops the run with exit code 2.
 - **Keep `--no-install`.** It runs only the copy the install step put in `node_modules`. Without it, a project that does not declare the package makes the runner fetch the unscoped name `mermaidjs-lint`, which this project does not own.
-- **Keep `--bun` in the Bun workflow.** The installed command starts on the runner's Node, even under `bunx`. `--bun` runs it on Bun, which a [TypeScript local rule](local-rule.md#go-further) needs unless Node is 22.18 or newer.
+- **Keep `--bun` in the Bun workflow.** The installed command starts on the runner's Node, even under `bunx`. `--bun` runs it on Bun, which a [TypeScript local rule](local-rule.md#go-further) needs unless Node is 22.18 or newer (23.6 or newer on Node 23).
 - **Use another CI service the same way.** Install the dependencies, then run the same command. Exit code 1 fails the job on any CI service.
 
 ## Read the result
@@ -58,7 +58,7 @@ The step fails while any finding remains, which fails the check.
 | Exit code | Meaning |
 |---|---|
 | 0 | No findings |
-| 1 | Findings remain, a plugin failed to load in a run without `--lenient-plugins`, or the run failed |
+| 1 | Findings remain, a plugin failed to load in a run that is not lenient, or the run failed |
 | 2 | A usage error, such as an unknown flag or a bad config file |
 
 Each finding prints as `file:line rule message`, so the log points straight at the diagram.

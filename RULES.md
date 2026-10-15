@@ -56,6 +56,7 @@ That prose stays diagram source after the fix, and `parse-diagram-unparseable` t
 A fence inside a quote or a list item ends with its container.
 There the fixer closes it only when nothing follows the container, using the container's prefix.
 When content follows, the fixer leaves it alone, because the closing line would be a guess.
+A fence opened on the list marker's own line, such as `- ```mermaid`, is left for a human even when nothing follows it.
 Only mermaid fences are checked: a diagram after an unclosed fence of another language is read as that fence's code, and is never seen.
 
 ````text before

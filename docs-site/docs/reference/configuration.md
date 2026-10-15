@@ -61,8 +61,9 @@ Set on one rule alone, it opens a gap or an overlap, and an overlap makes two ru
 | `"off"` | The rule does not run |
 
 Plugin rules are set the same way, by their `namespace/key` id.
-Outside strict mode, a setting for a plugin rule that did not load is set aside, and standard error says so.
-That covers `--no-plugins`, `"plugins": false`, a lenient run and `--validate-plugins`.
+Outside strict mode, a setting for a plugin rule that did not load is set aside.
+Under `--no-plugins`, `"plugins": false` or a lenient run, standard error says so.
+`--validate-plugins` runs no check, so it prints no such line.
 A built-in id that does not exist always fails with `error[unknown-rule]`.
 
 ## Rule options

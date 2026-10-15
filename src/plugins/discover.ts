@@ -4,14 +4,16 @@
 // names a config lists. A directory of node_modules is never scanned, so only
 // what the project chose to depend on can run.
 //
-// A declared package that is not installed is a failure the caller decides
-// how to treat, not an exception, so a lenient run can skip it and a
-// validating run can report every one. A malformed package.json throws.
+// A declared package that is not installed, or whose package.json is not a
+// JSON object, is a failure the caller decides how to treat, not an exception,
+// so a lenient run can skip it and a validating run can report every one. A
+// malformed project package.json throws PackageJsonError, except in a run with
+// plugins off, which loads no package it names.
 
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 import type { Config } from "../config.ts";
-import { PluginNotInstalledError } from "../errors.ts";
+import { PackageJsonError, PluginLoadError, PluginNotInstalledError, PluginSourceError } from "../errors.ts";
 
 export type SourceKind = "local" | "package" | "config";
 
@@ -23,10 +25,16 @@ export interface PluginSource {
   path: string;
 }
 
+export interface UnresolvedSource {
+  kind: SourceKind;
+  error: PluginLoadError;
+}
+
 export interface Discovery {
   sources: PluginSource[];
-  // Sources found but not resolvable, such as a declared package that is not installed.
-  failures: PluginNotInstalledError[];
+  // Sources found but not resolvable, such as a declared package that is not
+  // installed, each with the kind of source that named it.
+  failures: UnresolvedSource[];
 }
 
 export const LOCAL_RULES = join(".mermaidjs-lint", "rules");
@@ -49,7 +57,7 @@ const readJson = async (path: string): Promise<Record<string, unknown> | null> =
   } catch {
     // Reported below with the path.
   }
-  throw new Error(`${path} is not a JSON object`);
+  throw new PackageJsonError(path);
 };
 
 // Every extension a local rule may have. Whether the runtime can import a
@@ -101,15 +109,27 @@ const entryOf = (pkg: Record<string, unknown>): string => {
 export const resolvePackage = async (root: string, name: string): Promise<string> => {
   for (let dir = resolve(root); ; dir = dirname(dir)) {
     const folder = join(dir, "node_modules", name);
-    const pkg = await readJson(join(folder, "package.json"));
+    let pkg: Record<string, unknown> | null;
+    try {
+      pkg = await readJson(join(folder, "package.json"));
+    } catch (err) {
+      if (!(err instanceof PackageJsonError)) throw err;
+      throw new PluginSourceError(name, `its package.json at ${err.file} is not a JSON object`);
+    }
     if (pkg) return join(folder, entryOf(pkg));
     if (dirname(dir) === dir) break;
   }
   throw new PluginNotInstalledError(name, root);
 };
 
-const declaredPlugins = async (root: string): Promise<string[]> => {
-  const pkg = await readJson(join(root, "package.json"));
+const declaredPlugins = async (root: string, tolerateBadManifest: boolean): Promise<string[]> => {
+  let pkg: Record<string, unknown> | null;
+  try {
+    pkg = await readJson(join(root, "package.json"));
+  } catch (err) {
+    if (tolerateBadManifest && err instanceof PackageJsonError) return [];
+    throw err;
+  }
   if (!pkg) return [];
   const names = ["dependencies", "devDependencies", "optionalDependencies"].flatMap((field) => {
     const deps = pkg[field];
@@ -118,18 +138,21 @@ const declaredPlugins = async (root: string): Promise<string[]> => {
   return [...new Set(names)].filter((name) => PACKAGE_PATTERN.test(name)).sort();
 };
 
-export const discoverSources = async (root: string, config: Config): Promise<Discovery> => {
+// A run with plugins off loads nothing, so a malformed project package.json,
+// which could only name packages that run will not load, does not stop it.
+export const discoverSources = async (root: string, config: Config, pluginsOff = false): Promise<Discovery> => {
   const sources = await localSources(root);
-  const failures: PluginNotInstalledError[] = [];
+  const failures: UnresolvedSource[] = [];
   const add = async (kind: SourceKind, spec: string, resolveIt: () => Promise<string>): Promise<void> => {
     try {
       sources.push({ kind, spec, path: await resolveIt() });
     } catch (err) {
-      if (!(err instanceof PluginNotInstalledError)) throw err;
-      failures.push(err);
+      if (!(err instanceof PluginLoadError)) throw err;
+      failures.push({ kind, error: err });
     }
   };
-  for (const name of await declaredPlugins(root)) await add("package", name, () => resolvePackage(root, name));
+  for (const name of await declaredPlugins(root, pluginsOff))
+    await add("package", name, () => resolvePackage(root, name));
   for (const spec of config.plugins || []) {
     const path = spec.startsWith(".") || isAbsolute(spec);
     await add("config", spec, () => (path ? Promise.resolve(resolve(root, spec)) : resolvePackage(root, spec)));

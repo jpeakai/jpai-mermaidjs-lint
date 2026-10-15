@@ -37,5 +37,7 @@ export interface Plugin {
 
 // A one-word category and a namespace or rule key, as they appear in an id.
 export const CATEGORY_WORD = /^[a-z]+$/;
-export const NAMESPACE = /^[a-z][a-z0-9-]*$/;
-export const RULE_KEY = /^[a-z][a-z0-9-]*$/;
+// Lower-case words joined by single hyphens: no leading, trailing or doubled
+// hyphen, so `house-` and `a-` are refused.
+export const NAMESPACE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+export const RULE_KEY = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;

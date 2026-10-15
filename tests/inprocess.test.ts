@@ -163,3 +163,19 @@ describe("config", () => {
     await expect(loadConfig(`${root}/missing.json`)).rejects.toBeInstanceOf(MermaidLintError);
   });
 });
+
+describe("main(argv, cwd)", () => {
+  test("detects the auto profile from the cwd passed in, not the process's", async () => {
+    // A fill with no color: is unauditable on GitHub, and scored against the
+    // Material canvases under mkdocs-material, so the rule that fires names the profile.
+    const doc = fence("flowchart LR\n  A --> B\n  classDef c fill:#ffff00\n  class A c");
+    const mk = tempProject({ "mkdocs.yml": "site_name: m\n", "a.md": doc });
+    expect(process.cwd()).not.toBe(mk);
+    const r = await run(mk, ["a.md"]);
+    expect(r.out).toContain("a.md:");
+    expect(r.out).not.toContain("contrast-directive-unauditable");
+    expect(r.out).toContain("contrast-text-below-aa");
+    const plain = tempProject({ "a.md": doc });
+    expect((await run(plain, ["a.md"])).out).toContain("contrast-directive-unauditable");
+  });
+});

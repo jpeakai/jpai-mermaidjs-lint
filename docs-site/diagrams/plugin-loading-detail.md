@@ -32,8 +32,8 @@ flowchart TB
     PM -->|"strict, lenient, collect"| LL --> CC
     PM -->|"strict, lenient, collect"| LP --> CC
     CC --> NS --> CW --> TR --> BR --> AC
-    D2 -. "not installed" .-> F
-    D3 -. "not installed" .-> F
+    PM -->|"strict, lenient, collect"| NI["A declared plugin<br/>that is not installed"]
+    NI -. "not installed" .-> F
     CC -. "import or contract error" .-> F
     NS -. "yes" .-> F
     CW -. "yes" .-> F
@@ -48,7 +48,7 @@ flowchart TB
     classDef failTint fill:#dc262636,stroke:#ef4444,stroke-width:2px
     classDef modeTint fill:#52525b36,stroke:#71717a,stroke-width:1px
     class D1,D2,D3,DD discoverTint
-    class LL,LP,CC loadTint
+    class LL,LP,CC,NI loadTint
     class NS,CW conflictTint
     class TR,BR,AC registryTint
     class F,X,S failTint

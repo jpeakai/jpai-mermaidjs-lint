@@ -27,17 +27,39 @@ Include the version, the command, and the smallest input that shows the problem.
 ## The trust model
 
 The linter reads markdown and diagram text as data, and never runs it.
-Three kinds of file are code, and they run with your permissions.
+Four kinds of file are code, and they run with your permissions.
 
 - **Local rules.** A run imports every file in `.mermaidjs-lint/rules`.
-- **Plugin packages.** A run imports every dependency named `mermaidjs-lint-plugin-*` that the project's `package.json` declares, and every entry in the config's `plugins` list.
+- **Plugin packages.** A run imports every declared dependency named `mermaidjs-lint-plugin` or `mermaidjs-lint-plugin-*`, scoped or not, and every entry in the config's `plugins` list.
 - **A `.mjs` config.** `mermaidjs-lint.config.mjs` is a module, so reading it runs it. A `.json` config is only parsed.
+- **The package runner's own config.** Bun reads `bunfig.toml` in the working folder, and npm reads the project's `.npmrc`. A `preload` or a `node-options=--import=...` there runs code before the linter starts.
+
+The project root, and so every source above, comes from the working folder.
+`--list-rules` and `--validate-plugins` import every plugin too, because they load them to list or check them.
 
 What each flag changes:
 
 - **Only declared code loads.** No folder of `node_modules` is scanned, so an installed package the project does not declare is never loaded.
-- **`--no-plugins` loads no local rule and no plugin, and never imports a `.mjs` config.** A run that finds one stops with `error[config-code]` and exit 2, before importing it. A `.json` config is still read, for its rule settings.
-- **`--no-plugins` does not make an untrusted repository safe.** Installing a repository's dependencies already runs their install scripts, before the linter starts. Lint an untrusted repository without installing its dependencies, and run `mermaidjs-lint --no-plugins --config <your-own.json>`.
+- **`--no-plugins` loads no local rule and no plugin, and never imports a `.mjs` config.** A run that finds one stops with `error[config-code]` and exit 2, before importing it. A `.json` config is still read, for its rule settings. A malformed project `package.json` does not stop it, because it loads nothing that file names.
+- **`--no-plugins` does not make an untrusted repository safe.** Installing a repository's dependencies already runs their install scripts. Starting the runner inside the checkout reads its `bunfig.toml` or `.npmrc`. Both happen before the linter starts.
 - **`--no-plugins` is not a CI boundary.** On a pull request from a fork, the workflow file and the dependency install both come from the fork. The boundary there is GitHub's read-only `pull_request` token with no secrets.
+
+## Lint a repository you do not trust
+
+Run an installed linter from a folder you control, and name the checkout's files by path.
+Never install the checkout's dependencies, and never start the runner inside it.
+
+```sh
+mkdir lint-runner
+cd lint-runner
+npm init -y
+npm install --save-dev @jpeakai/mermaidjs-lint
+echo '{}' > lint.json
+npx --no-install mermaidjs-lint --no-plugins --config lint.json /path/to/checkout/docs
+```
+
+With Bun, run `bun add --dev @jpeakai/mermaidjs-lint`, then `bunx --bun --no-install mermaidjs-lint` with the same flags.
+The project root is then `lint-runner`, so no local rule, plugin, config or runner config from the checkout loads.
+`--no-plugins` and `--config` keep the run to the built-in rules, even if `lint-runner` gains a plugin later.
 
 [The plugin model](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/plugin-model/) explains discovery and loading in full.

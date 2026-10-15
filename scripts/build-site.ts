@@ -9,13 +9,14 @@
 //   bun run scripts/build-site.ts
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, extname, join } from "node:path";
 import { parseArgs } from "node:util";
 import { reportLine } from "../src/cli.ts";
 import {
   buildDocModel,
   CATEGORIES,
   checkMarkdown,
+  documentKind,
   type Finding,
   fixSource,
   PRESETS,
@@ -59,6 +60,15 @@ const DRAW_LIMIT = 3;
 
 // The fixture folders with no description, which fail the build.
 export const undescribedFolders = (folders: string[]): string[] => folders.filter((f) => !(f in FIXTURE_GROUPS));
+
+// The folder each test fixture sits in, as the fixtures page groups them. A
+// file directly under tests/fixtures/ lands in a folder named "fixtures",
+// which has no description, so it fails like an undescribed folder.
+export const fixtureFolders = (fixtures: Fixture[]): string[] =>
+  [...new Set(fixtures.filter((f) => f.rel.startsWith("tests/")).map((f) => basename(dirname(f.rel))))].sort((a, b) => {
+    const order = Object.keys(FIXTURE_GROUPS);
+    return (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1);
+  });
 
 export const failures: string[] = [];
 const fail = (where: string, what: string): void => {
@@ -287,8 +297,8 @@ const fixtureSection = async (f: Fixture): Promise<string> => {
   const fixed = await fixSource(f.source, f.path, GITHUB);
   if (f.fixed !== null && fixed !== f.fixed) fail(f.rel, "--fix no longer matches its pinned .fixed file");
 
-  const ext = f.path.endsWith(".mmd") ? ".mmd" : ".md";
-  const kind = ext === ".mmd" ? "diagram" : "markdown";
+  const ext = extname(f.path);
+  const kind = documentKind(f.path);
   const lang = kind === "diagram" ? "text" : "markdown";
   const out: string[] = [
     `### ${basename(f.rel, ext)}`,
@@ -336,10 +346,7 @@ const fixtureSection = async (f: Fixture): Promise<string> => {
 
 const fixturesPage = async (): Promise<string> => {
   const fixtures = loadFixtures().filter((f) => f.rel.startsWith("tests/"));
-  const folders = [...new Set(fixtures.map((f) => basename(dirname(f.rel))))].sort((a, b) => {
-    const order = Object.keys(FIXTURE_GROUPS);
-    return (order.indexOf(a) + 1 || order.length + 1) - (order.indexOf(b) + 1 || order.length + 1);
-  });
+  const folders = fixtureFolders(fixtures);
   const out: string[] = [
     "# Fixtures",
     "",
@@ -509,7 +516,7 @@ const main = async (): Promise<void> => {
     "home-compare.md": await homeCompare(),
   };
   if (failures.length) {
-    console.error(`build-site: ${failures.length} example(s) drifted from the tool:`);
+    console.error(`build-site: ${failures.length} problem(s) found:`);
     for (const f of failures) console.error(`  ${f}`);
     process.exit(1);
   }

@@ -34,7 +34,7 @@ make install   # uv sync, then bun install
 
 ```sh
 make fix       # regenerate the ADR bundle, then biome autofix
-make check     # typecheck, coverage, docs-ci and lint, with Bun alone, as GitHub Actions runs it
+make check     # typecheck, coverage, docs-ci and lint, with Bun and Node, as GitHub Actions runs it
 make build     # bundle src into dist for Node, which git ignores
 make test      # build, then run the test suite once
 make ci        # fix, typecheck, coverage gate, then docs-ci
@@ -55,18 +55,24 @@ The coverage gate fails below 90% aggregate for functions or lines.
 1. Write one module in `src/rules` exporting a `Rule`, named for its id.
 2. Add its id to `RULE` in `src/rules/types.ts`, and register it in `RULES` in `src/rules/index.ts`.
 3. If it has a fixer, also add it to `FIX_ORDER` in `src/rules/index.ts`, at the position its edits must apply. A fixer missing from `FIX_ORDER` never runs under `--fix`.
-4. Add its section and examples to `RULES.md`, which `tests/rules-doc.test.ts` holds to the code.
-5. Add tests that run the real parser over real strings.
-6. Add a line under `Unreleased` in `CHANGELOG.md`.
+4. Add its section and examples to `RULES.md`, and its id to the Categories table there. `tests/rules-doc.test.ts` holds both to the code.
+5. Add a fixture named for the rule, `tests/fixtures/rules/<id>.md`, with an expect comment naming the rule. `tests/fixtures.test.ts` fails until every core rule has one. If `--fix` cannot clear it, add the `.llm.md` sibling that [Adding a fixture](#adding-a-fixture) describes.
+6. Add tests that run the real parser over real strings.
+7. Add a row for the rule to the remediation table in `skills/mermaidjs-lint/SKILL.md`, unless an existing row already covers it.
+8. Add a line under `Unreleased` in `CHANGELOG.md`.
 
 A rule that rewrites text needs an expectation from the verifier, and an adversarial test for every case it refuses.
 The verifier compares only what `src/fix/verify.ts` lists, so a fixer must not rely on it to catch a changed edge or label.
 
 ## Adding a fixture
 
-A diagram that misbehaves in the wild becomes a fixture: one file under `tests/fixtures`, with an expect comment naming the rules it must report.
+A diagram that misbehaves in the wild becomes a fixture.
+That is one file in a folder under `tests/fixtures`, with an expect comment naming the rules it must report.
 [tests/fixtures/README.md](tests/fixtures/README.md) has the format.
 The test suite and the docs site both pick it up, with no test code to write.
+The site needs a description for every fixture folder.
+So never put a file directly in `tests/fixtures`, and describe a new folder as that README says.
+Run `make site` after adding a fixture, an example or a folder, because `make check` does not build the site.
 
 A fixture that `--fix` cannot clear also needs a `<name>.llm.md` sibling, or the suite fails.
 That sibling must lint clean and carry an `llm:` comment with its reason, as [Show what an LLM would fix](tests/fixtures/README.md#show-what-an-llm-would-fix) explains.
@@ -75,10 +81,12 @@ That sibling must lint clean and carry an `llm:` comment with its reason, as [Sh
 
 An example is one `.mmd` file in `examples/`, run as a fixture and drawn on the docs site from a committed PNG.
 `make site` fails with "has no rendered image" until `docs-site/docs/assets/examples/<name>.png` exists.
-Draw it with the mermaid CLI, at four times scale, on the default theme and a white background:
+Draw it with the mermaid CLI, at four times scale, on the default theme and a white background.
+Pin a mermaid CLI on the same mermaid major as the linter, so the image comes from the parser that checked it.
+When the linter moves to a new mermaid major, move this pin with it.
 
 ```sh
-npx -y -p @mermaid-js/mermaid-cli@12.0.0 mmdc -i examples/<name>.mmd \
+npx -y -p @mermaid-js/mermaid-cli@11.17.0 mmdc -i examples/<name>.mmd \
   -o docs-site/docs/assets/examples/<name>.png --scale 4 -t default -b white
 ```
 
@@ -101,7 +109,8 @@ Run it when the skill or a fixture it seeds from changes, then update [the Agent
 
 ## Reporting a bug
 
-Open an issue at [GitHub issues](https://github.com/jpeakai/jpai-mermaidjs-lint/issues) with the version from `mermaidjs-lint --version`, the command, the diagram, and the `--json` output.
+Open an issue at [GitHub issues](https://github.com/jpeakai/jpai-mermaidjs-lint/issues) with the version, the command, the diagram, and the `--json` output.
+`mermaidjs-lint --version` prints the version, and on 0.1.x `npm ls @jpeakai/mermaidjs-lint` does.
 Report a vulnerability privately, as [SECURITY.md](SECURITY.md) describes.
 
 ## Landing a change
@@ -115,6 +124,7 @@ gh pr create --fill
 ```
 
 A pull request merges once Check (Node 20) and Check (Node 24) pass on its latest commit.
+Check (Node 24) also builds the docs site.
 A change a user can see also adds a line under `Unreleased` in [CHANGELOG.md](CHANGELOG.md).
 
 ## Recording a decision
@@ -122,7 +132,9 @@ A change a user can see also adds a line under `Unreleased` in [CHANGELOG.md](CH
 A binding decision is recorded as a new `.yml` record in `adrs/` in the same change that makes it.
 Copy the shape of an existing record, give it the next number, and keep the `MJL-` prefix.
 Every typed relation needs its back-edge in the target record.
-Run `make fix` to validate the record and regenerate the bundle.
+Appending that back-edge is the one edit an accepted record allows, per [MJL-0016](adrs/0016-a-back-edge-may-be-appended-to-an-accepted-record.md).
+Run `make fix` to regenerate the bundle, then read its output.
+It reports a one-way relation as `one-way: ...`, but still exits 0.
 
 ## Publishing a release
 

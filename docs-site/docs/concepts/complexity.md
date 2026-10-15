@@ -6,6 +6,7 @@ The complexity rules put a number on that point, so a review can say "split this
 ## Two measures
 
 **Node count** is the number of nodes mermaid's parser reads from the diagram.
+What counts as a node depends on the diagram type, as [What counts as a node](#what-counts-as-a-node) lists.
 
 **Visual complexity score** adds what nodes alone miss:
 
@@ -39,7 +40,8 @@ Only the rule for that band fires, so one diagram never gets three findings for 
 | Score | above `vcsAcceptable`, up to `vcsComplex` | `complexity-visual-score-acceptable-exceeded` |
 | Score | above `vcsComplex` | `complexity-visual-score-critical` |
 
-Each threshold in the table bounds two neighbouring bands, so two rules read it.
+`nodeComplex`, `nodeHardLimit` and `vcsComplex` each bound two neighbouring bands, so two rules read each of them.
+`nodeAcceptable` and `vcsAcceptable` bound only the lowest band, so one rule reads each.
 
 Nesting has its own rule: subgraphs nested three or more levels deep fire `complexity-subgraph-nesting-too-deep`.
 That limit is fixed at three, and no preset or option changes it.
@@ -53,6 +55,39 @@ Because each rule covers one band, set the preset for the whole ladder at once w
 Setting `preset` or a threshold on one complexity rule in the config moves only that rule's band.
 That can leave a gap between bands, or an overlap where two rules report the same diagram.
 [Rule settings](../reference/configuration.md#rule-settings) shows a threshold set on both rules that read it.
+
+## What counts as a node
+
+Each diagram type has its own unit, read from mermaid's parser result.
+`src/parse/stats.ts` holds one adapter per type, and it is the authority when this table and the code disagree.
+
+| Diagram type | A node is | A subgraph is |
+|---|---|---|
+| `flowchart`, `graph` | A vertex | A `subgraph` |
+| `classDiagram` | A class | None |
+| `sequenceDiagram` | A participant or actor | None |
+| `stateDiagram` | A state, including a composite state | A composite state |
+| `erDiagram` | An entity | None |
+| `block` | A leaf block | A block that holds others |
+| `C4` diagrams | A shape, such as a person or system | A boundary |
+| `requirementDiagram` | A requirement or an element | None |
+| `gantt` | A task | A section |
+| `journey` | A task | A section |
+| `timeline` | A period, and each event under it | A section |
+| `kanban` | A task | A column |
+| `mindmap`, `ishikawa` | Every entry in the tree | None |
+| `quadrantChart` | A plotted point, and a quadrant that has a label | None |
+| `xychart` | An x position: a category, or a point of the longest series | None |
+| `sankey` | A node | None |
+| `venn` | A set | None |
+| `pie` | A slice | None |
+| `packet` | A block | None |
+| `gitGraph` | A commit | A branch |
+| `radar` | An axis or a curve | None |
+| `treemap`, `treeView` | Every entry in the tree | None |
+| `architecture-beta` | A service | A group |
+| `wardley` | An anchor or a component | None |
+| `info` | None | None |
 
 ## Why complexity is never fixed automatically
 

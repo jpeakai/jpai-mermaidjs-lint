@@ -58,8 +58,11 @@ A flag therefore overrides a preset or profile the config sets, but not a thresh
 When the config it would read is a `.mjs` file, the run stops with `error[config-code]` and exit code 2.
 Pass `--config` with a `.json` config of your own to run anyway.
 A `.json` config is read as usual, because it is data and runs no code.
-So this tool runs none of the repository's code.
-That does not make the repository safe, because installing its dependencies may already have run their code.
+So the linter itself imports none of the repository's code.
+That does not make the repository safe.
+Installing its dependencies may already have run their code.
+A package runner started inside the checkout reads its `bunfig.toml` or `.npmrc`, which can run code before the linter starts.
+Run an installed linter from a folder you control, and name the checkout's files by path.
 [SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) states the full trust model.
 
 ## Paths
@@ -72,8 +75,15 @@ That does not make the repository safe, because installing its dependencies may 
 
 A directory walk skips, at any depth, every folder whose name starts with a dot.
 It also skips every folder named `node_modules`, `vendor`, `dist`, `build`, `tmp` or `__pycache__`.
-So `mermaidjs-lint docs/` never checks `docs/build/page.md`, and the run can still exit 0.
-Name such a file explicitly to check it.
+So `mermaidjs-lint docs/` never checks `docs/build/page.md`, and the run can still exit 0 when `docs/` holds other files.
+When the paths match no file at all, the run stops with `error[flag]: no matching files` and exit code 2.
+Name a skipped file explicitly to check it.
+
+A directory walk never follows a symbolic link, to a file or to a folder.
+It names each link it skipped on standard error, as `mermaidjs-lint: skipped symbolic link <path>`, so a gate never passes a file in silence.
+A link named as a path is followed and checked.
+`--fix` refuses to write through a named link whose target is outside the project root, with `error[fix-outside-root]` and exit code 2.
+It refuses before it writes any file.
 
 Every path must exist.
 A missing path is a usage error, `error[flag]: cannot read <path>`, with exit code 2.
@@ -83,8 +93,8 @@ A missing path is a usage error, `error[flag]: cannot read <path>`, with exit co
 | Code | Meaning |
 |---|---|
 | 0 | No findings remain |
-| 1 | Findings remain, a plugin failed to load in a run that is not lenient, or the run failed |
-| 2 | A usage error: an unknown flag, a missing path, or a bad config file |
+| 1 | Findings remain, a plugin failed to load in a run that is not lenient, or the run failed, such as with `package-json` or `fix-not-converging` |
+| 2 | A usage error: an unknown flag, a missing path, no matching files, or a bad config file |
 
 ## Error codes
 
@@ -92,15 +102,18 @@ A failure prints `error[code]: reason`, and the same `code` is on the exported e
 
 | Code | Exit code | Cause |
 |---|---|---|
-| `flag` | 2 | An unknown flag, a bad flag value, flags that contradict, no paths, or a path that cannot be read |
+| `flag` | 2 | An unknown flag, a bad flag value, flags that contradict, no paths, a path that cannot be read, or no matching files |
 | `config-file` | 2 | The config cannot be read or parsed, or is neither `.json` nor `.mjs` |
 | `config-not-found` | 2 | The file given to `--config` does not exist |
 | `config-code` | 2 | `--no-plugins` was given, and the config to read is a `.mjs` file, which is code |
 | `config-ambiguous` | 2 | More than one config file at the project root |
 | `config-shape` | 2 | An unknown config key, or a key of the wrong type |
 | `rule-setting` | 2 | A rule setting that is not a severity, or a severity and options |
-| `unknown-rule` | 2 | A rule id that is not loaded. Under `--no-plugins` or a lenient run, a plugin rule id is set aside instead. |
-| `rule-option` | 2 | An option the rule does not declare, or a value of the wrong type |
+| `unknown-rule` | 2 | A rule id that is not loaded. Outside strict mode, a plugin rule id is set aside instead. |
+| `rule-option` | 2 | An option the rule does not declare, a value of the wrong type, or a preset or profile name that does not exist |
+| `fix-outside-root` | 2 | `--fix` was given a symbolic link whose target is outside the project root |
+| `package-json` | 1 | The project's `package.json` is not a JSON object. A run under `--no-plugins` reads nothing from it, so it carries on. |
+| `fix-not-converging` | 1 | A fixer kept proposing edits for 1000 passes. The message names the rules still editing, and that file is not written. |
 | `plugin-import` | 1 | A plugin module could not be imported |
 | `plugin-contract` | 1 | A plugin export breaks the contract, or targets another API version |
 | `plugin-conflict` | 1 | Another plugin already claimed the namespace or a category word |

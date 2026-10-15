@@ -32,8 +32,20 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      # The docs site build re-checks every example and fixture against the
+      # tool, so it runs here too, in a required check, not only in the Docs
+      # workflow. Once per matrix is enough, so it runs on the publish Node.
+      - uses: astral-sh/setup-uv@v10.3.0
+        if: matrix.node == '24'
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Gate
         run: make check
+
+      - name: Build site
+        if: matrix.node == '24'
+        run: |
+          uv sync --frozen
+          make site

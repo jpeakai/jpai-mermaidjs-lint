@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { checkMarkdown, fixSource, fixSourceReport, RULE } from "../src/index.ts";
+import { describeError } from "../src/cli.ts";
+import { checkMarkdown, FixNotConvergingError, fixSource, fixSourceReport, RULE } from "../src/index.ts";
+import { fixRule, localPlugin } from "../src/testing.ts";
 import { fence } from "./helpers.ts";
 
 const withClass = (props: string, extra = ""): string =>
@@ -107,4 +109,83 @@ describe("fence fixer", () => {
     const once = await fixSource(src, "doc.md");
     expect(await fixSource(once, "doc.md")).toBe(once);
   });
+});
+
+// A plugin rule whose fixer proposes one fixed edit, held to the real engine.
+const rewriter = (
+  edit: (src: string) => { start: number; end: number; text: string },
+  kind: "same-tree" | "same-diagrams",
+) =>
+  localPlugin("diagram-rewrite", {
+    default: {
+      category: "diagram",
+      summary: "rewrites",
+      check: () => [],
+      fix: ({ doc }: { doc: { src: string } }) => {
+        const e = edit(doc.src);
+        return doc.src.slice(e.start, e.end) === e.text ? [] : [{ ...e, expect: { kind } }];
+      },
+    },
+    categories: { diagram: "d" },
+  });
+
+describe("same-tree on a raw diagram file", () => {
+  const RAW = "flowchart LR\n  A --> B\n";
+
+  for (const file of ["d.mmd", "d.mermaid"]) {
+    test(`${file}: a fixer that replaces the whole diagram is refused`, async () => {
+      const plugin = rewriter((src) => ({ start: 0, end: src.length, text: "pie\n  title gone\n" }), "same-tree");
+      const out = await fixRule(plugin, "diagram-rewrite", RAW, { file });
+      expect(out.output).toBe(RAW);
+      expect(out.applied).toEqual([]);
+      expect(out.refused).toHaveLength(1);
+    });
+
+    test(`${file}: an edit that keeps the diagram's structure is applied`, async () => {
+      const plugin = rewriter(
+        (src) => ({ start: src.indexOf(" --> "), end: src.indexOf(" --> ") + 5, text: "-->" }),
+        "same-tree",
+      );
+      const out = await fixRule(plugin, "diagram-rewrite", RAW, { file });
+      expect(out.output).toBe("flowchart LR\n  A-->B\n");
+    });
+  }
+
+  test("a markdown file is still judged by its tree alone", async () => {
+    const src = `# Title\n\n${fence("flowchart LR\n  A --> B")}`;
+    const plugin = rewriter(
+      (s) => ({ start: s.indexOf("Title"), end: s.indexOf("Title") + 5, text: "Heading" }),
+      "same-tree",
+    );
+    expect((await fixRule(plugin, "diagram-rewrite", src)).refused).toHaveLength(1);
+  });
+});
+
+describe("a fixer that never converges", () => {
+  test("stops with fix-not-converging, naming the rule still proposing edits", async () => {
+    // Every pass adds one more comment line, which verifies, so there is never a fixpoint.
+    const plugin = localPlugin("diagram-forever", {
+      default: {
+        category: "diagram",
+        summary: "never done",
+        check: () => [],
+        fix: ({ doc }: { doc: { src: string } }) => {
+          const at = doc.src.indexOf("  A --> B");
+          return [{ start: at, end: at, text: "  %% ok\n", expect: { kind: "same-diagrams" as const } }];
+        },
+      },
+      categories: { diagram: "d" },
+    });
+    const run = fixRule(plugin, "diagram-forever", fence("flowchart LR\n  A --> B"), { file: "doc.md" });
+    const err = await run.then(
+      () => null,
+      (e: unknown) => e,
+    );
+    expect(err).toBeInstanceOf(FixNotConvergingError);
+    const named = err as FixNotConvergingError;
+    expect(named.code).toBe("fix-not-converging");
+    expect(named.rules).toEqual(["local/diagram-forever"]);
+    expect(describeError(named)).toStartWith("error[fix-not-converging]: doc.md: --fix did not converge");
+    expect(describeError(named)).toContain("local/diagram-forever kept proposing edits");
+  }, 60_000);
 });

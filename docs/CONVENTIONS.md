@@ -15,8 +15,8 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 - **Diagrams on the site:** each lives once in `docs-site/diagrams/` and is included into pages, so it is linted on its own
 - **Shared text:** text that both the site and the root markdown carry, such as the four tenets, lives once in `docs-site/includes/`. The site includes it, and a test holds each root copy to it verbatim.
 - **Agent files:** `CLAUDE.md` at root, with no nested agent files
-- **Prose gates:** `make docs-ci` gates every authored markdown file and its diagrams. That is the root files, `docs/`, `adrs/`, the site's authored pages, diagrams and includes, the skill's markdown and `tests/fixtures/README.md`. The fixtures and `examples/` are inputs under test, so they are outside it, and the site's generated pages are checked by `make site` instead.
-- **Changelog:** `CHANGELOG.md` at root, in Keep a Changelog style, curated by hand. A user-visible change adds a line under `Unreleased` in the same change, and a release renames that section to its version. GitHub Releases carries the generated notes.
+- **Prose gates:** `make docs-ci` gates every authored markdown file and its diagrams. That is the root files, `docs/`, `adrs/`, the site's authored pages, diagrams and includes, the skill's markdown and `tests/fixtures/README.md`. Inputs under test are outside it: the fixtures, `examples/` and the skill's eval fixtures in `skills/mermaidjs-lint/evals/fixtures/`. The site's generated pages are checked by `make site` instead.
+- **Changelog:** `CHANGELOG.md` at root, in Keep a Changelog style, curated by hand. A user-visible change adds a line under `Unreleased` in the same change, and a release renames that section to its version. The Publish workflow copies that section into the GitHub release notes.
 - **Documented version:** the README and the docs site describe `main`. Anything not yet on npm is listed under `Unreleased` in `CHANGELOG.md`.
 - **Proposals and RFCs:** not used
 
@@ -41,13 +41,20 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 | `docs-site/docs/` | The site's authored pages, scored under `mkdocs-material` | Consumers | Behaviour, flags, config or the plugin contract changes |
 | `docs-site/diagrams/` | One diagram per file, included into site pages | Consumers | The model, the plugin loader or the run pipeline changes |
 | `docs-site/includes/` | Text the site includes and the root markdown repeats verbatim, starting with `tenets.md` | Both | A tenet is reworded |
-| `docs-site/docs/gallery/agent-evals.md` | Whether AI coding agents can fix the fixtures `--fix` leaves, with a results table | Consumers | The eval suite is run again |
+| `docs-site/docs/gallery/agent-evals.md` | Whether AI coding agents can fix the rule fixtures it lists that `--fix` leaves, with a results table, its run date and the skill commit it measured | Consumers | The eval suite is run again |
 | `docs-site/docs/assets/examples/` | One PNG per example, drawn with the mermaid CLI and committed | Consumers | An example is added or changed |
 | `skills/mermaidjs-lint/` | The agent skill that drives the linter, copied into an agent's skills folder rather than shipped on npm | Consumers | The CLI's flags, output or rules change |
 | `skills/mermaidjs-lint/evals/` | The live agent eval suite for the skill, with its own README and seed fixtures | Contributors | The skill or a fixture it seeds from changes |
 | `tests/fixtures/` | The fixture corpus, one case per file, with its own README | Contributors | A new case is found |
 | `examples/` | Layout and icon examples, shipped in the npm package and run as fixtures, each needing its PNG | Consumers | An example is added |
+| `src/` | The package source: the CLI, parsers, rules, fix engine and plugin loader | Contributors | Behaviour changes |
+| `src/rules/` | One module per built-in rule, named for its id | Contributors | A rule is added or changed |
+| `tests/` | The test suite, run with `bun test ./tests/`, against real parsers and files | Contributors | Behaviour changes |
 | `scripts/` | Repo tooling, such as the site generator | Contributors | The tooling changes |
+| `docs-site/snippets/` | Generated text the site includes, such as the CLI help, ignored by git | Consumers | Never edited, only regenerated |
+| `package.json` | The npm manifest: name, version, exports, bins and dependencies | Both | A dependency, export or release changes |
+| `Makefile` | Every repo command, as listed in `CONTRIBUTING.md` | Contributors | The dev workflow changes |
+| `tsconfig.json`, `biome.json`, `bunfig.toml`, `pyproject.toml` | Type checking, lint and format, the Bun test settings, and the uv tooling | Contributors | The toolchain changes |
 | `LICENSE` | The MIT license | Consumers | Never, short of relicensing |
 | `dist/` | Generated Node bundles, ignored by git and shipped in the npm package | Consumers | Never edited, only rebuilt |
 

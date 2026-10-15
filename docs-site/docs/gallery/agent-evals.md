@@ -1,7 +1,23 @@
 # Agent evals
 
 Can an AI coding agent, given this linter, actually fix a failing diagram?
-These results answer that across agent harnesses and model tiers, for every fixture `--fix` cannot clear on its own.
+These results answer that across agent harnesses and model tiers, for the rule fixtures listed below that `--fix` cannot clear on its own.
+
+## Which fixtures are evaluated
+
+Each case seeds one file from `tests/fixtures/rules/`, copied into `skills/mermaidjs-lint/evals/fixtures/` without its expect comment.
+
+| Case | Fixture |
+|---|---|
+| `border_contrast` | `contrast-border-reported.md` |
+| `erd_contrast` | `contrast-text-unfixable-erd.md` |
+| `label_colour` | `contrast-directive-no-color.md` |
+| `large_chain` | `complexity-large-chain.md` |
+| `nesting` | `complexity-nesting.md` |
+| `parse_repair` | `parse-unparseable.md` |
+
+Other fixtures that `--fix` cannot clear are not evaluated.
+Those are `contrast-edge-label.md`, and the larger scenario files under `complexity/`, `contrast/` and `skill-evals/`.
 
 ## What a cell proves
 
@@ -21,6 +37,8 @@ The grader is deterministic: the verdict comes from the linter and the structure
 ## Results
 
 Run on 2026-10-15 with the tier 2 and tier 3 model of each harness, the project matrix in `pyproject.toml`.
+The run used the skill as of commit `7285ec2`.
+The results predate the current skill text: commit `b64f849` changed `SKILL.md` later the same day, and the suite has not been run since.
 
 | Case | `claude/claude-sonnet-5-5` | `claude/claude-haiku-4-5-20251001` | `codex/gpt-5.6-terra` | `codex/gpt-6-luna` |
 |---|---|---|---|---|
@@ -38,7 +56,7 @@ The whole run cost an estimated $1.04.
 
 - **They do not judge meaning.** A fix can lint clean and keep every node while changing what the diagram says, and no check here catches that.
 - **They are one run.** An agent's output varies from run to run, so one pass is evidence, not a rate.
-- **They cover only the failing fixtures.** Each case starts from one small file, not a real document set.
+- **They cover only the fixtures listed.** Each case starts from one small file, not a real document set.
 
 ## Run them yourself
 

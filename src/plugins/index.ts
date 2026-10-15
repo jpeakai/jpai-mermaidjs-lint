@@ -34,7 +34,7 @@ export interface PluginSet {
 }
 
 export const loadPlugins = async (root: string, config: Config, mode: PluginMode): Promise<PluginSet> => {
-  const { sources: found, failures: unresolved } = await discoverSources(root, config);
+  const { sources: found, failures: unresolved } = await discoverSources(root, config, mode === "off");
   const set: PluginSet = {
     rules: [],
     categories: new Map(BUILTIN_CATEGORIES),
@@ -42,14 +42,16 @@ export const loadPlugins = async (root: string, config: Config, mode: PluginMode
     skipped: [],
     failures: [],
   };
-  if (mode === "off") return { ...set, skipped: [...found.map((s) => s.spec), ...unresolved.map((e) => e.source)] };
+  if (mode === "off") {
+    return { ...set, skipped: [...found.map((s) => s.spec), ...unresolved.map((u) => u.error.source)] };
+  }
 
   // Strict stops at the first failure. The others record it and carry on.
   const settle = (error: PluginLoadError, kind: SourceKind): void => {
     if (mode === "strict") throw error;
     if (!set.failures.some((f) => f.source === error.source)) set.failures.push({ source: error.source, kind, error });
   };
-  for (const error of unresolved) settle(error, "package");
+  for (const { error, kind } of unresolved) settle(error, kind);
 
   const loaded: { plugin: Plugin; kind: SourceKind; spec: string }[] = [];
   const locals = found.filter((s) => s.kind === "local");

@@ -169,3 +169,99 @@ describe("testing helper", () => {
     expect(() => checkRule(plugin, "missing", "x")).toThrow("has no rule");
   });
 });
+
+describe("package.json errors carry a code", () => {
+  test("a malformed project package.json prints error[package-json] and exits 1", async () => {
+    const root = tempProject({ "package.json": "{bad", "a.md": DOC });
+    const r = await runCli(root, ["a.md"]);
+    expect(r.code).toBe(1);
+    expect(r.stderr).toContain("error[package-json]: ");
+    expect(r.stderr).toContain("package.json is not a JSON object");
+  });
+
+  test("--no-plugins reads no package from it, so a malformed one does not stop the run", async () => {
+    const root = tempProject({ "package.json": "{bad", "a.md": DOC });
+    const r = await runCli(root, ["a.md", "--no-plugins"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("0 finding(s) in 1 file(s)");
+  });
+
+  test("a plugin whose own package.json is malformed is a plugin-source failure a lenient run skips", async () => {
+    const files = {
+      "a.md": DOC,
+      "package.json": JSON.stringify({ devDependencies: { "mermaidjs-lint-plugin-acme": "1.0.0" } }),
+      "node_modules/mermaidjs-lint-plugin-acme/package.json": "{bad",
+    };
+    const strict = await runCli(tempProject(files), ["a.md"]);
+    expect(strict.code).toBe(1);
+    expect(strict.stderr).toContain("error[plugin-source]: plugin mermaidjs-lint-plugin-acme: its package.json");
+    const lenient = await runCli(tempProject(files), ["a.md", "--lenient-plugins"]);
+    expect(lenient.code).toBe(0);
+    expect(lenient.stderr).toContain("skipped plugin mermaidjs-lint-plugin-acme [plugin-source]");
+  });
+
+  test("a config plugins entry that is not installed is reported with kind config", async () => {
+    const root = tempProject({
+      "a.md": DOC,
+      "mermaidjs-lint.config.json": JSON.stringify({ plugins: ["acme-not-installed"] }),
+    });
+    const r = await runCli(root, ["a.md", "--lenient-plugins", "--json"]);
+    const out = JSON.parse(r.stdout) as { skippedPlugins: { source: string; kind: string; code: string }[] };
+    expect(out.skippedPlugins).toEqual([
+      expect.objectContaining({ source: "acme-not-installed", kind: "config", code: "plugin-not-installed" }),
+    ]);
+  });
+});
+
+describe("local rule files that share a base name", () => {
+  const RULE_BODY = (message: string): string =>
+    `export default { category: "diagram", summary: "x", check: ({ doc }) => doc.diagrams.map((d) => ({ line: d.startLine, message: "${message}" })) };
+export const categories = { diagram: "d" };`;
+  const files = {
+    "a.md": DOC,
+    ".mermaidjs-lint/rules/diagram-x.js": RULE_BODY("from js"),
+    ".mermaidjs-lint/rules/diagram-x.mjs": RULE_BODY("from mjs"),
+  };
+
+  test("fail the load with plugin-contract, naming both files", async () => {
+    const r = await runCli(tempProject(files), ["a.md"]);
+    expect(r.code).toBe(1);
+    expect(r.stderr).toContain("error[plugin-contract]");
+    expect(r.stderr).toContain(".mermaidjs-lint/rules/diagram-x.js");
+    expect(r.stderr).toContain(".mermaidjs-lint/rules/diagram-x.mjs");
+    expect(r.stdout).not.toContain("from js");
+    expect(r.stdout).not.toContain("from mjs");
+  });
+
+  test("--validate-plugins reports the clash instead of calling the set valid", async () => {
+    const r = await runCli(tempProject(files), ["--validate-plugins"]);
+    expect(r.code).toBe(1);
+    expect(r.stderr).toContain("plugin validation failed");
+    expect(r.stderr).toContain('rule "diagram-x" is defined by more than one file');
+    expect(r.stdout).not.toContain("plugins valid");
+  });
+});
+
+describe("contract tightening", () => {
+  const rule = (extra: Record<string, unknown> = {}) => ({
+    default: { category: "diagram", summary: "x", check: () => [], ...extra },
+    categories: { diagram: "d" },
+  });
+
+  test("an option named preset or profile must be a string, the built-in meaning", () => {
+    expect(() => localPlugin("diagram-a", rule({ options: { preset: "number" } }))).toThrow(
+      '"preset" is reserved for the built-in preset',
+    );
+    expect(() => localPlugin("diagram-a", rule({ options: { profile: "boolean" } }))).toThrow(
+      '"profile" is reserved for the built-in profile',
+    );
+    expect(localPlugin("diagram-a", rule({ options: { profile: "string" } })).rules["diagram-a"]).toBeDefined();
+  });
+
+  test("a key or namespace with a trailing or doubled hyphen is refused", () => {
+    expect(() => localPlugin("diagram-", rule())).toThrow("is not a valid key");
+    expect(() => localPlugin("diagram--a", rule())).toThrow("is not a valid key");
+    const plugin = { meta: { name: "a", namespace: "a-", apiVersion: 1 }, rules: {} };
+    expect(() => checkRule(plugin, "x", "")).toThrow("meta.namespace must be lower-case words joined by hyphens");
+  });
+});

@@ -2,6 +2,9 @@
 
 Score your site's diagrams the way Material renders them, where the theme sets the label colour.
 
+**Before you begin:** the package is a dev dependency, as in [Get started](../get-started.md).
+The short command `mermaidjs-lint` below works only then.
+
 ## Run it on the docs folder
 
 ```sh
@@ -9,8 +12,12 @@ bunx mermaidjs-lint docs/
 ```
 
 There is nothing to configure.
-The default profile, `auto`, scores a file as Material renders it when any parent folder holds `mkdocs.yml` or `mkdocs.yaml`.
+The default profile, `auto`, scores a file as Material renders it when its folder, or a parent folder, holds `mkdocs.yml` or `mkdocs.yaml`.
 Every other file is scored as GitHub renders it.
+
+- **The search climbs up to 20 folders.** It stops at neither the project root nor the repository root.
+- **Any MkDocs config counts.** The theme it names is never read.
+- **A monorepo needs care.** A `mkdocs.yml` at the top scores every package's README as Material, so lint those with `--profile github`.
 
 ## Keep README.md scored as GitHub renders it
 
@@ -20,10 +27,10 @@ With `mkdocs.yml` at the repository root, every markdown file in the repository 
 Choose one of two fixes:
 
 - **Move the site into its own folder.** Put `mkdocs.yml` and its docs folder under a folder such as `docs-site/`, and the root files keep the `github` profile.
-- **Lint the root files in a second run.** Pass the profile for them:
+- **Lint the root files in a second run.** Pass the profile for them, naming the root files your project has:
 
 ```sh
-bunx mermaidjs-lint --profile github README.md CONTRIBUTING.md
+bunx mermaidjs-lint --profile github README.md
 bunx mermaidjs-lint docs/
 ```
 

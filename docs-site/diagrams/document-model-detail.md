@@ -65,7 +65,7 @@ erDiagram
         string foreground
         string background
         number ratio "WCAG 2.x"
-        enum rating "AAA AA AA-Large Fail"
+        enum rating "AAA, AA, AA Large or Fail"
         number apca_lc
     }
 

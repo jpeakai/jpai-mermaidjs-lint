@@ -19,6 +19,7 @@
 | [MJL-0013](0013-the-docs-site-is-generated-from-tested-sources.md) | The docs site is generated from the sources the tests run | accepted |
 | [MJL-0014](0014-an-llm-fix-is-committed-and-verified.md) | An LLM fix is committed beside its fixture and verified clean | accepted |
 | [MJL-0015](0015-four-tenets-define-the-tool.md) | Four tenets define what the tool guarantees | accepted |
+| [MJL-0016](0016-a-back-edge-may-be-appended-to-an-accepted-record.md) | A back-edge may be appended to an accepted record | accepted |
 # By group
 
 ## config
@@ -27,6 +28,9 @@
 ## contrast
 
 * [MJL-0011](0011-profile-decides-who-owns-label-text.md) - github scores the declared pairs, and mkdocs-material scores the host's forced text in both themes
+## decisions
+
+* [MJL-0016](0016-a-back-edge-may-be-appended-to-an-accepted-record.md) - The one edit an accepted record allows is adding the inverse of a relation a newer record declares
 ## docs
 
 * [MJL-0013](0013-the-docs-site-is-generated-from-tested-sources.md) - Reference pages come from RULES.md, the fixtures and examples, and the build re-checks every example

@@ -43,6 +43,8 @@ export interface SetupOptions {
 }
 
 export interface Setup {
+  // The project root the config and plugins were found from.
+  root: string;
   registry: Registry;
   skipped: string[];
   // Plugins left out because they failed. Empty unless the run was lenient or collecting.
@@ -84,5 +86,5 @@ export const setUp = async ({
     // rather than failing the run. A built-in id never is.
     ignoreUnknownPluginIds: mode !== "strict",
   });
-  return { registry, skipped: plugins.skipped, failures: plugins.failures };
+  return { root, registry, skipped: plugins.skipped, failures: plugins.failures };
 };

@@ -1,9 +1,11 @@
-// Discovers the fixture corpus: every .md and .mmd file under tests/fixtures
+// Discovers the fixture corpus: every .md, .mmd and .mermaid file under tests/fixtures
 // and examples, except README.md and the .fixed and .llm siblings. A fixture declares what the tool must report in a comment on
-// any line of the file, so adding a case is adding one file and nothing else:
+// any line of the file, so adding a case is adding one file, in a folder that
+// scripts/build-site.ts describes in FIXTURE_GROUPS (tests/build-site.test.ts
+// fails on a file outside one):
 //
 //   <!-- expect: contrast-text-below-aa contrast-border-below-ui-minimum -->   (.md)
-//   %% expect: none                                                            (.mmd)
+//   %% expect: none                                                            (.mmd, .mermaid)
 //
 // A sibling named <name>.fixed.<ext> pins the exact output of --fix.
 //
@@ -55,7 +57,11 @@ const walk = (dir: string): string[] => {
   for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
     const abs = join(dir, entry.name);
     if (entry.isDirectory()) out.push(...walk(abs));
-    else if ([".md", ".mmd"].includes(extname(entry.name)) && entry.name !== "README.md" && !isSibling(entry.name))
+    else if (
+      [".md", ".mmd", ".mermaid"].includes(extname(entry.name)) &&
+      entry.name !== "README.md" &&
+      !isSibling(entry.name)
+    )
       out.push(abs);
   }
   return out;

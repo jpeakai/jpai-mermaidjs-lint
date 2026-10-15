@@ -1,12 +1,12 @@
 // The command line: check files, optionally fix them first. The process glue
 // lives in bin.ts so tests can call main() directly.
 
-import { readFile, writeFile } from "node:fs/promises";
-import { relative } from "node:path";
+import { lstat, readFile, realpath, writeFile } from "node:fs/promises";
+import { isAbsolute, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import pkg from "../package.json" with { type: "json" };
 import { checkModel, type RunFlags } from "./check.ts";
-import { FlagError, MermaidLintError, UsageError } from "./errors.ts";
+import { FixOutsideRootError, FlagError, MermaidLintError, UsageError } from "./errors.ts";
 import { collectFiles, DIAGRAM_FILE_EXTS, SKIP_DIRS } from "./files.ts";
 import { fixSourceReport } from "./fix/engine.ts";
 import { buildDocModel, DIAGRAM_EXTS, documentKind } from "./model.ts";
@@ -16,7 +16,7 @@ import type { PluginFailure } from "./plugins/index.ts";
 import { setUp } from "./project.ts";
 import { RULES } from "./rules/index.ts";
 import type { LoadedSource, Registry } from "./rules/registry.ts";
-import { CATEGORIES, type Finding } from "./rules/types.ts";
+import { CATEGORIES, type Finding, type Rule } from "./rules/types.ts";
 
 // The invocation forms, printed alone after a usage error so the error is not
 // buried, and first in --help.
@@ -26,19 +26,25 @@ const SYNOPSIS = `usage: mermaidjs-lint <path...> [--fix] [--json] [--preset NAM
        mermaidjs-lint --validate-plugins [--json] [--config FILE]
        mermaidjs-lint --version | -h, --help`;
 
+// One rule as help and --list-rules print it: the id padded to a column, the
+// autofix marker inside it, then the summary, so every summary lines up.
+const ruleRow = (r: Rule, width: number): string => `${`${r.id}${r.fix ? "*" : ""}`.padEnd(width)}  ${r.summary}`;
+
+const idWidth = (rules: Rule[]): number => Math.max(0, ...rules.map((r) => r.id.length + 1));
+
 const USAGE = `${SYNOPSIS}
 
 Deterministic Mermaid diagram gates (* = autofixable):
 ${CATEGORIES.map((c) =>
-  [`  ${c}:`, ...RULES.filter((r) => r.category === c).map((r) => `    ${r.id}${r.fix ? "*" : " "} ${r.summary}`)].join(
-    "\n",
-  ),
+  [`  ${c}:`, ...RULES.filter((r) => r.category === c).map((r) => `    ${ruleRow(r, idWidth(RULES))}`)].join("\n"),
 ).join("\n")}
 
 A path is a file or a directory, and every path must exist. A file ending in
 ${DIAGRAM_EXTS.join(" or ")} is read as one raw diagram, and any other file is read as markdown
 whose mermaid fences are checked. A directory is walked for ${[...DIAGRAM_FILE_EXTS].join(", ")} files,
-skipping dot-folders and ${[...SKIP_DIRS].join(", ")}.
+skipping dot-folders and ${[...SKIP_DIRS].join(", ")}. The walk does not follow a symbolic link,
+and names each one it skipped. A link named as a path is read, but --fix does not write
+through one whose target is outside the project root.
 Examples of every rule, with fixes: https://jpeakai.github.io/jpai-mermaidjs-lint/reference/rules/
 
 -p, --preset NAME sets the density for every complexity rule: ${PRESET_NAMES.join(", ")}
@@ -49,14 +55,16 @@ Examples of every rule, with fixes: https://jpeakai.github.io/jpai-mermaidjs-lin
 --fix applies every fix it can prove safe, then reports what remains.
 A fixer that is unsure leaves the text alone and the finding stays.
 --config FILE reads that config instead of mermaidjs-lint.config.json or .mjs at the project root.
-Plugins load on their own from .mermaidjs-lint/rules and from dependencies named mermaidjs-lint-plugin-*.
+Plugins load on their own from .mermaidjs-lint/rules, from dependencies named mermaidjs-lint-plugin,
+  mermaidjs-lint-plugin-* or @scope/mermaidjs-lint-plugin(-*), and from the config's plugins list.
 --no-plugins runs the built-in rules only and loads no plugin. It reads a .json config as usual,
   and stops with a usage error rather than import a .mjs config, which is code.
 --lenient-plugins skips a plugin that fails to load and says so, instead of stopping the run.
---validate-plugins loads and checks every plugin, reports every failure, and runs no check or fix.
+--validate-plugins imports and checks every plugin, reports every failure, and runs no check or fix.
 --list-rules prints every active rule by category, including plugin rules, and where each plugin came from.
+  It imports the plugins to list them.
 --version prints the version, to quote in a bug report.
-Exits 0 when no findings remain, 1 when findings remain or a plugin fails to load (a lenient run
+Exits 0 when no findings remain, 1 when findings remain, a plugin fails to load or the run fails (a lenient run
 skips a broken plugin, so it alone does not exit 1), and 2 on a usage error.`;
 
 interface Parsed {
@@ -122,11 +130,12 @@ export const skippedLines = (failures: PluginFailure[], ignored: string[]): stri
 // Every active rule under its category, then where each plugin came from.
 export const listRules = (registry: Registry): string => {
   const lines: string[] = [];
+  const width = idWidth(registry.rules);
   for (const [category, description] of registry.categories) {
     const rules = registry.rules.filter((r) => r.category === category);
     if (rules.length === 0) continue;
     lines.push(`${category}: ${description}`);
-    for (const r of rules) lines.push(`  ${r.id}${r.fix ? "*" : " "} ${r.summary}`);
+    for (const r of rules) lines.push(`  ${ruleRow(r, width)}`);
   }
   if (registry.sources.length > 0) {
     lines.push("", "plugins:");
@@ -180,6 +189,19 @@ const display = (file: string, cwd: string): string => {
   return !rel || rel.startsWith("..") ? file : rel;
 };
 
+// --fix writes through a symbolic link to its target, so a link whose target
+// sits outside the project root would let a run edit a file in another tree.
+// Every such link is refused before any file is written.
+const refuseOutsideLinks = async (files: string[], root: string, cwd: string): Promise<void> => {
+  const realRoot = await realpath(root);
+  for (const file of files) {
+    if (!(await lstat(file)).isSymbolicLink()) continue;
+    const target = await realpath(file);
+    const rel = relative(realRoot, target);
+    if (rel.startsWith("..") || isAbsolute(rel)) throw new FixOutsideRootError(display(file, cwd), target, root);
+  }
+};
+
 const run = async (argv: string[], cwd: string): Promise<number> => {
   let parsed: Parsed;
   try {
@@ -215,7 +237,7 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
   }
   if (positionals.length === 0 && !listing && !validating) throw new FlagError("files", "no files given");
 
-  const { registry, skipped, failures } = await setUp({
+  const { root, registry, skipped, failures } = await setUp({
     cwd,
     configPath: values.config,
     noPlugins: values["no-plugins"],
@@ -238,10 +260,18 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
     return 0;
   }
 
-  const { files, unreadable } = collectFiles(positionals.map((p) => (p.startsWith("/") ? p : `${cwd}/${p}`)));
+  const { files, unreadable, symlinks } = collectFiles(positionals.map((p) => resolve(cwd, p)));
   if (unreadable.length > 0) throw new FlagError("files", `cannot read ${unreadable.join(", ")}`);
+  for (const link of symlinks) {
+    console.error(`mermaidjs-lint: skipped symbolic link ${display(link, cwd)}; name it as a path to check it`);
+  }
   if (files.length === 0) throw new FlagError("files", "no matching files");
+  if (values.fix) await refuseOutsideLinks(files, root, cwd);
 
+  // Every rule, in check and in fix, sees the file as an absolute path, so a
+  // rule that reads the path sees one form, and the auto profile is found
+  // from the file's own folder whatever the process's working directory. The
+  // report shows the path relative to cwd.
   const flags: RunFlags = { preset: values.preset, profile: values.profile };
   const perFile = await Promise.all(
     files.map(async (file) => {
@@ -253,7 +283,9 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
           src = fixed;
         }
       }
-      return checkModel(buildDocModel(src, documentKind(file)), display(file, cwd), flags, registry);
+      const shown = display(file, cwd);
+      const found = await checkModel(buildDocModel(src, documentKind(file)), file, flags, registry);
+      return found.map((f) => ({ ...f, file: shown }));
     }),
   );
   const all = perFile.flat();

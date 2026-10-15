@@ -2,6 +2,7 @@
 
 Answers to the questions a first week with the linter raises.
 Each entry starts from what you see, then gives the fix.
+The commands assume the package is a dev dependency, as in [Get started](../get-started.md), because the short name `mermaidjs-lint` works only then.
 
 ## The run exits 2 with an error line
 
@@ -11,7 +12,7 @@ The first line of standard error names the cause as `error[code]`, and the usage
 | First line | Cause | Fix |
 |---|---|---|
 | `error[flag]: cannot read <path>` | A path you named does not exist | Pass only paths that exist, such as `docs/` |
-| `error[flag]: no matching files` | The paths hold no markdown, `.mmd` or `.mermaid` file | Point at the folder that holds your diagrams |
+| `error[flag]: no matching files` | The paths hold no markdown, `.mmd` or `.mermaid` file outside the skipped folders | Point at the folder that holds your diagrams |
 | `error[flag]: no files given` | No path was named | Name at least one file or folder |
 | `error[flag]: Unknown option '--x'` | A misspelt flag, or one newer than your installed version | Check the flag in `--help` |
 | `error[unknown-rule]` | The config names a rule that is not loaded | See [A plugin rule id is unknown](#a-plugin-rule-id-is-unknown) |
@@ -59,6 +60,7 @@ It is the nearest folder upwards holding a `package.json`, a config file or a `.
 
 - **Run from the package's folder** to use that package's config and plugins.
 - **Pass `--config`** to read a config from anywhere.
+- **Pass `--profile github`** for packages GitHub draws, when a `mkdocs.yml` sits above them. The `auto` profile climbs past the package to find it, as [Lint a MkDocs Material site](mkdocs.md#run-it-on-the-docs-folder) explains.
 
 Plugins are discovered from the project root's `package.json` and `.mermaidjs-lint/rules`, so they follow the working directory too.
 

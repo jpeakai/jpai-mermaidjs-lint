@@ -50,7 +50,7 @@ Run a check on the output to see which findings remain.
 
 | Export | Signature | Returns |
 |---|---|---|
-| `setUp` | `({ cwd, configPath?, noPlugins = false, lenient = false, collect = false })` | `Promise<{ registry, skipped, failures }>` |
+| `setUp` | `({ cwd, configPath?, noPlugins = false, lenient = false, collect = false })` | `Promise<Setup>`, which is `{ root, registry, skipped, failures }` |
 | `findProjectRoot` | `(cwd: string)` | `Promise<string>`, the nearest ancestor with a `package.json`, a config file or a `.mermaidjs-lint` folder, else `cwd` |
 | `loadConfig` | `(file: string)` | `Promise<Config>` from a `.json` or `.mjs` file |
 | `parseConfig` | `(file: string, raw: unknown)` | `Config`, validated, where `file` names the source in errors |
@@ -67,18 +67,22 @@ The `setUp` options mirror the flags:
 | `lenient` | `--lenient-plugins` |
 | `collect` | `--validate-plugins` |
 
+`root` is the project root the config and plugins were found from.
 `skipped` names the plugins discovered but not loaded under `noPlugins`.
-`failures` holds the plugins a lenient or collecting run left out, each with its source and error.
+`failures` holds the plugins a lenient or collecting run left out, each a `PluginFailure` of `{ source, kind, error }`.
 
 ## Running the command
 
 | Export | Signature | Returns |
 |---|---|---|
 | `main` | `(argv: string[] = process.argv.slice(2), cwd: string = process.cwd())` | `Promise<number>`, the exit code |
-| `collectFiles` | `(paths: string[])` | `{ files: string[]; unreadable: string[] }`, walking directories as the command does |
+| `collectFiles` | `(paths: string[])` | `Collected`, which is `{ files: string[]; unreadable: string[]; symlinks: string[] }`, walking directories as the command does |
 
 `main` prints to standard output and standard error as the command does.
 It returns 2 on a usage error and throws on a runtime failure, which the command turns into exit code 1.
+`cwd` sets the folder relative paths resolve from, and the project root.
+The `auto` profile is then found from each file's own folder, so `main` scores files the same from any working directory.
+`collectFiles` lists, in `symlinks`, every symbolic link a directory walk passed over.
 
 ## Reading diagrams
 
@@ -90,7 +94,18 @@ It returns 2 on a usage error and throws on a runtime failure, which the command
 | `extractStats` | `(content: string)` | `Promise<DiagramStats>` for one diagram's text |
 | `detectKeyword` | `(content: string)` | `string \| null`, the diagram's first word past frontmatter and comments |
 | `PRESETS` | `Record<string, Preset>` | Each density preset's thresholds |
-| `thresholdsFrom` | `(options: Record<string, unknown>)` | The thresholds a complexity rule runs with, from its options |
+| `thresholdsFrom` | `(options: Record<string, unknown>)` | `ThresholdConfig`, the thresholds a complexity rule runs with, from its options |
+
+`Preset` and `ThresholdConfig` name their fields in snake_case, unlike the camelCase config options.
+So the config option `nodeHardLimit` is the field `node_hard_limit`:
+
+```ts
+import { PRESETS } from "@jpeakai/mermaidjs-lint";
+
+PRESETS["high-density"].node_hard_limit; // the hard limit nodeHardLimit overrides
+```
+
+`ThresholdConfig` adds `edge_weight`, `subgraph_weight`, `depth_weight` and `preset_name` to the `Preset` fields.
 
 ## Rules and categories
 
@@ -106,6 +121,7 @@ It returns 2 on a usage error and throws on a runtime failure, which the command
 Every error class in [Error codes](cli.md#error-codes) is exported, so code can branch on the class or on its `code`.
 `UsageError` is the parent of every usage error, and `PluginLoadError` the parent of every load error.
 Both extend `MermaidLintError`, which carries the `code`.
+The runtime errors `PackageJsonError` and `FixNotConvergingError` extend `MermaidLintError` directly, and the command exits 1 on them.
 Their own codes, `usage` and `plugin`, are base-class defaults, and the command never prints either one alone.
 Branch on a subclass code from the table, or on `instanceof` the parent class.
 
@@ -113,10 +129,11 @@ Branch on a subclass code from the table, or on `instanceof` the parent class.
 
 The package also exports these types:
 
-- **Run and config:** `RunFlags`, `Config`, `RuleSetting`, `Severity`, `PluginLoading`, `Registry`, `RegistryInput`, `LoadedSource`.
+- **Run and config:** `RunFlags`, `Config`, `RuleSetting`, `Severity`, `PluginLoading`, `Registry`, `RegistryInput`, `LoadedSource`, `Setup`, `SetupOptions`, `Collected`.
+- **Complexity:** `Preset`, `ThresholdConfig`.
 - **Document:** `DocModel`, `Diagram`, `StyleDirective`, `ValueSpan`, `ContrastAssessment`, `DiagramStats`.
 - **Rules:** `Rule`, `RuleId`, `CoreRuleId`, `PluginRuleId`, `Category`, `RuleContext`, `CheckContext`, `FixContext`, `RuleOptions`, `OptionSpec`, `OptionType`, `Helpers`.
 - **Results:** `Finding`, `Edit`, `Expectation`, `FixReport`.
-- **Plugins:** `Plugin`, `PluginMeta`, `PluginRule`, `PluginFinding`, `PluginEdit`.
+- **Plugins:** `Plugin`, `PluginMeta`, `PluginRule`, `PluginFinding`, `PluginEdit`, `PluginFailure`, `SourceKind`.
 
 The testing helpers live in a second entry point, `@jpeakai/mermaidjs-lint/testing`, listed on [Plugin API](plugin-api.md#testing-helpers).

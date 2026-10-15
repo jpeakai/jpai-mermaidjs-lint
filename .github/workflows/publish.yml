@@ -75,6 +75,21 @@ jobs:
             exit 1
           fi
 
+      # The release body is the version's CHANGELOG section, so the notes on
+      # GitHub are the user-facing ones, not a list of pull request titles. A
+      # version with no section stops the release.
+      - name: Release notes from the CHANGELOG
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          awk -v v="$VERSION" 'BEGIN { gsub(/\./, "\\.", v) }
+            /^## / { if (found) exit; if ($0 ~ ("^## \\[?" v "\\]?( |$)")) { found = 1; next } }
+            found && !/^\[[^]]+\]: / { print }' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
+            echo "::error::CHANGELOG.md has no section for $VERSION. Add one under a '## [$VERSION] - date' heading."
+            exit 1
+          fi
+
       - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -86,7 +101,7 @@ jobs:
           if [ "$NPM_TAG" != "latest" ]; then PRERELEASE_FLAG="--prerelease"; fi
           # shellcheck disable=SC2086
           gh release create "$TAG" --repo "${{ github.repository }}" --target "$SHA" \
-            --title "$TAG" --draft --generate-notes $PRERELEASE_FLAG
+            --title "$TAG" --draft --notes-file "$RUNNER_TEMP/notes.md" $PRERELEASE_FLAG
 
   # Trusted Publishing: npm trusts this repo and this workflow file, so no npm
   # token is stored. npm publish runs prepublishOnly (make check) and prepack

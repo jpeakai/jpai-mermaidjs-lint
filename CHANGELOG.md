@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.6.3] - 2026-10-16
+
 ### Changed
 
 - `--list-rules` refuses a path, `--fix`, `--json`, `--preset`, `--profile`, `--canvas-light` or `--canvas-dark` with `error[flag]`, since it would ignore them.
@@ -193,7 +197,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.6.3...HEAD
+[0.6.3]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.5.0...v0.6.0

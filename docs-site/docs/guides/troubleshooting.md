@@ -81,7 +81,7 @@ The installed command starts with Node, even under `bunx`, so run it on Bun with
 
 `error[plugin-import]` with `Unexpected token 'export'` on a `.js` or `.ts` rule means Node read it as CommonJS.
 Either the project's `package.json` says `"type": "commonjs"`, which `npm init -y` writes in npm 11.
-Or it has no `"type"` field and Node is older than 20.19, or a 22 release older than 22.7.
+Or it has no `"type"` field and Node is 20.18 or older, any 21 release, or 22.0 to 22.6.
 Rename the file to `.mjs` or `.mts`, or set `"type": "module"`, as [Choose the file extension](local-rule.md#choose-the-file-extension) explains.
 
 ## You are filing a bug report

@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.6.2] - 2026-10-16
+
 ### Added
 
 - The `--json` object carries `canvasSetAside`, the files whose config canvas was set aside because `auto` scores them under `mkdocs-material`.
@@ -182,7 +186,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.4.2...v0.5.0

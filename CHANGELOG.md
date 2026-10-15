@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.4.2] - 2026-10-16
+
 ### Fixed
 
 - A rule that declares a `preset` option now receives the canonical preset name, such as `high-density`.
@@ -125,7 +129,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.2.0...v0.3.0

@@ -1,0 +1,27 @@
+id: MJL-0013
+slug: the-docs-site-is-generated-from-tested-sources
+plan_id: null
+title: The docs site is generated from the sources the tests run
+description: Reference pages come from RULES.md, the fixtures and examples, and the build re-checks every example
+status: accepted
+accepted_on: 2026-10-15
+last_changed_on: 2026-10-15
+tags: [docs, testing]
+
+provenance: A hand-written gallery of before and after diagrams would drift from the tool, while RULES.md was already held true by a test
+enforced_in:
+  - scripts/build-site.ts, which fails when an example stops reporting its rule or its fix output changes
+  - docs-site/mkdocs.yml, built with --strict by make site and the Docs workflow
+relates_to: []
+
+decision:
+  given: the site shows every rule and fixture before and after --fix, rendered through Material
+  we_prefer: generating the reference pages at build time from RULES.md, tests/fixtures and examples, over committing hand-written pages
+  because: a page that is regenerated and re-checked on every build cannot show behaviour the tool no longer has
+  unless: a page explains something no test source holds, which is then authored under docs-site/docs and linted like any other page
+consequences:
+  pros:
+    - The site doubles as a test suite, run on every pull request.
+    - The site lives in docs-site, so only its own pages are scored under the mkdocs-material profile.
+  cons:
+    - The reference pages exist only after make site, so they cannot be read on GitHub.

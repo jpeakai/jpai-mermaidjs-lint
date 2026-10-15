@@ -38,6 +38,10 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Error code | The stable kebab-case name of a failure, shown as error[code] and carried on the error class. |
 | Adversarial test | A hostile input written to break a fixer, asserting a refusal or an exact safe output. |
 | Record | One decision, authored as YAML in `adrs/`. Its markdown is generated and never edited. |
+| Fixture | One `.md` or `.mmd` file under `tests/fixtures` or `examples/` that the test suite runs as a case. |
+| Expect comment | The line in a fixture naming the rule ids it must report, or none for a clean file. |
+| Pinned fix | A `<name>.fixed.<ext>` sibling of a fixture holding the exact output of `--fix`. |
+| Docs site | The MkDocs Material site under `docs-site/`, whose reference pages are generated from the fixtures, `RULES.md` and `examples/`. |
 | Bundle | The `adrs/` directory as a whole, including the records and everything generated from them. |
 | Dialect | This repo's declared documentation conventions, in `docs/CONVENTIONS.md`. |
 | Release | One version published to npm by the Publish workflow, with a matching tag and GitHub release. |

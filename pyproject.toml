@@ -1,18 +1,17 @@
 [project]
 name = "jpai-mermaidjs-lint"
 version = "0.1.0"
-description = "Dev tooling only: renders this repo's okf-yaml decision bundle. The package itself is TypeScript."
+description = "Dev tooling only: builds the docs site. The package itself is TypeScript."
 requires-python = ">=3.12"
 dependencies = []
 
 [dependency-groups]
 dev = [
-    # Renders this repo's okf-yaml decision bundle (uv run meta adr render).
-    "jpai-meta-cli",
+    # Builds the docs site under docs-site/ (make site). MkDocs 2 drops the
+    # plugin and theme system Material is built on, so it stays below 2.
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.7.7",
 ]
 
 [tool.uv]
 package = false
-
-[tool.uv.sources]
-jpai-meta-cli = { git = "https://github.com/jpeakai/jpai-meta-cli.git" }

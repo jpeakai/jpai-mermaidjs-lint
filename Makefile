@@ -1,4 +1,4 @@
-.PHONY: install build fix adrs check ci typecheck test test-cov-ts docs-ci clean
+.PHONY: install build fix adrs check ci typecheck test test-cov-ts docs-ci site site-serve clean
 
 install:
 	uv sync
@@ -15,7 +15,7 @@ build:
 
 # Autofix formatting and lint, then regenerate the decision bundle.
 fix: adrs
-	bunx --bun @biomejs/biome check --write src tests
+	bunx --bun @biomejs/biome check --write src tests scripts
 
 # Validate the records against adrs/record.schema.json, then render the bundle.
 adrs:
@@ -24,7 +24,7 @@ adrs:
 # The package gates, with no autofix and no private tooling, so GitHub Actions
 # and npm prepublishOnly can run them with Bun alone.
 check: typecheck test-cov-ts docs-ci
-	bunx --bun @biomejs/biome check src tests
+	bunx --bun @biomejs/biome check src tests scripts
 
 typecheck:
 	bunx --bun tsc --project tsconfig.json --noEmit
@@ -47,7 +47,20 @@ ci: fix typecheck test-cov-ts docs-ci
 
 # Prose gates over every markdown file, and this repo's own diagram gates over
 # the diagrams in them, using this repo's source and never a published copy.
-DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md)
+# The site's authored pages are scored under mkdocs-material, which the linter
+# reads from docs-site/mkdocs.yml.
+DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md) $(wildcard docs-site/docs/*.md) tests/fixtures/README.md
+
+# The docs site. The generator re-checks every example as it writes the
+# reference pages, then mkdocs builds in strict mode, so a drifted example or a
+# broken link fails the build.
+site:
+	bun run scripts/build-site.ts
+	uv run mkdocs build --strict --config-file docs-site/mkdocs.yml
+
+site-serve:
+	bun run scripts/build-site.ts
+	uv run mkdocs serve --config-file docs-site/mkdocs.yml
 
 docs-ci:
 	bunx --bun @jpeakai/prose-gates $(DOCS)

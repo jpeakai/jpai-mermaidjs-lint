@@ -32,6 +32,16 @@ describe("RULES.md", () => {
     for (const [i, src] of before.entries()) expect(await fixSource(src, "doc.md")).toBe(after[i] as string);
   });
 
+  test("every reported block is followed by an LLM fix that says why and lints clean", async () => {
+    const reported = blocks("reported");
+    const llm = blocks("llm");
+    expect(llm.length).toBe(reported.length);
+    for (const src of llm) {
+      expect(src).toMatch(/<!--\s*llm:\s*\S/);
+      expect(await checkMarkdown(src, "doc.md")).toEqual([]);
+    }
+  });
+
   test("every reported block keeps a finding and is left untouched", async () => {
     const reported = blocks("reported");
     expect(reported.length).toBeGreaterThan(0);

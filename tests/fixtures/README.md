@@ -1,6 +1,6 @@
 # Fixtures
 
-Every `.md` and `.mmd` file here, and under `examples/`, is run by `tests/fixtures.test.ts`, except this README and the `.fixed` siblings.
+Every `.md` and `.mmd` file here, and under `examples/`, is run by `tests/fixtures.test.ts`, except this README and the `.fixed` and `.llm` siblings.
 Adding a case is adding one file, with no test code to write.
 
 ## Declare what the tool must report
@@ -19,6 +19,19 @@ A file with no `expect` comment fails the suite.
 
 A sibling named `<name>.fixed.md` or `<name>.fixed.mmd` holds the exact output of `--fix`.
 Without one, the suite still checks that fixing is idempotent and never adds a rule.
+
+## Show what an LLM would fix
+
+When `--fix` leaves findings, the suite requires a sibling named `<name>.llm.md` or `<name>.llm.mmd`.
+It is the fix a careful LLM would make by judgment: a split diagram, a new label colour, a repaired edge.
+Put the reason in one comment, and the file must lint clean:
+
+```text
+<!-- llm: The edge had no target, so it now points at a node B. -->   in a .md file
+%% llm: Declared a label colour that reads on the fill.                in a .mmd file
+```
+
+The docs site shows it beside the original, with the reason.
 
 ## Folders
 

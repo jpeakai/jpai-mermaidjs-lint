@@ -17,6 +17,7 @@
 | [MJL-0011](0011-profile-decides-who-owns-label-text.md) | A contrast profile decides who owns the label text | accepted |
 | [MJL-0012](0012-a-fixture-declares-its-own-expectation.md) | A fixture declares what it must report in its own file | accepted |
 | [MJL-0013](0013-the-docs-site-is-generated-from-tested-sources.md) | The docs site is generated from the sources the tests run | accepted |
+| [MJL-0014](0014-an-llm-fix-is-committed-and-verified.md) | An LLM fix is committed beside its fixture and verified clean | accepted |
 # By group
 
 ## config
@@ -52,6 +53,7 @@
 ## testing
 
 * [MJL-0012](0012-a-fixture-declares-its-own-expectation.md) - Each fixture names its expected rule ids in an expect comment, and a .fixed sibling pins its fix output
+* [MJL-0014](0014-an-llm-fix-is-committed-and-verified.md) - Judgment fixes for what --fix leaves are authored once as .llm siblings, never generated at build time
 # Relationship graph
 
 Open [graph.html](graph.html) to explore the records visually: click a node to read it, and links between records navigate the graph.

@@ -9,6 +9,8 @@ The types are exported from `@jpeakai/mermaidjs-lint`, as `.d.ts` declarations i
 
 A rule reads one context built around the document model.
 Its check returns findings, and its optional fixer returns edits that declare what must stay the same.
+The diagram shows the engine's view, where a `Finding` carries its file and rule id, and an `Edit` its rule id.
+A plugin returns a `PluginFinding` and a `PluginEdit` without them, and the engine adds them.
 
 --8<-- "rule-contract.md"
 
@@ -24,7 +26,7 @@ The default export of a plugin package.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `meta.name` | `string` | The plugin's name, shown when it loads |
+| `meta.name` | `string` | The plugin's name. Required and non-empty. Run output names the plugin by its namespace, not this name. |
 | `meta.namespace` | `string` | Prefix of every rule id. Lower-case words of letters and digits, joined by single hyphens, starting with a letter. `local` is reserved. |
 | `meta.apiVersion` | `number` | The contract version the plugin targets. It must be `1`. |
 | `meta.categories` | `Record<string, string>`, optional | New category words, each a single lower-case word, mapped to a one-line description |
@@ -136,7 +138,7 @@ A plugin that fails to load stops the run with exit code 1 and `error[code]`, un
 |---|---|
 | `plugin-import` | The module could not be imported |
 | `plugin-contract` | The export breaks the contract: a field is missing or of the wrong type, the API version differs, or two local rule files share one name |
-| `plugin-conflict` | Another plugin already claimed the namespace or a category word |
+| `plugin-conflict` | Another plugin already claimed the namespace or a category word, or two local rule files declare one category with different descriptions |
 | `plugin-not-installed` | A declared plugin package is not installed |
 | `plugin-source` | The source cannot be loaded, such as a `.cts` file, TypeScript on a runtime that cannot import it, or a plugin package whose `package.json` is not a JSON object |
 

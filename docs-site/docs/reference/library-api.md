@@ -34,6 +34,7 @@ The `file` also decides the `auto` contrast profile, so pass the real path when 
 A relative `file` resolves against `process.cwd()`, not the folder of the source you read.
 So `checkMarkdown(src, "README.md")` looks for a `mkdocs.yml` above the working directory.
 Pass `{ profile: "github" }` or `{ profile: "mkdocs-material" }` as the flags to fix the profile instead.
+A check or a fix rejects an unknown `preset` or `profile` with a `FlagError`, whose `flag` is `preset` or `profile`.
 
 ## Fixing
 
@@ -102,7 +103,7 @@ So the config option `nodeHardLimit` is the field `node_hard_limit`:
 ```ts
 import { PRESETS } from "@jpeakai/mermaidjs-lint";
 
-PRESETS["high-density"].node_hard_limit; // the hard limit nodeHardLimit overrides
+PRESETS["high-density"]?.node_hard_limit; // the hard limit nodeHardLimit overrides
 ```
 
 `ThresholdConfig` adds `edge_weight`, `subgraph_weight`, `depth_weight` and `preset_name` to the `Preset` fields.

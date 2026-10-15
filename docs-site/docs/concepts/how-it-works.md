@@ -77,8 +77,8 @@ An edit that fails is refused, remembered, and never proposed again for the same
 
 After any accepted change the engine starts a new pass on the new source, because every offset a fixer computed belongs to the old one.
 The loop ends when no fixer makes progress.
-A fixer that never stops proposing edits stops the run after 1000 passes with [`error[fix-not-converging]`](../reference/cli.md#error-codes), and that file is not written.
 The file is then written, and checked like any other.
+A fixer that never stops proposing edits stops the run after 1000 passes with [`error[fix-not-converging]`](../reference/cli.md#error-codes), and that file is not written.
 
 !!! warning "A refused edit leaves the finding in place"
 

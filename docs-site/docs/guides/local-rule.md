@@ -28,6 +28,7 @@ Each key comes from exactly one file, so two files such as `house-x.js` and `hou
 The `categories` export declares `house` as a new category, because a TODO is a house-style choice.
 Keep the built-in categories, `parse`, `complexity` and `contrast`, for what those words mean.
 The rule loads on its own, with the id `local/house-no-todo`.
+The `.mjs` extension makes the file an ES module in any project, as [Choose the file extension](#choose-the-file-extension) explains.
 
 ## Run it
 
@@ -42,7 +43,7 @@ flowchart TD
 ````
 
 ```sh
-bunx mermaidjs-lint docs/
+bunx mermaidjs-lint docs/flow.md
 ```
 
 ```text
@@ -103,6 +104,21 @@ Either route reports one passing test.
 ## Go further
 
 - **Add a fixer** by returning edits from a `fix` function. Each edit must declare what stays the same, and the engine refuses any edit that breaks it. See [Plugin API](../reference/plugin-api.md#edits).
-- **Write it in TypeScript** as `.mts` or `.ts`. The command starts on Node even under `bunx`, so run `bunx --bun mermaidjs-lint docs/` to use Bun, or use Node 22.18 or newer. Anything else fails with `error[plugin-source]`.
-- **Prefer `.mjs` and `.mts` to `.js` and `.ts`.** Under Node, a `.js` or `.ts` rule in a project without `"type": "module"` prints a `MODULE_TYPELESS_PACKAGE_JSON` warning on every run.
+- **Write it in TypeScript** as `.mts`. The command starts on Node even under `bunx`, so run `bunx --bun mermaidjs-lint docs/` to use Bun, or use Node 22.18 or newer. Anything else fails with `error[plugin-source]`.
 - **Check every rule loads** with `bunx mermaidjs-lint --validate-plugins`.
+
+## Choose the file extension
+
+Name a rule `.mjs`, or `.mts` for TypeScript, and it loads in any project.
+Under Node, a `.js` or `.ts` rule loads only as the `"type"` field in the project's `package.json` allows:
+
+| `"type"` in `package.json` | A `.js` or `.ts` rule under Node |
+|---|---|
+| `"module"` | Loads |
+| No `"type"` field | Loads, and Node prints a `MODULE_TYPELESS_PACKAGE_JSON` warning on every run |
+| `"commonjs"` | Fails with `error[plugin-import]`, `could not be imported: Unexpected token 'export'`, and exits 1 |
+
+`npm init -y` writes `"type": "commonjs"` in npm 11, so the npm route in [Get started](../get-started.md) makes a project where a `.js` rule fails.
+`bun init -y` writes `"type": "module"`.
+To keep a `.js` or `.ts` name, set `"type": "module"` in `package.json`, or rename the file to `.mjs` or `.mts`.
+Under Bun, through `bunx --bun`, each extension loads whatever the `"type"` field says.

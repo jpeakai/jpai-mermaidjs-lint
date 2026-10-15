@@ -3,7 +3,7 @@
 // or single edit that survives verification. Offsets are only valid for the source they were
 // computed from, so every accepted edit restarts the pass.
 
-import { optionsFor, type RunFlags } from "../check.ts";
+import { checkRunFlags, optionsFor, type RunFlags } from "../check.ts";
 import { FixNotConvergingError } from "../errors.ts";
 import { buildDocModel, documentKind } from "../model.ts";
 import { BUILTIN, HELPERS, type Registry } from "../rules/registry.ts";
@@ -46,6 +46,7 @@ export const fixSourceReport = async (
   flags: RunFlags = {},
   registry: Registry = BUILTIN,
 ): Promise<FixReport> => {
+  checkRunFlags(flags);
   const kind = documentKind(file);
   const applied: Edit[] = [];
   const refused: Edit[] = [];

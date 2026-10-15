@@ -112,11 +112,11 @@ A failure prints `error[code]: reason`, and the same `code` is on the exported e
 | `unknown-rule` | 2 | A rule id that is not loaded. Outside strict mode, a plugin rule id is set aside instead. |
 | `rule-option` | 2 | An option the rule does not declare, a value of the wrong type, or a preset or profile name that does not exist |
 | `fix-outside-root` | 2 | `--fix` was given a symbolic link whose target is outside the project root |
-| `package-json` | 1 | The project's `package.json` is not a JSON object. A run under `--no-plugins` reads nothing from it, so it carries on. |
+| `package-json` | 1 | The project's `package.json` is not a JSON object. A run with plugins off, through `--no-plugins` or `"plugins": false` in the config, reads nothing from it, so it carries on. |
 | `fix-not-converging` | 1 | A fixer kept proposing edits for 1000 passes. The message names the rules still editing, and that file is not written. |
 | `plugin-import` | 1 | A plugin module could not be imported |
 | `plugin-contract` | 1 | A plugin export breaks the contract, or targets another API version |
-| `plugin-conflict` | 1 | Another plugin already claimed the namespace or a category word |
+| `plugin-conflict` | 1 | Another plugin already claimed the namespace or a category word, or two local rule files declare one category with different descriptions |
 | `plugin-not-installed` | 1 | A declared plugin package is not installed |
 | `plugin-source` | 1 | A plugin source cannot be loaded, such as a `.cts` file, TypeScript on a runtime that cannot import it, or an installed plugin whose `package.json` is not a JSON object |
 | `plugin-fixer` | 1 | A plugin fixer threw, returned something other than a list, or returned an edit with no valid expectation |
@@ -133,7 +133,7 @@ docs/architecture.md:6 contrast-text-below-aa classDef warn: text 1.43:1 < 4.5 (
 A line reads `file:line rule message`.
 A finding that spans a diagram prints its first and last line, as `file:3-7`.
 
-Standard error carries one line about plugins, when there are any:
+Standard error carries these lines about plugins, each when it applies:
 
 | Line | When |
 |---|---|

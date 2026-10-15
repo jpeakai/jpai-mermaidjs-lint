@@ -77,6 +77,12 @@ Plugins are discovered from the project root's `package.json` and `.mermaidjs-li
 `error[plugin-source]` on a `.ts` or `.mts` rule means the runtime cannot import TypeScript.
 The installed command starts with Node, even under `bunx`, so run it on Bun with `bunx --bun mermaidjs-lint`, or use Node 22.18 or newer.
 
+## A `.js` local rule fails with `Unexpected token 'export'`
+
+`error[plugin-import]` with `Unexpected token 'export'` on a `.js` or `.ts` rule means Node read it as CommonJS.
+The project's `package.json` says `"type": "commonjs"`, which `npm init -y` writes in npm 11.
+Rename the file to `.mjs` or `.mts`, or set `"type": "module"`, as [Choose the file extension](local-rule.md#choose-the-file-extension) explains.
+
 ## You are filing a bug report
 
 Print the version with:

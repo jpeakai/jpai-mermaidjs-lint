@@ -16,7 +16,7 @@
     "type": "git",
     "url": "git+https://github.com/jpeakai/jpai-mermaidjs-lint.git"
   },
-  "homepage": "https://github.com/jpeakai/jpai-mermaidjs-lint#readme",
+  "homepage": "https://jpeakai.github.io/jpai-mermaidjs-lint/",
   "bugs": "https://github.com/jpeakai/jpai-mermaidjs-lint/issues",
   "packageManager": "bun@1.3.12",
   "publishConfig": {

@@ -7,8 +7,8 @@ user-invocable: true
 
 # Lint and fix Mermaid diagrams
 
-The linter reads every ` ```mermaid ` fence in a markdown file, or a whole `.mmd` file.
-It reports each finding with its rule, line and a remediation.
+The linter reads every ` ```mermaid ` fence in a markdown file, or a whole `.mmd` or `.mermaid` file.
+It prints each finding with its file, line, rule and message, and `--json` adds a remediation.
 A file is done when the linter reports **0 findings** and every node and edge the author drew is still there.
 
 ## 1. Run the linter
@@ -20,8 +20,8 @@ npx -y @jpeakai/mermaidjs-lint <file>
 ```
 
 It exits `0` with no findings, `1` when findings remain, and `2` on a usage error.
-Add `--json` for machine-readable findings.
-A directory is walked for markdown and `.mmd` files.
+Add `--json` for machine-readable findings, each with its `remediation`.
+A directory is walked for markdown, `.mmd` and `.mermaid` files.
 
 ## 2. Apply the safe fixes
 
@@ -33,6 +33,12 @@ bunx @jpeakai/mermaidjs-lint --fix <file>
 A fixer that is unsure leaves the text alone, so expect findings to survive it.
 
 ## 3. Fix what remains by judgement
+
+List what remains with its remediation, which only `--json` prints:
+
+```sh
+bunx @jpeakai/mermaidjs-lint --json <file>
+```
 
 Edit the file in place. Read each finding's `rule` and `remediation`, then:
 

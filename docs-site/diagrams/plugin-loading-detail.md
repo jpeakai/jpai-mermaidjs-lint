@@ -26,12 +26,11 @@ flowchart TB
     S["Leave the source out,<br/>record the failure"]
     K["Report every spec<br/>as skipped"]
 
-    PM -->|"strict, lenient, collect"| D1
+    D1 --> D2 --> D3 --> DD --> PM
     PM -->|off| K
     K --> BR
-    D1 --> D2 --> D3 --> DD
-    DD --> LL --> CC
-    DD --> LP --> CC
+    PM -->|"strict, lenient, collect"| LL --> CC
+    PM -->|"strict, lenient, collect"| LP --> CC
     CC --> NS --> CW --> TR --> BR --> AC
     D2 -. "not installed" .-> F
     D3 -. "not installed" .-> F

@@ -11,6 +11,7 @@ Each page links to the guide that shows it in use.
 | [Document model](document-model.md) | The parsed file every rule reads: diagrams, style directives and stats |
 | [Plugin API](plugin-api.md) | The plugin contract, findings, edits and the testing helpers |
 | [Library API](library-api.md) | Every export of the package, for use from code |
+| [Changelog](#changelog) | What changed in each release, and what is not yet released |
 
 ## Rules at a glance
 
@@ -51,4 +52,10 @@ The public surface is:
 - The types and functions the package exports.
 
 Finding message text is not part of it, so match on the rule id, not the message.
-[GitHub Releases](https://github.com/jpeakai/jpai-mermaidjs-lint/releases) is the changelog.
+
+## Changelog
+
+[CHANGELOG.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CHANGELOG.md) lists the user-visible changes in each release.
+These pages are built from the `main` branch, so they may describe a change that is not yet on npm.
+Such a change is listed under `Unreleased` in the changelog.
+`mermaidjs-lint --version` prints the version you run, and releases up to 0.1.1 lack the flag.

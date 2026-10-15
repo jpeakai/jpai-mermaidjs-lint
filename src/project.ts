@@ -4,9 +4,9 @@
 // before it touches a document.
 
 import { access } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
 import { CONFIG_FILES, findConfig, loadConfig, NO_CONFIG } from "./config.ts";
-import { ConfigNotFoundError } from "./errors.ts";
+import { ConfigCodeError, ConfigNotFoundError } from "./errors.ts";
 import { loadPlugins, type PluginFailure, type PluginMode } from "./plugins/index.ts";
 import { FIX_ORDER, RULES } from "./rules/index.ts";
 import { buildRegistry, type Registry } from "./rules/registry.ts";
@@ -33,7 +33,8 @@ export const findProjectRoot = async (cwd: string): Promise<string> => {
 export interface SetupOptions {
   cwd: string;
   configPath?: string;
-  // Built-ins only. Anything discovered is reported as skipped.
+  // Built-ins only, and no project code runs. Anything discovered is reported
+  // as skipped, and a .mjs config is refused with ConfigCodeError.
   noPlugins?: boolean;
   // Skip a plugin that fails to load and say so, instead of stopping the run.
   lenient?: boolean;
@@ -63,6 +64,9 @@ export const setUp = async ({
   } else {
     file = await findConfig(root);
   }
+  // A .mjs config is code, and --no-plugins promises that no project code
+  // runs, so the run stops before importing it rather than drop its settings.
+  if (noPlugins && file !== null && extname(file) === ".mjs") throw new ConfigCodeError(file);
   const config = file ? await loadConfig(file) : NO_CONFIG;
   let mode: PluginMode = "strict";
   if (noPlugins || config.plugins === false) mode = "off";

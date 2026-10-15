@@ -38,7 +38,7 @@ describe("fixture corpus", () => {
     expect(await fixSource(f.source, f.path)).toBe(f.fixed as string);
   });
 
-  // What --fix leaves behind needs judgment, so the gallery shows an LLM fix
+  // What --fix leaves behind needs judgement, so the gallery shows an LLM fix
   // for it, and that fix must actually clear every finding.
   test.each(fixtures.map((f) => [f.rel, f] as const))("%s has an LLM fix if --fix leaves findings", async (_, f) => {
     const left = await distinctRules(await fixSource(f.source, f.path), f.path);

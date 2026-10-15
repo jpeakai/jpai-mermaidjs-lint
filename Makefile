@@ -29,15 +29,17 @@ check: typecheck test-cov-ts docs-ci
 typecheck:
 	bunx --bun tsc --project tsconfig.json --noEmit
 
-# The Node tests run dist, so every test target builds it first.
+# The Node tests (tests/node-dist.test.ts) spawn node on dist/bin.js, so every
+# test target builds it first. The suite is tests/ only, so a scratch test
+# under tmp/ never runs as part of it.
 test: build
-	bun test
+	bun test ./tests/
 
 # Bun's own threshold is per file, so the aggregate gate is enforced here from
 # the "All files" row: both the function and the line column must reach 90.
 test-cov-ts: build
 	@mkdir -p tmp
-	@bun test --coverage > tmp/coverage.txt 2>&1; status=$$?; cat tmp/coverage.txt; \
+	@bun test --coverage ./tests/ > tmp/coverage.txt 2>&1; status=$$?; cat tmp/coverage.txt; \
 	test "$$status" -eq 0 || exit "$$status"; \
 	awk -F'|' '/^All files/ { if ($$2 + 0 < 90 || $$3 + 0 < 90) { print "ERROR: coverage below 90%"; exit 1 } found = 1 } \
 		END { if (!found) { print "ERROR: no coverage summary"; exit 1 } }' tmp/coverage.txt

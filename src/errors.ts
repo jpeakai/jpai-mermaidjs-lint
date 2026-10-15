@@ -51,6 +51,20 @@ export class ConfigNotFoundError extends UsageError {
   }
 }
 
+// --no-plugins runs no project code, and a .mjs config is code, so the run
+// stops before importing it. A .json config is data and is read as usual.
+export class ConfigCodeError extends UsageError {
+  readonly file: string;
+
+  constructor(file: string) {
+    super(
+      `${file}: a .mjs config is code, and --no-plugins runs no project code; pass --config with a .json config, or drop --no-plugins`,
+      "config-code",
+    );
+    this.file = file;
+  }
+}
+
 // Two config files at one root, so neither can be picked.
 export class AmbiguousConfigError extends UsageError {
   readonly files: string[];

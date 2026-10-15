@@ -20,7 +20,7 @@ The text below is generated from `mermaidjs-lint --help` when this site is built
 | `--preset` | `-p` | a preset name or alias | `high-density` | Set the density for every complexity rule |
 | `--profile` | | `auto`, `github`, `mkdocs-material` | `auto` | Set how contrast is read |
 | `--config` | | a file path | the config at the project root | Read that config file instead |
-| `--no-plugins` | | | off | Load no plugin, and set aside config settings for plugin rules |
+| `--no-plugins` | | | off | Load no plugin, refuse a `.mjs` config, and set aside config settings for plugin rules |
 | `--lenient-plugins` | | | off | Skip a plugin that fails to load, and say so |
 | `--validate-plugins` | | | off | Load every plugin, report every failure, and check no file |
 | `--list-rules` | | | off | Print every active rule by category, then the plugins |
@@ -40,22 +40,50 @@ A preset name or alias is matched without regard to case:
 | `medium-density` | `medium`, `med`, `m`, `balanced` |
 | `high-density` | `high`, `h`, `permissive`, `default` |
 
+## Precedence
+
+A complexity threshold or a contrast profile can be set in four places.
+The first that applies wins:
+
+1. A threshold option set on the rule in the config, such as `nodeHardLimit`, which beats any preset.
+2. The `--preset` or `--profile` flag.
+3. The `preset` or `profile` option set on the rule in the config.
+4. The default, which is `high-density` or `auto`.
+
+A flag therefore overrides a preset or profile the config sets, but not a threshold the config sets.
+
+## Plugins and untrusted repositories
+
+`--no-plugins` loads no plugin, and never imports a `.mjs` config, because a `.mjs` config is code.
+When the config it would read is a `.mjs` file, the run stops with `error[config-code]` and exit code 2.
+Pass `--config` with a `.json` config of your own to run anyway.
+A `.json` config is read as usual, because it is data and runs no code.
+So this tool runs none of the repository's code.
+That does not make the repository safe, because installing its dependencies may already have run their code.
+[SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) states the full trust model.
+
 ## Paths
 
 | Path | What is checked |
 |---|---|
-| A `.md` or `.markdown` file | Every mermaid fence in it |
-| A `.mmd` file | The whole file, as one diagram |
-| A directory | Every such file beneath it, skipping dot-folders and vendored or build folders such as `node_modules`, `dist` and `tmp` |
+| A `.mmd` or `.mermaid` file | The whole file, as one diagram |
+| Any other file named explicitly | Every mermaid fence in it, read as markdown whatever its extension |
+| A directory | Every `.md`, `.markdown`, `.mmd` and `.mermaid` file beneath it, outside the skipped folders |
 
-A file named explicitly is checked whatever its extension.
+A directory walk skips, at any depth, every folder whose name starts with a dot.
+It also skips every folder named `node_modules`, `vendor`, `dist`, `build`, `tmp` or `__pycache__`.
+So `mermaidjs-lint docs/` never checks `docs/build/page.md`, and the run can still exit 0.
+Name such a file explicitly to check it.
+
+Every path must exist.
+A missing path is a usage error, `error[flag]: cannot read <path>`, with exit code 2.
 
 ## Exit codes
 
 | Code | Meaning |
 |---|---|
 | 0 | No findings remain |
-| 1 | Findings remain, a plugin failed to load, or the run failed |
+| 1 | Findings remain, a plugin failed to load in a run that is not lenient, or the run failed |
 | 2 | A usage error: an unknown flag, a missing path, or a bad config file |
 
 ## Error codes
@@ -67,6 +95,7 @@ A failure prints `error[code]: reason`, and the same `code` is on the exported e
 | `flag` | 2 | An unknown flag, a bad flag value, flags that contradict, no paths, or a path that cannot be read |
 | `config-file` | 2 | The config cannot be read or parsed, or is neither `.json` nor `.mjs` |
 | `config-not-found` | 2 | The file given to `--config` does not exist |
+| `config-code` | 2 | `--no-plugins` was given, and the config to read is a `.mjs` file, which is code |
 | `config-ambiguous` | 2 | More than one config file at the project root |
 | `config-shape` | 2 | An unknown config key, or a key of the wrong type |
 | `rule-setting` | 2 | A rule setting that is not a severity, or a severity and options |

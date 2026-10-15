@@ -23,9 +23,9 @@ One parsed file.
 | Field | Type | Meaning |
 |---|---|---|
 | `src` | `string` | The whole file, as read. Edit offsets index into it. |
-| `kind` | `"markdown"` or `"diagram"` | `diagram` for a `.mmd` file, otherwise `markdown` |
+| `kind` | `"markdown"` or `"diagram"` | `diagram` for a `.mmd` or `.mermaid` file, otherwise `markdown` |
 | `tree` | mdast `Root` | The markdown tree, parsed with GFM and YAML or TOML frontmatter |
-| `diagrams` | `Diagram[]` | Every mermaid fence in document order, or the one diagram of a `.mmd` file |
+| `diagrams` | `Diagram[]` | Every mermaid fence in document order, or the one diagram of a raw diagram file |
 
 ## Diagram
 
@@ -36,7 +36,7 @@ One mermaid source.
 | `index` | `number` | Position in `doc.diagrams`, from 0 |
 | `source` | `string` | The diagram text. Inside a list or a quote, the indentation is already removed. |
 | `keyword` | `string` or `null` | The first word of the diagram, such as `flowchart`, past any frontmatter and comments |
-| `startLine`, `endLine` | `number` | The file lines a finding points at: the fences, or the whole `.mmd` file |
+| `startLine`, `endLine` | `number` | The file lines a finding points at: the fences, or the whole raw diagram file |
 | `firstLine` | `number` | The file line of the first line of `source` |
 | `terminated` | `boolean` | `false` when the fence runs to the end of the file without closing |
 | `endOffset` | `number` | The offset in `doc.src` where the fence ends |
@@ -80,9 +80,9 @@ What mermaid's parser reads from a diagram.
 | `nodes`, `edges`, `subgraphs` | `number` | Counts of each |
 | `max_subgraph_depth` | `number` | The deepest subgraph nesting |
 | `node_ids`, `subgraph_names` | `string[]` | Identifiers, used to suggest where to split |
-| `parser_used` | `"langium"`, `"mermaid-core"` or `"custom"` | Which parser produced the result |
+| `parser_used` | `"langium"` or `"mermaid-core"` | Which parser produced the result, or on a failure, the parser whose reason `error` carries |
 | `diagram_type` | `string` | The type the parser recognised |
-| `error` | `string` or `null` | The parser's reason, when no parser produced structure |
+| `error` | `string` or `null` | The parser's reason on one line, when no parser produced structure. Its line numbers count from the diagram's first line. |
 
 ## Building a model yourself
 

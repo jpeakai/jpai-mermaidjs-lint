@@ -4,11 +4,11 @@ How to set up `jpai-mermaidjs-lint`, make a change, and get it accepted.
 
 ## What a change must serve
 
-The tool has four tenets: three guarantees about every diagram, and one commitment about the tool.
+Three tenets are guarantees about every diagram the tool passes, and the fourth is a commitment about the tool.
 A change is accepted when it strengthens one of them without weakening another.
 
-- **Readable in light and dark.** The colours a diagram declares are scored against their fill as the host renders it, in both light and dark themes.
-- **Renders.** Every diagram parses with the mermaid parsers this package ships, and every fence is closed.
+- **Readable in light and dark.** Declared fills, label colours and borders are scored as the host draws them, on nodes, erDiagram rows and edge labels, in both themes.
+- **Renders.** Every diagram parses with the mermaid parsers this package ships, and every mermaid fence is closed.
 - **Simple enough to follow.** Node count and visual complexity are scored against a density preset, so an oversized diagram is flagged to be split.
 - **Extensible.** A plugin adds rules of your own, which run through the same config, fix engine and verification as the built-ins.
 
@@ -24,7 +24,7 @@ Prerequisites:
 
 - [Bun](https://bun.sh), at the version the `packageManager` field of `package.json` names.
 - [uv](https://docs.astral.sh/uv/), which installs the Python that `requires-python` in `pyproject.toml` asks for.
-- Node, only to run the Node tests against `dist/` and to draw example images.
+- Node, to run `tests/node-dist.test.ts`, which spawns `node dist/bin.js` as `npx` would, and to draw example images.
 
 ```sh
 make install   # uv sync, then bun install
@@ -38,7 +38,8 @@ make check     # typecheck, coverage, docs-ci and lint, with Bun alone, as GitHu
 make build     # bundle src into dist for Node, which git ignores
 make test      # build, then run the test suite once
 make ci        # fix, typecheck, coverage gate, then docs-ci
-make docs-ci   # gate every markdown file with this repo's own source
+make docs-ci   # gate every authored markdown file with this repo's own source
+make evals-dry # list the agent eval matrix, invoking and billing nothing
 make site      # generate the reference pages, then build the docs site in strict mode
 make site-serve  # the same, served locally with live reload
 ```
@@ -52,17 +53,23 @@ The coverage gate fails below 90% aggregate for functions or lines.
 ## Adding a rule
 
 1. Write one module in `src/rules` exporting a `Rule`, named for its id.
-2. Add its id to `RULE` in `src/rules/types.ts`, and register it in `src/rules/index.ts`.
-3. Add its section and examples to `RULES.md`, which `tests/rules-doc.test.ts` holds to the code.
-4. Add tests that run the real parser over real strings.
+2. Add its id to `RULE` in `src/rules/types.ts`, and register it in `RULES` in `src/rules/index.ts`.
+3. If it has a fixer, also add it to `FIX_ORDER` in `src/rules/index.ts`, at the position its edits must apply. A fixer missing from `FIX_ORDER` never runs under `--fix`.
+4. Add its section and examples to `RULES.md`, which `tests/rules-doc.test.ts` holds to the code.
+5. Add tests that run the real parser over real strings.
+6. Add a line under `Unreleased` in `CHANGELOG.md`.
 
 A rule that rewrites text needs an expectation from the verifier, and an adversarial test for every case it refuses.
+The verifier compares only what `src/fix/verify.ts` lists, so a fixer must not rely on it to catch a changed edge or label.
 
 ## Adding a fixture
 
 A diagram that misbehaves in the wild becomes a fixture: one file under `tests/fixtures`, with an expect comment naming the rules it must report.
 [tests/fixtures/README.md](tests/fixtures/README.md) has the format.
-The test suite and the docs site both pick it up, with no code to write.
+The test suite and the docs site both pick it up, with no test code to write.
+
+A fixture that `--fix` cannot clear also needs a `<name>.llm.md` sibling, or the suite fails.
+That sibling must lint clean and carry an `llm:` comment with its reason, as [Show what an LLM would fix](tests/fixtures/README.md#show-what-an-llm-would-fix) explains.
 
 ## Adding an example
 
@@ -78,6 +85,19 @@ npx -y -p @mermaid-js/mermaid-cli@12.0.0 mmdc -i examples/<name>.mmd \
 - **Iconify icons need their pack.** For an `architecture-beta` diagram that uses `logos:` icons, add `--iconPacksNamesAndUrls "logos#https://unpkg.com/@iconify-json/logos@1/icons.json"`.
 - **Font Awesome needs nothing extra.** A flowchart with `fa:` icons draws with the command as shown.
 - **The CLI drives a Chromium.** When it reports that it cannot find Chrome, set `PUPPETEER_EXECUTABLE_PATH` to a Chrome or Chromium binary you already have.
+
+## Changing the agent skill
+
+`skills/mermaidjs-lint/` is an agent skill that drives this linter, with a live eval suite in `skills/mermaidjs-lint/evals/`.
+[Its README](skills/mermaidjs-lint/evals/README.md) explains how each cell is graded.
+Preview the eval matrix without invoking or billing anything:
+
+```sh
+make evals-dry
+```
+
+`make evals` runs every cell live, and each cell is a billed agent session.
+Run it when the skill or a fixture it seeds from changes, then update [the Agent evals page](docs-site/docs/gallery/agent-evals.md) with the results.
 
 ## Reporting a bug
 
@@ -95,6 +115,7 @@ gh pr create --fill
 ```
 
 A pull request merges once Check (Node 20) and Check (Node 24) pass on its latest commit.
+A change a user can see also adds a line under `Unreleased` in [CHANGELOG.md](CHANGELOG.md).
 
 ## Recording a decision
 

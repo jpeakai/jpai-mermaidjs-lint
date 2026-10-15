@@ -39,9 +39,12 @@ export interface DiagramStats {
   max_subgraph_depth: number;
   node_ids: string[];
   subgraph_names: string[];
-  parser_used: "langium" | "mermaid-core" | "custom";
+  // The parser that read the diagram, or, on a failure, the one whose reason
+  // `error` carries: langium for the types its grammars own, else mermaid-core.
+  parser_used: "langium" | "mermaid-core";
   diagram_type: string;
-  // The reason the last parser gave when no parser produced structure.
+  // The parser's reason, on one line, when no parser produced structure. Line
+  // numbers in it count from the diagram's own first line.
   error: string | null;
 }
 
@@ -104,11 +107,15 @@ export async function extractStats(content: string): Promise<MermaidStats> {
   const keyword = detectKeyword(content) ?? "unknown";
 
   // 1. Langium grammar (@mermaid-js/parser) — typed AST, no DOM needed.
-  if (keyword in LANGIUM_TYPES) {
+  // Its error is kept, because for these types it is the parser that owns the
+  // grammar, and mermaid core's attempt below is only a second chance.
+  const langium = keyword in LANGIUM_TYPES;
+  let langiumError: string | null = null;
+  if (langium) {
     try {
       return await extractLangiumStats(content, keyword);
-    } catch {
-      /* fall through to mermaid-core */
+    } catch (err) {
+      langiumError = parserReason(err);
     }
   }
 
@@ -116,11 +123,11 @@ export async function extractStats(content: string): Promise<MermaidStats> {
   // DOMPurify; the parsers populate each type's DB (vertices, edges,
   // blocks, sections, etc.). A per-type adapter in extractCoreStats reads
   // the canonical DB shape.
-  let error: string | null = null;
+  let coreError: string;
   try {
     return await extractCoreStats(content, keyword);
   } catch (err) {
-    error = (err instanceof Error ? err.message : String(err)).split("\n")[0] ?? null;
+    coreError = parserReason(err);
   }
 
   // 3. Neither canonical parser produced stats. Return a tagged failure so
@@ -132,11 +139,30 @@ export async function extractStats(content: string): Promise<MermaidStats> {
     max_subgraph_depth: 0,
     node_ids: [],
     subgraph_names: [],
-    parser_used: "mermaid-core",
+    parser_used: langium ? "langium" : "mermaid-core",
     diagram_type: keyword,
-    error,
+    error: langiumError ?? coreError,
   };
 }
+
+// A pointer line under an echoed source line, as the JISON parsers print it.
+const POINTER = /^-*\^$/;
+
+// A parser's whole reason on one line, so a finding stays one line. The JISON
+// parsers echo the source line and point at the column; both are dropped, and
+// the line number and what the parser expected are kept. "No diagram type
+// detected" echoes the whole diagram after its first line, so only that line
+// is kept.
+export const parserReason = (err: unknown): string => {
+  const message = err instanceof Error ? err.message : String(err);
+  const lines = message.split("\n");
+  if (message.startsWith("No diagram type detected")) return (lines[0] ?? "").trim();
+  return lines
+    .filter((line, i) => !POINTER.test(line.trim()) && !POINTER.test((lines[i + 1] ?? "").trim()))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
 
 // ── Langium extraction (@mermaid-js/parser) ─────────────────────────────────
 

@@ -29,8 +29,11 @@ const findings = await checkMarkdown(src, "docs/architecture.md", {}, registry);
 | `checkModel` | `(doc: DocModel, file: string, flags: RunFlags = {}, registry: Registry = BUILTIN)` | `Promise<Finding[]>` for a model you built |
 | `RunFlags` | `{ preset?: string; profile?: string }` | The run-level settings `--preset` and `--profile` give |
 
-A `file` ending in `.mmd` is read as one diagram, and any other name as markdown.
+A `file` ending in `.mmd` or `.mermaid` is read as one diagram, and any other name as markdown.
 The `file` also decides the `auto` contrast profile, so pass the real path when the profile matters.
+A relative `file` resolves against `process.cwd()`, not the folder of the source you read.
+So `checkMarkdown(src, "README.md")` looks for a `mkdocs.yml` above the working directory.
+Pass `{ profile: "github" }` or `{ profile: "mkdocs-material" }` as the flags to fix the profile instead.
 
 ## Fixing
 
@@ -82,6 +85,8 @@ It returns 2 on a usage error and throws on a runtime failure, which the command
 | Export | Signature | Returns |
 |---|---|---|
 | `buildDocModel` | `(src: string, kind: "markdown" \| "diagram" = "markdown")` | `DocModel` |
+| `documentKind` | `(file: string)` | `"markdown" \| "diagram"`, how the command reads a file of that name |
+| `DIAGRAM_EXTS` | `readonly string[]` | The extensions read as one raw diagram: `.mmd` and `.mermaid` |
 | `extractStats` | `(content: string)` | `Promise<DiagramStats>` for one diagram's text |
 | `detectKeyword` | `(content: string)` | `string \| null`, the diagram's first word past frontmatter and comments |
 | `PRESETS` | `Record<string, Preset>` | Each density preset's thresholds |
@@ -101,6 +106,8 @@ It returns 2 on a usage error and throws on a runtime failure, which the command
 Every error class in [Error codes](cli.md#error-codes) is exported, so code can branch on the class or on its `code`.
 `UsageError` is the parent of every usage error, and `PluginLoadError` the parent of every load error.
 Both extend `MermaidLintError`, which carries the `code`.
+Their own codes, `usage` and `plugin`, are base-class defaults, and the command never prints either one alone.
+Branch on a subclass code from the table, or on `instanceof` the parent class.
 
 ## Types
 

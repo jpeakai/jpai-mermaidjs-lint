@@ -5,8 +5,10 @@
 
 import { type Dirent, readdirSync, statSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
+import { DIAGRAM_EXTS } from "./model.ts";
 
-export const DIAGRAM_FILE_EXTS = new Set([".mmd", ".md", ".markdown"]);
+// What a directory walk picks up: raw diagram files and markdown files.
+export const DIAGRAM_FILE_EXTS = new Set<string>([...DIAGRAM_EXTS, ".md", ".markdown"]);
 
 // Directories never worth walking. Vendored trees dwarf real content, and
 // dot-directories hold VCS and tool state, not diagrams. A denylist keeps the

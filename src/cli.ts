@@ -7,22 +7,26 @@ import { parseArgs } from "node:util";
 import pkg from "../package.json" with { type: "json" };
 import { checkModel, type RunFlags } from "./check.ts";
 import { FlagError, MermaidLintError, UsageError } from "./errors.ts";
-import { collectFiles } from "./files.ts";
+import { collectFiles, DIAGRAM_FILE_EXTS, SKIP_DIRS } from "./files.ts";
 import { fixSourceReport } from "./fix/engine.ts";
-import { buildDocModel } from "./model.ts";
+import { buildDocModel, DIAGRAM_EXTS, documentKind } from "./model.ts";
 import { PROFILES } from "./parse/contrast.ts";
 import { canonicalPreset, PRESET_NAMES } from "./parse/metrics.ts";
 import type { PluginFailure } from "./plugins/index.ts";
 import { setUp } from "./project.ts";
 import { RULES } from "./rules/index.ts";
 import type { LoadedSource, Registry } from "./rules/registry.ts";
-import { CATEGORIES } from "./rules/types.ts";
+import { CATEGORIES, type Finding } from "./rules/types.ts";
 
-const USAGE = `usage: mermaidjs-lint <path...> [--fix] [--json] [--preset NAME] [--profile NAME] [--config FILE]
+// The invocation forms, printed alone after a usage error so the error is not
+// buried, and first in --help.
+const SYNOPSIS = `usage: mermaidjs-lint <path...> [--fix] [--json] [--preset NAME] [--profile NAME] [--config FILE]
                      [--no-plugins | --lenient-plugins]
        mermaidjs-lint --list-rules
        mermaidjs-lint --validate-plugins [--json] [--config FILE]
-       mermaidjs-lint --version | -h, --help
+       mermaidjs-lint --version | -h, --help`;
+
+const USAGE = `${SYNOPSIS}
 
 Deterministic Mermaid diagram gates (* = autofixable):
 ${CATEGORIES.map((c) =>
@@ -31,24 +35,29 @@ ${CATEGORIES.map((c) =>
   ),
 ).join("\n")}
 
-A path is a .mmd file, a markdown file whose mermaid fences are checked, or a
-directory, which is walked for both.
+A path is a file or a directory, and every path must exist. A file ending in
+${DIAGRAM_EXTS.join(" or ")} is read as one raw diagram, and any other file is read as markdown
+whose mermaid fences are checked. A directory is walked for ${[...DIAGRAM_FILE_EXTS].join(", ")} files,
+skipping dot-folders and ${[...SKIP_DIRS].join(", ")}.
 Examples of every rule, with fixes: https://jpeakai.github.io/jpai-mermaidjs-lint/reference/rules/
 
 -p, --preset NAME sets the density for every complexity rule: ${PRESET_NAMES.join(", ")}
-  (aliases low, medium, high). Rule options and the config can set it per rule.
---profile NAME sets how contrast is read: ${PROFILES.join(", ")}.
+  (aliases low, medium, high). It overrides a preset set in the config, and a
+  numeric threshold set in the config overrides both.
+--profile NAME sets how contrast is read: ${PROFILES.join(", ")}. It overrides a profile set in the config.
   auto reads mkdocs-material when any parent folder holds mkdocs.yml or mkdocs.yaml, else github.
 --fix applies every fix it can prove safe, then reports what remains.
 A fixer that is unsure leaves the text alone and the finding stays.
 --config FILE reads that config instead of mermaidjs-lint.config.json or .mjs at the project root.
 Plugins load on their own from .mermaidjs-lint/rules and from dependencies named mermaidjs-lint-plugin-*.
---no-plugins runs the built-in rules only, for a baseline or a repo you do not trust.
+--no-plugins runs the built-in rules only and loads no plugin. It reads a .json config as usual,
+  and stops with a usage error rather than import a .mjs config, which is code.
 --lenient-plugins skips a plugin that fails to load and says so, instead of stopping the run.
 --validate-plugins loads and checks every plugin, reports every failure, and runs no check or fix.
 --list-rules prints every active rule by category, including plugin rules, and where each plugin came from.
 --version prints the version, to quote in a bug report.
-Exits 1 when findings remain or a plugin fails to load, 2 on usage error.`;
+Exits 0 when no findings remain, 1 when findings remain or a plugin fails to load (a lenient run
+skips a broken plugin, so it alone does not exit 1), and 2 on a usage error.`;
 
 interface Parsed {
   values: {
@@ -159,6 +168,13 @@ const validate = (
   return { code, stdout: line, stderr: [] };
 };
 
+// One finding as the text report prints it: file, line or line range, rule
+// and message. The site generator prints its examples with this too.
+export const reportLine = (f: Finding, file: string): string => {
+  const where = f.endLine > f.line ? `${f.line}-${f.endLine}` : `${f.line}`;
+  return `${file}:${where} ${f.rule} ${f.message}`;
+};
+
 const display = (file: string, cwd: string): string => {
   const rel = relative(cwd, file);
   return !rel || rel.startsWith("..") ? file : rel;
@@ -237,9 +253,7 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
           src = fixed;
         }
       }
-      const kind = file.toLowerCase().endsWith(".mmd") ? "diagram" : "markdown";
-      const found = await checkModel(buildDocModel(src, kind), display(file, cwd), flags, registry);
-      return found;
+      return checkModel(buildDocModel(src, documentKind(file)), display(file, cwd), flags, registry);
     }),
   );
   const all = perFile.flat();
@@ -255,10 +269,7 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
       JSON.stringify({ findings: all, files: files.length, plugins: registry.sources, skippedPlugins }, null, 2),
     );
   } else {
-    for (const f of all) {
-      const where = f.endLine > f.line ? `${f.line}-${f.endLine}` : `${f.line}`;
-      console.log(`${f.file}:${where} ${f.rule} ${f.message}`);
-    }
+    for (const f of all) console.log(reportLine(f, f.file));
     console.log(`${all.length} finding(s) in ${files.length} file(s)`);
   }
   return all.length > 0 ? 1 : 0;
@@ -270,15 +281,17 @@ export const describeError = (err: unknown): string =>
     ? `error[${err.code}]: ${err.message}`
     : `error: ${err instanceof Error ? err.message : String(err)}`;
 
-// A usage error prints its reason and the usage, and exits 2. Anything else is
-// a runtime failure and propagates to bin.ts, which exits 1.
+// A usage error prints its reason, the invocation forms and a pointer to
+// --help, and exits 2. Anything else is a runtime failure and propagates to
+// bin.ts, which exits 1.
 export const main = async (argv: string[] = process.argv.slice(2), cwd: string = process.cwd()): Promise<number> => {
   try {
     return await run(argv, cwd);
   } catch (err) {
     if (!(err instanceof UsageError)) throw err;
     console.error(describeError(err));
-    console.error(USAGE);
+    console.error(SYNOPSIS);
+    console.error("run mermaidjs-lint --help for more");
     return 2;
   }
 };

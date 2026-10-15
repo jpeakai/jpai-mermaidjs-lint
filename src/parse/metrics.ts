@@ -167,15 +167,22 @@ export const calculateComplexity = (stats: DiagramStats, config: ThresholdConfig
   };
 };
 
-// A multi-line diagram that yielded no nodes is a silent parser failure, so its
-// metrics cannot be trusted. A one-line diagram may legitimately have no nodes,
-// such as `info` or `pie title Pets`, so on one line only a parser's own error
-// counts: that is what catches `graph TD; A-->; B[[[`.
+// Whether a diagram failed to parse, so its metrics cannot be trusted. A
+// parser's own error always counts: that is what catches `graph TD; A-->; B[[[`.
+// A Langium grammar that read the diagram without an error parsed it, even with
+// no nodes, as `pie` then `title Pets`, or `info` then `showInfo`, legitimately
+// have none. Mermaid core can read a multi-line diagram into an empty
+// structure without complaint, so there a multi-line diagram with no nodes is
+// taken as a silent failure. A one-line diagram may have none, as `info` does.
 export const parseFailed = (content: string, stats: DiagramStats): boolean => {
-  const lines = content.split("\n").filter((l) => {
+  if (stats.error !== null) return true;
+  if (stats.parser_used === "langium" || stats.nodes > 0) return false;
+  return sourceLines(content) > 1;
+};
+
+// The lines that carry diagram source: not blank, a comment or a frontmatter fence.
+export const sourceLines = (content: string): number =>
+  content.split("\n").filter((l) => {
     const t = l.trim();
     return t && !t.startsWith("%%") && t !== "---";
-  });
-  if (lines.length <= 1) return stats.nodes === 0 && stats.error !== null;
-  return stats.nodes === 0;
-};
+  }).length;

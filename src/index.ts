@@ -6,7 +6,7 @@ export { type Config, loadConfig, type PluginLoading, parseConfig, type RuleSett
 export * from "./errors.ts";
 export { collectFiles } from "./files.ts";
 export { type FixReport, fixSource, fixSourceReport } from "./fix/engine.ts";
-export { buildDocModel, type Diagram, type DocModel } from "./model.ts";
+export { buildDocModel, DIAGRAM_EXTS, type Diagram, type DocModel, documentKind } from "./model.ts";
 export type { ContrastAssessment, StyleDirective, ValueSpan } from "./parse/color.ts";
 export { PRESETS, thresholdsFrom } from "./parse/metrics.ts";
 export { type DiagramStats, detectKeyword, extractStats } from "./parse/stats.ts";

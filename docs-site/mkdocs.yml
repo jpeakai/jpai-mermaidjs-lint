@@ -110,6 +110,7 @@ nav:
   - Guides:
       - guides/index.md
       - Gate diagrams in CI: guides/ci.md
+      - Check diagrams before each commit: guides/pre-commit.md
       - Configure the rules: guides/configure.md
       - Lint a MkDocs Material site: guides/mkdocs.md
       - Write a local rule: guides/local-rule.md

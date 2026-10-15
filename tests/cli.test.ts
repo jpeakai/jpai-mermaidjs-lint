@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chain, fence, runCli, tempProject } from "./helpers.ts";
 
@@ -110,6 +110,104 @@ describe("cli additions", () => {
     });
     const r = await runCli(root, ["a.md", "--no-plugins"]);
     expect(r.code).toBe(0);
+  });
+
+  // A config that leaves a marker file when it is imported, so a test can see
+  // whether the code ran.
+  const MARKING_CONFIG = [
+    'import { writeFileSync } from "node:fs";',
+    'writeFileSync(new URL("./ran.txt", import.meta.url), "ran");',
+    "export default {};",
+  ].join("\n");
+
+  test("--no-plugins refuses to import a .mjs config, and the config does not run", async () => {
+    const root = tempProject({ "mermaidjs-lint.config.mjs": MARKING_CONFIG, "a.md": fence("flowchart LR\n  A --> B") });
+    const r = await runCli(root, ["a.md", "--no-plugins"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("error[config-code]");
+    expect(r.stderr).toContain("pass --config with a .json config");
+    expect(existsSync(join(root, "ran.txt"))).toBe(false);
+  });
+
+  test("--no-plugins refuses a .mjs config named with --config too", async () => {
+    const root = tempProject({ "own.mjs": MARKING_CONFIG, "a.md": fence("flowchart LR\n  A --> B") });
+    const r = await runCli(root, ["a.md", "--no-plugins", "--config", "own.mjs"]);
+    expect(r.code).toBe(2);
+    expect(existsSync(join(root, "ran.txt"))).toBe(false);
+  });
+
+  test("--no-plugins with --config <json> lints a repo whose own config is .mjs, without running it", async () => {
+    const root = tempProject({
+      "mermaidjs-lint.config.mjs": MARKING_CONFIG,
+      "own.json": JSON.stringify({ rules: { "contrast-text-below-aa": "off" } }),
+      "a.md": BAD,
+    });
+    const r = await runCli(root, ["a.md", "--no-plugins", "--config", "own.json"]);
+    expect(r.stdout).not.toContain("contrast-text-below-aa");
+    expect(existsSync(join(root, "ran.txt"))).toBe(false);
+  });
+
+  test("without --no-plugins a .mjs config is imported as before", async () => {
+    const root = tempProject({ "mermaidjs-lint.config.mjs": MARKING_CONFIG, "a.md": fence("flowchart LR\n  A --> B") });
+    expect((await runCli(root, ["a.md"])).code).toBe(0);
+    expect(existsSync(join(root, "ran.txt"))).toBe(true);
+  });
+
+  test("an explicit .mermaid file is read as a raw diagram, and a directory walk finds it", async () => {
+    const broken = "flowchart LR\n  A -->\n";
+    const root = tempProject({ "d.mermaid": broken, "docs/e.mermaid": broken, "notes.txt": broken });
+    const r = await runCli(root, ["d.mermaid", "docs", "notes.txt"]);
+    expect(r.code).toBe(1);
+    expect(r.stdout).toContain("d.mermaid:1-3 parse-diagram-unparseable");
+    expect(r.stdout).toContain("docs/e.mermaid:1-3 parse-diagram-unparseable");
+    // Any other extension is read as markdown, and holds no mermaid fence here.
+    expect(r.stdout).not.toContain("notes.txt");
+    expect(r.stdout).toContain("2 finding(s) in 3 file(s)");
+  });
+
+  test("a usage error prints the error and the usage lines, not the whole help", async () => {
+    const r = await runCli(tempProject({}), ["missing.md"]);
+    expect(r.code).toBe(2);
+    const lines = r.stderr.trim().split("\n");
+    expect(lines[0]).toStartWith("error[flag]: cannot read ");
+    expect(lines[0]).toEndWith("missing.md");
+    expect(lines[1]).toStartWith("usage: mermaidjs-lint");
+    expect(lines.at(-1)).toBe("run mermaidjs-lint --help for more");
+    expect(lines.length).toBeLessThanOrEqual(8);
+    expect(r.stderr).not.toContain("Deterministic Mermaid diagram gates");
+  });
+
+  test("--help states precedence, the --no-plugins config rule, the path rule and lenient exits", async () => {
+    const { stdout } = await runCli(tempProject({}), ["--help"]);
+    expect(stdout).toContain("It overrides a preset set in the config");
+    expect(stdout).toContain("numeric threshold set in the config overrides both");
+    expect(stdout).toContain("It overrides a profile set in the config");
+    expect(stdout).toContain("stops with a usage error rather than import a .mjs config");
+    expect(stdout).not.toContain("do not trust");
+    expect(stdout).toContain(".mmd or .mermaid is read as one raw diagram");
+    expect(stdout).toContain("any other file is read as markdown");
+    expect(stdout).toContain("a lenient run\nskips a broken plugin");
+  });
+
+  test("--preset overrides a configured preset, and a configured threshold overrides both", async () => {
+    const root = tempProject({
+      "mermaidjs-lint.config.json": JSON.stringify({
+        rules: { "complexity-node-count-acceptable-exceeded": ["error", { preset: "high" }] },
+      }),
+      "a.md": fence(chain(16)),
+    });
+    // 16 nodes: clean under high, over low's acceptable 12.
+    expect((await runCli(root, ["a.md"])).code).toBe(0);
+    expect((await runCli(root, ["a.md", "--preset", "low"])).stdout).toContain("16 nodes > 12");
+    const pinned = tempProject({
+      "mermaidjs-lint.config.json": JSON.stringify({
+        rules: { "complexity-node-count-acceptable-exceeded": ["error", { nodeAcceptable: 30 }] },
+      }),
+      "a.md": fence(chain(16)),
+    });
+    expect((await runCli(pinned, ["a.md", "--preset", "low"])).stdout).not.toContain(
+      "complexity-node-count-acceptable-exceeded",
+    );
   });
 
   test("--no-plugins still fails on an unknown built-in id", async () => {

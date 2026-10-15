@@ -8,6 +8,7 @@ Releases are the only way a version reaches npm, and the workflow publishes with
 
 Use this for every release once the one-time setup below is done.
 The version bump lands through a pull request like any other change.
+Before the commit, rename the `Unreleased` heading in `CHANGELOG.md` to the new version and date, and add an empty `Unreleased` above it.
 
 ```sh
 git switch main && git pull
@@ -15,6 +16,7 @@ make ci                                  # the full local gate, including the de
 npm version patch --no-git-tag-version   # or minor, major, or prerelease --preid=rc
 VERSION=$(node -p "require('./package.json').version")
 git switch -c "release-v$VERSION"
+"${EDITOR:-vi}" CHANGELOG.md             # move the Unreleased entries under the new version
 git commit -am "Release v$VERSION"
 git push -u origin "release-v$VERSION"
 gh pr create --fill
@@ -140,6 +142,7 @@ The package page on npmjs.com should show a provenance badge that links to the w
 | Symptom | Cause and fix |
 |---|---|
 | `Release vX already exists` | Bump the version in `package.json`, or delete the release with `gh release delete vX --cleanup-tag --yes`. |
+| `Tag vX exists with no release` | An earlier run pushed the tag but never made the release. Delete the remote tag with `git push origin :refs/tags/vX`, then run again. |
 | `already on npm` | npm never lets a version be reused, even after an unpublish, so bump the version. |
 | `Releases run only from main` | The run started from another branch. Merge the change first, then run it with `--ref main`. |
 | `Branch is not allowed to deploy to npm` | The `npm` environment refused a branch other than main, which is the protection working. |

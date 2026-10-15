@@ -1,4 +1,4 @@
-- **Readable in light and dark.** The colours a diagram declares are scored against their fill as the host renders it, in both light and dark themes.
-- **Renders.** Every diagram parses with the mermaid parsers this package ships, and every fence is closed.
+- **Readable in light and dark.** Declared fills, label colours and borders are scored as the host draws them, on nodes, erDiagram rows and edge labels, in both themes.
+- **Renders.** Every diagram parses with the mermaid parsers this package ships, and every mermaid fence is closed.
 - **Simple enough to follow.** Node count and visual complexity are scored against a density preset, so an oversized diagram is flagged to be split.
 - **Extensible.** A plugin adds rules of your own, which run through the same config, fix engine and verification as the built-ins.

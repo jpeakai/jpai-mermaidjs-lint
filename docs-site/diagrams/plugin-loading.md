@@ -8,7 +8,7 @@ flowchart LR
     M -->|strict| X["Throw and<br/>stop the run"]
     M -->|"lenient or collect"| S["Leave source out,<br/>record failure"]
     S --> R
-    D -->|"mode off"| R
+    D -->|"mode off:<br/>report as skipped"| R
 
     classDef discoverTint fill:#15803d36,stroke:#22c55e,stroke-width:2px
     classDef loadTint fill:#1d4ed836,stroke:#3b82f6,stroke-width:2px

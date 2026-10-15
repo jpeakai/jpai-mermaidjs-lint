@@ -50,6 +50,7 @@ Give the rule a pair of severity and options:
 ```json
 {
   "rules": {
+    "complexity-node-count-cognitive-limit": ["error", { "nodeHardLimit": 80 }],
     "complexity-node-count-hard-limit": ["error", { "nodeHardLimit": 80 }],
     "contrast-text-below-aa": ["error", { "profile": "github" }]
   }
@@ -58,6 +59,23 @@ Give the rule a pair of severity and options:
 
 Each rule declares the options it accepts and their types, and a config that breaks them fails before any file is read.
 [Config file](../reference/configuration.md) lists every option.
+
+A threshold is the boundary between two bands, so the two rules either side of it both read it.
+Set it on both rules that read it, or a diagram between the old and new values reports two bands at once.
+`nodeHardLimit` is read by the cognitive-limit and hard-limit rules, as in the example, where a diagram of 90 nodes reports the hard limit only.
+[Rule settings](../reference/configuration.md#rule-settings) names the rules that read each threshold.
+
+## Know which setting wins
+
+A rule takes each setting from the first of these that gives one:
+
+1. A threshold option on the rule in the config, such as `nodeHardLimit`.
+2. The `--preset` or `--profile` flag.
+3. The `preset` or `profile` option on the rule in the config.
+4. The default, which is the `high-density` preset and the `auto` profile.
+
+So `--preset low` overrides a configured `preset`, and a configured `nodeAcceptable` overrides both.
+[Precedence](../reference/cli.md#precedence) states the same order.
 
 ## Use JavaScript for the config
 
@@ -72,3 +90,7 @@ export default {
 ```
 
 A project holds one config file, so having both a `.json` and a `.mjs` file is an error.
+
+A `.mjs` config is code that runs on every check.
+A `--no-plugins` run refuses to import it and stops with `error[config-code]`, so prefer `.json` unless you need code.
+Version 0.1.1 imports a `.mjs` config even under `--no-plugins`.

@@ -9,33 +9,120 @@ Share rules between projects as an npm package that loads on its own once instal
 Name it `mermaidjs-lint-plugin-<name>`, or `@scope/mermaidjs-lint-plugin-<name>`.
 A project loads it when it lists the package in `dependencies`, `devDependencies` or `optionalDependencies`.
 
+## Write package.json
+
+Start the package in a new folder, with this `package.json`:
+
+```json
+{
+  "name": "mermaidjs-lint-plugin-acme",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": "./index.js",
+  "files": ["index.js"],
+  "peerDependencies": {
+    "@jpeakai/mermaidjs-lint": "^0.1.1"
+  },
+  "devDependencies": {
+    "@jpeakai/mermaidjs-lint": "^0.1.1"
+  }
+}
+```
+
+- **`"type": "module"`** marks `index.js` as an ES module. Without it, Node reparses the file, and warns on every run while you test the package through a link.
+- **`exports`** names the file the linter imports.
+- **`peerDependencies`** says which linter versions the plugin works with, and uses the project's own copy.
+- **`devDependencies`** installs the linter, so the plugin's tests can run.
+
 ## Export the plugin
 
-The package's default export is the plugin: its metadata and its rules.
+The package's default export, in `index.js`, is the plugin: its metadata and its rules.
 
 ```js
+const FLOWCHART = new Set(["flowchart", "graph"]);
+
 export default {
   meta: { name: "acme", namespace: "acme", apiVersion: 1, categories: { house: "Acme house style" } },
   rules: {
-    "house-left-to-right": {
+    "house-direction": {
       category: "house",
-      summary: "a flowchart that does not read left to right",
-      check: ({ doc }) =>
-        doc.diagrams
-          .filter((d) => d.keyword === "flowchart" && !/^flowchart\s+LR/m.test(d.source))
-          .map((d) => ({ line: d.startLine, endLine: d.endLine, message: "flowcharts in Acme docs read left to right" })),
+      summary: "a flowchart that does not read in the house direction",
+      options: { direction: "string" },
+      check: ({ doc, options }) => {
+        const direction = options.direction ?? "LR";
+        const wanted = new RegExp(`^(flowchart|graph)\\s+${direction}\\b`, "m");
+        return doc.diagrams
+          .filter((d) => FLOWCHART.has(d.keyword) && !wanted.test(d.source))
+          .map((d) => ({ line: d.startLine, endLine: d.endLine, message: `flowcharts in Acme docs read ${direction}` }));
+      },
     },
   },
 };
 ```
 
-- **`namespace`** prefixes every rule id, so this rule runs as `acme/house-left-to-right`. It must be lower-case and cannot be `local`.
+- **`namespace`** prefixes every rule id, so this rule runs as `acme/house-direction`. It must be lower-case and cannot be `local`.
 - **`apiVersion`** must match the version the tool implements, which is `1`.
 - **`categories`** declares any new category word the rules use. A built-in category needs no declaration.
+- **`options`** declares each option the rule accepts, as a name mapped to `number`, `string`, `boolean` or `string[]`. The rule reads them from `options`.
 
-## Check it loads
+A flowchart opens with either `flowchart` or `graph`, so the rule checks both keywords.
 
-In a project that depends on the package:
+## Test it
+
+The `testing` entry point runs one rule over a string, with the same contract checks and fix engine as a real run.
+Create `test/house-direction.test.js`:
+
+```js
+import { expect, test } from "bun:test";
+import { checkRule } from "@jpeakai/mermaidjs-lint/testing";
+import plugin from "../index.js";
+
+const graphTopDown = "```mermaid\ngraph TD\n  A --> B\n```\n";
+
+test("reports a graph that reads top down", async () => {
+  const findings = await checkRule(plugin, "house-direction", graphTopDown);
+  expect(findings.map((f) => f.rule)).toEqual(["acme/house-direction"]);
+});
+
+test("takes the direction from its options", async () => {
+  const findings = await checkRule(plugin, "house-direction", graphTopDown, { options: { direction: "TD" } });
+  expect(findings).toEqual([]);
+});
+```
+
+Run `bun install`, then `bun test`, and both tests pass.
+On Node, write the same tests with `node:test`, as [Write a local rule](local-rule.md#test-it) shows.
+
+## Publish it
+
+Check what the package will ship, then publish it:
+
+=== "Bun"
+
+    ```sh
+    bun pm pack --dry-run
+    bun publish
+    ```
+
+=== "npm"
+
+    ```sh
+    npm pack --dry-run
+    npm publish
+    ```
+
+The dry run lists `package.json` and `index.js`, and nothing else.
+A scoped name needs `--access public` on its first publish.
+
+## Install it in a project
+
+In a project that uses the linter, add the plugin as a dev dependency:
+
+```sh
+bun add --dev mermaidjs-lint-plugin-acme
+```
+
+Then check it loads:
 
 ```sh
 bunx mermaidjs-lint --validate-plugins
@@ -52,12 +139,11 @@ mermaidjs-lint: plugins valid: acme (1 rule)
 A plugin rule is switched off, or given options, exactly like a built-in:
 
 ```json
-{ "rules": { "acme/house-left-to-right": "off" } }
+{ "rules": { "acme/house-direction": ["error", { "direction": "TD" }] } }
 ```
 
-To accept options, declare them on the rule as names mapped to `number`, `string`, `boolean` or `string[]`.
-Read them from `ctx.options`.
-The config is checked against that declaration before any file is read.
+The config is checked against the rule's `options` before any file is read.
+A wrong type, such as `"direction": 3`, stops the run with `error[rule-option]`.
 
 ## When a load fails
 

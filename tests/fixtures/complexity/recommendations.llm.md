@@ -3,7 +3,7 @@
 <!-- llm: Each failing diagram is split along its own groups or stages so every node and edge survives under the limits, the nesting drops to two levels, the unknown keyword becomes a flowchart, and the compound fill gets a dark label colour. -->
 
 This file is the LLM fix for `recommendations.md`.
-In each section, the failing diagram is replaced by the fix an LLM made by judgment.
+In each section, the failing diagram is replaced by the fix an LLM made by judgement.
 The fix keeps every node and edge where it can, and splits rather than trims.
 The text describing the original and what the linter reported on it is kept, beside the fix.
 Every diagram in this file lints clean:
@@ -307,7 +307,7 @@ flowchart TD
 
 ```text
 complexity-node-count-hard-limit 101 nodes > 100 hard limit
-complexity-visual-score-critical VCS 105.5 > 100 critical threshold
+complexity-visual-score-critical VCS 105.5 > 100 complex threshold
 ```
 
 ### Recommendation
@@ -422,7 +422,7 @@ flowchart LR
 
 Twenty services are all coupled to each other.
 This is a monolith being broken apart, where every extracted service still depends on every other one.
-The 190 edges push the score past the critical threshold, though the 20 nodes are fine.
+The 190 edges push the score past the complex threshold, though the 20 nodes are fine.
 
 The fix keeps every call but splits the mesh by caller into three diagrams: `auth` to `orders`, `inventory` to `support`, then `audit` onwards.
 
@@ -460,7 +460,7 @@ flowchart LR
 ### What the linter reported on the original
 
 ```text
-complexity-visual-score-critical VCS 115.0 > 100 critical threshold
+complexity-visual-score-critical VCS 115.0 > 100 complex threshold
 ```
 
 ### Recommendation
@@ -613,7 +613,7 @@ flowchart TB
 
 ### Failing example, as fixed
 
-Mermaid does not recognise the diagram keyword, so the parser reads zero nodes.
+Mermaid does not recognise the diagram keyword, so the parser rejects it with an error.
 
 The fix replaces the unknown keyword with `flowchart`, so the two nodes parse.
 
@@ -626,7 +626,7 @@ flowchart
 ### What the linter reported on the original
 
 ```text
-parse-diagram-unparseable not_a_known_diagram_type yielded 0 nodes from multi-line source (parser: mermaid-core): No diagram type detected matching given configuration for text: not_a_known_diagram_type
+parse-diagram-unparseable not_a_known_diagram_type did not parse (parser: mermaid-core): No diagram type detected matching given configuration for text: not_a_known_diagram_type
 ```
 
 The complexity rules skip a diagram that fails to parse.

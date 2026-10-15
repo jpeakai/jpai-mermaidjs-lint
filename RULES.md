@@ -5,7 +5,7 @@ Each fix example is real output: `tests/rules-doc.test.ts` runs every block belo
 
 A block labelled before is followed by its after, which is exactly what `--fix` writes.
 A block labelled reported is a case the fixer leaves alone, so the finding stays for a human.
-A block labelled llm follows each reported block, and shows the judgment fix an LLM would make, with its reason in a comment.
+A block labelled llm follows each reported block, and shows the judgement fix an LLM would make, with its reason in a comment.
 It must lint clean.
 Rules marked with a star in `--help` have a fixer.
 
@@ -24,10 +24,11 @@ An unparseable diagram skips every complexity rule, because thresholds mean noth
 
 ### parse-diagram-unparseable
 
-A multi-line diagram that mermaid's parser reads as zero nodes.
-The message carries the parser's own reason.
-A one-line diagram may legitimately have no nodes, such as `info` or `pie title Pets`.
-So on one line it fails only when the parser itself reports an error, as for `graph TD; A-->; B[[[`.
+A diagram that mermaid's parser reports an error for, on one line or many, such as `graph TD; A-->; B[[[`.
+The message carries the parser's own reason, whose line numbers count within the diagram, not the file.
+At the end of the input, that line may be one past the diagram's last line.
+A diagram the Langium parser reads without an error passes even with no nodes, such as `pie` with a `title` line, or `info`.
+A diagram mermaid core reads into zero nodes is also reported when it spans more than one line, because that is a silent parse failure.
 There is no fixer, since a syntax error needs an author.
 
 ````text reported
@@ -49,8 +50,12 @@ flowchart LR
 ### parse-fence-unterminated
 
 A mermaid fence that is never closed, so every line after it is read as diagram source.
-The fix adds the closing fence, using the opening fence's own marker and indentation.
-It does so only when nothing but whitespace follows the diagram.
+The fix adds the closing fence at the end of the file, using the opening fence's own marker and indentation.
+At the top level an unclosed fence runs to the end of the file, so any prose after the diagram ends up inside the fence.
+That prose stays diagram source after the fix, and `parse-diagram-unparseable` then reports it for a human to move.
+A fence inside a quote or a list item ends with its container.
+There the fixer leaves it alone, because the closing line would be a guess.
+Only mermaid fences are checked: a diagram after an unclosed fence of another language is read as that fence's code, and is never seen.
 
 ````text before
 ```mermaid
@@ -67,20 +72,103 @@ flowchart LR
 
 ## Complexity
 
-Every complexity rule takes a `preset` option and any of the numeric thresholds, such as `nodeAcceptable`.
+Every complexity rule except `complexity-subgraph-nesting-too-deep` takes a `preset` option and any of the numeric thresholds, such as `nodeAcceptable`.
+The node count rules form one ladder, and the two visual score rules form another.
 A diagram lands in one band of each ladder, so only the most severe rule of a ladder fires.
+A threshold such as `nodeHardLimit` is the boundary between two neighbouring bands, so set it on both rules that read it.
+Set on one rule alone, it opens a gap or an overlap, and an overlap makes two rules report the same diagram.
+A `--preset` flag overrides a rule's configured preset, and a numeric threshold option overrides both.
 No complexity rule has a fixer, because splitting a diagram changes what it says.
+The examples below are scored under the default preset, `high-density`.
 
 ### complexity-node-count-hard-limit
 
 More nodes than the preset's hard limit.
 The limit is 100 under `high-density`, and the message names existing subgraph boundaries to split along.
 
+````text reported
+```mermaid
+flowchart LR
+  N0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6 --> N7 --> N8 --> N9 --> N10
+  N10 --> N11 --> N12 --> N13 --> N14 --> N15 --> N16 --> N17 --> N18 --> N19 --> N20
+  N20 --> N21 --> N22 --> N23 --> N24 --> N25 --> N26 --> N27 --> N28 --> N29 --> N30
+  N30 --> N31 --> N32 --> N33 --> N34 --> N35 --> N36 --> N37 --> N38 --> N39 --> N40
+  N40 --> N41 --> N42 --> N43 --> N44 --> N45 --> N46 --> N47 --> N48 --> N49 --> N50
+  N50 --> N51 --> N52 --> N53 --> N54 --> N55 --> N56 --> N57 --> N58 --> N59 --> N60
+  N60 --> N61 --> N62 --> N63 --> N64 --> N65 --> N66 --> N67 --> N68 --> N69 --> N70
+  N70 --> N71 --> N72 --> N73 --> N74 --> N75 --> N76 --> N77 --> N78 --> N79 --> N80
+  N80 --> N81 --> N82 --> N83 --> N84 --> N85 --> N86 --> N87 --> N88 --> N89 --> N90
+  N90 --> N91 --> N92 --> N93 --> N94 --> N95 --> N96 --> N97 --> N98 --> N99 --> N100
+```
+````
+
+````text llm
+<!-- llm: A 101-step chain has no subgraphs to split along, so it splits into three diagrams of at most 35 nodes, each starting where the last ends. -->
+
+```mermaid
+flowchart LR
+  N0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6 --> N7 --> N8 --> N9 --> N10
+  N10 --> N11 --> N12 --> N13 --> N14 --> N15 --> N16 --> N17 --> N18 --> N19 --> N20
+  N20 --> N21 --> N22 --> N23 --> N24 --> N25 --> N26 --> N27 --> N28 --> N29 --> N30
+  N30 --> N31 --> N32 --> N33 --> N34
+```
+
+```mermaid
+flowchart LR
+  N34 --> N35 --> N36 --> N37 --> N38 --> N39 --> N40 --> N41 --> N42 --> N43 --> N44
+  N44 --> N45 --> N46 --> N47 --> N48 --> N49 --> N50 --> N51 --> N52 --> N53 --> N54
+  N54 --> N55 --> N56 --> N57 --> N58 --> N59 --> N60 --> N61 --> N62 --> N63 --> N64
+  N64 --> N65 --> N66 --> N67 --> N68
+```
+
+```mermaid
+flowchart LR
+  N68 --> N69 --> N70 --> N71 --> N72 --> N73 --> N74 --> N75 --> N76 --> N77 --> N78
+  N78 --> N79 --> N80 --> N81 --> N82 --> N83 --> N84 --> N85 --> N86 --> N87 --> N88
+  N88 --> N89 --> N90 --> N91 --> N92 --> N93 --> N94 --> N95 --> N96 --> N97 --> N98
+  N98 --> N99 --> N100
+```
+````
+
+A chain this long also scores above the complex threshold, so `complexity-visual-score-critical` fires beside it.
+
 ### complexity-node-count-cognitive-limit
 
 More nodes than a reader can follow.
 Under `high-density` the limit is 50 nodes, following [Huang et al. 2020](https://arxiv.org/abs/2008.07944) on where a network diagram becomes hard to read.
 It fires above the cognitive limit and up to the hard limit.
+
+````text reported
+```mermaid
+flowchart LR
+  N0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6 --> N7 --> N8 --> N9 --> N10
+  N10 --> N11 --> N12 --> N13 --> N14 --> N15 --> N16 --> N17 --> N18 --> N19 --> N20
+  N20 --> N21 --> N22 --> N23 --> N24 --> N25 --> N26 --> N27 --> N28 --> N29 --> N30
+  N30 --> N31 --> N32 --> N33 --> N34 --> N35 --> N36 --> N37 --> N38 --> N39 --> N40
+  N40 --> N41 --> N42 --> N43 --> N44 --> N45 --> N46 --> N47 --> N48 --> N49 --> N50
+  N50 --> N51 --> N52 --> N53 --> N54 --> N55 --> N56 --> N57 --> N58 --> N59
+```
+````
+
+````text llm
+<!-- llm: A 60-step chain splits at node N30 into two diagrams of 31 and 30 nodes, and the second starts where the first ends. -->
+
+```mermaid
+flowchart LR
+  N0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6 --> N7 --> N8 --> N9 --> N10
+  N10 --> N11 --> N12 --> N13 --> N14 --> N15 --> N16 --> N17 --> N18 --> N19 --> N20
+  N20 --> N21 --> N22 --> N23 --> N24 --> N25 --> N26 --> N27 --> N28 --> N29 --> N30
+```
+
+```mermaid
+flowchart LR
+  N30 --> N31 --> N32 --> N33 --> N34 --> N35 --> N36 --> N37 --> N38 --> N39 --> N40
+  N40 --> N41 --> N42 --> N43 --> N44 --> N45 --> N46 --> N47 --> N48 --> N49 --> N50
+  N50 --> N51 --> N52 --> N53 --> N54 --> N55 --> N56 --> N57 --> N58 --> N59
+```
+````
+
+The chain also scores above the readable threshold, so `complexity-visual-score-acceptable-exceeded` fires beside it.
 
 ### complexity-node-count-acceptable-exceeded
 
@@ -177,17 +265,175 @@ flowchart LR
 
 ### complexity-visual-score-critical
 
-A visual complexity score above the preset's `vcsComplex` threshold, which is 100 under `high-density`.
+A visual complexity score above the preset's complex threshold, `vcsComplex`, which is 100 under `high-density`.
 The score is nodes plus half a point per edge plus three per subgraph, scaled by one tenth per level of nesting.
-The `vcsCritical` option is accepted but not read by this rule.
+The `vcsCritical` option is accepted but no rule reads it.
+This diagram has only 35 nodes, but its ten subgraphs, two levels of nesting and report-back edges score above 100.
+
+````text reported
+```mermaid
+flowchart LR
+  subgraph Plan
+    subgraph P1[Intake]
+      P1N1 --> P1N2 --> P1N3 --> P1N4 --> P1N5
+    end
+    subgraph P2[Triage]
+      P2N1 --> P2N2 --> P2N3 --> P2N4 --> P2N5
+    end
+    P1N5 --> P2N1
+  end
+  subgraph Make
+    subgraph P3[Build]
+      P3N1 --> P3N2 --> P3N3 --> P3N4 --> P3N5
+    end
+    subgraph P4[Review]
+      P4N1 --> P4N2 --> P4N3 --> P4N4 --> P4N5
+    end
+    subgraph P5[Release]
+      P5N1 --> P5N2 --> P5N3 --> P5N4 --> P5N5
+    end
+    P3N5 --> P4N1
+    P4N5 --> P5N1
+  end
+  subgraph Run
+    subgraph P6[Operate]
+      P6N1 --> P6N2 --> P6N3 --> P6N4 --> P6N5
+    end
+    subgraph P7[Retire]
+      P7N1 --> P7N2 --> P7N3 --> P7N4 --> P7N5
+    end
+    P6N5 --> P7N1
+  end
+  P2N5 --> P3N1
+  P5N5 --> P6N1
+  P2N3 -.-> P1N1
+  P2N5 -.-> P1N2
+  P3N3 -.-> P1N1
+  P3N5 -.-> P1N2
+  P4N3 -.-> P1N1
+  P4N5 -.-> P1N2
+  P5N3 -.-> P1N1
+  P5N5 -.-> P1N2
+  P6N3 -.-> P1N1
+  P6N5 -.-> P1N2
+  P7N3 -.-> P1N1
+  P7N5 -.-> P1N2
+```
+````
+
+````text llm
+<!-- llm: The seven stages fall into three phases, so each phase becomes its own diagram, and the twelve report-back edges become one per diagram. -->
+
+```mermaid
+flowchart LR
+  subgraph P1[Intake]
+    P1N1 --> P1N2 --> P1N3 --> P1N4 --> P1N5
+  end
+  subgraph P2[Triage]
+    P2N1 --> P2N2 --> P2N3 --> P2N4 --> P2N5
+  end
+  P1N5 --> P2N1
+  P2N5 --> Make[Make phase]
+```
+
+```mermaid
+flowchart LR
+  Plan[Plan phase] --> P3N1
+  subgraph P3[Build]
+    P3N1 --> P3N2 --> P3N3 --> P3N4 --> P3N5
+  end
+  subgraph P4[Review]
+    P4N1 --> P4N2 --> P4N3 --> P4N4 --> P4N5
+  end
+  subgraph P5[Release]
+    P5N1 --> P5N2 --> P5N3 --> P5N4 --> P5N5
+  end
+  P3N5 --> P4N1
+  P4N5 --> P5N1
+  P5N5 --> Run[Run phase]
+  P5N5 -.-> Report[Report to intake]
+```
+
+```mermaid
+flowchart LR
+  Make[Make phase] --> P6N1
+  subgraph P6[Operate]
+    P6N1 --> P6N2 --> P6N3 --> P6N4 --> P6N5
+  end
+  subgraph P7[Retire]
+    P7N1 --> P7N2 --> P7N3 --> P7N4 --> P7N5
+  end
+  P6N5 --> P7N1
+  P7N5 -.-> Report[Report to intake]
+```
+````
 
 ### complexity-visual-score-acceptable-exceeded
 
 A visual complexity score above the preset's readable threshold, up to `vcsComplex`.
 
+This diagram has only 30 nodes, but its five subgraphs and their edges score above 60 under `high-density`.
+
+````text reported
+```mermaid
+flowchart LR
+  subgraph P1[Intake]
+    P1N1 --> P1N2 --> P1N3 --> P1N4 --> P1N5 --> P1N6
+  end
+  subgraph P2[Triage]
+    P2N1 --> P2N2 --> P2N3 --> P2N4 --> P2N5 --> P2N6
+  end
+  subgraph P3[Build]
+    P3N1 --> P3N2 --> P3N3 --> P3N4 --> P3N5 --> P3N6
+  end
+  subgraph P4[Review]
+    P4N1 --> P4N2 --> P4N3 --> P4N4 --> P4N5 --> P4N6
+  end
+  subgraph P5[Release]
+    P5N1 --> P5N2 --> P5N3 --> P5N4 --> P5N5 --> P5N6
+  end
+  P1N6 --> P2N1
+  P2N6 --> P3N1
+  P3N6 --> P4N1
+  P4N6 --> P5N1
+```
+````
+
+````text llm
+<!-- llm: The five stages split after Build into two diagrams, and the second opens with a node that stands for the first. -->
+
+```mermaid
+flowchart LR
+  subgraph P1[Intake]
+    P1N1 --> P1N2 --> P1N3 --> P1N4 --> P1N5 --> P1N6
+  end
+  subgraph P2[Triage]
+    P2N1 --> P2N2 --> P2N3 --> P2N4 --> P2N5 --> P2N6
+  end
+  subgraph P3[Build]
+    P3N1 --> P3N2 --> P3N3 --> P3N4 --> P3N5 --> P3N6
+  end
+  P1N6 --> P2N1
+  P2N6 --> P3N1
+```
+
+```mermaid
+flowchart LR
+  From[From Build] --> P4N1
+  subgraph P4[Review]
+    P4N1 --> P4N2 --> P4N3 --> P4N4 --> P4N5 --> P4N6
+  end
+  subgraph P5[Release]
+    P5N1 --> P5N2 --> P5N3 --> P5N4 --> P5N5 --> P5N6
+  end
+  P4N6 --> P5N1
+```
+````
+
 ### complexity-subgraph-nesting-too-deep
 
 Subgraphs nested three or more levels deep.
+The limit is fixed at three, and no preset, flag or option changes it.
 Flatten the nesting, or promote a deep group into its own diagram.
 
 ````text reported
@@ -296,7 +542,7 @@ A fill with no declared `color:` is reported by `contrast-directive-unauditable`
 ### contrast-border-below-ui-minimum
 
 A border below 3 to 1 against its fill, the WCAG rule for a UI component.
-Under a host profile and in an `erDiagram` the pair is not a finding.
+Under the `mkdocs-material` profile, and in an `erDiagram` under any profile, the pair is scored but is not a finding.
 A saturated hue cannot clear 3 to 1 in both themes, and the label and tint also carry the category.
 There is no fixer.
 

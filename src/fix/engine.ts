@@ -4,7 +4,7 @@
 // computed from, so every accepted edit restarts the pass.
 
 import { optionsFor, type RunFlags } from "../check.ts";
-import { buildDocModel } from "../model.ts";
+import { buildDocModel, documentKind } from "../model.ts";
 import { BUILTIN, HELPERS, type Registry } from "../rules/registry.ts";
 import type { Edit } from "../rules/types.ts";
 import { verify } from "./verify.ts";
@@ -44,7 +44,7 @@ export const fixSourceReport = async (
   flags: RunFlags = {},
   registry: Registry = BUILTIN,
 ): Promise<FixReport> => {
-  const kind = file.toLowerCase().endsWith(".mmd") ? "diagram" : "markdown";
+  const kind = documentKind(file);
   const applied: Edit[] = [];
   const refused: Edit[] = [];
   // An edit refused once stays refused while its source slice is unchanged.

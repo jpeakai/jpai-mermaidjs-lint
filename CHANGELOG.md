@@ -10,7 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The README is now a short front page that shows one command, its output and the fix.
+  Everything else links into the docs site.
 
 ## [0.7.0] - 2026-10-16
 

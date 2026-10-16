@@ -63,6 +63,15 @@ flowchart LR
 ```
 ````
 
+This is how GitHub draws it, and the API label all but disappears:
+
+```mermaid-github
+flowchart LR
+  Client --> API --> DB
+  classDef warn fill:#ffd400,color:#ffffff
+  class API warn
+```
+
 Run the linter over the folder:
 
 === "Bun"
@@ -111,6 +120,36 @@ The file now declares black text, which reads on yellow:
 classDef warn fill:#ffd400,color:#000000
 ```
 
+<div class="grid ml-compare" markdown>
+
+<div markdown>
+
+<p class="ml-caption ml-caption--before">Before: white on yellow, 1.43 to 1</p>
+
+```mermaid-github
+flowchart LR
+  Client --> API --> DB
+  classDef warn fill:#ffd400,color:#ffffff
+  class API warn
+```
+
+</div>
+
+<div markdown>
+
+<p class="ml-caption ml-caption--after">After --fix: black on yellow</p>
+
+```mermaid-github
+flowchart LR
+  Client --> API --> DB
+  classDef warn fill:#ffd400,color:#000000
+  class API warn
+```
+
+</div>
+
+</div>
+
 ## 5. Fix one by hand
 
 Give the database its own colour, with a fill but no label colour.
@@ -129,6 +168,18 @@ flowchart LR
 ```
 ````
 
+Mermaid's default label is dark grey, so on GitHub the new label sinks into the navy:
+
+```mermaid-github
+flowchart LR
+  Client --> API --> DB
+  classDef warn fill:#ffd400,color:#000000
+  classDef store fill:#1e3a5f
+  class API warn
+  class DB store
+```
+
+A host with its own theme may draw that label in another colour, so the linter cannot score it until the diagram declares one.
 Run with `--fix` again:
 
 ```text
@@ -142,6 +193,40 @@ Declare one beside the fill:
 ```text
   classDef store fill:#1e3a5f,color:#ffffff
 ```
+
+<div class="grid ml-compare" markdown>
+
+<div markdown>
+
+<p class="ml-caption ml-caption--before">Before: no label colour declared</p>
+
+```mermaid-github
+flowchart LR
+  Client --> API --> DB
+  classDef warn fill:#ffd400,color:#000000
+  classDef store fill:#1e3a5f
+  class API warn
+  class DB store
+```
+
+</div>
+
+<div markdown>
+
+<p class="ml-caption ml-caption--after">After: white on navy, declared</p>
+
+```mermaid-github
+flowchart LR
+  Client --> API --> DB
+  classDef warn fill:#ffd400,color:#000000
+  classDef store fill:#1e3a5f,color:#ffffff
+  class API warn
+  class DB store
+```
+
+</div>
+
+</div>
 
 Run again, and it is clean:
 

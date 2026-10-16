@@ -118,13 +118,10 @@ Run an installed linter from a folder you control, and name the checkout's files
 |---|---|
 | A `.mmd` or `.mermaid` file | The whole file, as one diagram |
 | Any other file named explicitly | Every mermaid fence in it, read as markdown whatever its extension |
-| A directory | Every `.md`, `.markdown`, `.mmd` and `.mermaid` file beneath it, outside the skipped folders |
+| A directory | Every `.md`, `.markdown`, `.mmd` and `.mermaid` file beneath it |
 
-A directory walk skips, at any depth, every folder whose name starts with a dot.
-It also skips every folder named `node_modules`, `vendor`, `dist`, `build`, `tmp` or `__pycache__`.
-So `mermaidjs-lint docs/` never checks `docs/build/page.md`, and the run can still exit 0 when `docs/` holds other files.
+A walk leaves out dot-folders and dependency or build output folders, as `--help` lists, and a file named explicitly is always checked.
 When the paths match no file at all, the run stops with `error[flag]: no matching files` and exit code 2.
-Name a skipped file explicitly to check it.
 
 A directory walk never follows a symbolic link, to a file or to a folder.
 It names each link it skipped on standard error, as `mermaidjs-lint: skipped symbolic link <path>; name it as a path to check it`, so a gate never passes a file in silence.

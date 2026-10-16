@@ -19,7 +19,6 @@ npx -y @jpeakai/mermaidjs-lint --fix docs/       # apply every fix proven safe, 
 Pass your own paths: every path you name must exist, or the run stops with a usage error and exit 2.
 A `.mmd` or `.mermaid` file is read as one diagram, and any other file you name is read as markdown.
 A directory is walked for `.mmd`, `.mermaid`, `.md` and `.markdown` files.
-The walk skips dot-folders and any folder named `node_modules`, `vendor`, `dist`, `build`, `tmp` or `__pycache__`, at any depth.
 Installed as a dev dependency, the command is `mermaidjs-lint`, and `--help` lists every flag.
 
 [Get started](https://jpeakai.github.io/jpai-mermaidjs-lint/get-started/) walks through a first run, a fix, and adding the check to a project.

@@ -81,7 +81,6 @@ The run exits 1 while any finding remains, so it works as a gate in CI with no e
 - **It does not draw diagrams.** "Renders" means the mermaid parsers this package ships accept the diagram, so a diagram that parses but draws badly is not caught.
 - **It does not know your host's mermaid version.** A host on an older mermaid may fail to draw a diagram type that parses here.
 - **It does not score unstyled nodes or theme settings outside a sequence diagram.** A `sequenceDiagram` is scored by its resolved theme colours. Elsewhere only the colours a diagram declares are scored, and [Contrast profiles](concepts/contrast.md#what-is-not-scored) lists what is left out.
-- **It does not walk build or vendor folders.** A directory walk skips dot-folders and any folder named `node_modules`, `vendor`, `dist`, `build`, `tmp` or `__pycache__`, at any depth. Name such a file directly to check it.
 - **It does not see a diagram inside another fence.** A mermaid fence after an unclosed fence of another language is read as that fence's code.
 - **It has no per-diagram suppression.** A rule is on for every diagram or off for all of them, and [Troubleshooting](guides/troubleshooting.md) gives the workarounds.
 - **It does not split diagrams.** A complexity finding names the subgraphs to split along, and a human or an LLM decides. The [fixture gallery](gallery/fixtures.md) shows what an LLM would do.

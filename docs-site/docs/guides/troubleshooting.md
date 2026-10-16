@@ -12,7 +12,7 @@ The first line of standard error names the cause as `error[code]`, and the usage
 | First line | Cause | Fix |
 |---|---|---|
 | `error[flag]: cannot read <path>` | A path you named does not exist | Pass only paths that exist, such as `docs/` |
-| `error[flag]: no matching files` | The paths hold no markdown, `.mmd` or `.mermaid` file outside the skipped folders | Point at the folder that holds your diagrams |
+| `error[flag]: no matching files` | The paths hold no markdown, `.mmd` or `.mermaid` file | Point at the folder that holds your diagrams |
 | `error[flag]: no files given` | No path was named | Name at least one file or folder |
 | `error[flag]: Unknown option '--x'` | A misspelt flag, or one newer than your installed version | Check the flag in `--help` |
 | `error[unknown-rule]` | The config names a rule that is not loaded | See [A plugin rule id is unknown](#a-plugin-rule-id-is-unknown) |
@@ -48,8 +48,7 @@ Instead:
 ## A file or folder should not be linted
 
 There is no ignore option.
-A directory walk already skips dot-folders and `node_modules`, `vendor`, `dist`, `build`, `tmp` and `__pycache__`.
-To leave anything else out, pass the files and folders to lint by name:
+To leave a file out, pass the files and folders to lint by name:
 
 ```sh
 bunx mermaidjs-lint README.md docs/guides/ docs/reference/

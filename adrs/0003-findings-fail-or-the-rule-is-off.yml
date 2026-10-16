@@ -12,7 +12,10 @@ provenance: The scripts exited 1 on warnings too, and the contrast audit printed
 enforced_in:
   - src/config.ts, whose only severities are error and off, and src/rules/contrast-border-below-ui-minimum.ts, which skips advisory pairs
 
-relates_to: []
+relates_to:
+  - relation: depended_on_by
+    target: MJL-0020
+    note: a category flag only switches rules on or off for one run
 
 decision:
   given: a check is uncertain enough that failing on it seems harsh

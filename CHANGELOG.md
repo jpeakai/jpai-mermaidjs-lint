@@ -10,7 +10,17 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `--disable-category NAME` turns off every rule in a category for one run, after the config is applied.
+- `--category NAME` turns on every rule in a category for one run, even one the config turns off, with the options the config gives it.
+- Each category flag may be repeated or take a comma-separated list, such as `--disable-category parse,complexity`, and works for a plugin's category too.
+- `--list-rules` takes the category flags, to show the rules a run would use.
+- `buildRegistry` and `setUp` take a `selection` of categories to enable and disable, exported as the `CategorySelection` type.
+
+A category that is not loaded, one named by both flags, or flags that turn off every rule fail with `error[flag]` and exit code 2.
+`--validate-plugins` refuses a category flag, since it checks every plugin.
+See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 
 ## [0.6.3] - 2026-10-16
 

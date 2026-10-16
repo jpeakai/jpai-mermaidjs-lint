@@ -2,86 +2,93 @@
   "elements": [
     {
       "data": {
+        "id": "group-cli",
+        "label": "cli",
+        "colour": "#6366f1"
+      }
+    },
+    {
+      "data": {
         "id": "group-config",
         "label": "config",
-        "colour": "#6366f1"
+        "colour": "#0891b2"
       }
     },
     {
       "data": {
         "id": "group-contrast",
         "label": "contrast",
-        "colour": "#0891b2"
+        "colour": "#059669"
       }
     },
     {
       "data": {
         "id": "group-decisions",
         "label": "decisions",
-        "colour": "#059669"
+        "colour": "#d97706"
       }
     },
     {
       "data": {
         "id": "group-docs",
         "label": "docs",
-        "colour": "#d97706"
+        "colour": "#db2777"
       }
     },
     {
       "data": {
         "id": "group-fixing",
         "label": "fixing",
-        "colour": "#db2777"
+        "colour": "#7c3aed"
       }
     },
     {
       "data": {
         "id": "group-packaging",
         "label": "packaging",
-        "colour": "#7c3aed"
+        "colour": "#0284c7"
       }
     },
     {
       "data": {
         "id": "group-parsing",
         "label": "parsing",
-        "colour": "#0284c7"
+        "colour": "#65a30d"
       }
     },
     {
       "data": {
         "id": "group-plugins",
         "label": "plugins",
-        "colour": "#65a30d"
+        "colour": "#6366f1"
       }
     },
     {
       "data": {
         "id": "group-policy",
         "label": "policy",
-        "colour": "#6366f1"
+        "colour": "#0891b2"
       }
     },
     {
       "data": {
         "id": "group-rules",
         "label": "rules",
-        "colour": "#0891b2"
+        "colour": "#059669"
       }
     },
     {
       "data": {
         "id": "group-scope",
         "label": "scope",
-        "colour": "#059669"
+        "colour": "#d97706"
       }
     },
     {
       "data": {
         "id": "group-testing",
         "label": "testing",
-        "colour": "#d97706"
+        "colour": "#db2777"
       }
     },
     {
@@ -89,7 +96,7 @@
         "id": "MJL-0001",
         "label": "0001",
         "parent": "group-parsing",
-        "colour": "#0284c7",
+        "colour": "#65a30d",
         "file": "0001-parse-with-mermaids-own-parsers.md",
         "title": "Every diagram is measured by mermaid's own parsers",
         "description": "Structure comes from the Langium grammars and mermaid core, never from regexes over the text",
@@ -102,7 +109,7 @@
         "id": "MJL-0002",
         "label": "0002",
         "parent": "group-rules",
-        "colour": "#0891b2",
+        "colour": "#059669",
         "file": "0002-one-rule-per-finding-code.md",
         "title": "One rule per finding code, one file per rule",
         "description": "Each distinct failure is its own rule id, so it can be switched off alone",
@@ -115,7 +122,7 @@
         "id": "MJL-0003",
         "label": "0003",
         "parent": "group-policy",
-        "colour": "#6366f1",
+        "colour": "#0891b2",
         "file": "0003-findings-fail-or-the-rule-is-off.md",
         "title": "A finding fails the run, or the rule is off",
         "description": "There is no warning level, and an advisory pair is not a finding",
@@ -128,7 +135,7 @@
         "id": "MJL-0004",
         "label": "0004",
         "parent": "group-fixing",
-        "colour": "#db2777",
+        "colour": "#7c3aed",
         "file": "0004-complexity-is-never-autofixed.md",
         "title": "No complexity rule has a fixer",
         "description": "Splitting a diagram changes what it says, so a human does it",
@@ -141,7 +148,7 @@
         "id": "MJL-0005",
         "label": "0005",
         "parent": "group-fixing",
-        "colour": "#db2777",
+        "colour": "#7c3aed",
         "file": "0005-a-fixer-refuses-when-unsure.md",
         "title": "A fixer refuses whenever the answer is a design choice",
         "description": "Contrast is repaired only with black or white, and only when it provably clears 4.5 to 1",
@@ -154,7 +161,7 @@
         "id": "MJL-0006",
         "label": "0006",
         "parent": "group-fixing",
-        "colour": "#db2777",
+        "colour": "#7c3aed",
         "file": "0006-every-fix-is-verified-by-reparse.md",
         "title": "Every edit is proven by re-parsing the document",
         "description": "An edit is kept only when the markdown tree and every diagram's structure are unchanged",
@@ -167,7 +174,7 @@
         "id": "MJL-0007",
         "label": "0007",
         "parent": "group-plugins",
-        "colour": "#65a30d",
+        "colour": "#6366f1",
         "file": "0007-plugins-follow-the-prose-gates-contract.md",
         "title": "Plugins follow the prose-gates contract",
         "description": "A plugin is { meta, rules } with a namespace, an apiVersion and declared categories",
@@ -180,7 +187,7 @@
         "id": "MJL-0008",
         "label": "0008",
         "parent": "group-packaging",
-        "colour": "#7c3aed",
+        "colour": "#0284c7",
         "file": "0008-node-bundle-keeps-mermaid-external.md",
         "title": "The Node bundle keeps mermaid and its parsers external",
         "description": "dist inlines this package's code and leaves its dependencies to be installed",
@@ -193,7 +200,7 @@
         "id": "MJL-0009",
         "label": "0009",
         "parent": "group-parsing",
-        "colour": "#0284c7",
+        "colour": "#65a30d",
         "file": "0009-a-diagram-is-read-from-the-markdown-tree.md",
         "title": "A diagram is a code node of the markdown tree",
         "description": "Fences come from mdast, and offsets are mapped back to the source by line",
@@ -206,7 +213,7 @@
         "id": "MJL-0010",
         "label": "0010",
         "parent": "group-config",
-        "colour": "#6366f1",
+        "colour": "#0891b2",
         "file": "0010-thresholds-are-options-not-environment.md",
         "title": "Thresholds are rule options and flags, never environment variables",
         "description": "A preset and numeric overrides come from the config or a flag",
@@ -219,7 +226,7 @@
         "id": "MJL-0011",
         "label": "0011",
         "parent": "group-contrast",
-        "colour": "#0891b2",
+        "colour": "#059669",
         "file": "0011-profile-decides-who-owns-label-text.md",
         "title": "A contrast profile decides who owns the label text",
         "description": "github scores the declared pairs, and mkdocs-material scores the host's forced text in both themes",
@@ -232,7 +239,7 @@
         "id": "MJL-0012",
         "label": "0012",
         "parent": "group-testing",
-        "colour": "#d97706",
+        "colour": "#db2777",
         "file": "0012-a-fixture-declares-its-own-expectation.md",
         "title": "A fixture declares what it must report in its own file",
         "description": "Each fixture names its expected rule ids in an expect comment, and a .fixed sibling pins its fix output",
@@ -245,7 +252,7 @@
         "id": "MJL-0013",
         "label": "0013",
         "parent": "group-docs",
-        "colour": "#d97706",
+        "colour": "#db2777",
         "file": "0013-the-docs-site-is-generated-from-tested-sources.md",
         "title": "The docs site is generated from the sources the tests run",
         "description": "Reference pages come from RULES.md, the fixtures and examples, and the build re-checks every example",
@@ -258,7 +265,7 @@
         "id": "MJL-0014",
         "label": "0014",
         "parent": "group-testing",
-        "colour": "#d97706",
+        "colour": "#db2777",
         "file": "0014-an-llm-fix-is-committed-and-verified.md",
         "title": "An LLM fix is committed beside its fixture and verified clean",
         "description": "Judgment fixes for what --fix leaves are authored once as .llm siblings, never generated at build time",
@@ -271,7 +278,7 @@
         "id": "MJL-0015",
         "label": "0015",
         "parent": "group-scope",
-        "colour": "#059669",
+        "colour": "#d97706",
         "file": "0015-four-tenets-define-the-tool.md",
         "title": "Four tenets define what the tool guarantees",
         "description": "Readable in light and dark, renders, simple enough to follow, and extensible, and nothing else belongs in the core",
@@ -284,7 +291,7 @@
         "id": "MJL-0016",
         "label": "0016",
         "parent": "group-decisions",
-        "colour": "#059669",
+        "colour": "#d97706",
         "file": "0016-a-back-edge-may-be-appended-to-an-accepted-record.md",
         "title": "A back-edge may be appended to an accepted record",
         "description": "The one edit an accepted record allows is adding the inverse of a relation a newer record declares",
@@ -297,7 +304,7 @@
         "id": "MJL-0017",
         "label": "0017",
         "parent": "group-contrast",
-        "colour": "#0891b2",
+        "colour": "#059669",
         "file": "0017-sequence-colours-come-from-mermaids-theme-engine.md",
         "title": "Sequence colours come from Mermaid's own theme engine",
         "description": "A sequence diagram is scored by theme variables Mermaid resolves on a pinned version",
@@ -310,7 +317,7 @@
         "id": "MJL-0018",
         "label": "0018",
         "parent": "group-contrast",
-        "colour": "#0891b2",
+        "colour": "#059669",
         "file": "0018-a-host-sets-the-page-canvas-under-github-only.md",
         "title": "A host sets the page canvas, under the github profile only",
         "description": "Page-backed colours are scored on a canvas the caller may set, and a canvas under mkdocs-material is refused",
@@ -323,12 +330,25 @@
         "id": "MJL-0019",
         "label": "0019",
         "parent": "group-contrast",
-        "colour": "#0891b2",
+        "colour": "#059669",
         "file": "0019-a-material-file-sets-a-config-canvas-aside.md",
         "title": "A Material file sets a config canvas aside",
         "description": "A config canvas is set aside, with a note, for a file the auto profile reads as mkdocs-material",
         "status": "accepted",
         "tags": "contrast, accessibility, cli"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0020",
+        "label": "0020",
+        "parent": "group-cli",
+        "colour": "#6366f1",
+        "file": "0020-category-flags-have-the-last-word-for-a-run.md",
+        "title": "Category flags have the last word for a run",
+        "description": "--category and --disable-category switch whole categories on or off for one run, over the config",
+        "status": "accepted",
+        "tags": "cli, config"
       }
     },
     {
@@ -349,6 +369,16 @@
         "label": "depends on",
         "relation": "depends_on",
         "note": "the rules read the parsed stats"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0003-depended_on_by-MJL-0020",
+        "source": "MJL-0003",
+        "target": "MJL-0020",
+        "label": "depended on by",
+        "relation": "depended_on_by",
+        "note": "a category flag only switches rules on or off for one run"
       }
     },
     {
@@ -409,6 +439,16 @@
         "label": "excepts",
         "relation": "excepts",
         "note": "a config canvas on a file the auto profile reads as mkdocs-material is set aside rather than refused"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0020-depends_on-MJL-0003",
+        "source": "MJL-0020",
+        "target": "MJL-0003",
+        "label": "depends on",
+        "relation": "depends_on",
+        "note": "a category flag only switches rules on or off, so a finding still fails the run or its rule is off"
       }
     }
   ],

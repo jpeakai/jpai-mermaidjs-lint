@@ -21,18 +21,21 @@ The text below is generated from `mermaidjs-lint --help` when this site is built
 | `--profile` | | `auto`, `github`, `mkdocs-material` | `auto` | Set how contrast is read |
 | `--canvas-light` | | an opaque CSS colour | `#ffffff` | Set the light page colour that page-backed pairs are scored on, under `github` only |
 | `--canvas-dark` | | an opaque CSS colour | `#0d1117` | Set the dark page colour that page-backed pairs are scored on, under `github` only |
+| `--category` | | a category name, or a comma-separated list | | Turn on every rule in that category for this run, even one the config turns off. May be repeated. |
+| `--disable-category` | | a category name, or a comma-separated list | | Turn off every rule in that category for this run. May be repeated. |
 | `--config` | | a file path | the config at the project root | Read that config file instead |
 | `--no-plugins` | | | off | Load no plugin, refuse a `.mjs` config, and set aside config settings for plugin rules |
 | `--lenient-plugins` | | | off | Skip a plugin that fails to load, and say so |
 | `--validate-plugins` | | | off | Load every plugin, report every failure, and check no file |
-| `--list-rules` | | | off | Print every active rule by category, then the plugins. Takes only `--config` and `--no-plugins` or `--lenient-plugins`. |
+| `--list-rules` | | | off | Print every active rule by category, then the plugins. Takes only `--config`, `--no-plugins` or `--lenient-plugins`, and the category flags. |
 | `--version` | | | | Print the version, for a bug report |
 | `--help` | `-h` | | | Print the help |
 
 Some flags cannot be combined, and the run exits 2 when they are:
 
 - `--no-plugins` with `--lenient-plugins`.
-- `--validate-plugins` with `--no-plugins`, `--fix`, `--list-rules` or any path.
+- `--validate-plugins` with `--no-plugins`, `--fix`, `--list-rules`, a category flag or any path.
+- `--category` and `--disable-category` naming the same category.
 - `--list-rules` with any path, `--fix`, `--json`, `--preset`, `--profile`, `--canvas-light` or `--canvas-dark`, which it would ignore.
 - `--canvas-light` or `--canvas-dark` with `--profile mkdocs-material`.
 
@@ -71,6 +74,30 @@ A flag therefore overrides a preset or profile the config sets, but not a thresh
 
 A canvas side follows the same order: `--canvas-light` or `--canvas-dark`, then that side of the `canvas` option in the config, then GitHub's colour.
 A flag sets only its own side, so `--canvas-dark` alone keeps a light side the config sets.
+
+## Which rules run
+
+The rules a run uses are settled in three steps:
+
+1. Every loaded rule starts on, built-in and plugin alike.
+2. The config turns off each rule set to `"off"`.
+3. The category flags have the last word for this run. `--category` turns a category's rules back on, and `--disable-category` turns them off.
+
+A rule that `--category` turns back on runs with the options the config gives it, such as `["off", { "preset": "low" }]`.
+A category is one of `parse`, `complexity` and `contrast`, or a category a loaded plugin declares.
+`--list-rules` takes the same flags, so it shows which rules a run would use.
+
+| Run | Rules used |
+|---|---|
+| `mermaidjs-lint docs/ --disable-category complexity` | The parse and contrast rules the config leaves on |
+| `mermaidjs-lint docs/ --disable-category parse,complexity` | The contrast rules the config leaves on |
+| `mermaidjs-lint docs/ --category contrast` | Every rule the config leaves on, plus every contrast rule, even one the config turns off |
+
+Each of these is a usage error with exit code 2, as `error[flag]`:
+
+- A category that no loaded rule source declares, such as a plugin category under `--no-plugins`.
+- One category named by both flags.
+- Category flags that turn off every rule, which would pass every file unchecked.
 
 ## Plugins and untrusted repositories
 
@@ -122,7 +149,7 @@ A failure prints `error[code]: reason`, and the same `code` is on the exported e
 
 | Code | Exit code | Cause |
 |---|---|---|
-| `flag` | 2 | An unknown flag, a bad flag value, flags that contradict (such as a canvas flag beside `--profile mkdocs-material`), no paths, a path that cannot be read, or no matching files |
+| `flag` | 2 | An unknown flag, a bad flag value, flags that contradict (such as a canvas flag beside `--profile mkdocs-material`), a category that is not loaded, category flags that leave no rule, no paths, a path that cannot be read, or no matching files |
 | `config-file` | 2 | The config cannot be read or parsed, or is neither `.json` nor `.mjs` |
 | `config-not-found` | 2 | The file given to `--config` does not exist |
 | `config-code` | 2 | `--no-plugins` was given, and the config to read is a `.mjs` file, which is code |

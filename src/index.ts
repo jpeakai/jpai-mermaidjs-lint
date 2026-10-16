@@ -20,6 +20,7 @@ export {
   BUILTIN,
   BUILTIN_CATEGORIES,
   buildRegistry,
+  type CategorySelection,
   type LoadedSource,
   type Registry,
   type RegistryInput,

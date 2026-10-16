@@ -29,6 +29,20 @@ A rule id that does not exist fails the run with `error[unknown-rule]`, so a mis
 Set its id to `"off"`, as above.
 There is no warning level: a rule is either on and failing the run, or off.
 
+## Switch a category on or off for one run
+
+Pass a category flag to change which rules run without editing the config.
+`--disable-category` turns a category off, and `--category` turns one on even where the config turns it off:
+
+```sh
+bunx mermaidjs-lint docs/ --disable-category parse,complexity
+bunx mermaidjs-lint docs/ --category contrast
+```
+
+The first run checks contrast alone, and the second puts back every contrast rule the config switched off.
+Each flag may be repeated, and `--list-rules` takes them, to show the rules a run would use.
+[Which rules run](../reference/cli.md#which-rules-run) gives the full order and the usage errors.
+
 ## Change the complexity preset
 
 Pass `--preset` to set the density for every complexity rule at once:

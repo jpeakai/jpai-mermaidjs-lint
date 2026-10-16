@@ -22,7 +22,8 @@ import { CATEGORIES, type Finding, type Rule } from "./rules/types.ts";
 // buried, and first in --help.
 const SYNOPSIS = `usage: mermaidjs-lint <path...> [--fix] [--json] [--preset NAME] [--profile NAME] [--config FILE]
                      [--canvas-light COLOUR] [--canvas-dark COLOUR] [--no-plugins | --lenient-plugins]
-       mermaidjs-lint --list-rules [--config FILE] [--no-plugins | --lenient-plugins]
+                     [--category NAME]... [--disable-category NAME]...
+       mermaidjs-lint --list-rules [--config FILE] [--no-plugins | --lenient-plugins] [category flags]
        mermaidjs-lint --validate-plugins [--json] [--config FILE]
        mermaidjs-lint --version | -h, --help`;
 
@@ -57,6 +58,10 @@ Examples of every rule, with fixes: https://jpeakai.github.io/jpai-mermaidjs-lin
   on it. Each is an opaque CSS colour such as #faf8f9, and a side not given keeps the config's, or GitHub's
   (#ffffff light, #0d1117 dark). A file scored under mkdocs-material refuses a canvas flag with a usage
   error, and sets a config canvas aside when auto picked the profile.
+--disable-category NAME turns off every rule in that category for this run, after the config is applied.
+--category NAME turns on every rule in that category for this run, even one the config turns off.
+  Each may be repeated or take a comma-separated list, such as --disable-category parse,complexity.
+  A category that is not loaded, one named by both flags, or a run left with no rule is a usage error.
 --json prints one JSON object instead of text lines.
 --fix applies every fix it can prove safe, then reports what remains.
 A fixer that is unsure leaves the text alone and the finding stays.
@@ -68,7 +73,7 @@ Plugins load on their own from .mermaidjs-lint/rules, from dependencies named me
 --lenient-plugins skips a plugin that fails to load and says so, instead of stopping the run.
 --validate-plugins imports and checks every plugin, reports every failure, and runs no check or fix.
 --list-rules prints every active rule by category, including plugin rules, and where each plugin came from.
-  It imports the plugins to list them, and takes no path or other flag.
+  It imports the plugins to list them. It takes the category flags, to preview a run, and no path or other flag.
 --version prints the version, to quote in a bug report.
 Exits 0 when no findings remain, 1 when findings remain, a plugin fails to load or the run fails (a lenient run
 skips a broken plugin, so it alone does not exit 1), and 2 on a usage error.`;
@@ -88,6 +93,8 @@ interface Parsed {
     "validate-plugins"?: boolean;
     "list-rules"?: boolean;
     version?: boolean;
+    category?: string[];
+    "disable-category"?: string[];
   };
   positionals: string[];
 }
@@ -109,10 +116,24 @@ const parse = (argv: string[]): Parsed =>
       "validate-plugins": { type: "boolean", default: false },
       "list-rules": { type: "boolean", default: false },
       version: { type: "boolean", default: false },
+      category: { type: "string", multiple: true },
+      "disable-category": { type: "string", multiple: true },
     },
     allowPositionals: true,
     strict: true,
   });
+
+// A category flag may be repeated or take a comma-separated list. A category
+// word never holds a comma, so the split cannot change a name. An empty item,
+// as in "parse,", is refused rather than dropped.
+const categoryWords = (flag: string, values: string[] | undefined): string[] =>
+  (values ?? []).flatMap((value) =>
+    value.split(",").map((word) => {
+      const trimmed = word.trim();
+      if (!trimmed) throw new FlagError(flag, `${flag} needs a category name, not "${value}"`);
+      return trimmed;
+    }),
+  );
 
 const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -246,6 +267,13 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
   if (validating && (values["no-plugins"] || values.fix || listing)) {
     throw new FlagError("--validate-plugins", "--validate-plugins takes no --no-plugins, --fix or --list-rules");
   }
+  const enable = categoryWords("--category", values.category);
+  const disable = categoryWords("--disable-category", values["disable-category"]);
+  // Validation loads every plugin whatever the category flags say, so it
+  // refuses them rather than ignore them.
+  if (validating && enable.length + disable.length > 0) {
+    throw new FlagError("--validate-plugins", "--validate-plugins checks every plugin, so it takes no category flag");
+  }
   // --list-rules prints the rules the config and the plugin flags leave
   // active. Any other flag or a path would be silently ignored, so it is refused.
   if (listing && !validating) {
@@ -273,6 +301,7 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
     noPlugins: values["no-plugins"],
     lenient: values["lenient-plugins"],
     collect: validating,
+    selection: { enable, disable, prefix: "--" },
   });
 
   if (validating) {

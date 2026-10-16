@@ -16,6 +16,7 @@ When a new domain term enters the code or the conversation, add it here in the s
 | Rule | One deterministic check with a rule id, and optionally a fixer. |
 | Rule id | The name of a rule, written category-short-name, such as contrast-text-below-aa. |
 | Category | The group a rule belongs to: parse, complexity or contrast, or a one-word category a plugin declares. |
+| Category flag | `--category` or `--disable-category`, which switches every rule in a category on or off for one run, over the config. In the library it is a `selection`. |
 | Finding | One reported violation, with a file, a line range, a rule id, a message and optionally a remediation. |
 | Remediation | The optional next step a rule attaches to a finding, shown in `--json` output. |
 | Parse engine | The code that reads a diagram's structure from mermaid's own parsers. |

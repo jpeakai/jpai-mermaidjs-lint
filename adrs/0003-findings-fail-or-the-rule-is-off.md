@@ -13,6 +13,10 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-15T00:00:00Z }
 
 <!-- GENERATED from MJL-0003 by okf_render.py. Do not edit; edit the .yml and regenerate. -->
 
+## Relates to
+
+- Depended on by [MJL-0020](0020-category-flags-have-the-last-word-for-a-run.md) (a category flag only switches rules on or off for one run)
+
 ## Decision
 
 ### The lens

@@ -9,7 +9,7 @@ import { CONFIG_FILES, findConfig, loadConfig, NO_CONFIG } from "./config.ts";
 import { ConfigCodeError, ConfigNotFoundError } from "./errors.ts";
 import { loadPlugins, type PluginFailure, type PluginMode } from "./plugins/index.ts";
 import { FIX_ORDER, RULES } from "./rules/index.ts";
-import { buildRegistry, type Registry } from "./rules/registry.ts";
+import { buildRegistry, type CategorySelection, type Registry } from "./rules/registry.ts";
 
 export const LOCAL_DIR = ".mermaidjs-lint";
 
@@ -40,6 +40,8 @@ export interface SetupOptions {
   lenient?: boolean;
   // Load every plugin and report every failure, without stopping at the first.
   collect?: boolean;
+  // Categories switched on or off for this run, over the config.
+  selection?: CategorySelection;
 }
 
 export interface Setup {
@@ -57,6 +59,7 @@ export const setUp = async ({
   noPlugins = false,
   lenient = false,
   collect = false,
+  selection,
 }: SetupOptions): Promise<Setup> => {
   const root = await findProjectRoot(cwd);
   let file: string | null;
@@ -85,6 +88,7 @@ export const setUp = async ({
     // by choice (off) or by failure (lenient, collect), so it is set aside
     // rather than failing the run. A built-in id never is.
     ignoreUnknownPluginIds: mode !== "strict",
+    ...(selection && { selection }),
   });
   return { root, registry, skipped: plugins.skipped, failures: plugins.failures };
 };

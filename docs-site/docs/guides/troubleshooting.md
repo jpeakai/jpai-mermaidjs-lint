@@ -42,6 +42,7 @@ Instead:
 - **Fix the diagram.** Run `--fix` first, then fix by hand what it leaves.
 - **Raise the threshold.** A complexity finding moves with the rule's options, such as `nodeHardLimit`, in the [config file](../reference/configuration.md#complexity-rules).
 - **Switch the rule off.** Set its id to `"off"`, which applies to every diagram.
+- **Switch its category off for one run.** Pass `--disable-category`, such as `--disable-category complexity`, which leaves the config as it is.
 - **Leave the file out of the run.** Name the paths to lint, rather than a folder that holds the file.
 
 ## A file or folder should not be linted

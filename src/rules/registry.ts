@@ -1,11 +1,11 @@
 // The registry: the rules a run actually uses. It starts from the built-in
-// catalogue, adds whatever plugins loaded, then applies the config, so a rule
-// that is off loses its check and its fixer together. Every check and fix reads
+// catalogue, adds whatever plugins loaded, applies the config, then the run's
+// category choice, so a rule that is off loses its check and its fixer together. Every check and fix reads
 // the registry, which is what lets a plugin rule behave as a built-in. The CLI
 // help reads the built-in catalogue directly.
 
 import type { Config } from "../config.ts";
-import { RuleOptionError, UnknownRuleError } from "../errors.ts";
+import { FlagError, RuleOptionError, UnknownRuleError } from "../errors.ts";
 import { compositeOver, wcagRatio } from "../parse/color.ts";
 import { canvasColourProblem, PROFILES, THEMES, type Theme } from "../parse/contrast.ts";
 import { canonicalPreset } from "../parse/metrics.ts";
@@ -49,7 +49,48 @@ export interface RegistryInput {
   // A lenient or collect (validating) run drops a setting for an unloaded
   // plugin rule instead of failing. A built-in id always fails.
   ignoreUnknownPluginIds?: boolean;
+  // Categories switched on or off for this run, over the config.
+  selection?: CategorySelection;
 }
+
+// The run's category choice. `enable` turns a category's rules on even when
+// the config turns them off, and `disable` turns them off. `prefix` is "--"
+// when the command passes its flags, so a message names the flag the user typed.
+export interface CategorySelection {
+  enable?: readonly string[];
+  disable?: readonly string[];
+  prefix?: string;
+}
+
+const selectionNames = (prefix: string): { enable: string; disable: string } =>
+  prefix
+    ? { enable: `${prefix}category`, disable: `${prefix}disable-category` }
+    : { enable: "selection.enable", disable: "selection.disable" };
+
+// A category the run does not know, or one named both on and off, is a usage
+// error, because either would leave the run checking something other than
+// what was asked.
+const checkSelection = (selection: CategorySelection, categories: ReadonlyMap<string, string>): void => {
+  const names = selectionNames(selection.prefix ?? "");
+  const known = [...categories.keys()];
+  for (const side of ["enable", "disable"] as const) {
+    for (const word of selection[side] ?? []) {
+      if (!categories.has(word)) {
+        throw new FlagError(
+          names[side],
+          `${names[side]} names no loaded category "${word}"; the categories are ${known.join(", ")}`,
+        );
+      }
+    }
+  }
+  const both = (selection.enable ?? []).filter((word) => selection.disable?.includes(word));
+  if (both.length > 0) {
+    throw new FlagError(
+      names.disable,
+      `${names.enable} and ${names.disable} both name ${[...new Set(both)].join(", ")}; name each category once`,
+    );
+  }
+};
 
 const typeOf = (value: unknown): OptionType | null => {
   if (typeof value === "number" && Number.isFinite(value)) return "number";
@@ -123,6 +164,8 @@ const checkOptions = (where: string, rule: Rule, options: RuleOptions): void => 
 
 export const buildRegistry = (input: RegistryInput): Registry => {
   const { rules, fixOrder, categories, sources = [], config, ignoreUnknownPluginIds = false } = input;
+  const selection = input.selection ?? {};
+  checkSelection(selection, categories);
   const off = new Set<string>();
   const options = new Map<RuleId, RuleOptions>();
   const ignored: string[] = [];
@@ -144,10 +187,23 @@ export const buildRegistry = (input: RegistryInput): Registry => {
       );
     }
     checkOptions(where, rule, setting.options);
+    // A rule that is off keeps its options, so a category flag that turns it
+    // back on runs it as the config describes it.
+    options.set(rule.id, setting.options);
     if (setting.severity === "off") off.add(id);
-    else options.set(rule.id, setting.options);
+  }
+  // Every rule starts on, the config turns some off, and then the category
+  // flags have the last word for this run (MJL-0020).
+  for (const rule of rules) {
+    if (selection.enable?.includes(rule.category)) off.delete(rule.id);
+    if (selection.disable?.includes(rule.category)) off.add(rule.id);
   }
   const active = rules.filter((r) => !off.has(r.id));
+  // Category flags that leave nothing to run would pass every file unchecked.
+  if (active.length === 0 && (selection.disable?.length ?? 0) > 0) {
+    const name = selectionNames(selection.prefix ?? "").disable;
+    throw new FlagError(name, `${name} leaves no rule to run; disable fewer categories`);
+  }
   return {
     rules: active,
     fixOrder: fixOrder.filter((r) => !off.has(r.id)),

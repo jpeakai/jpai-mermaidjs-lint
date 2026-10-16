@@ -23,8 +23,12 @@
 | [MJL-0017](0017-sequence-colours-come-from-mermaids-theme-engine.md) | Sequence colours come from Mermaid's own theme engine | accepted |
 | [MJL-0018](0018-a-host-sets-the-page-canvas-under-github-only.md) | A host sets the page canvas, under the github profile only | accepted |
 | [MJL-0019](0019-a-material-file-sets-a-config-canvas-aside.md) | A Material file sets a config canvas aside | accepted |
+| [MJL-0020](0020-category-flags-have-the-last-word-for-a-run.md) | Category flags have the last word for a run | accepted |
 # By group
 
+## cli
+
+* [MJL-0020](0020-category-flags-have-the-last-word-for-a-run.md) - --category and --disable-category switch whole categories on or off for one run, over the config
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -75,9 +79,11 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 
 * MJL-0001 --depended_on_by--> MJL-0002
 * MJL-0002 --depends_on--> MJL-0001
+* MJL-0003 --depended_on_by--> MJL-0020
 * MJL-0005 --depended_on_by--> MJL-0006
 * MJL-0006 --depends_on--> MJL-0005
 * MJL-0017 --see_also--> MJL-0018
 * MJL-0018 --see_also--> MJL-0017
 * MJL-0018 --excepted_by--> MJL-0019
 * MJL-0019 --excepts--> MJL-0018
+* MJL-0020 --depends_on--> MJL-0003

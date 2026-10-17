@@ -36,7 +36,8 @@ The grader is deterministic: the verdict comes from the linter and the structure
 
 ## Results
 
-Run on 2026-10-15 with the tier 1 and tier 2 model of each harness, the project matrix in `pyproject.toml`.
+Run on 2026-10-15 with the tier 1 and tier 2 model of each harness, the project matrix in `pyproject.toml` at the time.
+The matrix has since replaced `claude-haiku-4-5-20251001` with `claude-haiku-5-5`.
 The run used the skill as of commit `7285ec2`.
 The results predate the current skill text.
 `SKILL.md` has changed since, first in commit `b64f849` later the same day.

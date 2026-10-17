@@ -10,7 +10,24 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **Complexity scores change for sequence, state, entity and class diagrams.** A diagram near a threshold may cross it either way, per [MJL-0021](adrs/0021-the-score-counts-what-a-reader-must-read.md).
+- A `sequenceDiagram` counts only messages as edges.
+  Notes, activations, `autonumber` and the lines that open, divide or close a block no longer count.
+- A `sequenceDiagram` counts each `box` and each block, such as `loop` or `alt`, as a subgraph.
+  A block inside another adds a level of nesting, so blocks nested three deep fire `complexity-subgraph-nesting-too-deep`.
+  A `rect` is a background tint, so it is not counted.
+- A `stateDiagram` no longer counts start and end markers, their transitions, or notes.
+- An `erDiagram` entity's attributes, and a `classDiagram` class's attributes and methods, are rows.
+  Each row adds 0.25 points to the visual complexity score, and the new `rowWeight` option sets that weight.
+- `DiagramStats` gains `rows`, and `ThresholdConfig` gains `row_weight`.
+  `same-diagrams` also compares `rows`.
+- The Measuring complexity page has worked examples for sequence, entity and state diagrams.
+
+### Fixed
+
+- A one-word `box` title in a `sequenceDiagram`, such as `box Shop`, is read as its title rather than as its fill colour.
 
 ## [0.7.4] - 2026-10-18
 

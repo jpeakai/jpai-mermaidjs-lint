@@ -1,0 +1,33 @@
+id: MJL-0021
+slug: the-score-counts-what-a-reader-must-read
+plan_id: null
+title: The score counts what a reader must read, not every record the parser keeps
+description: Control lines, markers and notes are left out, and boxes, blocks and attribute rows are counted
+status: accepted
+accepted_on: 2026-10-18
+last_changed_on: 2026-10-18
+tags: [complexity, parsing]
+
+provenance: Worked examples for sequence, entity and state diagrams showed each type counted records the reader never reads, and missed boundaries and rows the reader does
+enforced_in:
+  - src/parse/stats.ts, adaptSequence, adaptState, adaptEr and adaptClass
+  - src/parse/metrics.ts, calculateComplexity and its row weight
+
+relates_to:
+  - relation: see_also
+    target: MJL-0001
+    note: every count is still read from the parser's result, never the text
+
+decision:
+  given: a parser's result holds records with nothing to read, such as a block's closing line or a start marker. It also files some things a reader does read, such as attributes, outside its nodes
+  we_prefer: counting messages, boxes, blocks, states and rows, and leaving out control lines, markers and notes. That is preferred over counting every record the parser keeps
+  because: the score stands for what a reader must find, trace and hold. A record with nothing to read inflates it, and a missed boundary or row deflates it
+  unless: a type draws a record as something the reader must place, as a fork or a choice is, which stays a node
+consequences:
+  pros:
+    - A sequence diagram with blocks, notes and activations scores its messages, not every statement.
+    - A large entity or class scores higher than an empty one.
+    - A sequence diagram whose blocks nest three deep fires the nesting rule, as a flowchart does.
+  cons:
+    - Scores change for sequence, state, entity and class diagrams, so a diagram near a threshold may cross it either way on upgrade.
+    - The row weight is a judgement, not a measured value.

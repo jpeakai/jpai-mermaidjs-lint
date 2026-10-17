@@ -122,7 +122,7 @@ import { PRESETS } from "@jpeakai/mermaidjs-lint";
 PRESETS["high-density"]?.node_hard_limit; // the hard limit nodeHardLimit overrides
 ```
 
-`ThresholdConfig` adds `edge_weight`, `subgraph_weight`, `depth_weight` and `preset_name` to the `Preset` fields.
+`ThresholdConfig` adds `edge_weight`, `row_weight`, `subgraph_weight`, `depth_weight` and `preset_name` to the `Preset` fields.
 
 ## Rules and categories
 

@@ -118,6 +118,18 @@ describe("complexity rules: nesting and remediation", () => {
     expect(calculateComplexity(stats, cfg).visual_complexity_score).toBeGreaterThan(flat);
   });
 
+  test("each row weighs on the score, and rowWeight sets how much", async () => {
+    const attrs = Array.from({ length: 8 }, (_, i) => `    string a${i}`).join("\n");
+    const stats = await buildDocModel(
+      fence(`erDiagram\n  CUSTOMER {\n${attrs}\n  }\n  CUSTOMER ||--o{ ORDER : places`),
+    ).diagrams[0]?.stats();
+    if (!stats) throw new Error("no stats");
+    const cfg = configFromPreset(DEFAULT_PRESET);
+    // 2 entities + 0.5 × 1 relationship + 0.25 × 8 rows.
+    expect(calculateComplexity(stats, cfg).visual_complexity_score).toBe(4.5);
+    expect(calculateComplexity(stats, { ...cfg, row_weight: 0 }).visual_complexity_score).toBe(2.5);
+  });
+
   test("a finding carries the remediation and names subgraph boundaries", async () => {
     const body = `flowchart LR\n  subgraph core\n${chain(14).split("\n").slice(1).join("\n")}\n  end`;
     const found = await checkMarkdown(fence(body), "doc.md", { preset: "low" });
@@ -263,6 +275,7 @@ describe("zero-node diagrams", () => {
       subgraphs: 0,
       max_subgraph_depth: 0,
       max_tree_depth: 0,
+      rows: 0,
       node_ids: [],
       subgraph_names: [],
       parser_used: "mermaid-core" as const,

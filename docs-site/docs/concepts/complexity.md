@@ -11,12 +11,13 @@ What counts as a node depends on the diagram type, as [What counts as a node](#w
 **Visual complexity score** adds what nodes alone miss:
 
 ```text
-score = (nodes + 0.5 × edges + 3 × subgraphs) × (1 + 0.1 × nesting depth)
+score = (nodes + 0.5 × edges + 0.25 × rows + 3 × subgraphs) × (1 + 0.1 × nesting depth)
 ```
 
 Edges add clutter, each subgraph adds a boundary to track, and each level of nesting makes all of it harder to follow.
+A row is a line of text inside a node, such as an entity's attribute, and only an `erDiagram` or a `classDiagram` has rows.
 For a `mindmap`, `treemap`, `treeView` or `ishikawa`, the nesting depth in the score is the tree's depth below its root.
-The three weights are options: `edgeWeight`, `subgraphWeight` and `depthWeight`.
+The four weights are options: `edgeWeight`, `rowWeight`, `subgraphWeight` and `depthWeight`.
 
 ## The score, one idea at a time
 
@@ -138,10 +139,10 @@ Each diagram type has its own unit, read from mermaid's parser result.
 | Diagram type | A node is | A subgraph is |
 |---|---|---|
 | `flowchart`, `flowchart-elk`, `graph` | A vertex | A `subgraph` |
-| `classDiagram` | A class | None |
-| `sequenceDiagram` | A participant or actor | None |
-| `stateDiagram` | A state, including a composite state | A composite state |
-| `erDiagram` | An entity | None |
+| `classDiagram` | A class, whose attributes and methods are rows | None |
+| `sequenceDiagram` | A participant or actor | A `box`, and a block such as `loop`, `alt` or `par` |
+| `stateDiagram` | A state, including a composite state, a fork and a choice | A composite state |
+| `erDiagram` | An entity, whose attributes are rows | None |
 | `block` | A leaf block | A block that holds others |
 | `C4` diagrams | A shape, such as a person or system | A boundary |
 | `requirementDiagram` | A requirement or an element | None |
@@ -162,6 +163,47 @@ Each diagram type has its own unit, read from mermaid's parser result.
 | `architecture-beta` | A service | A group |
 | `wardley` | An anchor or a component | None |
 | `info` | None | None |
+
+A note is never counted, in any diagram type.
+
+## Sequence, entity and state diagrams
+
+These three types draw something other than boxes joined by lines, so each counts its own parts.
+As in the steps above, each graph is what the parser returned, and each score is computed by the site build.
+
+### Sequence diagrams
+
+A participant is a node, and each message from one participant to another is an edge.
+A `box` around participants is a subgraph, and so is each block, such as `loop`, `alt`, `opt` or `par`.
+A block inside another block adds a level of nesting.
+An `else` divides its block rather than opening a new one.
+A note, an activation and `autonumber` add nothing.
+Neither does a `rect`, which tints the background behind its messages rather than drawing a boundary.
+This checkout has three participants, six messages, a box and an `alt` block, so it scores 13.2.
+
+--8<-- "complexity/sequence.md"
+
+A block frames messages rather than participants, so the graph draws it as an empty boundary.
+
+### Entity relationship diagrams
+
+An entity is a node, and a relationship is an edge.
+Each attribute is a row, which adds a quarter of a point.
+A row is text to read, but it sits inside a box the reader has already found, so it weighs less than an edge.
+These four entities, three relationships and five attributes score 6.75.
+
+--8<-- "complexity/er.md"
+
+### State diagrams
+
+A state is a node, and a transition between two states is an edge.
+A composite state is a node and also a subgraph around the states inside it.
+A start or end marker, `[*]`, only marks where a path begins or ends.
+It is not a state, and its transition is not an edge.
+A fork and a choice are nodes, because each is a point where the path divides.
+This order flow has five states, three transitions and one composite state, so it scores 10.45.
+
+--8<-- "complexity/state.md"
 
 ## Why complexity is never fixed automatically
 

@@ -54,7 +54,50 @@ describe("extractGraph", () => {
   });
 
   test("refuses a type it does not read, rather than returning an empty graph", async () => {
-    await expect(extractGraph("sequenceDiagram\n  A->>B: hi\n")).rejects.toThrow("not sequence");
+    await expect(extractGraph("classDiagram\n  A <|-- B\n")).rejects.toThrow("not classDiagram");
+  });
+});
+
+describe("extractGraph for sequence, entity and state diagrams", () => {
+  test("reads a sequence diagram's participants, messages, boxes and nested blocks", async () => {
+    const graph = await extractGraph(
+      "sequenceDiagram\n  box Shop\n    participant A as Alpha\n  end\n  participant B\n  loop L\n    alt ok\n      A->>B: hi\n    end\n  end\n  Note over A: n\n  B-->>A: bye",
+    );
+    expect(graph.nodes).toEqual([
+      { id: "A", label: "Alpha", parent: "box_0" },
+      { id: "B", label: "B", parent: null },
+    ]);
+    expect(graph.edges).toEqual([
+      { source: "A", target: "B" },
+      { source: "B", target: "A" },
+    ]);
+    expect(graph.subgraphs).toEqual([
+      { id: "box_0", label: "Shop", parent: null },
+      { id: "block_1", label: "L", parent: null },
+      { id: "block_2", label: "ok", parent: "block_1" },
+    ]);
+  });
+
+  test("reads an erDiagram's entities and relationships by entity name", async () => {
+    const graph = await extractGraph("erDiagram\n  A ||--o{ B : has\n  B }|--|| C : in\n");
+    expect(graph.nodes.map((n) => n.id)).toEqual(["A", "B", "C"]);
+    expect(graph.edges).toEqual([
+      { source: "A", target: "B" },
+      { source: "B", target: "C" },
+    ]);
+  });
+
+  test("reads a stateDiagram without markers or notes, with a composite state inside its own box", async () => {
+    const graph = await extractGraph(
+      "stateDiagram-v2\n  [*] --> A\n  state A {\n    [*] --> B\n  }\n  A --> C\n  note right of C : n\n",
+    );
+    expect(graph.nodes).toEqual([
+      { id: "A", label: "A", parent: "A__group" },
+      { id: "B", label: "B", parent: "A__group" },
+      { id: "C", label: "C", parent: null },
+    ]);
+    expect(graph.edges).toEqual([{ source: "A", target: "C" }]);
+    expect(graph.subgraphs).toEqual([{ id: "A__group", label: "", parent: null }]);
   });
 
   for (const step of STEPS) {
@@ -70,8 +113,17 @@ describe("extractGraph", () => {
 describe("the worked complexity steps", () => {
   test("every step's snippet is included by the page, in order, and the ladder has its preset table", () => {
     const included = [...PAGE.matchAll(/--8<-- "complexity\/([\w-]+)\.md"/g)].map((m) => m[1]);
-    expect(included).toEqual([...STEPS.map((s) => s.slug), "presets"]);
-    expect(STEPS.map((s) => s.slug)).toContain(LADDER_STEP);
+    const slugs = STEPS.map((s) => s.slug);
+    const ladder = slugs.indexOf(LADDER_STEP);
+    expect(ladder).toBeGreaterThanOrEqual(0);
+    // The preset table follows the ladder step's section, before the steps after it.
+    expect(included).toEqual([...slugs.slice(0, ladder + 1), "presets", ...slugs.slice(ladder + 1)]);
+  });
+
+  test("the graph of each step with rows names them in its counts", async () => {
+    const snippets = await complexitySnippets(join(PROJECT_ROOT, "doc.md"));
+    expect(snippets["complexity/er.md"]).toContain("4 nodes, 3 edges, 0 subgraphs, 5 rows");
+    expect(snippets["complexity/state.md"]).toContain("5 nodes, 3 edges, 1 subgraphs");
   });
 
   test("each score the page states is the score the linter computes for that step", async () => {
@@ -88,6 +140,7 @@ describe("the worked complexity steps", () => {
       const snippet = snippets[`complexity/${step.slug}.md`] ?? "";
       expect(snippet).toContain(`      = ${num(m.score)}\n\`\`\``);
       expect(snippet).toContain(`${m.stats.nodes} nodes, ${m.stats.edges} edges, ${m.stats.subgraphs} subgraphs`);
+      expect(snippet).toContain(m.stats.rows > 0 ? `× ${m.stats.rows} +` : "× edges + ");
       const graph = /data-graph="([^"]*)"/.exec(snippet)?.[1] ?? "";
       const elements = JSON.parse(graph.replaceAll("&quot;", '"').replaceAll("&amp;", "&"));
       expect(elements).toEqual(cytoscapeElements(m.graph));

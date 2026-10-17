@@ -35,6 +35,7 @@ export const COMPLEXITY_OPTIONS: OptionSpec = {
   nodeTarget: "number",
   vcsTarget: "number",
   edgeWeight: "number",
+  rowWeight: "number",
   subgraphWeight: "number",
   depthWeight: "number",
 };

@@ -60,6 +60,7 @@ flowchart LR
     PEN["Parse Engine"]:::pipeline
     STA["Stats"]:::info
     TRD["Tree Depth"]:::info
+    ROW["Row"]:::info
     VCS["Visual Complexity Score"]:::info
     PRE["Preset"]:::rule
     LAD["Ladder"]:::rule
@@ -67,6 +68,7 @@ flowchart LR
 
     PEN -- reads --> STA
     STA -- includes --> TRD
+    STA -- includes --> ROW
     STA -- feeds --> VCS
     PRE -- sets the thresholds of --> LAD
     LAD -- divides into --> BND
@@ -424,6 +426,11 @@ One version published to npm by the Publish workflow, with a matching tag and Gi
 
 The optional next step a Rule attaches to a Finding, shown in `--json` output.
 
+## Row
+
+A line of text inside a node: an `erDiagram` entity's attribute, or a `classDiagram` class's attribute or method.
+It weighs on the Visual Complexity Score, but it is not a node.
+
 ## Rule
 
 One deterministic check with a Rule ID, and optionally a Fixer.
@@ -446,7 +453,7 @@ It is config for an entry in the Config File's `plugins` list.
 
 ## Stats
 
-The nodes, edges, subgraphs, subgraph nesting depth and Tree Depth the Parse Engine reads from a Diagram.
+The nodes, edges, Rows, subgraphs, subgraph nesting depth and Tree Depth the Parse Engine reads from a Diagram.
 
 ## Style Directive
 
@@ -482,6 +489,6 @@ It checks only what the Edit's Expectation lists, in `src/fix/verify.ts`, and an
 
 ## Visual Complexity Score
 
-Nodes plus half a point per edge plus three per subgraph.
+Nodes plus half a point per edge, a quarter per Row and three per subgraph.
 It is scaled by one tenth per level of subgraph nesting or Tree Depth, whichever is deeper.
 Written VCS in Finding messages.

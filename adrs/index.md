@@ -24,11 +24,15 @@
 | [MJL-0018](0018-a-host-sets-the-page-canvas-under-github-only.md) | A host sets the page canvas, under the github profile only | accepted |
 | [MJL-0019](0019-a-material-file-sets-a-config-canvas-aside.md) | A Material file sets a config canvas aside | accepted |
 | [MJL-0020](0020-category-flags-have-the-last-word-for-a-run.md) | Category flags have the last word for a run | accepted |
+| [MJL-0021](0021-the-score-counts-what-a-reader-must-read.md) | The score counts what a reader must read, not every record the parser keeps | accepted |
 # By group
 
 ## cli
 
 * [MJL-0020](0020-category-flags-have-the-last-word-for-a-run.md) - --category and --disable-category switch whole categories on or off for one run, over the config
+## complexity
+
+* [MJL-0021](0021-the-score-counts-what-a-reader-must-read.md) - Control lines, markers and notes are left out, and boxes, blocks and attribute rows are counted
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -87,3 +91,4 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0018 --excepted_by--> MJL-0019
 * MJL-0019 --excepts--> MJL-0018
 * MJL-0020 --depends_on--> MJL-0003
+* MJL-0021 --see_also--> MJL-0001

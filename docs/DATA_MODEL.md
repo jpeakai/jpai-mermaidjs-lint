@@ -175,6 +175,7 @@ erDiagram
         number subgraphs
         number max_subgraph_depth
         number max_tree_depth "mindmap treemap treeView ishikawa"
+        number rows "erDiagram attributes, classDiagram members"
         string[] node_ids
         string[] subgraph_names
         enum parser_used "langium or mermaid-core"
@@ -247,6 +248,7 @@ erDiagram
         number subgraphs
         number max_subgraph_depth
         number max_tree_depth
+        number rows "erDiagram attributes, classDiagram members"
     }
     Preset {
         number node_ideal
@@ -262,6 +264,7 @@ erDiagram
     }
     ThresholdConfig {
         number edge_weight "0.5"
+        number row_weight "0.25"
         number subgraph_weight "3"
         number depth_weight "0.1"
         string preset_name "canonical name, or custom"
@@ -614,6 +617,7 @@ erDiagram
         number subgraphs
         number max_subgraph_depth
         number max_tree_depth
+        number rows "erDiagram attributes, classDiagram members"
         string[] node_ids
         string[] subgraph_names
     }

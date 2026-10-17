@@ -1,144 +1,30 @@
-/* OsakaNights, the design system from the richdocs skill
-   (skills/richdocs/resources/themes/osakanights in jpeakai/skills).
-   Night is home and the default; Day is re-derived, never mirrored.
-   Legibility is the point of the theme, and of this tool. */
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
-
-/* ── Night ─────────────────────────────────────────────────────────── */
-[data-md-color-scheme="slate"] {
-  --md-default-bg-color: #101010; /* Midnight Asphalt */
-  --md-default-fg-color: #dddddd; /* Streetlight */
-  --md-default-fg-color--light: #adadad; /* Steam */
-  --md-default-fg-color--lighter: #858585; /* Drizzle */
-  --md-default-fg-color--lightest: #323232; /* Kerb */
-  --md-typeset-color: #adadad;
-  --md-primary-fg-color: #1a1a1c; /* Shopfront */
-  --md-primary-fg-color--light: #26262a;
-  --md-primary-fg-color--dark: #101010;
-  --md-primary-bg-color: #dddddd;
-  --md-primary-bg-color--light: #adadad;
-  --md-accent-fg-color: #c3b0fd; /* Synth Violet */
-  --md-accent-fg-color--transparent: #c3b0fd1a;
-  --md-typeset-a-color: #6bcbf7; /* Konbini Cyan */
-  --md-code-bg-color: #1a1a1c;
-  --md-footer-bg-color: #1a1a1c;
-  --md-footer-bg-color--dark: #101010;
-  --ml-heading: #c3b0fd;
-  --ml-encore-bg: #cc66ff;
-  --ml-encore-fg: #101010;
-  --ml-pass: #90d192; /* Wasabi */
-  --ml-fail: #fda19a; /* Sunrise Coral */
-  --ml-card-border: #323232;
-  /* The canvas behind a Material-drawn diagram is the one the mkdocs-material
-     profile scores against, so what the linter passes is what a reader sees. */
-  --ml-diagram-bg: #1e2129;
-}
-
-/* ── Day ───────────────────────────────────────────────────────────── */
-[data-md-color-scheme="default"] {
-  --md-default-bg-color: #faf8f9; /* First Light */
-  --md-default-fg-color: #1c1a20;
-  --md-default-fg-color--light: #57525e;
-  --md-default-fg-color--lighter: #847e8c;
-  --md-default-fg-color--lightest: #e5dee2;
-  --md-typeset-color: #1c1a20;
-  --md-primary-fg-color: #5c4295; /* Synth Violet, day */
-  --md-primary-fg-color--light: #6f55a8;
-  --md-primary-fg-color--dark: #4a3479;
-  --md-primary-bg-color: #ffffff;
-  --md-primary-bg-color--light: #f2eef0;
-  --md-accent-fg-color: #6515c1;
-  --md-accent-fg-color--transparent: #6515c11a;
-  --md-typeset-a-color: #005e7d; /* Konbini Cyan, day */
-  --md-code-bg-color: #f2eef0; /* Stairwell */
-  --md-footer-bg-color: #1c1a20;
-  --md-footer-bg-color--dark: #101010;
-  --ml-heading: #5c4295;
-  --ml-encore-bg: #6515c1;
-  --ml-encore-fg: #ffffff;
-  --ml-pass: #146720;
-  --ml-fail: #90302e;
-  --ml-card-border: #e5dee2;
-  --ml-diagram-bg: #ffffff;
-}
-
-/* ── Type: Fraunces carries the character, Fira Sans the reading ─────── */
-.md-typeset h1,
-.md-typeset h2,
-.md-typeset h3,
-.md-header__topic {
-  font-family: "Fraunces", Georgia, serif;
-  letter-spacing: -0.01em;
-}
-.md-typeset h1 {
-  font-weight: 700;
-  color: var(--md-default-fg-color);
-}
-.md-typeset h2 {
-  font-weight: 600;
-  color: var(--ml-heading);
-}
-.md-typeset h3 {
-  font-weight: 600;
-}
-
-/* ── The Encore: exactly one saturated element per view ─────────────── */
-.md-typeset .md-button--primary {
-  background-color: var(--ml-encore-bg);
-  border-color: var(--ml-encore-bg);
-  color: var(--ml-encore-fg);
-  border-radius: 999px;
-}
-/* Material colours an outline button with the header colour, which is the
-   Shopfront surface at night and would vanish, so it takes the accent. */
-.md-typeset .md-button:not(.md-button--primary) {
-  border-radius: 999px;
-  color: var(--md-accent-fg-color);
-  border-color: var(--ml-card-border);
-}
-.md-typeset .md-button--primary:hover,
-.md-typeset .md-button--primary:focus {
-  background-color: var(--ml-encore-bg);
-  border-color: var(--ml-encore-bg);
-  color: var(--ml-encore-fg);
-  filter: brightness(1.08);
-}
-
-/* ── Landing hero ───────────────────────────────────────────────────── */
-.ml-hero {
-  padding: 1.2rem 0 0.4rem;
-}
-.ml-hero h1 {
-  margin-bottom: 0.4rem;
-}
-.ml-hero p.ml-lede {
-  font-size: 1.15rem;
-  margin-top: 0;
-}
+/* This site's own classes, on top of the OsakaNights theme in
+   docs-site/theme/osakanights/, whose stylesheet loads first and supplies
+   the --on-* tokens these rules use. Brand-generic rules belong there. */
 
 /* ── Badges for rule metadata ───────────────────────────────────────── */
 .ml-badge {
   display: inline-block;
   padding: 0.05rem 0.5rem;
   margin-right: 0.3rem;
-  border: 1px solid var(--ml-card-border);
+  border: 1px solid var(--on-card-border);
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
 }
 .ml-badge--fix {
-  border-color: var(--ml-pass);
-  color: var(--ml-pass);
+  border-color: var(--on-pass);
+  color: var(--on-pass);
 }
 .ml-badge--nofix {
-  border-color: var(--ml-fail);
-  color: var(--ml-fail);
+  border-color: var(--on-fail);
+  color: var(--on-fail);
 }
 
 /* ── Before and after panels ────────────────────────────────────────── */
 .md-typeset .grid.ml-compare > div {
-  border: 1px solid var(--ml-card-border);
+  border: 1px solid var(--on-card-border);
   border-radius: 12px;
   padding: 0 0.8rem 0.4rem;
 }
@@ -150,22 +36,17 @@
   margin: 0.6rem 0 0;
 }
 .md-typeset .ml-caption--before {
-  color: var(--ml-fail);
+  color: var(--on-fail);
 }
 .md-typeset .ml-caption--after {
-  color: var(--ml-pass);
+  color: var(--on-pass);
 }
 
 /* ── Diagrams ───────────────────────────────────────────────────────── */
-/* Material-drawn diagrams sit on the canvas the linter scores against. */
-.md-typeset .mermaid {
-  --md-mermaid-label-bg-color: var(--ml-diagram-bg);
-  background: var(--ml-diagram-bg);
-  border-radius: 12px;
-  padding: 0.6rem;
-}
-/* A GitHub-style diagram keeps GitHub's white page behind it in both site
-   themes, so its colours read as written. */
+/* The theme puts Material-drawn diagrams on --on-diagram-bg, the canvas the
+   mkdocs-material profile scores against, so what the linter passes is what a
+   reader sees. A GitHub-style diagram keeps GitHub's white page behind it in
+   both site themes, so its colours read as written. */
 .md-typeset .grid.ml-compare .mermaid,
 .md-typeset .mermaid-github {
   text-align: center;

@@ -1,0 +1,130 @@
+/* OsakaNights for MkDocs Material, the design system from the richdocs skill
+   (skills/richdocs/resources/themes/osakanights in jpeakai/skills).
+   Night is home and the default; Day is re-derived, never mirrored.
+   Legibility is the point of the theme.
+   Brand-generic only: a site's own classes belong in its own extra_css. */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
+
+/* tokens:start. Generated from design-tokens.json by tokens.ts, so edit the JSON. */
+
+/* ── Night ───────────────────────────────────────────────────────────── */
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #101010; /* Midnight Asphalt */
+  --md-default-fg-color: #dddddd; /* Streetlight */
+  --md-default-fg-color--light: #adadad; /* Steam */
+  --md-default-fg-color--lighter: #858585; /* Drizzle */
+  --md-default-fg-color--lightest: #323232; /* Kerb */
+  --md-typeset-color: #adadad;
+  --md-primary-fg-color: #1a1a1c; /* Shopfront */
+  --md-primary-fg-color--light: #26262a;
+  --md-primary-fg-color--dark: #101010;
+  --md-primary-bg-color: #dddddd;
+  --md-primary-bg-color--light: #adadad;
+  --md-accent-fg-color: #c3b0fd; /* Synth Violet */
+  --md-accent-fg-color--transparent: #c3b0fd1a;
+  --md-typeset-a-color: #6bcbf7; /* Konbini Cyan */
+  --md-code-bg-color: #1a1a1c;
+  --md-footer-bg-color: #1a1a1c;
+  --md-footer-bg-color--dark: #101010;
+  --on-heading: #c3b0fd;
+  --on-encore-bg: #cc66ff;
+  --on-encore-fg: #101010;
+  --on-pass: #90d192; /* Wasabi */
+  --on-fail: #fda19a; /* Sunrise Coral */
+  --on-card-border: #323232;
+  --on-diagram-bg: #1e2129;
+}
+
+/* ── Day ─────────────────────────────────────────────────────────────── */
+[data-md-color-scheme="default"] {
+  --md-default-bg-color: #faf8f9; /* First Light */
+  --md-default-fg-color: #1c1a20;
+  --md-default-fg-color--light: #57525e;
+  --md-default-fg-color--lighter: #847e8c;
+  --md-default-fg-color--lightest: #e5dee2;
+  --md-typeset-color: #1c1a20;
+  --md-primary-fg-color: #5c4295; /* Synth Violet, day */
+  --md-primary-fg-color--light: #6f55a8;
+  --md-primary-fg-color--dark: #4a3479;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #f2eef0;
+  --md-accent-fg-color: #6515c1;
+  --md-accent-fg-color--transparent: #6515c11a;
+  --md-typeset-a-color: #005e7d; /* Konbini Cyan, day */
+  --md-code-bg-color: #f2eef0; /* Stairwell */
+  --md-footer-bg-color: #1c1a20;
+  --md-footer-bg-color--dark: #101010;
+  --on-heading: #5c4295;
+  --on-encore-bg: #6515c1;
+  --on-encore-fg: #ffffff;
+  --on-pass: #146720;
+  --on-fail: #90302e;
+  --on-card-border: #e5dee2;
+  --on-diagram-bg: #ffffff;
+}
+
+/* tokens:end */
+
+/* ── Type: Fraunces carries the character, Fira Sans the reading ─────── */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-header__topic {
+  font-family: "Fraunces", Georgia, serif;
+  letter-spacing: -0.01em;
+}
+.md-typeset h1 {
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+}
+.md-typeset h2 {
+  font-weight: 600;
+  color: var(--on-heading);
+}
+.md-typeset h3 {
+  font-weight: 600;
+}
+
+/* ── The Encore: exactly one saturated element per view ─────────────── */
+.md-typeset .md-button--primary {
+  background-color: var(--on-encore-bg);
+  border-color: var(--on-encore-bg);
+  color: var(--on-encore-fg);
+  border-radius: 999px;
+}
+/* Material colours an outline button with the header colour, which is the
+   Shopfront surface at night and would vanish, so it takes the accent. */
+.md-typeset .md-button:not(.md-button--primary) {
+  border-radius: 999px;
+  color: var(--md-accent-fg-color);
+  border-color: var(--on-card-border);
+}
+.md-typeset .md-button--primary:hover,
+.md-typeset .md-button--primary:focus {
+  background-color: var(--on-encore-bg);
+  border-color: var(--on-encore-bg);
+  color: var(--on-encore-fg);
+  filter: brightness(1.08);
+}
+
+/* ── Landing hero: <div class="on-hero" markdown> with a p.on-lede ───── */
+.on-hero {
+  padding: 1.2rem 0 0.4rem;
+}
+.on-hero h1 {
+  margin-bottom: 0.4rem;
+}
+.on-hero p.on-lede {
+  font-size: 1.15rem;
+  margin-top: 0;
+}
+
+/* ── Diagrams ───────────────────────────────────────────────────────── */
+/* Material-drawn diagrams sit on one fixed canvas per scheme, so a diagram
+   checked for contrast against --on-diagram-bg reads as it was checked. */
+.md-typeset .mermaid {
+  --md-mermaid-label-bg-color: var(--on-diagram-bg);
+  background: var(--on-diagram-bg);
+  border-radius: 12px;
+  padding: 0.6rem;
+}

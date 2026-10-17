@@ -1,0 +1,67 @@
+# OsakaNights for MkDocs Material: the brand-generic half of a site config.
+# A site pulls it in with `INHERIT: <path to this file>` and must also set
+# `theme.custom_dir` to this folder's overrides/, which loads the stylesheet.
+# README.md beside this file says how, and what a site sets for itself.
+#
+# MkDocs deep-merges the site's config over this one. Mappings merge key by
+# key, and a list in the site's config replaces the list here whole. So the
+# markdown extensions are a mapping, which lets a site add one without
+# repeating the rest. This file is named mkdocs.base.yml, never mkdocs.yml,
+# so mermaidjs-lint's auto profile does not treat its folder as a site.
+
+theme:
+  name: material
+  # Fira Sans to read and JetBrains Mono for code. Fraunces on headings is
+  # loaded by osakanights.css.
+  font:
+    text: Fira Sans
+    code: JetBrains Mono
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - search.suggest
+    - toc.follow
+  # Night first, as OsakaNights is dark-native. The reader's system setting
+  # still wins. The colours come from the tokens in osakanights.css.
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to Day
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to Night
+
+markdown_extensions:
+  admonition:
+  attr_list:
+  md_in_html:
+  tables:
+  toc:
+    permalink: true
+  pymdownx.details:
+  pymdownx.emoji:
+    emoji_index: !!python/name:material.extensions.emoji.twemoji
+    emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  pymdownx.highlight:
+    anchor_linenums: true
+  pymdownx.inlinehilite:
+  pymdownx.superfences:
+    custom_fences:
+      - name: mermaid
+        class: mermaid
+        format: !!python/name:pymdownx.superfences.fence_code_format
+  pymdownx.tabbed:
+    alternate_style: true

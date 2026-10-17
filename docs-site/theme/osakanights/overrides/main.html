@@ -1,0 +1,10 @@
+{#- OsakaNights: loads the theme stylesheet after Material's own, and before
+    the site's extra_css, so a site's own rules still have the last word.
+    It is loaded here rather than through extra_css because INHERIT replaces
+    a list, so a site that sets extra_css would drop a stylesheet set there. -#}
+{% extends "base.html" %}
+
+{% block styles %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ 'assets/osakanights/osakanights.css' | url }}">
+{% endblock %}

@@ -14,7 +14,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 - **Regenerate:** `make adrs` for the decision bundle, which `make fix` runs, and `make site` for the docs site
 - **Diagrams on the site:** each lives once in `docs-site/diagrams/` and is included into pages, so it is linted on its own
 - **Shared text:** text that both the site and the root markdown carry, such as the four tenets, lives once in `docs-site/includes/`. The site includes it, and a test holds each root copy to it verbatim.
-- **Home mirrors the README:** the site home page opens with the README's sections, in the README's order, and sections only the site has come after them. `tests/readme-site.test.ts` holds the order and the shared includes.
+- **Home mirrors the README:** the site home page opens with the README's sections, in the same order. Sections only the site has come after them. `tests/readme-site.test.ts` holds the order and the shared includes.
 - **Agent files:** `CLAUDE.md` at root, with no nested agent files
 - **Prose gates:** `make docs-ci` gates every authored markdown file and its diagrams. That is the root files, `docs/`, `adrs/`, the site's authored pages, diagrams and includes, the skill's markdown and `tests/fixtures/README.md`. Inputs under test are outside it: the fixtures, `examples/` and the skill's eval fixtures in `skills/mermaidjs-lint/evals/fixtures/`. The site's generated pages are checked by `make site` instead.
 - **Changelog:** `CHANGELOG.md` at root, in Keep a Changelog style, curated by hand. A user-visible change adds a line under `Unreleased` in the same change, and a release renames that section to its version. The Publish workflow copies that section into the GitHub release notes.

@@ -533,13 +533,13 @@ wheels = [
 
 [[package]]
 name = "pytest-xharness-eval"
-version = "0.10.0"
+version = "0.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7a/c0/a408a41fd1361de5ddf17e7a8a4936e79387b529d6311a37abff76a0150f/pytest_xharness_eval-0.10.0-py3-none-any.whl", hash = "sha256:63e0be0a328a1d2ceabab612a8fde5ff6481d9d950da1d09a98d00830cc0dbe1", size = 777358, upload-time = "2026-10-07T22:01:53.471Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/9d/82ffd24f386f795b8ba688cac03b2637c640b544fabf534c37a86a76cee6/pytest_xharness_eval-0.11.0-py3-none-any.whl", hash = "sha256:991f9a0bd11928629935bdd464f714106b723a9e47881727179d2dcf45c041c3", size = 781291, upload-time = "2026-10-17T10:29:19.826Z" },
 ]
 
 [[package]]

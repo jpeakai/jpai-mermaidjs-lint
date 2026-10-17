@@ -36,7 +36,7 @@ The grader is deterministic: the verdict comes from the linter and the structure
 
 ## Results
 
-Run on 2026-10-15 with the tier 2 and tier 3 model of each harness, the project matrix in `pyproject.toml`.
+Run on 2026-10-15 with the tier 1 and tier 2 model of each harness, the project matrix in `pyproject.toml`.
 The run used the skill as of commit `7285ec2`.
 The results predate the current skill text.
 `SKILL.md` has changed since, first in commit `b64f849` later the same day.
@@ -53,6 +53,14 @@ The suite has not been run since.
 
 Every cell passed.
 The whole run cost an estimated $1.04.
+
+## What each agent wrote
+
+Each case shows its original fixture, then the file each harness and model left behind.
+That run removed its workspaces, so each file was rebuilt by replaying the session log's edits onto the fixture.
+Every rebuilt file reports zero findings, as the grader recorded, and the site build fails if one ever does not.
+
+--8<-- "agent-eval-outputs.md"
 
 ## What the results do not show
 

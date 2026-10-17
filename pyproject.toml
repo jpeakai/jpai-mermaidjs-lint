@@ -27,7 +27,7 @@ package = false
 testpaths = ["tests"]
 # The plugin's build workspaces, dependencies and scratch are never test sources.
 norecursedirs = [".xharness_eval_cache", "node_modules", "dist", "tmp", ".venv", "docs-site"]
-# Tier 2 and tier 3 models of each harness. The task is a bounded fix with a
+# Tier 1 and tier 2 models of each harness. The task is a bounded fix with a
 # deterministic grader, so the question worth paying for is whether the smaller
 # models can do it, not whether the flagship can. Add a flagship with --model.
 xharness_matrix = [

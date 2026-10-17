@@ -10,7 +10,9 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The agent evals page shows each case's original fixture and the file every harness and model left behind.
 
 ## [0.7.3] - 2026-10-17
 

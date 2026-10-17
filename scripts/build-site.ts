@@ -1,15 +1,15 @@
 #!/usr/bin/env bun
 // Generates the parts of the docs site that the code already knows: the rules
 // page, the fixture and example galleries, and snippets (the CLI help, the
-// rule table, the preset thresholds, the worked complexity examples) that
-// authored pages include. Each comes
+// rule table, the preset thresholds, the worked complexity examples, the
+// agent eval outputs) that authored pages include. Each comes
 // from the source the test suite runs, and every example is checked again as
 // its page is written, so a drifted example fails the build. The one exception
 // is the rendered example images, which are only checked to exist.
 //
 //   bun run scripts/build-site.ts
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
 import { parseArgs } from "node:util";
 import { reportLine } from "../src/cli.ts";
@@ -458,6 +458,94 @@ const examplesPage = async (): Promise<string> => {
   return out.join("\n");
 };
 
+// ── Agent eval outputs ──────────────────────────────────────────────────
+
+// Each eval case seeds one fixture, and each harness and model it ran leaves
+// one file, kept at docs-site/eval-outputs/<fixture>/<harness>/<model>.md.
+const EVALS = join(PROJECT_ROOT, "skills", "mermaidjs-lint", "evals");
+const EVAL_OUTPUTS = join(SITE, "eval-outputs");
+const REPO_BLOB = "https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main";
+
+interface EvalCase {
+  name: string;
+  fixture: string;
+  target: string;
+}
+
+// The case, fixture and target each eval_*.py names, read from its constants.
+const evalCases = (): EvalCase[] =>
+  readdirSync(EVALS)
+    .filter((f) => /^eval_\w+\.py$/.test(f))
+    .sort()
+    .map((file) => {
+      const src = readFileSync(join(EVALS, file), "utf8");
+      const fixture = src.match(/^FIXTURE = "([^"]+)"/m)?.[1] ?? "";
+      const target = src.match(/^TARGET = "([^"]+)"/m)?.[1] ?? "";
+      if (!(fixture && target)) fail(`${EVALS}/${file}`, "names no FIXTURE or TARGET constant");
+      return { name: file.replace(/^eval_|\.py$/g, ""), fixture, target };
+    });
+
+// The files the agents left for one fixture, as harness/model and source.
+const evalCells = (fixture: string): { cell: string; source: string }[] => {
+  const dir = join(EVAL_OUTPUTS, fixture);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .sort()
+    .flatMap((harness) =>
+      readdirSync(join(dir, harness))
+        .filter((f) => f.endsWith(".md"))
+        .sort()
+        .map((f) => ({
+          cell: `${harness}/${basename(f, ".md")}`,
+          source: readFileSync(join(dir, harness, f), "utf8"),
+        })),
+    );
+};
+
+// A file's diagrams drawn full width, or its source when a finding means
+// mermaid would draw an error box or a diagram too small to read.
+const evalDrawing = (source: string, findings: Finding[]): string[] =>
+  buildDocModel(source, "markdown").diagrams.map((d) => {
+    const own = findings.filter((x) => x.line >= d.startLine && x.line <= d.endLine);
+    return drawable(own) ? mermaid(d.source) : fenced(d.source, "text");
+  });
+
+const evalCaseSection = async (c: EvalCase): Promise<string> => {
+  const seedRel = `skills/mermaidjs-lint/evals/fixtures/${c.fixture}/${c.target}`;
+  const seed = readFileSync(join(PROJECT_ROOT, seedRel), "utf8");
+  const seedFindings = await checkMarkdown(seed, join(PROJECT_ROOT, seedRel), GITHUB);
+  const out: string[] = [
+    `### \`${c.name}\``,
+    "",
+    `The original fixture is [\`${c.target}\`](${REPO_BLOB}/${seedRel}). It reports ${distinct(seedFindings)
+      .map((r) => `\`${r}\``)
+      .join(" and ")}.`,
+    "",
+    ...evalDrawing(seed, seedFindings),
+    "",
+    admonition("???", "note", "Original source", fenced(seed, "markdown")),
+  ];
+  const cells = evalCells(c.fixture);
+  if (!cells.length) fail(`docs-site/eval-outputs/${c.fixture}`, "holds no agent output");
+  for (const { cell, source } of cells) {
+    const where = `docs-site/eval-outputs/${c.fixture}/${cell}.md`;
+    // The grader's verdict was zero findings, so an output that reports any
+    // was recorded wrongly.
+    const left = await checkMarkdown(source, join(PROJECT_ROOT, where), GITHUB);
+    if (left.length) fail(where, `an agent output must lint clean, but reports ${distinct(left).join(" ")}`);
+    out.push(
+      `#### \`${cell}\``,
+      "",
+      ...evalDrawing(source, left),
+      "",
+      admonition("???", "success", "Output source", fenced(source, "markdown")),
+    );
+  }
+  return out.join("\n");
+};
+
+const agentEvalOutputs = async (): Promise<string> => (await Promise.all(evalCases().map(evalCaseSection))).join("\n");
+
 // ── Snippets ────────────────────────────────────────────────────────────
 
 const rulesTable = (): string =>
@@ -575,6 +663,7 @@ const main = async (): Promise<void> => {
     "rules-table.md": rulesTable(),
     "presets-table.md": presetsTable(),
     "home-compare.md": await homeCompare(),
+    "agent-eval-outputs.md": await agentEvalOutputs(),
     ...(await complexitySnippets(DOC_FILE)),
   };
   if (failures.length) {

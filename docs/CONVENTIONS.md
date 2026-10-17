@@ -46,6 +46,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 | `docs-site/diagrams/` | One diagram per file, included into site pages | Consumers | The model, the plugin loader or the run pipeline changes |
 | `docs-site/includes/` | Text the site includes and the root markdown repeats verbatim: the tenets and the README text the home page shares | Both | A tenet or a shared README line is reworded |
 | `docs-site/docs/gallery/agent-evals.md` | Whether AI coding agents can fix the rule fixtures it lists that `--fix` leaves, with a results table, its run date and the skill commit it measured | Consumers | The eval suite is run again |
+| `docs-site/eval-outputs/` | The file each eval cell left, one per fixture, harness and model, drawn on the agent evals page and required to lint clean | Consumers | The eval suite is run again |
 | `docs-site/docs/assets/examples/` | One PNG per example, drawn with the mermaid CLI and committed | Consumers | An example is added or changed |
 | `skills/mermaidjs-lint/` | The agent skill that drives the linter, copied into an agent's skills folder rather than shipped on npm | Consumers | The CLI's flags, output or rules change |
 | `skills/mermaidjs-lint/evals/` | The live agent eval suite for the skill, with its own README and seed fixtures | Contributors | The skill or a fixture it seeds from changes |

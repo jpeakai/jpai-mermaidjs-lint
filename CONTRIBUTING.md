@@ -50,6 +50,12 @@ The test targets rebuild it first, so the Node tests never run a stale bundle.
 `make ci` must pass before a change is accepted, and it runs `make docs-ci` itself.
 The coverage gate fails below 90% aggregate for functions or lines.
 
+## Finding your way around the code
+
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) shows the modules and how a lint run, a fix run and plugin loading move through them.
+[docs/DATA_MODEL.md](docs/DATA_MODEL.md) draws every shape those stages pass around, each diagram citing the file in `src/` it comes from.
+A change to a type or a stage they draw updates the diagram in the same change.
+
 ## Adding a rule
 
 1. Write one module in `src/rules` exporting a `Rule`, named for its id.

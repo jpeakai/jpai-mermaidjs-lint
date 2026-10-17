@@ -6,7 +6,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 ## Dialect
 
 - **Flavour:** minimal, with an ADR surface promoted to `okf-yaml`, inherited from `jpai-library`
-- **Docs taxonomy:** user docs live on the docs site, in `docs-site/docs/`. It holds a tutorial (`get-started.md`), then `guides/`, `concepts/`, `reference/` and `gallery/`. `docs/` holds maintainer runbooks only, with one declared exception: `docs/plugins.md`, a redirect kept so old links resolve.
+- **Docs taxonomy:** user docs live on the docs site, in `docs-site/docs/`. It holds a tutorial (`get-started.md`), then `guides/`, `concepts/`, `reference/` and `gallery/`. `docs/` holds maintainer runbooks and contributor references, `ARCHITECTURE.md` and `DATA_MODEL.md`, with one declared exception: `docs/plugins.md`, a redirect kept so old links resolve.
 - **Glossary:** `GLOSSARY.md` at root, one canonical term per concept, new domain terms added in the change that introduces them
 - **ADR layout:** `okf-yaml`, with records authored in `adrs/NNNN-slug.yml` and markdown generated from them
 - **Record ids:** prefixed `MJL-` in this repo, so a citation is unambiguous across bundles
@@ -37,6 +37,8 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 | `docs/CONVENTIONS.md` | This dialect declaration | Both | A documentation convention changes |
 | `docs/plugins.md` | A pointer to the plugin pages on the docs site, kept so old links resolve | Plugin authors | A plugin page moves |
 | `docs/PUBLISHING.md` | The release speed run and the one-time npm setup | Maintainers | The release workflow changes |
+| `docs/ARCHITECTURE.md` | The modules, the run pipeline, the lint, fix and plugin loading sequences, and fix verification, as dual-density diagrams | Contributors | A module, the run, the fix engine, the verifier or the plugin loader changes |
+| `docs/DATA_MODEL.md` | The document, rule, registry, fix and plugin models as dual-density erDiagrams, each citing its source file | Contributors | A type in `src/` that a diagram draws gains, loses or changes a field |
 | `.github/workflows/` | CI on pushes and pull requests to main, the Docs build on pull requests and main with its Pages deploy after each successful Publish run, and the manually triggered Publish workflow | Maintainers | The gate, the site or the release process changes |
 | `docs-site/mkdocs.yml` | The site's config and navigation | Consumers | A page is added, moved or renamed |
 | `docs-site/docs/` | The site's authored pages, scored under `mkdocs-material` | Consumers | Behaviour, flags, config or the plugin contract changes |
@@ -62,7 +64,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 ## Naming
 
 - Root meta-files are UPPERCASE.
-- Runbook and dialect files inside `docs/` are UPPERCASE, like `CONVENTIONS.md` and `PUBLISHING.md`.
+- Runbook, dialect and contributor reference files inside `docs/` are UPPERCASE, like `CONVENTIONS.md`, `PUBLISHING.md` and `ARCHITECTURE.md`.
 - Every other file inside `docs/` is lowercase kebab-case.
 - Records are `NNNN-slug.yml`, and a number is never reused.
 - Rule modules are `src/rules/<rule-id>.ts`.

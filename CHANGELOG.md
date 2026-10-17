@@ -10,7 +10,9 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The README and the docs site home show package badges: npm version, monthly downloads, Node range, CI, Docs and licence.
 
 ## [0.7.2] - 2026-10-17
 

@@ -6,6 +6,20 @@
 // cytoscape is imported only on a page that holds a graph, so every other
 // page of the site skips the download.
 const CYTOSCAPE = "https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.esm.min.mjs";
+// dagre lays a graph out in ranks, as mermaid does, and keeps each subgraph's
+// members inside one box without boxes overlapping.
+// Both ship as UMD scripts that set a global, so they load as classic scripts:
+// the ESM build of cytoscape-dagre loses its dagre import.
+const DAGRE = [
+  "https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js",
+  "https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js",
+];
+
+const script = (src) =>
+  new Promise((resolve, reject) => {
+    const el = Object.assign(document.createElement("script"), { src, onload: resolve, onerror: reject });
+    document.head.append(el);
+  });
 let cytoscape = null;
 
 const token = (el, name) => getComputedStyle(el).getPropertyValue(name).trim();
@@ -20,7 +34,7 @@ const style = (el) => [
       height: "label",
       padding: "8px",
       "font-family": token(el, "--md-text-font-family") || "sans-serif",
-      "font-size": 12,
+      "font-size": 14,
       "text-valign": "center",
       "text-halign": "center",
       color: token(el, "--ml-cy-node-fg"),
@@ -56,23 +70,31 @@ const style = (el) => [
   },
 ];
 
-// A tree or a flat graph reads best in layers from its roots. Compound nodes
-// need a force layout that keeps each subgraph's members together.
-const layout = (el) =>
-  el.dataset.layout === "cose"
-    ? {
-        name: "cose",
-        animate: false,
-        randomize: false,
-        nodeDimensionsIncludeLabels: true,
-        idealEdgeLength: () => 40,
-        nodeRepulsion: () => 6000,
-        nestingFactor: 0.8,
-        gravity: 40,
-        componentSpacing: 30,
-        padding: 16,
-      }
-    : { name: "breadthfirst", directed: true, spacingFactor: 1.1, padding: 16 };
+// Ranks run the way the diagram's own direction runs.
+const layout = (el) => ({
+  name: "dagre",
+  rankDir: el.dataset.direction === "TB" ? "TB" : "LR",
+  nodeSep: 18,
+  rankSep: 36,
+  padding: 16,
+});
+
+// Labels must stay readable, so a graph is never shrunk below MIN_ZOOM to fit.
+// The box grows to the graph's height instead, and a graph still too wide pans.
+const MIN_ZOOM = 0.75;
+const MAX_ZOOM = 1.15;
+const PAD = 24;
+
+const fitReadable = (cy, el) => {
+  cy.zoom(1);
+  const box = cy.elements().boundingBox();
+  const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, (el.clientWidth - 2 * PAD) / box.w));
+  el.style.height = `${Math.ceil(box.h * zoom + 2 * PAD)}px`;
+  cy.resize();
+  cy.zoom(zoom);
+  cy.center();
+  cy.userPanningEnabled(box.w * zoom > el.clientWidth - 2 * PAD);
+};
 
 const graphs = new Map();
 
@@ -82,12 +104,14 @@ const draw = (el) => {
     container: el,
     elements: JSON.parse(el.dataset.graph),
     style: style(el),
-    layout: layout(el),
+    layout: { name: "preset" },
     userZoomingEnabled: false,
     userPanningEnabled: false,
     boxSelectionEnabled: false,
     autoungrabify: true,
   });
+  cy.layout(layout(el)).run();
+  fitReadable(cy, el);
   graphs.set(el, cy);
 };
 
@@ -99,7 +123,12 @@ const drawAll = async () => {
   }
   const targets = document.querySelectorAll("div.ml-cy");
   if (targets.length === 0) return;
-  cytoscape ??= (await import(CYTOSCAPE)).default;
+  if (cytoscape === null) {
+    const core = await import(CYTOSCAPE);
+    for (const src of DAGRE) await script(src);
+    cytoscape = core.default;
+    cytoscape.use(window.cytoscapeDagre);
+  }
   for (const el of targets) draw(el);
 };
 

@@ -200,22 +200,23 @@ const fence = (text: string, lang: string): string => `\`\`\`${lang}\n${text.rep
 
 const caption = (text: string): string => `<p class="ml-caption">${text}</p>`;
 
-// A graph larger than this is drawn across the page, below its source, since
-// half a page leaves its labels too small to read.
+// A graph larger than this, or one with subgraphs, is drawn across the page
+// below its source, since half a page leaves its labels too small to read.
 const WIDE_NODES = 10;
 
 const card = (lines: string[]): string[] => ["<div markdown>", "", ...lines, "", "</div>"];
 
 export const stepSnippet = (m: MeasuredStep): string => {
-  const layout = m.graph.subgraphs.length > 0 ? "cose" : "breadthfirst";
-  const wide = m.stats.nodes > WIDE_NODES;
+  // The direction the graph is laid out in, as mermaid would draw it. A mindmap grows sideways.
+  const direction = /^\s*flowchart\s+(TD|TB|BT)\b/.test(m.step.source) ? "TB" : "LR";
+  const wide = m.stats.nodes > WIDE_NODES || m.stats.subgraphs > 0;
   const data = escapeAttr(JSON.stringify(cytoscapeElements(m.graph)));
   const counts = `${m.stats.nodes} nodes, ${m.stats.edges} edges, ${m.stats.subgraphs} subgraphs`;
   const source = card([caption("Mermaid source"), "", fence(m.step.source, "text")]);
   const graph = card([
     caption(`What the parser returned: ${counts}`),
     "",
-    `<div class="ml-cy${wide ? " ml-cy--wide" : ""}" role="img" aria-label="${escapeAttr(m.step.alt)}" data-layout="${layout}" data-graph="${data}"></div>`,
+    `<div class="ml-cy${wide ? " ml-cy--wide" : ""}" role="img" aria-label="${escapeAttr(m.step.alt)}" data-direction="${direction}" data-graph="${data}"></div>`,
   ]);
   const cards = wide
     ? [...source, "", "</div>", "", '<div class="grid ml-compare" markdown>', "", ...graph]

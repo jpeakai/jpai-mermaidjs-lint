@@ -136,6 +136,63 @@ ${ORDER_EDGES}
   PS --> LOG
 `,
   },
+  {
+    slug: "sequence",
+    alt: "Three participants, two of them in a Shop box, with six messages and an alt block",
+    source: `sequenceDiagram
+  actor C as Customer
+  box Shop
+    participant W as Web
+    participant P as Payments
+  end
+  C->>W: Place order
+  activate W
+  W->>P: Charge card
+  alt approved
+    P-->>W: Receipt
+    W-->>C: Confirmation
+  else declined
+    P-->>W: Declined
+    W-->>C: Try again
+  end
+  deactivate W
+  Note over C,W: Notes are not counted
+`,
+  },
+  {
+    slug: "er",
+    alt: "Four entities joined by three relationships",
+    source: `erDiagram
+  CUSTOMER ||--o{ ORDER : places
+  ORDER ||--|{ LINE_ITEM : contains
+  PRODUCT ||--o{ LINE_ITEM : "ordered in"
+  CUSTOMER {
+    string id PK
+    string name
+    string email
+  }
+  ORDER {
+    string id PK
+    date placed
+  }
+`,
+  },
+  {
+    slug: "state",
+    alt: "Five states, with Address and Payment inside the composite state Checkout",
+    source: `stateDiagram-v2
+  [*] --> Cart
+  Cart --> Checkout
+  state Checkout {
+    [*] --> Address
+    Address --> Payment
+    Payment --> [*]
+  }
+  Checkout --> Shipped
+  Shipped --> [*]
+  note right of Cart : Notes are not counted
+`,
+  },
 ];
 
 // The step whose findings are shown under every preset.
@@ -161,21 +218,25 @@ export const num = (x: number): string => String(Number(x.toFixed(2)));
 
 // The score worked line by line, from the stats and the default weights. The
 // last line is the score calculateComplexity returns, and the lines above it
-// must arrive there, or the step fails.
+// must arrive there, or the step fails. The rows term is shown only for a
+// diagram that has rows, so the flowchart steps keep the shorter sum.
 export const workedScore = (stats: DiagramStats, c: ThresholdConfig): string => {
-  const { nodes: n, edges: e, subgraphs: s } = stats;
+  const { nodes: n, edges: e, subgraphs: s, rows: r } = stats;
   const d = Math.max(stats.max_subgraph_depth, stats.max_tree_depth);
-  const base = n + c.edge_weight * e + c.subgraph_weight * s;
+  const base = n + c.edge_weight * e + c.row_weight * r + c.subgraph_weight * s;
   const scale = 1 + c.depth_weight * d;
   const score = calculateComplexity(stats, c).visual_complexity_score;
   if (num(base * scale) !== num(score)) throw new Error(`worked score ${base * scale} is not ${score}`);
   const w = (x: number): string => num(x);
+  const rowTerm = r > 0 ? ` + ${w(c.row_weight)} × rows` : "";
+  const rowValue = r > 0 ? ` + ${w(c.row_weight)} × ${r}` : "";
+  const rowSum = r > 0 ? ` + ${num(c.row_weight * r)}` : "";
   return [
     `depth = max(subgraph nesting ${stats.max_subgraph_depth}, tree depth ${stats.max_tree_depth}) = ${d}`,
     "",
-    `score = (nodes + ${w(c.edge_weight)} × edges + ${w(c.subgraph_weight)} × subgraphs) × (1 + ${w(c.depth_weight)} × depth)`,
-    `      = (${n} + ${w(c.edge_weight)} × ${e} + ${w(c.subgraph_weight)} × ${s}) × (1 + ${w(c.depth_weight)} × ${d})`,
-    `      = (${n} + ${num(c.edge_weight * e)} + ${num(c.subgraph_weight * s)}) × ${num(scale)}`,
+    `score = (nodes + ${w(c.edge_weight)} × edges${rowTerm} + ${w(c.subgraph_weight)} × subgraphs) × (1 + ${w(c.depth_weight)} × depth)`,
+    `      = (${n} + ${w(c.edge_weight)} × ${e}${rowValue} + ${w(c.subgraph_weight)} × ${s}) × (1 + ${w(c.depth_weight)} × ${d})`,
+    `      = (${n} + ${num(c.edge_weight * e)}${rowSum} + ${num(c.subgraph_weight * s)}) × ${num(scale)}`,
     `      = ${num(base)} × ${num(scale)}`,
     `      = ${num(score)}`,
   ].join("\n");
@@ -211,7 +272,8 @@ export const stepSnippet = (m: MeasuredStep): string => {
   const direction = /^\s*flowchart\s+(TD|TB|BT)\b/.test(m.step.source) ? "TB" : "LR";
   const wide = m.stats.nodes > WIDE_NODES || m.stats.subgraphs > 0;
   const data = escapeAttr(JSON.stringify(cytoscapeElements(m.graph)));
-  const counts = `${m.stats.nodes} nodes, ${m.stats.edges} edges, ${m.stats.subgraphs} subgraphs`;
+  const rows = m.stats.rows > 0 ? `, ${m.stats.rows} rows` : "";
+  const counts = `${m.stats.nodes} nodes, ${m.stats.edges} edges, ${m.stats.subgraphs} subgraphs${rows}`;
   const source = card([caption("Mermaid source"), "", fence(m.step.source, "text")]);
   const graph = card([
     caption(`What the parser returned: ${counts}`),

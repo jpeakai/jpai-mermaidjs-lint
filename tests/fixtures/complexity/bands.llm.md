@@ -25,10 +25,10 @@ The `high-density` preset sets these thresholds:
 | `vcsAcceptable` | 60 |
 | `vcsComplex` | 100 |
 
-The visual complexity score (VCS) weighs edges, subgraphs and nesting as well as nodes:
+The visual complexity score (VCS) weighs edges, rows, subgraphs and nesting as well as nodes:
 
 ```text
-score = (nodes + 0.5 × edges + 3 × subgraphs) × (1 + 0.1 × nesting depth)
+score = (nodes + 0.5 × edges + 0.25 × rows + 3 × subgraphs) × (1 + 0.1 × nesting depth)
 ```
 
 | Section | Original diagram | Nodes | Score | Rules reported |

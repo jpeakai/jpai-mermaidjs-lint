@@ -95,3 +95,94 @@ describe("what counts as a node", () => {
     expect(stats.max_subgraph_depth).toBe(2);
   });
 });
+
+// Per MJL-0021, the score counts what a reader must read: no control lines,
+// markers or notes, but every boundary and row.
+const statsOf = async (source: string) => {
+  const stats = await buildDocModel(fence(source)).diagrams[0]?.stats();
+  expect(stats?.error).toBeNull();
+  return stats as NonNullable<typeof stats>;
+};
+
+describe("what a sequenceDiagram counts", () => {
+  test("sequenceDiagram counts only messages as edges, never notes, activations or block lines", async () => {
+    const stats = await statsOf(
+      "sequenceDiagram\n  autonumber\n  participant A\n  participant B\n  loop Every minute\n    A->>B: ping\n    alt ok\n      B-->>A: pong\n    else fail\n      B-xA: error\n    end\n  end\n  Note over A,B: a note\n  activate A\n  deactivate A\n  A->>+B: call\n  B-->>-A: done",
+    );
+    expect(stats.nodes).toBe(2);
+    expect(stats.edges).toBe(5);
+  });
+
+  test("sequenceDiagram counts each box and each block as a subgraph, with blocks nesting", async () => {
+    const stats = await statsOf(
+      "sequenceDiagram\n  box Front\n    participant A\n  end\n  box Back\n    participant B\n  end\n  loop L\n    alt ok\n      opt maybe\n        A->>B: deep\n      end\n    end\n  end\n  par one\n    A->>B: x\n  and two\n    B->>A: y\n  end",
+    );
+    expect(stats.subgraphs).toBe(6);
+    expect(stats.max_subgraph_depth).toBe(3);
+  });
+
+  test("sequenceDiagram leaves out a rect, which tints the background rather than drawing a boundary", async () => {
+    const stats = await statsOf(
+      "sequenceDiagram\n  rect rgba(0, 0, 255, 0.1)\n    loop L\n      alt ok\n        A->>B: hi\n      end\n    end\n  end",
+    );
+    expect(stats.subgraphs).toBe(2);
+    expect(stats.max_subgraph_depth).toBe(2);
+  });
+
+  test("a sequence box keeps its title, and a leading colour is read as its fill, as a browser reads it", async () => {
+    const stats = await statsOf(
+      "sequenceDiagram\n  box Shop\n    participant A\n  end\n  box Aqua Back office\n    participant B\n  end\n  A->>B: hi",
+    );
+    expect(stats.subgraph_names).toEqual(["Shop", "Back office"]);
+  });
+});
+
+describe("what a stateDiagram counts", () => {
+  test("stateDiagram leaves out start and end markers, and their transitions", async () => {
+    const stats = await statsOf(
+      "stateDiagram-v2\n  [*] --> Idle\n  Idle --> Running\n  Running --> Idle\n  Running --> [*]",
+    );
+    expect(stats.nodes).toBe(2);
+    expect(stats.edges).toBe(2);
+  });
+
+  test("stateDiagram leaves out notes, so a note adds no node, edge or subgraph", async () => {
+    const plain = await statsOf("stateDiagram-v2\n  state A {\n    B --> C\n  }\n  A --> D");
+    const noted = await statsOf(
+      "stateDiagram-v2\n  state A {\n    B --> C\n  }\n  A --> D\n  note right of A : one\n  note left of D\n    two\n  end note",
+    );
+    expect(noted.nodes).toBe(plain.nodes);
+    expect(noted.edges).toBe(plain.edges);
+    expect(noted.subgraphs).toBe(1);
+    expect(noted.max_subgraph_depth).toBe(1);
+  });
+
+  test("stateDiagram keeps a fork and a choice as nodes", async () => {
+    const stats = await statsOf(
+      "stateDiagram-v2\n  state f <<fork>>\n  state c <<choice>>\n  A --> f\n  f --> c\n  c --> B",
+    );
+    expect(stats.nodes).toBe(4);
+  });
+});
+
+describe("rows", () => {
+  test("erDiagram counts each attribute as a row, apart from its entity", async () => {
+    const stats = await statsOf(
+      "erDiagram\n  CUSTOMER {\n    string id PK\n    string name\n    string email\n  }\n  ORDER {\n    string id PK\n  }\n  CUSTOMER ||--o{ ORDER : places",
+    );
+    expect(stats.nodes).toBe(2);
+    expect(stats.rows).toBe(4);
+  });
+
+  test("classDiagram counts each attribute and method as a row", async () => {
+    const stats = await statsOf(
+      "classDiagram\n  class Animal {\n    +String name\n    +int age\n    +eat() void\n  }\n  Animal <|-- Dog\n  Dog : +bark() void",
+    );
+    expect(stats.nodes).toBe(2);
+    expect(stats.rows).toBe(4);
+  });
+
+  test("a type with no rows reports 0 rows", async () => {
+    expect((await statsOf("flowchart LR\n  A --> B")).rows).toBe(0);
+  });
+});

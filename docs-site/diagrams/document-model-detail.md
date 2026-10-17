@@ -50,6 +50,7 @@ erDiagram
         number subgraphs
         number max_subgraph_depth
         number max_tree_depth "mindmap, treemap, treeView, ishikawa"
+        number rows "erDiagram attributes, classDiagram members"
         string[] node_ids
         string[] subgraph_names
         enum parser_used "langium or mermaid-core"

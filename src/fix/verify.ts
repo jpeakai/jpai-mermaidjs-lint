@@ -57,6 +57,7 @@ const sameDiagrams = async (before: DocModel, after: DocModel): Promise<boolean>
       s.subgraphs,
       s.max_subgraph_depth,
       s.max_tree_depth,
+      s.rows,
       s.node_ids,
       s.subgraph_names,
     ];

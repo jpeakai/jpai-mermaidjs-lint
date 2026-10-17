@@ -5,6 +5,7 @@
 // diagram is measured the way mermaid itself reads it.
 
 import { parse as langiumParse } from "@mermaid-js/parser";
+import Color from "colorjs.io";
 import { Window } from "happy-dom";
 
 // mermaid core registers DOMPurify hooks while its grammars run, and DOMPurify
@@ -22,6 +23,31 @@ const installDomShim = (): void => {
   g.DocumentFragment = win.DocumentFragment;
   g.NodeFilter = win.NodeFilter;
   g.getComputedStyle = win.getComputedStyle.bind(win);
+  // happy-dom's CSS.supports("color", v) is true for any word, where a browser
+  // checks that v is a colour. Mermaid asks it to split `box Shop` into a fill
+  // and a title, so the shim's answer gave every one-word box title away as
+  // its fill. A colour is whatever colorjs.io can parse, as in color.ts.
+  // happy-dom builds a fresh CSS object on each read, so the window's CSS is
+  // replaced by one fixed object that carries the corrected check.
+  const css = (win as unknown as { CSS?: { supports: (p: string, v?: string) => boolean } }).CSS;
+  if (css) {
+    const supports = css.supports.bind(css);
+    const fixed = {
+      ...css,
+      supports: (property: string, value?: string): boolean =>
+        property === "color" && value !== undefined ? isCssColour(value) : supports(property, value),
+    };
+    Object.defineProperty(win, "CSS", { value: fixed, configurable: true });
+  }
+};
+
+const isCssColour = (value: string): boolean => {
+  try {
+    new Color(value);
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 let mermaidCore: typeof import("mermaid").default | null = null;
@@ -58,6 +84,11 @@ export interface DiagramStats {
   // kept apart from max_subgraph_depth and the nesting rule never reads it.
   // It is 0 for every other type.
   max_tree_depth: number;
+  // The rows drawn inside a node: an erDiagram entity's attributes, and a
+  // classDiagram class's attributes and methods. A row is text to read, but it
+  // sits in a box the reader has already found, so it is not a node. It is 0
+  // for every other type.
+  rows: number;
   node_ids: string[];
   subgraph_names: string[];
   // The parser that read the diagram, or, on a failure, the one whose reason
@@ -167,6 +198,7 @@ export async function extractStats(content: string): Promise<MermaidStats> {
     subgraphs: 0,
     max_subgraph_depth: 0,
     max_tree_depth: 0,
+    rows: 0,
     node_ids: [],
     subgraph_names: [],
     parser_used: langium ? "langium" : "mermaid-core",
@@ -233,6 +265,7 @@ async function extractLangiumStats(content: string, keyword: string): Promise<Me
     subgraphs: subgraphNames.length,
     max_subgraph_depth: maxDepth,
     max_tree_depth: treeDepth,
+    rows: 0,
     node_ids: [...new Set(nodeIds.filter(Boolean))].sort(),
     subgraph_names: subgraphNames,
     parser_used: "langium",
@@ -395,6 +428,8 @@ interface Structure {
   maxDepth: number;
   // Set only by the tree-shaped types: see max_tree_depth.
   treeDepth?: number;
+  // Set only by the types that draw rows inside a node: see rows.
+  rows?: number;
 }
 type CoreAdapter = (db: AnyDb) => Structure;
 
@@ -417,7 +452,7 @@ async function extractCoreStats(content: string, keyword: string): Promise<Merma
   if (!adapter) {
     throw new Error(`no core adapter for diagram.type="${diagramType}" (keyword="${keyword}")`);
   }
-  const { nodeIds, edges, subgraphNames, maxDepth, treeDepth = 0 } = adapter(diagram.db);
+  const { nodeIds, edges, subgraphNames, maxDepth, treeDepth = 0, rows = 0 } = adapter(diagram.db);
 
   return {
     nodes: nodeIds.length,
@@ -425,6 +460,7 @@ async function extractCoreStats(content: string, keyword: string): Promise<Merma
     subgraphs: subgraphNames.length,
     max_subgraph_depth: maxDepth,
     max_tree_depth: treeDepth,
+    rows,
     node_ids: [...nodeIds].sort(),
     subgraph_names: subgraphNames,
     parser_used: "mermaid-core",
@@ -491,30 +527,76 @@ function adaptFlowchart(db: AnyDb): Structure {
   };
 }
 
+const lengthOf = (x: unknown): number => (Array.isArray(x) ? x.length : 0);
+
 function adaptClass(db: AnyDb): Structure {
   // classDb exposes data on direct properties: db.classes (Map), db.relations (Array).
-  const classes = (db.classes instanceof Map ? db.classes : new Map()) as Map<string, unknown>;
+  const classes = (db.classes instanceof Map ? db.classes : new Map()) as Map<
+    string,
+    { members?: unknown; methods?: unknown }
+  >;
   const relations = (Array.isArray(db.relations) ? db.relations : []) as Array<unknown>;
-  return { nodeIds: [...classes.keys()], edges: relations.length, subgraphNames: [], maxDepth: 0 };
+  let rows = 0;
+  for (const c of classes.values()) rows += lengthOf(c.members) + lengthOf(c.methods);
+  return { nodeIds: [...classes.keys()], edges: relations.length, subgraphNames: [], maxDepth: 0, rows };
 }
 
+interface SequenceRecord {
+  type?: number;
+  from?: unknown;
+  to?: unknown;
+  message?: unknown;
+}
 interface SequenceState {
   records?: {
     actors?: Map<string, unknown>;
     messages?: Array<unknown>;
+    boxes?: Array<{ name?: string }>;
   };
 }
+// Mermaid's sequence LINETYPE codes. Its messages list holds every statement in
+// order: a message, but also a note, an activation and each line that opens,
+// divides or closes a block. A block opens with one code, may be divided
+// (else, and, option), and closes with another. A par_over block closes with
+// PAR_END, like par.
+const SEQ_NOTE = 2;
+// loop, alt, opt, par, critical, break, par_over. A `rect` (22, 23) is left
+// out: it tints the background behind its messages, with no title or border,
+// so it is a highlight rather than a boundary to track.
+export const SEQUENCE_BLOCK_OPEN: ReadonlySet<number> = new Set([10, 12, 15, 19, 27, 30, 32]);
+export const SEQUENCE_BLOCK_CLOSE: ReadonlySet<number> = new Set([11, 14, 16, 21, 29, 31]);
+
+// A message runs from one participant to another (or itself). A note also
+// names both, so it is told apart by its code, and an activation names only one.
+export const isSequenceMessage = (m: SequenceRecord): boolean =>
+  m.type !== SEQ_NOTE && typeof m.from === "string" && typeof m.to === "string";
+
 function adaptSequence(db: AnyDb): Structure {
-  // sequenceDb stores state under db.state.records.{actors,messages}.
+  // sequenceDb stores state under db.state.records.{actors,messages,boxes}.
   const state = (db.state as SequenceState | undefined)?.records;
   const actors = state?.actors instanceof Map ? state.actors : new Map<string, unknown>();
   const rawMessages = state?.messages;
-  const messages = Array.isArray(rawMessages) ? rawMessages : [];
+  const records = (Array.isArray(rawMessages) ? rawMessages : []) as SequenceRecord[];
+  const boxes = Array.isArray(state?.boxes) ? state.boxes : [];
+  // A box groups participants and a block frames messages: both are drawn as
+  // a labelled boundary. Boxes cannot nest, and blocks nest inside each other.
+  const subgraphNames = boxes.map((b, i) => b.name || `box_${i}`);
+  let depth = 0;
+  let maxBlockDepth = 0;
+  for (const r of records) {
+    if (r.type !== undefined && SEQUENCE_BLOCK_OPEN.has(r.type)) {
+      depth++;
+      maxBlockDepth = Math.max(maxBlockDepth, depth);
+      subgraphNames.push(typeof r.message === "string" && r.message ? r.message : `block_${subgraphNames.length}`);
+    } else if (r.type !== undefined && SEQUENCE_BLOCK_CLOSE.has(r.type)) {
+      depth = Math.max(0, depth - 1);
+    }
+  }
   return {
     nodeIds: [...actors.keys()],
-    edges: messages.length,
-    subgraphNames: [],
-    maxDepth: 0,
+    edges: records.filter(isSequenceMessage).length,
+    subgraphNames,
+    maxDepth: Math.max(boxes.length > 0 ? 1 : 0, maxBlockDepth),
   };
 }
 
@@ -572,13 +654,16 @@ function adaptC4(db: AnyDb): Structure {
 function adaptEr(db: AnyDb): Structure {
   // ER db exposes data on direct properties. entities is a Map keyed on
   // entity name (CAR, NAMED-DRIVER); relationships is an Array.
-  const entities = db.entities instanceof Map ? db.entities : new Map<string, unknown>();
+  const entities = (db.entities instanceof Map ? db.entities : new Map()) as Map<string, { attributes?: unknown }>;
   const relationships = (Array.isArray(db.relationships) ? db.relationships : []) as Array<unknown>;
+  let rows = 0;
+  for (const e of entities.values()) rows += lengthOf(e.attributes);
   return {
     nodeIds: [...entities.keys()],
     edges: relationships.length,
     subgraphNames: [],
     maxDepth: 0,
+    rows,
   };
 }
 
@@ -713,21 +798,42 @@ function adaptSankey(db: AnyDb): Structure {
 interface StateNode {
   id?: string;
   type?: string;
+  shape?: string;
   isGroup?: boolean;
   parentId?: string;
 }
 interface StateEdge {
-  id1?: string;
-  id2?: string;
+  start?: string;
+  end?: string;
 }
+// The shapes stateDb gives what is not a state: the start and end markers
+// ([*], one pair per composite state), and a note with the group mermaid wraps
+// it in. A marker only says where a path begins or ends, and a note is an
+// annotation, as notes are in every other type.
+const STATE_NOT_A_STATE = new Set(["stateStart", "stateEnd", "note", "noteGroup"]);
+
+export const isCountedState = (n: { shape?: string }): boolean => !STATE_NOT_A_STATE.has(n.shape ?? "");
+
+// The states and transitions a stateDiagram draws, without markers or notes.
+// A transition into or out of a marker goes with it, as does a note's
+// connector. graph.ts draws the same set, so the two never disagree.
+export const countedStateElements = <N extends StateNode, E extends StateEdge>(
+  db: AnyDb,
+): { nodes: N[]; edges: E[] } => {
+  const all = (db.nodes as N[] | undefined) ?? [];
+  const nodes = all.filter(isCountedState);
+  const kept = new Set(nodes.map((n) => n.id ?? ""));
+  const edges = ((db.edges as E[] | undefined) ?? []).filter((e) => kept.has(e.start ?? "") && kept.has(e.end ?? ""));
+  return { nodes, edges };
+};
+
 // A composite state (`state A { ... }`) is a group that holds other states,
 // so it counts as a subgraph too, and its nesting depth is read from each
 // state's parentId chain. It stays a node as well, because it is drawn as a
 // labelled state.
 function adaptState(db: AnyDb): Structure {
   // stateDiagram db exposes data on direct properties.
-  const nodes = (db.nodes as StateNode[] | undefined) ?? [];
-  const edges = (db.edges as StateEdge[] | undefined) ?? [];
+  const { nodes, edges } = countedStateElements<StateNode, StateEdge>(db);
   const groups = nodes.filter((n) => n.isGroup === true);
   const parentOf = new Map(nodes.map((n) => [n.id ?? "", n.parentId]));
   let maxDepth = 0;

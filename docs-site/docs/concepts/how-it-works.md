@@ -83,7 +83,7 @@ A fixer proposes edits: a span of the source, its replacement, and an expectatio
 
 | Expectation | What must hold after the edit |
 |---|---|
-| `same-diagrams` | The markdown is unchanged outside the mermaid fences, once whitespace in text is collapsed, and the document holds the same number of diagrams. Each keeps its keyword, whether it parses, its type, counts, deepest nesting and tree depth, node ids and subgraph names. |
+| `same-diagrams` | The markdown is unchanged outside the mermaid fences, once whitespace in text is collapsed, and the document holds the same number of diagrams. Each keeps its keyword, whether it parses, its type, counts, rows, deepest nesting and tree depth, node ids and subgraph names. |
 | `same-tree` | The markdown tree is identical, except for whitespace in prose text. Mermaid fence bodies must match exactly, and no diagram that parsed may stop parsing. A raw diagram file has an empty tree, so there the diagram must also pass the `same-diagrams` check. |
 
 The engine splices the edits, parses the whole document again, and keeps the change only when every expectation holds.

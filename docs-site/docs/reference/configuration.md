@@ -118,7 +118,7 @@ Every complexity rule accepts the same options.
 | `nodeAcceptable`, `nodeComplex`, `nodeHardLimit` | number | The node-count bands |
 | `vcsAcceptable`, `vcsComplex` | number | The score bands. `vcsComplex` is the complex threshold that `complexity-visual-score-critical` fires above. |
 | `nodeTarget`, `vcsTarget` | number | The size a finding suggests splitting down to |
-| `edgeWeight`, `subgraphWeight`, `depthWeight` | number | The weights of the [visual complexity score](../concepts/complexity.md#two-measures) |
+| `edgeWeight`, `rowWeight`, `subgraphWeight`, `depthWeight` | number | The weights of the [visual complexity score](../concepts/complexity.md#two-measures) |
 | `nodeIdeal`, `vcsIdeal`, `vcsCritical` | number | Accepted, but no rule reads them yet |
 
 A threshold option overrides the preset's value.

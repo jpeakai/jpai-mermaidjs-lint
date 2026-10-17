@@ -443,13 +443,9 @@ sequenceDiagram
                 FE->>V: verify(edit, before, after), each edit
                 V->>E: stats() before and after
                 E-->>V: DiagramStats
-                alt every edit accepted
-                    V-->>FE: accept
-                    FE->>FE: keep next, record applied, restart the pass
-                else an edit refused
-                    V-->>FE: refuse
-                    FE->>FE: try one edit at a time, refuse and remember each failure
-                end
+                V-->>FE: accept or refuse, each edit
+                FE->>FE: every edit accepted: keep next, record applied, restart the pass
+                FE->>FE: an edit refused: try one edit at a time, refuse and remember each failure
             end
         end
     end
@@ -514,7 +510,7 @@ flowchart TB
         N{"Same number<br/>of diagrams?"}
         TB{"Tree equal with<br/>fence bodies blanked?"}
         KW{"Each diagram keeps<br/>its keyword?"}
-        SH{"Each diagram keeps parse success,<br/>type, node, edge and subgraph counts,<br/>both depths, node ids, subgraph names?"}
+        SH{"Each diagram keeps parse success,<br/>type, node, edge, row and subgraph counts,<br/>both depths, node ids, subgraph names?"}
     end
     NOT["Never compared:<br/>edge endpoints, edge labels, node text"]
     R["Refuse"]

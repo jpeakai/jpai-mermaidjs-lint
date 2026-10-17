@@ -106,7 +106,7 @@ An edit outside those bounds is refused, and the finding stays.
 
 | Expectation | Holds when |
 |---|---|
-| `same-diagrams` | The markdown is unchanged outside the mermaid fences, once whitespace in text is collapsed, and the document holds the same number of diagrams. Each diagram keeps its keyword, whether it parses, its diagram type, its node, edge and subgraph counts, its deepest nesting, its tree depth, its node ids and its subgraph names. |
+| `same-diagrams` | The markdown is unchanged outside the mermaid fences, once whitespace in text is collapsed, and the document holds the same number of diagrams. Each diagram keeps its keyword, whether it parses, its diagram type, its node, edge and subgraph counts, its rows, its deepest nesting, its tree depth, its node ids and its subgraph names. |
 | `same-tree` | The markdown tree is identical, except for whitespace in prose text. Mermaid fence bodies must match exactly, and no diagram that parsed may stop parsing. In a `.mmd` or `.mermaid` file the tree is empty, so the diagram must also pass the `same-diagrams` check. |
 
 Whether a diagram parses is the test `parse-diagram-unparseable` applies.

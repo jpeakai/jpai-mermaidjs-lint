@@ -73,10 +73,13 @@ const PRESET_ALIASES: Record<string, string> = {
   default: "high-density",
 };
 
-const VCS_WEIGHTS = { edge: 0.5, subgraph: 3.0, depth: 0.1 } as const;
+// A row (an entity's attribute, a class's member) weighs half an edge: it is
+// text to read, but inside a box the reader has already found.
+const VCS_WEIGHTS = { edge: 0.5, row: 0.25, subgraph: 3.0, depth: 0.1 } as const;
 
 export interface ThresholdConfig extends Preset {
   edge_weight: number;
+  row_weight: number;
   subgraph_weight: number;
   depth_weight: number;
   preset_name: string;
@@ -96,6 +99,7 @@ export const THRESHOLD_OPTIONS = {
   nodeTarget: "node_target",
   vcsTarget: "vcs_target",
   edgeWeight: "edge_weight",
+  rowWeight: "row_weight",
   subgraphWeight: "subgraph_weight",
   depthWeight: "depth_weight",
 } as const;
@@ -117,6 +121,7 @@ export const configFromPreset = (name: string): ThresholdConfig => {
   return {
     ...preset,
     edge_weight: VCS_WEIGHTS.edge,
+    row_weight: VCS_WEIGHTS.row,
     subgraph_weight: VCS_WEIGHTS.subgraph,
     depth_weight: VCS_WEIGHTS.depth,
     preset_name: canonical,
@@ -149,7 +154,7 @@ export interface ComplexityMetrics {
 const round2 = (x: number): number => Math.round(x * 100) / 100;
 const round4 = (x: number): number => Math.round(x * 10000) / 10000;
 
-// (nodes + edges*w_e + subgraphs*w_s) * (1 + depth*w_d). Edge density is
+// (nodes + edges*w_e + rows*w_r + subgraphs*w_s) * (1 + depth*w_d). Edge density is
 // reported as 0 below two nodes rather than dividing by a fallback, which gave
 // nonsense when a parser returned edges but no nodes.
 //
@@ -164,7 +169,7 @@ export const calculateComplexity = (stats: DiagramStats, config: ThresholdConfig
   const e = stats.edges;
   const s = stats.subgraphs;
   const d = Math.max(stats.max_subgraph_depth, stats.max_tree_depth);
-  const base = n + e * config.edge_weight + s * config.subgraph_weight;
+  const base = n + e * config.edge_weight + stats.rows * config.row_weight + s * config.subgraph_weight;
   const vcs = base * (1 + d * config.depth_weight);
   const maxEdges = n > 1 ? n * (n - 1) : 0;
   return {

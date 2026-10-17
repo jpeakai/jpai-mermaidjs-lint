@@ -8,7 +8,7 @@ description: Every typed edge between the bundle's decision records
 
 # Decision relationship graph
 
-20 decision records, 10 typed edges, in 13 groups.
+21 decision records, 11 typed edges, in 14 groups.
 Every edge comes from a record's `relates_to` block, so this view cannot drift from the records.
 
 For an interactive view of the same graph, open [graph.html](graph.html).
@@ -33,4 +33,4 @@ For an interactive view of the same graph, open [graph.html](graph.html).
 An edge whose inverse is missing on the far record.
 These are gaps in the record set, not rendering artifacts.
 
-None: every edge has its inverse.
+* `MJL-0021` declares `see_also MJL-0001`, but `MJL-0001` has no `see_also MJL-0021`

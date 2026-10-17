@@ -1,0 +1,35 @@
+/* The parsed-structure graphs on the Measuring complexity page, drawn by
+   complexity-graphs.js. The script reads these tokens at draw time, so each
+   palette has its own, and every text colour clears 4.5:1 on its fill. */
+[data-md-color-scheme="slate"] {
+  --ml-cy-canvas: #1a1a1c;
+  --ml-cy-node-bg: #2d2640;
+  --ml-cy-node-fg: #f0eaff;
+  --ml-cy-node-border: #c3b0fd;
+  --ml-cy-group-bg: #22212a;
+  --ml-cy-group-fg: #e0d6ff;
+  --ml-cy-group-border: #8f80b8;
+  --ml-cy-edge: #a99bd0;
+}
+
+[data-md-color-scheme="default"] {
+  --ml-cy-canvas: #ffffff;
+  --ml-cy-node-bg: #ede7f6;
+  --ml-cy-node-fg: #1f1147;
+  --ml-cy-node-border: #5c4295;
+  --ml-cy-group-bg: #f7f4fb;
+  --ml-cy-group-fg: #3d2c66;
+  --ml-cy-group-border: #8a7aa8;
+  --ml-cy-edge: #6f55a8;
+}
+
+.md-typeset .ml-cy {
+  height: 18rem;
+  margin: 0.6rem 0;
+  border-radius: 12px;
+  background: var(--ml-cy-canvas);
+}
+
+.md-typeset .ml-cy--wide {
+  height: 32rem;
+}

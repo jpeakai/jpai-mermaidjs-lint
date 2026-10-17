@@ -18,6 +18,71 @@ Edges add clutter, each subgraph adds a boundary to track, and each level of nes
 For a `mindmap`, `treemap`, `treeView` or `ishikawa`, the nesting depth in the score is the tree's depth below its root.
 The three weights are options: `edgeWeight`, `subgraphWeight` and `depthWeight`.
 
+## The score, one idea at a time
+
+The steps below build the score from a single idea upwards.
+Each step shows a small diagram's source, then the structure mermaid's parser returned for it.
+That graph is not drawn from the source text.
+The site build runs the linter's own parse engine over each example, and draws the nodes, edges and subgraphs it read.
+A subgraph is drawn as a dashed box around its members.
+The worked score under each graph is also computed in that build, with the default weights.
+
+### Nodes
+
+Start with nodes and nothing else.
+Each node is one thing the reader must find and name, so each adds one point.
+Six unconnected nodes score 6.
+
+--8<-- "complexity/nodes.md"
+
+### Edges
+
+Join the same six nodes with five edges.
+An edge is a line to trace, but it is lighter than a node, so each adds half a point.
+The diagram now scores 8.5.
+
+--8<-- "complexity/edges.md"
+
+### Subgraphs
+
+Group five of the nodes into two subgraphs, Billing and Warehouse.
+A subgraph is a boundary the reader must track, so each adds three points.
+Grouping also creates one level of nesting, which scales the whole sum by 1.1.
+The diagram now scores 15.95.
+
+--8<-- "complexity/subgraphs.md"
+
+### Nesting depth
+
+Move Packing and Shipping into a Dispatch subgraph inside Warehouse.
+The extra subgraph adds three points, and the second level of nesting raises the scale to 1.2.
+Nesting multiplies the score rather than adding to it, because a deeper diagram makes every element harder to place.
+The diagram now scores 21.
+
+--8<-- "complexity/nesting.md"
+
+At three levels, nesting also fires its own rule, as [Each measure is a ladder](#each-measure-is-a-ladder) explains.
+
+### Tree depth
+
+A `mindmap` draws no subgraphs, but a deep tree is as hard to follow as deep nesting.
+For a tree-shaped type, the depth in the score is how far the tree reaches below its root.
+Every entry is a node, and every link from parent to child is an edge.
+This mindmap reaches three levels below its root, so it scores 13.
+
+--8<-- "complexity/tree.md"
+
+### The full score
+
+A real diagram combines all of these.
+This shop architecture has more nodes, more edges and five subgraphs, nested two levels deep.
+It scores 45.
+
+--8<-- "complexity/full.md"
+
+The score on its own says nothing about whether 45 is too much.
+That depends on the audience, which is what a preset sets.
+
 ## Presets set the thresholds
 
 A preset is a named set of thresholds for one density of diagram.
@@ -43,6 +108,11 @@ Only the rule for that band fires, so one diagram never gets three findings for 
 
 `nodeComplex`, `nodeHardLimit` and `vcsComplex` each bound two neighbouring bands, so two rules read each of them.
 `nodeAcceptable` and `vcsAcceptable` bound only the lowest band, so one rule reads each.
+
+The shop architecture from [The full score](#the-full-score) lands in a different band under each preset.
+Each row below is a real run of the complexity rules over that diagram.
+
+--8<-- "complexity/presets.md"
 
 Nesting has its own rule: subgraphs nested three or more levels deep fire `complexity-subgraph-nesting-too-deep`.
 That limit is fixed at three, and no preset or option changes it.

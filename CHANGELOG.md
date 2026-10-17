@@ -10,7 +10,13 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- The docs site home page follows the README section by section.
+- Measuring complexity builds the score one idea at a time, with a graph of what mermaid's parser returned for each example and its worked score.
+- How a run works and the plugin model gain sequence diagrams, each with a simple and a detailed version.
+- The site's OsakaNights theme lives in `docs-site/theme/osakanights/`, ready for another MkDocs Material site to adopt.
+- Every Biome complexity rule now fails the check, and the code is refactored to pass with no change in behaviour.
 
 ## [0.7.1] - 2026-10-16
 

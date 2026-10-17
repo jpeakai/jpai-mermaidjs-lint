@@ -17,7 +17,7 @@ site_url: https://jpeakai.github.io/jpai-mermaidjs-lint/
 repo_url: https://github.com/jpeakai/jpai-mermaidjs-lint
 repo_name: jpeakai/jpai-mermaidjs-lint
 edit_uri: ""
-copyright: Released under the MIT licence
+copyright: MIT licence
 docs_dir: docs
 site_dir: ../tmp/docs-site
 strict: true

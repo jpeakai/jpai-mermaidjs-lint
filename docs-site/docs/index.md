@@ -10,9 +10,6 @@
 
 ## The four tenets
 
-Every rule and every design choice serves one of four tenets.
-Three tenets are guarantees about every diagram the tool passes, and the fourth is a commitment about the tool.
-
 --8<-- "tenets.md"
 
 The [contrast](reference/rules.md#contrast), [parse](reference/rules.md#parse) and [complexity](reference/rules.md#complexity) rules deliver the first three, and [the plugin model](concepts/plugin-model.md) delivers the fourth.
@@ -34,19 +31,19 @@ Run these in a project that has a `package.json`, then name your own markdown fi
 
     ```sh
     bun add --dev @jpeakai/mermaidjs-lint
-    bunx mermaidjs-lint docs/
+    bunx @jpeakai/mermaidjs-lint docs/
+    bunx @jpeakai/mermaidjs-lint --fix docs/
     ```
 
 === "npm"
 
     ```sh
     npm install --save-dev @jpeakai/mermaidjs-lint
-    npx mermaidjs-lint docs/
+    npx -y @jpeakai/mermaidjs-lint docs/
+    npx -y @jpeakai/mermaidjs-lint --fix docs/
     ```
 
-Every path you name must exist, or the run stops with a usage error and exit 2.
-The run exits 1 while any finding remains, so it works as a gate in CI with no extra flags.
-[Get started](get-started.md) begins from an empty folder.
+[Get started](get-started.md) to begin from an empty folder through a fully worked example.
 
 !!! info "Which version these pages describe"
 

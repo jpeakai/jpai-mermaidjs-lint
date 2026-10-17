@@ -2,6 +2,14 @@
 
 ```mermaid
 flowchart LR
+  Stage1[Nodes N0–N24] --> Stage2[Nodes N24–N48]
+  Stage2 --> Stage3[Nodes N48–N72]
+  Stage3 --> Stage4[Nodes N72–N96]
+  Stage4 --> Stage5[Nodes N96–N120]
+```
+
+```mermaid
+flowchart LR
   N0 --> N1
   N1 --> N2
   N2 --> N3
@@ -26,6 +34,10 @@ flowchart LR
   N21 --> N22
   N22 --> N23
   N23 --> N24
+```
+
+```mermaid
+flowchart LR
   N24 --> N25
   N25 --> N26
   N26 --> N27
@@ -36,10 +48,6 @@ flowchart LR
   N31 --> N32
   N32 --> N33
   N33 --> N34
-```
-
-```mermaid
-flowchart LR
   N34 --> N35
   N35 --> N36
   N36 --> N37
@@ -54,6 +62,10 @@ flowchart LR
   N45 --> N46
   N46 --> N47
   N47 --> N48
+```
+
+```mermaid
+flowchart LR
   N48 --> N49
   N49 --> N50
   N50 --> N51
@@ -74,14 +86,14 @@ flowchart LR
   N65 --> N66
   N66 --> N67
   N67 --> N68
-```
-
-```mermaid
-flowchart LR
   N68 --> N69
   N69 --> N70
   N70 --> N71
   N71 --> N72
+```
+
+```mermaid
+flowchart LR
   N72 --> N73
   N73 --> N74
   N74 --> N75
@@ -106,16 +118,16 @@ flowchart LR
   N93 --> N94
   N94 --> N95
   N95 --> N96
+```
+
+```mermaid
+flowchart LR
   N96 --> N97
   N97 --> N98
   N98 --> N99
   N99 --> N100
   N100 --> N101
   N101 --> N102
-```
-
-```mermaid
-flowchart LR
   N102 --> N103
   N103 --> N104
   N104 --> N105

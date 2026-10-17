@@ -28,6 +28,7 @@ import {
 import { type Fixture, loadFixtures } from "../tests/fixture-loader.ts";
 import { PROJECT_ROOT } from "../tests/helpers.ts";
 import { complexitySnippets } from "./complexity-steps.ts";
+import type { EvalCell, EvalResults } from "./eval-outputs.ts";
 
 const SITE = join(PROJECT_ROOT, "docs-site");
 const SITE_DOCS = join(SITE, "docs");
@@ -485,21 +486,40 @@ const evalCases = (): EvalCase[] =>
       return { name: file.replace(/^eval_|\.py$/g, ""), fixture, target };
     });
 
-// The files the agents left for one fixture, as harness/model and source.
-const evalCells = (fixture: string): { cell: string; source: string }[] => {
-  const dir = join(EVAL_OUTPUTS, fixture);
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .sort()
-    .flatMap((harness) =>
-      readdirSync(join(dir, harness))
-        .filter((f) => f.endsWith(".md"))
-        .sort()
-        .map((f) => ({
-          cell: `${harness}/${basename(f, ".md")}`,
-          source: readFileSync(join(dir, harness, f), "utf8"),
-        })),
-    );
+// The last run, as scripts/eval-outputs.ts copied it.
+const evalResults = (): EvalResults =>
+  JSON.parse(readFileSync(join(EVAL_OUTPUTS, "results.json"), "utf8")) as EvalResults;
+
+const cellName = (c: EvalCell): string => `${c.harness}/${c.model}`;
+
+// Each harness, then its models from the smallest tier up.
+const byColumn = (a: EvalCell, b: EvalCell): number => a.harness.localeCompare(b.harness) || a.tier - b.tier;
+
+// The run's date, skill commit, pass count and cost, then one row per case
+// and one column per harness and model.
+const agentEvalResults = (): string => {
+  const r = evalResults();
+  const columns = [...new Map([...r.cells].sort(byColumn).map((c) => [cellName(c), c])).values()];
+  const cases = [...new Set(r.cells.map((c) => c.case))].sort();
+  const tierList = [...new Set(columns.map((c) => c.tier))].sort();
+  const tiers =
+    tierList.length > 1 ? `${tierList.slice(0, -1).join(", ")} and ${tierList.at(-1)}` : `${tierList[0] ?? ""}`;
+  const passed = r.cells.filter((c) => c.verdict === "pass").length;
+  const verdict = (name: string, model: string): string => {
+    const c = r.cells.find((x) => x.case === name && cellName(x) === model);
+    return c ? `${c.verdict}, ${c.turns} turns` : "not run";
+  };
+  return [
+    `Run on ${r.date} with the tier ${tiers} models of each harness, the project matrix in \`pyproject.toml\`.`,
+    `The run used the skill as of commit \`${r.skill_commit}\`.`,
+    "",
+    `| Case | ${columns.map((c) => `\`${cellName(c)}\``).join(" | ")} |`,
+    `|---|${columns.map(() => "---").join("|")}|`,
+    ...cases.map((name) => `| \`${name}\` | ${columns.map((c) => verdict(name, cellName(c))).join(" | ")} |`),
+    "",
+    `${passed} of ${r.cells.length} cells passed.`,
+    `The whole run cost an estimated $${r.cost_usd.toFixed(2)}.`,
+  ].join("\n");
 };
 
 // A file's diagrams drawn full width, or its source when a finding means
@@ -525,20 +545,26 @@ const evalCaseSection = async (c: EvalCase): Promise<string> => {
     "",
     admonition("???", "note", "Original source", fenced(seed, "markdown")),
   ];
-  const cells = evalCells(c.fixture);
-  if (!cells.length) fail(`docs-site/eval-outputs/${c.fixture}`, "holds no agent output");
-  for (const { cell, source } of cells) {
-    const where = `docs-site/eval-outputs/${c.fixture}/${cell}.md`;
-    // The grader's verdict was zero findings, so an output that reports any
-    // was recorded wrongly.
+  const cells = evalResults()
+    .cells.filter((x) => x.case === c.name)
+    .sort(byColumn);
+  if (!cells.length) fail(`docs-site/eval-outputs/results.json`, `holds no cell for ${c.name}`);
+  for (const x of cells) {
+    const where = `docs-site/eval-outputs/${c.fixture}/${cellName(x)}.md`;
+    const source = readFileSync(join(PROJECT_ROOT, where), "utf8");
     const left = await checkMarkdown(source, join(PROJECT_ROOT, where), GITHUB);
-    if (left.length) fail(where, `an agent output must lint clean, but reports ${distinct(left).join(" ")}`);
+    // A passing cell's grader saw zero findings, so a passing output that
+    // reports any was copied wrongly.
+    const pass = x.verdict === "pass";
+    if (pass && left.length) fail(where, `a passing output must lint clean, but reports ${distinct(left).join(" ")}`);
     out.push(
-      `#### \`${cell}\``,
+      `#### \`${cellName(x)}\``,
+      "",
+      `${badge(x.verdict, pass ? "fix" : "nofix")} ${x.turns} turns, an estimated $${x.cost_usd.toFixed(3)}`,
       "",
       ...evalDrawing(source, left),
       "",
-      admonition("???", "success", "Output source", fenced(source, "markdown")),
+      admonition("???", pass ? "success" : "failure", "Output source", fenced(source, "markdown")),
     );
   }
   return out.join("\n");
@@ -663,6 +689,7 @@ const main = async (): Promise<void> => {
     "rules-table.md": rulesTable(),
     "presets-table.md": presetsTable(),
     "home-compare.md": await homeCompare(),
+    "agent-eval-results.md": agentEvalResults(),
     "agent-eval-outputs.md": await agentEvalOutputs(),
     ...(await complexitySnippets(DOC_FILE)),
   };

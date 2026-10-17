@@ -36,30 +36,12 @@ The grader is deterministic: the verdict comes from the linter and the structure
 
 ## Results
 
-Run on 2026-10-15 with the tier 1 and tier 2 model of each harness, the project matrix in `pyproject.toml` at the time.
-The matrix has since replaced `claude-haiku-4-5-20251001` with `claude-haiku-5-5`.
-The run used the skill as of commit `7285ec2`.
-The results predate the current skill text.
-`SKILL.md` has changed since, first in commit `b64f849` later the same day.
-The suite has not been run since.
-
-| Case | `claude/claude-sonnet-5-5` | `claude/claude-haiku-4-5-20251001` | `codex/gpt-5.6-terra` | `codex/gpt-6-luna` |
-|---|---|---|---|---|
-| `border_contrast` | pass, 4 turns | pass, 6 turns | pass, 5 turns | pass, 5 turns |
-| `erd_contrast` | pass, 4 turns | pass, 6 turns | pass, 3 turns | pass, 3 turns |
-| `label_colour` | pass, 3 turns | pass, 7 turns | pass, 8 turns | pass, 5 turns |
-| `large_chain` | pass, 5 turns | pass, 8 turns | pass, 10 turns | pass, 5 turns |
-| `nesting` | pass, 4 turns | pass, 6 turns | pass, 4 turns | pass, 5 turns |
-| `parse_repair` | pass, 4 turns | pass, 9 turns | pass, 7 turns | pass, 5 turns |
-
-Every cell passed.
-The whole run cost an estimated $1.04.
+--8<-- "agent-eval-results.md"
 
 ## What each agent wrote
 
-Each case shows its original fixture, then the file each harness and model left behind.
-That run removed its workspaces, so each file was rebuilt by replaying the session log's edits onto the fixture.
-Every rebuilt file reports zero findings, as the grader recorded, and the site build fails if one ever does not.
+Each case shows its original fixture, then the file each harness and model left behind, copied from its kept workspace.
+A passing output must lint clean, and the site build fails if one does not.
 
 --8<-- "agent-eval-outputs.md"
 
@@ -90,6 +72,12 @@ Run it live. Every cell is a billed agent session:
 
 ```sh
 make evals
+```
+
+Then copy the run onto this page, and rebuild the site:
+
+```sh
+make eval-outputs site
 ```
 
 The suite's [README](https://github.com/jpeakai/jpai-mermaidjs-lint/tree/main/skills/mermaidjs-lint/evals) explains each case and its grader.

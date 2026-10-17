@@ -1,15 +1,38 @@
 # A long chain
 
-Overview: the links between the parts.
+The chain is split into an overview and five parts of at most 25 nodes each.
+
+## Overview
 
 ```mermaid
 flowchart LR
-  N30 --> N31
-  N60 --> N61
-  N90 --> N91
+  subgraph P1["Part 1: N0 to N24"]
+    N0
+    N24
+  end
+  subgraph P2["Part 2: N25 to N49"]
+    N25
+    N49
+  end
+  subgraph P3["Part 3: N50 to N74"]
+    N50
+    N74
+  end
+  subgraph P4["Part 4: N75 to N99"]
+    N75
+    N99
+  end
+  subgraph P5["Part 5: N100 to N120"]
+    N100
+    N120
+  end
+  N24 --> N25
+  N49 --> N50
+  N74 --> N75
+  N99 --> N100
 ```
 
-Part 1: N0 to N30.
+## Part 1
 
 ```mermaid
 flowchart LR
@@ -37,18 +60,18 @@ flowchart LR
   N21 --> N22
   N22 --> N23
   N23 --> N24
-  N24 --> N25
+```
+
+## Part 2
+
+```mermaid
+flowchart LR
   N25 --> N26
   N26 --> N27
   N27 --> N28
   N28 --> N29
   N29 --> N30
-```
-
-Part 2: N31 to N60.
-
-```mermaid
-flowchart LR
+  N30 --> N31
   N31 --> N32
   N32 --> N33
   N33 --> N34
@@ -67,7 +90,12 @@ flowchart LR
   N46 --> N47
   N47 --> N48
   N48 --> N49
-  N49 --> N50
+```
+
+## Part 3
+
+```mermaid
+flowchart LR
   N50 --> N51
   N51 --> N52
   N52 --> N53
@@ -78,12 +106,7 @@ flowchart LR
   N57 --> N58
   N58 --> N59
   N59 --> N60
-```
-
-Part 3: N61 to N90.
-
-```mermaid
-flowchart LR
+  N60 --> N61
   N61 --> N62
   N62 --> N63
   N63 --> N64
@@ -97,7 +120,12 @@ flowchart LR
   N71 --> N72
   N72 --> N73
   N73 --> N74
-  N74 --> N75
+```
+
+## Part 4
+
+```mermaid
+flowchart LR
   N75 --> N76
   N76 --> N77
   N77 --> N78
@@ -113,12 +141,7 @@ flowchart LR
   N87 --> N88
   N88 --> N89
   N89 --> N90
-```
-
-Part 4: N91 to N120.
-
-```mermaid
-flowchart LR
+  N90 --> N91
   N91 --> N92
   N92 --> N93
   N93 --> N94
@@ -127,7 +150,12 @@ flowchart LR
   N96 --> N97
   N97 --> N98
   N98 --> N99
-  N99 --> N100
+```
+
+## Part 5
+
+```mermaid
+flowchart LR
   N100 --> N101
   N101 --> N102
   N102 --> N103

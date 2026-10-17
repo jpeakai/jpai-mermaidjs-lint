@@ -5,6 +5,6 @@ A fill with no `color:` beside it cannot be audited, so it is reported rather th
 ```mermaid
 flowchart LR
   A --> B
-  classDef c fill:#123456,color:#ffffff
+  classDef c fill:#123456,color:#fff
   class A c
 ```

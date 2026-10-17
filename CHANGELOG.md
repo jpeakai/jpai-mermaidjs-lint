@@ -13,6 +13,8 @@ Anything under `Unreleased` is on `main` but not yet released.
 ### Changed
 
 - The agent evals page shows each case's original fixture and the file every harness and model left behind.
+- The agent evals now cover the tier 1, 2 and 3 models of Claude Code and Codex, with `claude-haiku-5-5` in place of `claude-haiku-4-5`.
+  The page shows the new run.
 
 ## [0.7.3] - 2026-10-17
 

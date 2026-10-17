@@ -1,4 +1,4 @@
-.PHONY: install build fix adrs theme check ci typecheck test test-cov-ts docs-ci site site-serve evals-dry evals clean
+.PHONY: install build fix adrs theme check ci typecheck test test-cov-ts docs-ci site site-serve evals-dry evals eval-outputs clean
 
 install:
 	uv sync
@@ -95,6 +95,11 @@ evals-dry:
 
 evals:
 	uv run pytest skills/mermaidjs-lint/evals -v $(ARGS)
+
+# Copy the last live run into docs-site/eval-outputs/: the file each agent
+# left, and results.json, which the agent evals page draws from.
+eval-outputs:
+	bun run scripts/eval-outputs.ts
 
 clean:
 	rm -rf dist tmp node_modules

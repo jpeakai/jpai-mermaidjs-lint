@@ -23,7 +23,8 @@
     "includes": [
       "src/**/*.ts",
       "tests/**/*.ts",
-      "scripts/**/*.ts"
+      "scripts/**/*.ts",
+      "docs-site/theme/**/*.ts"
     ]
   }
 }

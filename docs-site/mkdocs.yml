@@ -10,6 +10,11 @@
 # Authored, and included with --8<--:
 #   diagrams/  (one diagram per file)
 #   includes/  (text shared with the root markdown, such as tenets.md)
+#
+# The OsakaNights look comes from theme/osakanights/: the theme, palette, fonts
+# and markdown extensions from its base config, and its stylesheet from
+# custom_dir. A list set here replaces the base list, a mapping merges with it.
+INHERIT: theme/osakanights/mkdocs.base.yml
 
 site_name: mermaidjs-lint
 site_description: Deterministic lint gates and verified fixers for Mermaid diagrams in markdown
@@ -23,42 +28,11 @@ site_dir: ../tmp/docs-site
 strict: true
 
 theme:
-  name: material
+  custom_dir: theme/osakanights/overrides
   logo: assets/logo.svg
   favicon: assets/logo.svg
-  # OsakaNights: Fira Sans to read, JetBrains Mono for code, and Fraunces on
-  # headings, loaded by assets/extra.css.
-  font:
-    text: Fira Sans
-    code: JetBrains Mono
   icon:
     repo: fontawesome/brands/github
-  features:
-    - content.code.copy
-    - content.tabs.link
-    - navigation.footer
-    - navigation.indexes
-    - navigation.sections
-    - navigation.tabs
-    - navigation.top
-    - search.suggest
-    - toc.follow
-  # Night first, as OsakaNights is dark-native. The reader's system setting still wins.
-  palette:
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to Day
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/weather-night
-        name: Switch to Night
 
 extra:
   social:
@@ -76,36 +50,23 @@ extra_javascript:
   - path: assets/complexity-graphs.js
     type: module
 
+# A mapping, so it merges with the base extensions rather than replacing them.
 markdown_extensions:
-  - admonition
-  - attr_list
-  - md_in_html
-  - tables
-  - toc:
-      permalink: true
-  - pymdownx.details
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets:
-      # Resolved from the working directory, so `make site` runs from the repo root.
-      base_path: [docs-site/snippets, docs-site/diagrams, docs-site/includes]
-      check_paths: true
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
-        # Examples scored under the github profile, drawn by plain mermaid as
-        # GitHub draws them, because Material forces its own label colour.
-        - name: mermaid-github
-          class: mermaid-github
-          format: !!python/name:pymdownx.superfences.fence_div_format
-  - pymdownx.tabbed:
-      alternate_style: true
+  pymdownx.snippets:
+    # Resolved from the working directory, so `make site` runs from the repo root.
+    base_path: [docs-site/snippets, docs-site/diagrams, docs-site/includes]
+    check_paths: true
+  pymdownx.superfences:
+    # A list replaces the base one, so the base mermaid fence is repeated.
+    custom_fences:
+      - name: mermaid
+        class: mermaid
+        format: !!python/name:pymdownx.superfences.fence_code_format
+      # Examples scored under the github profile, drawn by plain mermaid as
+      # GitHub draws them, because Material forces its own label colour.
+      - name: mermaid-github
+        class: mermaid-github
+        format: !!python/name:pymdownx.superfences.fence_div_format
 
 nav:
   - Home: index.md

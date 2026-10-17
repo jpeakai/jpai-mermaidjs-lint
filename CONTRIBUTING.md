@@ -33,7 +33,8 @@ make install   # uv sync, then bun install
 ## Making a change
 
 ```sh
-make fix       # regenerate the ADR bundle, then biome autofix
+make fix       # regenerate the ADR bundle and the site theme's tokens, then biome autofix
+make theme     # write the site theme's colour tokens from its design-tokens.json
 make check     # typecheck, coverage, docs-ci and lint, with Bun and Node, as GitHub Actions runs it
 make build     # bundle src into dist for Node, which git ignores
 make test      # build, then run the test suite once

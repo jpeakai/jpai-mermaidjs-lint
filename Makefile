@@ -1,4 +1,4 @@
-.PHONY: install build fix adrs check ci typecheck test test-cov-ts docs-ci site site-serve evals-dry evals clean
+.PHONY: install build fix adrs theme check ci typecheck test test-cov-ts docs-ci site site-serve evals-dry evals clean
 
 install:
 	uv sync
@@ -16,9 +16,14 @@ build:
 	bun build src/testing.ts --target=node --format=esm --packages=external --outfile dist/testing.js
 	bunx --bun tsc --project tsconfig.build.json
 
-# Regenerate the decision bundle, then autofix formatting and lint.
-fix: adrs
-	bunx --bun @biomejs/biome check --write src tests scripts
+# Regenerate the decision bundle and the theme's tokens, then autofix formatting and lint.
+fix: adrs theme
+	bunx --bun @biomejs/biome check --write src tests scripts docs-site/theme
+
+# Write the OsakaNights colour tokens from design-tokens.json into the theme's
+# stylesheet. check runs the same script with --check, so a hand edit fails.
+theme:
+	bun run docs-site/theme/osakanights/tokens.ts
 
 # Validate the records against adrs/record.schema.json, then render the bundle.
 adrs:
@@ -29,7 +34,8 @@ adrs:
 # dist/bin.js). The docs site build needs uv as well, so it is `make site`,
 # which CI runs beside this.
 check: typecheck test-cov-ts docs-ci
-	bunx --bun @biomejs/biome check src tests scripts
+	bun run docs-site/theme/osakanights/tokens.ts --check
+	bunx --bun @biomejs/biome check src tests scripts docs-site/theme
 
 typecheck:
 	bunx --bun tsc --project tsconfig.json --noEmit
@@ -60,7 +66,8 @@ ci: fix typecheck test-cov-ts docs-ci
 SITE_GENERATED := docs-site/docs/reference/rules.md docs-site/docs/gallery/fixtures.md docs-site/docs/gallery/examples.md
 SITE_DOCS := $(filter-out $(SITE_GENERATED),$(wildcard docs-site/docs/*.md docs-site/docs/*/*.md)) $(wildcard docs-site/diagrams/*.md docs-site/includes/*.md)
 SKILL_DOCS := $(wildcard skills/*/*.md skills/*/evals/*.md)
-DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md) $(SITE_DOCS) $(SKILL_DOCS) tests/fixtures/README.md
+THEME_DOCS := $(wildcard docs-site/theme/*/*.md)
+DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md) $(SITE_DOCS) $(THEME_DOCS) $(SKILL_DOCS) tests/fixtures/README.md
 
 # The docs site. The generator re-checks every example as it writes the
 # reference pages, then mkdocs builds in strict mode, so a drifted example or a

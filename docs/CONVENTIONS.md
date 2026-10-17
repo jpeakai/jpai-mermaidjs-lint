@@ -10,13 +10,13 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 - **Glossary:** `GLOSSARY.md` at root, one canonical term per concept, new domain terms added in the change that introduces them
 - **ADR layout:** `okf-yaml`, with records authored in `adrs/NNNN-slug.yml` and markdown generated from them
 - **Record ids:** prefixed `MJL-` in this repo, so a citation is unambiguous across bundles
-- **Generated paths:** `adrs/*.md`, `adrs/index.md`, `adrs/graph.md`, `adrs/graph.json`, `adrs/graph.html`, and, ignored by git, `docs-site/docs/reference/rules.md`, `docs-site/docs/gallery/fixtures.md`, `docs-site/docs/gallery/examples.md`, `docs-site/snippets/`
-- **Regenerate:** `make adrs` for the decision bundle, which `make fix` runs, and `make site` for the docs site
+- **Generated paths:** `adrs/*.md`, `adrs/index.md`, `adrs/graph.md`, `adrs/graph.json`, `adrs/graph.html`, and, ignored by git, `docs-site/docs/reference/rules.md`, `docs-site/docs/gallery/fixtures.md`, `docs-site/docs/gallery/examples.md`, `docs-site/snippets/`. So is the token block in the site theme's `osakanights.css`, written from its `design-tokens.json`.
+- **Regenerate:** `make adrs` for the decision bundle and `make theme` for the theme's tokens, which `make fix` both runs, and `make site` for the docs site
 - **Diagrams on the site:** each lives once in `docs-site/diagrams/` and is included into pages, so it is linted on its own
 - **Shared text:** text that both the site and the root markdown carry, such as the four tenets, lives once in `docs-site/includes/`. The site includes it, and a test holds each root copy to it verbatim.
 - **Home mirrors the README:** the site home page opens with the README's sections, in the same order. Sections only the site has come after them. `tests/readme-site.test.ts` holds the order and the shared includes.
 - **Agent files:** `CLAUDE.md` at root, with no nested agent files
-- **Prose gates:** `make docs-ci` gates every authored markdown file and its diagrams. That is the root files, `docs/`, `adrs/`, the site's authored pages, diagrams and includes, the skill's markdown and `tests/fixtures/README.md`. Inputs under test are outside it: the fixtures, `examples/` and the skill's eval fixtures in `skills/mermaidjs-lint/evals/fixtures/`. The site's generated pages are checked by `make site` instead.
+- **Prose gates:** `make docs-ci` gates every authored markdown file and its diagrams. That is the root files, `docs/`, `adrs/`, the site's authored pages, diagrams, includes and theme README, the skill's markdown and `tests/fixtures/README.md`. Inputs under test are outside it: the fixtures, `examples/` and the skill's eval fixtures in `skills/mermaidjs-lint/evals/fixtures/`. The site's generated pages are checked by `make site` instead.
 - **Changelog:** `CHANGELOG.md` at root, in Keep a Changelog style, curated by hand. A user-visible change adds a line under `Unreleased` in the same change, and a release renames that section to its version. The Publish workflow copies that section into the GitHub release notes.
 - **Documented version:** the docs site describes the latest release. The Docs workflow deploys it only after a Publish run succeeds, or when run by hand. The README on GitHub describes `main`. Anything on `main` but not yet released is listed under `Unreleased` in `CHANGELOG.md`.
 - **Proposals and RFCs:** not used
@@ -41,6 +41,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 | `docs/DATA_MODEL.md` | The document, rule, registry, fix and plugin models as dual-density erDiagrams, each citing its source file | Contributors | A type in `src/` that a diagram draws gains, loses or changes a field |
 | `.github/workflows/` | CI on pushes and pull requests to main, the Docs build on pull requests and main with its Pages deploy after each successful Publish run, and the manually triggered Publish workflow | Maintainers | The gate, the site or the release process changes |
 | `docs-site/mkdocs.yml` | The site's config and navigation | Consumers | A page is added, moved or renamed |
+| `docs-site/theme/osakanights/` | The site's OsakaNights look, kept brand-generic so another site can reuse it, with a README on adopting it | Both | The palette, fonts or generic styling changes |
 | `docs-site/docs/` | The site's authored pages, scored under `mkdocs-material` | Consumers | Behaviour, flags, config or the plugin contract changes |
 | `docs-site/diagrams/` | One diagram per file, included into site pages | Consumers | The model, the plugin loader or the run pipeline changes |
 | `docs-site/includes/` | Text the site includes and the root markdown repeats verbatim: the tenets and the README text the home page shares | Both | A tenet or a shared README line is reworded |

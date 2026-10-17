@@ -233,133 +233,154 @@ const refuseOutsideLinks = async (files: string[], root: string, cwd: string): P
   }
 };
 
-const run = async (argv: string[], cwd: string): Promise<number> => {
-  let parsed: Parsed;
+type Values = Parsed["values"];
+
+const parseArgv = (argv: string[]): Parsed => {
   try {
-    parsed = parse(argv);
+    return parse(argv);
   } catch (err) {
     throw new FlagError("argv", err instanceof Error ? err.message : String(err));
   }
-  const { values, positionals } = parsed;
-  if (values.help) {
-    console.log(USAGE);
-    return 0;
-  }
-  if (values.version) {
-    console.log(pkg.version);
-    return 0;
-  }
-  const listing = values["list-rules"];
-  const validating = values["validate-plugins"];
+};
+
+const runFlagsOf = (values: Values): RunFlags => {
   const canvas = {
     ...(values["canvas-light"] !== undefined && { light: values["canvas-light"] }),
     ...(values["canvas-dark"] !== undefined && { dark: values["canvas-dark"] }),
   };
-  const flags: RunFlags = {
+  return {
     preset: values.preset,
     profile: values.profile,
     ...(Object.keys(canvas).length > 0 && { canvas }),
   };
-  checkRunFlags(flags, "--");
+};
+
+const checkPluginFlags = (values: Values): void => {
   if (values["no-plugins"] && values["lenient-plugins"]) {
     throw new FlagError("--lenient-plugins", "--no-plugins and --lenient-plugins contradict each other");
   }
-  if (validating && (values["no-plugins"] || values.fix || listing)) {
+  if (values["validate-plugins"] && (values["no-plugins"] || values.fix || values["list-rules"])) {
     throw new FlagError("--validate-plugins", "--validate-plugins takes no --no-plugins, --fix or --list-rules");
   }
+};
+
+// --list-rules prints the rules the config and the plugin flags leave
+// active. Any other flag or a path would be silently ignored, so it is refused.
+const checkListingFlags = (values: Values, positionals: string[]): void => {
+  const ignored = [
+    ...(["fix", "json", "preset", "profile", "canvas-light", "canvas-dark"] as const)
+      .filter((name) => values[name] !== undefined && values[name] !== false)
+      .map((name) => `--${name}`),
+    ...(positionals.length > 0 ? ["a path"] : []),
+  ];
+  if (ignored.length > 0) {
+    throw new FlagError(
+      "--list-rules",
+      `--list-rules takes only --config and --no-plugins or --lenient-plugins, not ${ignored.join(", ")}`,
+    );
+  }
+};
+
+// The paths each mode takes: a check needs at least one, validation none.
+const checkPositionals = (values: Values, positionals: string[]): void => {
+  const validating = values["validate-plugins"];
+  if (validating && positionals.length > 0) {
+    throw new FlagError("files", "--validate-plugins runs no check, so it takes no files");
+  }
+  if (positionals.length === 0 && !(values["list-rules"] || validating)) {
+    throw new FlagError("files", "no files given");
+  }
+};
+
+interface CategoryWords {
+  enable: string[];
+  disable: string[];
+}
+
+// The category flags as word lists, after every flag they combine with is checked.
+const checkCombinations = (values: Values, positionals: string[]): CategoryWords => {
+  checkPluginFlags(values);
   const enable = categoryWords("--category", values.category);
   const disable = categoryWords("--disable-category", values["disable-category"]);
+  const validating = values["validate-plugins"];
   // Validation loads every plugin whatever the category flags say, so it
   // refuses them rather than ignore them.
   if (validating && enable.length + disable.length > 0) {
     throw new FlagError("--validate-plugins", "--validate-plugins checks every plugin, so it takes no category flag");
   }
-  // --list-rules prints the rules the config and the plugin flags leave
-  // active. Any other flag or a path would be silently ignored, so it is refused.
-  if (listing && !validating) {
-    const ignored = [
-      ...(["fix", "json", "preset", "profile", "canvas-light", "canvas-dark"] as const)
-        .filter((name) => values[name] !== undefined && values[name] !== false)
-        .map((name) => `--${name}`),
-      ...(positionals.length > 0 ? ["a path"] : []),
-    ];
-    if (ignored.length > 0) {
-      throw new FlagError(
-        "--list-rules",
-        `--list-rules takes only --config and --no-plugins or --lenient-plugins, not ${ignored.join(", ")}`,
-      );
-    }
-  }
-  if (validating && positionals.length > 0) {
-    throw new FlagError("files", "--validate-plugins runs no check, so it takes no files");
-  }
-  if (positionals.length === 0 && !listing && !validating) throw new FlagError("files", "no files given");
+  if (values["list-rules"] && !validating) checkListingFlags(values, positionals);
+  checkPositionals(values, positionals);
+  return { enable, disable };
+};
 
-  const { root, registry, skipped, failures } = await setUp({
-    cwd,
-    configPath: values.config,
-    noPlugins: values["no-plugins"],
-    lenient: values["lenient-plugins"],
-    collect: validating,
-    selection: { enable, disable, prefix: "--" },
-  });
+const printValidation = (registry: Registry, failures: PluginFailure[], json: boolean): number => {
+  const result = validate(registry, failures, json);
+  for (const line of result.stderr) console.error(line);
+  if (result.stdout) console.log(result.stdout);
+  return result.code;
+};
 
-  if (validating) {
-    const result = validate(registry, failures, Boolean(values.json));
-    for (const line of result.stderr) console.error(line);
-    if (result.stdout) console.log(result.stdout);
-    return result.code;
-  }
-
-  const note = loadedLine(registry.sources, skipped);
-  if (note) console.error(note);
-  for (const line of skippedLines(failures, registry.ignoredSettings)) console.error(line);
-  if (listing) {
-    console.log(listRules(registry));
-    return 0;
-  }
-
+// The files the paths name, refusing an unreadable path or an empty walk, and
+// naming each symbolic link the walk skipped.
+const filesToCheck = (positionals: string[], cwd: string): string[] => {
   const { files, unreadable, symlinks } = collectFiles(positionals.map((p) => resolve(cwd, p)));
   if (unreadable.length > 0) throw new FlagError("files", `cannot read ${unreadable.join(", ")}`);
   for (const link of symlinks) {
     console.error(`mermaidjs-lint: skipped symbolic link ${display(link, cwd)}; name it as a path to check it`);
   }
   if (files.length === 0) throw new FlagError("files", "no matching files");
-  if (values.fix) await refuseOutsideLinks(files, root, cwd);
+  return files;
+};
 
-  // A config canvas is set aside for a file the auto profile reads as
-  // mkdocs-material, and one line names every such file, so the run says what
-  // it scored without the canvas. The --json object carries the same paths, so
-  // a job that reads only stdout still learns the canvas was dropped.
+// A config canvas is set aside for a file the auto profile reads as
+// mkdocs-material, and one line names every such file, so the run says what
+// it scored without the canvas. The --json object carries the same paths, so
+// a job that reads only stdout still learns the canvas was dropped.
+const reportSetAside = (files: string[], flags: RunFlags, registry: Registry, cwd: string): string[] => {
   const setAside = files.filter((file) => canvasSetAside(file, flags, registry)).map((f) => display(f, cwd));
   if (setAside.length > 0) {
     console.error(
       `mermaidjs-lint: config canvas set aside for ${plural(setAside.length, "file")} scored under mkdocs-material: ${setAside.join(", ")}`,
     );
   }
+  return setAside;
+};
 
-  // Every rule, in check and in fix, sees the file as an absolute path, so a
-  // rule that reads the path sees one form, and the auto profile is found
-  // from the file's own folder whatever the process's working directory. The
-  // report shows the path relative to cwd.
-  const perFile = await Promise.all(
-    files.map(async (file) => {
-      let src = await readFile(file, "utf8");
-      if (values.fix) {
-        const fixed = (await fixSourceReport(src, file, flags, registry)).output;
-        if (fixed !== src) {
-          await writeFile(file, fixed);
-          src = fixed;
-        }
-      }
-      const shown = display(file, cwd);
-      const found = await checkModel(buildDocModel(src, documentKind(file)), file, flags, registry);
-      return found.map((f) => ({ ...f, file: shown }));
-    }),
-  );
-  const all = perFile.flat();
+interface FileRun {
+  flags: RunFlags;
+  registry: Registry;
+  fix: boolean;
+  cwd: string;
+}
 
-  if (values.json) {
+// Every rule, in check and in fix, sees the file as an absolute path, so a
+// rule that reads the path sees one form, and the auto profile is found
+// from the file's own folder whatever the process's working directory. The
+// report shows the path relative to cwd.
+const checkFile = async (file: string, { flags, registry, fix, cwd }: FileRun): Promise<Finding[]> => {
+  let src = await readFile(file, "utf8");
+  if (fix) {
+    const fixed = (await fixSourceReport(src, file, flags, registry)).output;
+    if (fixed !== src) {
+      await writeFile(file, fixed);
+      src = fixed;
+    }
+  }
+  const shown = display(file, cwd);
+  const found = await checkModel(buildDocModel(src, documentKind(file)), file, flags, registry);
+  return found.map((f) => ({ ...f, file: shown }));
+};
+
+interface Report {
+  all: Finding[];
+  files: number;
+  registry: Registry;
+  failures: PluginFailure[];
+  setAside: string[];
+}
+
+const printReport = (json: boolean, { all, files, registry, failures, setAside }: Report): void => {
+  if (json) {
     const skippedPlugins = failures.map((f) => ({
       source: f.source,
       kind: f.kind,
@@ -368,15 +389,57 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
     }));
     console.log(
       JSON.stringify(
-        { findings: all, files: files.length, plugins: registry.sources, skippedPlugins, canvasSetAside: setAside },
+        { findings: all, files, plugins: registry.sources, skippedPlugins, canvasSetAside: setAside },
         null,
         2,
       ),
     );
-  } else {
-    for (const f of all) console.log(reportLine(f, f.file));
-    console.log(`${all.length} finding(s) in ${files.length} file(s)`);
+    return;
   }
+  for (const f of all) console.log(reportLine(f, f.file));
+  console.log(`${all.length} finding(s) in ${files} file(s)`);
+};
+
+const run = async (argv: string[], cwd: string): Promise<number> => {
+  const { values, positionals } = parseArgv(argv);
+  if (values.help) {
+    console.log(USAGE);
+    return 0;
+  }
+  if (values.version) {
+    console.log(pkg.version);
+    return 0;
+  }
+  const flags = runFlagsOf(values);
+  checkRunFlags(flags, "--");
+  const { enable, disable } = checkCombinations(values, positionals);
+
+  const { root, registry, skipped, failures } = await setUp({
+    cwd,
+    configPath: values.config,
+    noPlugins: values["no-plugins"],
+    lenient: values["lenient-plugins"],
+    collect: values["validate-plugins"],
+    selection: { enable, disable, prefix: "--" },
+  });
+
+  if (values["validate-plugins"]) return printValidation(registry, failures, Boolean(values.json));
+
+  const note = loadedLine(registry.sources, skipped);
+  if (note) console.error(note);
+  for (const line of skippedLines(failures, registry.ignoredSettings)) console.error(line);
+  if (values["list-rules"]) {
+    console.log(listRules(registry));
+    return 0;
+  }
+
+  const files = filesToCheck(positionals, cwd);
+  const fix = Boolean(values.fix);
+  if (fix) await refuseOutsideLinks(files, root, cwd);
+  const setAside = reportSetAside(files, flags, registry, cwd);
+  const perFile = await Promise.all(files.map((file) => checkFile(file, { flags, registry, fix, cwd })));
+  const all = perFile.flat();
+  printReport(Boolean(values.json), { all, files: files.length, registry, failures, setAside });
   return all.length > 0 ? 1 : 0;
 };
 

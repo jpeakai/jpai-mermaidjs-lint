@@ -38,7 +38,7 @@ export const parseDiagramUnparseable: Rule = {
       const remediation = EXTERNAL_TYPES.has(stats.diagram_type)
         ? `No fixer can help: mermaidjs-lint has no ${stats.diagram_type} parser. Redraw it as a type mermaid core includes, such as sequenceDiagram, or turn this rule off in the config.`
         : "Verify the diagram renders in mermaid.js and fix its syntax. Complexity rules are skipped for this diagram while it cannot be parsed.";
-      found.push(finding(ctx, diagram, RULE.UNPARSEABLE, messageOf(stats), remediation));
+      found.push(finding(ctx, diagram, RULE.UNPARSEABLE, { message: messageOf(stats), remediation }));
     }
     return found;
   },

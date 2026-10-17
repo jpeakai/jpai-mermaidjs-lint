@@ -106,7 +106,7 @@ const parseProperties = (
     const key = pair.slice(0, colon).trim().toLowerCase();
     const valueRaw = pair.slice(colon + 1);
     const value = valueRaw.trim();
-    if (!key || !value) continue;
+    if (!(key && value)) continue;
     properties[key] = value;
     const lead = valueRaw.length - valueRaw.trimStart().length;
     const start = rawStart + pairStart + colon + 1 + lead;

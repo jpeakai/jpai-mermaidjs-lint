@@ -25,8 +25,12 @@ afterEach(() => {
 const run = async (cwd: string, args: string[]): Promise<{ code: number; out: string; err: string }> => {
   const out: string[] = [];
   const err: string[] = [];
-  console.log = (...a: unknown[]) => void out.push(a.join(" "));
-  console.error = (...a: unknown[]) => void err.push(a.join(" "));
+  console.log = (...a: unknown[]) => {
+    out.push(a.join(" "));
+  };
+  console.error = (...a: unknown[]) => {
+    err.push(a.join(" "));
+  };
   try {
     return { code: await main(args, cwd), out: out.join("\n"), err: err.join("\n") };
   } finally {
@@ -88,10 +92,24 @@ export const categories = { diagram: "House" };`,
   });
 });
 
-describe("config", () => {
-  const withConfig = (config: unknown): string =>
-    tempProject({ "a.md": DOC, "mermaidjs-lint.config.json": JSON.stringify(config) });
+const withConfig = (config: unknown): string =>
+  tempProject({ "a.md": DOC, "mermaidjs-lint.config.json": JSON.stringify(config) });
 
+// Each config mistake and the usage error code it is named by.
+const CONFIG_MISTAKES: Array<[unknown, string]> = [
+  [{ rules: { "no-such-rule": "off" } }, "unknown-rule"],
+  [{ rules: { "contrast-text-below-aa": "warn" } }, "rule-setting"],
+  [{ rules: { "contrast-text-below-aa": ["error", { nope: 1 }] } }, "rule-option"],
+  [{ rules: { "contrast-text-below-aa": ["error", { profile: "x" }] } }, "rule-option"],
+  [{ rules: { "complexity-node-count-hard-limit": ["error", { preset: "x" }] } }, "rule-option"],
+  [{ rules: { "complexity-node-count-hard-limit": ["error", { nodeIdeal: "x" }] } }, "rule-option"],
+  [{ extra: 1 }, "config-shape"],
+  [{ plugins: "x" }, "config-shape"],
+  [{ pluginLoading: "x" }, "config-shape"],
+  [[], "config-shape"],
+];
+
+describe("config rule settings", () => {
   test("a rule can be switched off and given options", async () => {
     const bad = fence("flowchart LR\n  A --> B\n  classDef c fill:#ffff00,color:#fefefe\n  class A c");
     const root = tempProject({
@@ -119,25 +137,15 @@ describe("config", () => {
   });
 
   test("mistakes are named usage errors", async () => {
-    const cases: Array<[unknown, string]> = [
-      [{ rules: { "no-such-rule": "off" } }, "unknown-rule"],
-      [{ rules: { "contrast-text-below-aa": "warn" } }, "rule-setting"],
-      [{ rules: { "contrast-text-below-aa": ["error", { nope: 1 }] } }, "rule-option"],
-      [{ rules: { "contrast-text-below-aa": ["error", { profile: "x" }] } }, "rule-option"],
-      [{ rules: { "complexity-node-count-hard-limit": ["error", { preset: "x" }] } }, "rule-option"],
-      [{ rules: { "complexity-node-count-hard-limit": ["error", { nodeIdeal: "x" }] } }, "rule-option"],
-      [{ extra: 1 }, "config-shape"],
-      [{ plugins: "x" }, "config-shape"],
-      [{ pluginLoading: "x" }, "config-shape"],
-      [[], "config-shape"],
-    ];
-    for (const [config, code] of cases) {
+    for (const [config, code] of CONFIG_MISTAKES) {
       const r = await run(withConfig(config), ["a.md"]);
       expect(r.code).toBe(2);
       expect(r.err).toContain(`error[${code}]`);
     }
   });
+});
 
+describe("config loading", () => {
   test("two configs, a missing --config and a broken file are errors", async () => {
     const two = tempProject({
       "a.md": DOC,

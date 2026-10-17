@@ -1,4 +1,4 @@
-<div class="ml-hero" markdown>
+<div class="on-hero" markdown>
 
 # mermaidjs-lint
 

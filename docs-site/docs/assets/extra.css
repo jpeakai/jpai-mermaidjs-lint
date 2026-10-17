@@ -2,19 +2,6 @@
    docs-site/theme/osakanights/, whose stylesheet loads first and supplies
    the --on-* tokens these rules use. Brand-generic rules belong there. */
 
-/* ── Landing hero ───────────────────────────────────────────────────── */
-/* The theme's .on-hero and .on-lede, under the names index.md uses. */
-.ml-hero {
-  padding: 1.2rem 0 0.4rem;
-}
-.ml-hero h1 {
-  margin-bottom: 0.4rem;
-}
-.ml-hero p.ml-lede {
-  font-size: 1.15rem;
-  margin-top: 0;
-}
-
 /* ── Badges for rule metadata ───────────────────────────────────────── */
 .ml-badge {
   display: inline-block;

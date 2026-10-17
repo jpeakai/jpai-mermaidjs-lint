@@ -2,28 +2,16 @@
 
 # mermaidjs-lint
 
-<p class="ml-lede">Lint the Mermaid diagrams in your markdown, and fix what can be fixed safely.</p>
+--8<-- "intro.md"
 
 [Get started](get-started.md){ .md-button .md-button--primary } [Browse the rules](reference/rules.md){ .md-button }
 
 </div>
 
-## The four tenets
+<!-- This page mirrors README.md section by section, and tests/readme-site.test.ts holds the two together.
+     Text they share lives in docs-site/includes/. Sections only the site has follow "Contribute". -->
 
---8<-- "tenets.md"
-
-The [contrast](reference/rules.md#contrast), [parse](reference/rules.md#parse) and [complexity](reference/rules.md#complexity) rules deliver the first three, and [the plugin model](concepts/plugin-model.md) delivers the fourth.
-[Concepts](concepts/index.md) states the limit of each.
-
-Where a fix is safe, `--fix` writes it and parses the document again.
-It keeps the fix only when the markdown around the diagrams is unchanged.
-Each diagram must also keep its type, node ids, subgraph names and counts, and a diagram that parsed must still parse:
-
---8<-- "home-compare.md"
-
-The check does not compare edge endpoints, edge labels or node text, so review the diff a fix writes.
-
-## Install
+## Lint your docs with one command
 
 Run these in a project that has a `package.json`, then name your own markdown files and folders.
 
@@ -43,15 +31,26 @@ Run these in a project that has a `package.json`, then name your own markdown fi
     npx -y @jpeakai/mermaidjs-lint --fix docs/
     ```
 
+--8<-- "sample-output.md"
+
 [Get started](get-started.md) to begin from an empty folder through a fully worked example.
 
-!!! info "Which version these pages describe"
+## Fix unreadable label text and unclosed fences
 
-    This site is published with each release, so it describes the latest release on npm.
-    A change on `main` that is not yet released is listed under `Unreleased` in the [changelog](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CHANGELOG.md).
-    `mermaidjs-lint --version` prints the version you run.
+Add `--fix` to apply the fixes that pass verification:
 
-## Where to go next
+--8<-- "home-compare.md"
+
+--8<-- "fix-check.md"
+
+## Four tenets
+
+--8<-- "tenets.md"
+
+The [contrast](reference/rules.md#contrast), [parse](reference/rules.md#parse) and [complexity](reference/rules.md#complexity) rules deliver the first three, and [the plugin model](concepts/plugin-model.md) delivers the fourth.
+[Concepts](concepts/index.md) states the limit of each.
+
+## Go further in the docs site
 
 <div class="grid cards" markdown>
 
@@ -73,6 +72,21 @@ Run these in a project that has a `package.json`, then name your own markdown fi
 
 </div>
 
+## Runs on Bun or Node
+
+--8<-- "runs-on.md"
+
+!!! info "Which version these pages describe"
+
+    This site is published with each release, so it describes the latest release on npm.
+    A change on `main` that is not yet released is listed under `Unreleased` in the [changelog](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CHANGELOG.md).
+    `mermaidjs-lint --version` prints the version you run.
+
+## Contribute
+
+[CONTRIBUTING.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CONTRIBUTING.md) covers setup.
+Licensed under [MIT](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/LICENSE).
+
 ## What it does not do
 
 - **It does not draw diagrams.** "Renders" means the mermaid parsers this package ships accept the diagram, so a diagram that parses but draws badly is not caught.
@@ -92,6 +106,4 @@ Run these in a project that has a `package.json`, then name your own markdown fi
 | Report a vulnerability, and the plugin trust model | [SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) |
 | What counts as a breaking change | [Versioning](reference/index.md#versioning) |
 | What changed in each release, and what is not yet released | [CHANGELOG.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CHANGELOG.md) |
-| Lint and fix diagrams from an AI coding agent | The [agent skill](https://github.com/jpeakai/jpai-mermaidjs-lint/tree/main/skills/mermaidjs-lint), installed as the [README](https://github.com/jpeakai/jpai-mermaidjs-lint#use-it-from-an-ai-agent) shows, and its [evals](gallery/agent-evals.md) |
-| Licence | MIT, in [LICENSE](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/LICENSE) |
-| Contributing | [CONTRIBUTING.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CONTRIBUTING.md) |
+| Lint and fix diagrams from an AI coding agent | The [agent skill](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/skills/mermaidjs-lint/SKILL.md), copied into `.claude/skills/mermaidjs-lint/SKILL.md`, and its [evals](gallery/agent-evals.md) |

@@ -15,13 +15,11 @@ export const parseFenceUnterminated: Rule = {
     ctx.doc.diagrams
       .filter((d) => !d.terminated)
       .map((d) =>
-        finding(
-          ctx,
-          d,
-          RULE.FENCE_UNTERMINATED,
-          `mermaid fence opened at line ${d.startLine} is never closed`,
-          "Add a closing fence directly after the last line of the diagram, with the opening line's prefix: `> ` in a quote, the item's indent in a list.",
-        ),
+        finding(ctx, d, RULE.FENCE_UNTERMINATED, {
+          message: `mermaid fence opened at line ${d.startLine} is never closed`,
+          remediation:
+            "Add a closing fence directly after the last line of the diagram, with the opening line's prefix: `> ` in a quote, the item's indent in a list.",
+        }),
       ),
   fix: (ctx) => {
     const edits: Edit[] = [];

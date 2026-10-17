@@ -1,11 +1,43 @@
+import type { Diagram } from "../model.ts";
 import { compositeOver, wcagRatio } from "../parse/color.ts";
+import type { ContrastPair, ContrastSource, Profile } from "../parse/contrast.ts";
 import { CONTRAST_OPTIONS, contrastOf, fileLine, settingsOf } from "./shared.ts";
-import { type Edit, type Finding, RULE, type Rule } from "./types.ts";
+import { type Edit, type Finding, RULE, type Rule, type RuleContext } from "./types.ts";
 
 const AA_NORMAL = 4.5;
 const CANDIDATES = ["#000000", "#ffffff"] as const;
 
 const ratioOn = (fg: string, bg: string): number => wcagRatio(compositeOver(fg, bg), bg);
+
+// How to fix failing text, by who controls it and what the colour is.
+const remediationOf = (profile: Profile, kind: ContrastSource["kind"]): string => {
+  if (profile === "mkdocs-material") {
+    return "The host theme forces the label text, so change the fill until the host text reads on it in both themes.";
+  }
+  if (kind === "themeVariables") {
+    return "A sequence diagram colour is a theme variable, and text with no box of its own sits on the page, so set the variable to a colour that reads on its background in both themes, or remove it and let the theme set it.";
+  }
+  if (kind === "linkStyle") {
+    return "An edge label sits on Mermaid's own label box, light in one theme and grey in the other, and no one colour reads on both, so drop color: from the linkStyle and let the theme set the label text.";
+  }
+  return "Darken or lighten the fill, or change color:, until the ratio reaches 4.5:1 in every theme.";
+};
+
+// The finding for one failing text pair.
+const textFinding = (ctx: RuleContext, diagram: Diagram, p: ContrastPair, profile: Profile): Finding => {
+  const where = [p.theme, p.row].filter(Boolean).join("/");
+  const line = fileLine(diagram, p.line);
+  return {
+    file: ctx.file,
+    line,
+    endLine: line,
+    rule: RULE.TEXT,
+    message:
+      `${p.directive.kind} ${p.selector}: text ${p.assessment.ratio.toFixed(2)}:1 < ${AA_NORMAL} ` +
+      `(${p.foreground} on ${p.background}${where ? `, ${where}` : ""})`,
+    remediation: remediationOf(profile, p.directive.kind),
+  };
+};
 
 // Label text must reach 4.5:1 against its fill, in every theme the fill is
 // scored in. The fix swaps a declared color: for black or white, whichever
@@ -25,26 +57,7 @@ export const contrastTextBelowAa: Rule = {
     const found: Finding[] = [];
     for (const diagram of ctx.doc.diagrams) {
       for (const p of (await contrastOf(diagram, settings)).pairs) {
-        if (p.kind !== "text" || p.passes) continue;
-        const where = [p.theme, p.row].filter(Boolean).join("/");
-        const line = fileLine(diagram, p.line);
-        found.push({
-          file: ctx.file,
-          line,
-          endLine: line,
-          rule: RULE.TEXT,
-          message:
-            `${p.directive.kind} ${p.selector}: text ${p.assessment.ratio.toFixed(2)}:1 < ${AA_NORMAL} ` +
-            `(${p.foreground} on ${p.background}${where ? `, ${where}` : ""})`,
-          remediation:
-            settings.profile === "mkdocs-material"
-              ? "The host theme forces the label text, so change the fill until the host text reads on it in both themes."
-              : p.directive.kind === "themeVariables"
-                ? "A sequence diagram colour is a theme variable, and text with no box of its own sits on the page, so set the variable to a colour that reads on its background in both themes, or remove it and let the theme set it."
-                : p.directive.kind === "linkStyle"
-                  ? "An edge label sits on Mermaid's own label box, light in one theme and grey in the other, and no one colour reads on both, so drop color: from the linkStyle and let the theme set the label text."
-                  : "Darken or lighten the fill, or change color:, until the ratio reaches 4.5:1 in every theme.",
-        });
+        if (p.kind === "text" && !p.passes) found.push(textFinding(ctx, diagram, p, settings.profile));
       }
     }
     return found;

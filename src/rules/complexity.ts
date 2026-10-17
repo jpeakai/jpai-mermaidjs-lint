@@ -28,7 +28,7 @@ export const complexityRule = (spec: {
       const measured = await measure(diagram, config);
       if (!measured) continue;
       const hit = spec.hit(measured, config);
-      if (hit) found.push(finding(ctx, diagram, spec.id, hit.message, hit.remediation));
+      if (hit) found.push(finding(ctx, diagram, spec.id, hit));
     }
     return found;
   },

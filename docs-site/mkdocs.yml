@@ -68,9 +68,12 @@ extra:
 
 extra_css:
   - assets/extra.css
+  - assets/complexity-graphs.css
 
 extra_javascript:
   - path: assets/mermaid-github.js
+    type: module
+  - path: assets/complexity-graphs.js
     type: module
 
 markdown_extensions:

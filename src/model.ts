@@ -137,7 +137,7 @@ export const buildDocModel = (src: string, kind: "markdown" | "diagram" = "markd
   collectMermaid(tree, fences);
   const diagrams = fences.flatMap((node, index) => {
     const { start, end } = node.position ?? {};
-    if (!start || !end || start.offset === undefined || end.offset === undefined) return [];
+    if (!(start && end) || start.offset === undefined || end.offset === undefined) return [];
     return [
       makeDiagram(src, lineStarts, {
         index,

@@ -268,23 +268,23 @@ describe("plugin rules", () => {
   });
 });
 
-describe("a config canvas in a repo with a Material site", () => {
-  // The config sets a canvas on every contrast rule, and the auto profile reads
-  // site/docs/flow.md as mkdocs-material because site/mkdocs.yml is present.
-  const canvasRules = {
-    "contrast-text-below-aa": ["error", { canvas: { dark: "#3a3a3a" } }],
-    [BORDER]: ["error", { canvas: { dark: "#3a3a3a" } }],
-    "contrast-directive-unauditable": ["error", { canvas: { dark: "#3a3a3a" } }],
-  };
-  const repo = (): string =>
-    tempProject({
-      "mermaidjs-lint.config.json": JSON.stringify({ rules: canvasRules }),
-      "docs/flow.md": DOC,
-      "site/mkdocs.yml": "site_name: x\n",
-      "site/docs/flow.md": DOC,
-      "site/docs/plain.md": "# No diagram\n",
-    });
+// The config sets a canvas on every contrast rule, and the auto profile reads
+// site/docs/flow.md as mkdocs-material because site/mkdocs.yml is present.
+const canvasRules = {
+  "contrast-text-below-aa": ["error", { canvas: { dark: "#3a3a3a" } }],
+  [BORDER]: ["error", { canvas: { dark: "#3a3a3a" } }],
+  "contrast-directive-unauditable": ["error", { canvas: { dark: "#3a3a3a" } }],
+};
+const repo = (): string =>
+  tempProject({
+    "mermaidjs-lint.config.json": JSON.stringify({ rules: canvasRules }),
+    "docs/flow.md": DOC,
+    "site/mkdocs.yml": "site_name: x\n",
+    "site/docs/flow.md": DOC,
+    "site/docs/plain.md": "# No diagram\n",
+  });
 
+describe("a config canvas in a repo with a Material site", () => {
   test("sets the canvas aside for the Material files, says so once, and scores the rest on it", async () => {
     const root = repo();
     const r = await runCli(root, ["docs", "site/docs"]);
@@ -318,7 +318,9 @@ describe("a config canvas in a repo with a Material site", () => {
     expect(r.code).toBe(0);
     expect(r.stderr).toContain("set aside for 1 file scored under mkdocs-material: site/docs/flow.md");
   });
+});
 
+describe("a config canvas in a repo with a Material site, where it is refused or asked about", () => {
   test("a canvas flag over the Material files is still refused", async () => {
     const r = await runCli(repo(), ["site/docs", "--canvas-dark", "#101010"]);
     expect(r.code).toBe(2);

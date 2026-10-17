@@ -127,19 +127,23 @@ const checkCanvas = (where: string, rule: Rule, name: string, value: Record<Them
   }
 };
 
-const checkOptions = (where: string, rule: Rule, options: RuleOptions): void => {
-  const accepted = Object.keys(rule.options ?? {});
-  for (const [name, value] of Object.entries(options)) {
-    const want = rule.options?.[name];
-    if (!want) {
-      const list = accepted.length > 0 ? `it accepts ${accepted.join(", ")}` : "it takes no options";
-      throw new RuleOptionError(where, rule.id, name, `rule "${rule.id}" has no option "${name}"; ${list}`);
-    }
-    if (typeOf(value) !== want) {
-      throw new RuleOptionError(where, rule.id, name, `option "${name}" of "${rule.id}" must be ${describeType(want)}`);
-    }
-    if (want === "canvas") checkCanvas(where, rule, name, value as Record<Theme, unknown>);
+// One option the rule must declare, holding a value of the declared type.
+const checkOption = (where: string, rule: Rule, name: string, value: unknown): void => {
+  const want = rule.options?.[name];
+  if (!want) {
+    const accepted = Object.keys(rule.options ?? {});
+    const list = accepted.length > 0 ? `it accepts ${accepted.join(", ")}` : "it takes no options";
+    throw new RuleOptionError(where, rule.id, name, `rule "${rule.id}" has no option "${name}"; ${list}`);
   }
+  if (typeOf(value) !== want) {
+    throw new RuleOptionError(where, rule.id, name, `option "${name}" of "${rule.id}" must be ${describeType(want)}`);
+  }
+  if (want === "canvas") checkCanvas(where, rule, name, value as Record<Theme, unknown>);
+};
+
+// The options every rule shares with the built-ins, checked against each other
+// and the built-in names.
+const checkSharedOptions = (where: string, rule: Rule, options: RuleOptions): void => {
   // Material draws its own page, so a canvas has nothing to set there.
   if (options.profile === "mkdocs-material" && options.canvas !== undefined && rule.options?.canvas === "canvas") {
     throw new RuleOptionError(
@@ -162,10 +166,20 @@ const checkOptions = (where: string, rule: Rule, options: RuleOptions): void => 
   }
 };
 
-export const buildRegistry = (input: RegistryInput): Registry => {
-  const { rules, fixOrder, categories, sources = [], config, ignoreUnknownPluginIds = false } = input;
-  const selection = input.selection ?? {};
-  checkSelection(selection, categories);
+const checkOptions = (where: string, rule: Rule, options: RuleOptions): void => {
+  for (const [name, value] of Object.entries(options)) checkOption(where, rule, name, value);
+  checkSharedOptions(where, rule, options);
+};
+
+// What the config makes of the rules: which are off, each rule's options, and
+// the settings dropped for a plugin that did not load.
+interface Configured {
+  off: Set<string>;
+  options: Map<RuleId, RuleOptions>;
+  ignored: string[];
+}
+
+const applyConfig = (rules: Rule[], config: Config | undefined, ignoreUnknownPluginIds: boolean): Configured => {
   const off = new Set<string>();
   const options = new Map<RuleId, RuleOptions>();
   const ignored: string[] = [];
@@ -192,6 +206,14 @@ export const buildRegistry = (input: RegistryInput): Registry => {
     options.set(rule.id, setting.options);
     if (setting.severity === "off") off.add(id);
   }
+  return { off, options, ignored };
+};
+
+export const buildRegistry = (input: RegistryInput): Registry => {
+  const { rules, fixOrder, categories, sources = [], config, ignoreUnknownPluginIds = false } = input;
+  const selection = input.selection ?? {};
+  checkSelection(selection, categories);
+  const { off, options, ignored } = applyConfig(rules, config, ignoreUnknownPluginIds);
   // Every rule starts on, the config turns some off, and then the category
   // flags have the last word for this run (MJL-0020).
   for (const rule of rules) {

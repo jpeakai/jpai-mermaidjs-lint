@@ -16,18 +16,23 @@ const OMIT = new Set(["position", "data"]);
 export const normalise = (node: Node, opts: { blankDiagrams?: boolean } = {}): Plain => {
   const out: Plain = {};
   const isDiagram = node.type === "code" && (node as { lang?: string }).lang === "mermaid";
+  const blank = isDiagram && Boolean(opts.blankDiagrams);
   for (const [key, value] of Object.entries(node)) {
     if (OMIT.has(key)) continue;
-    if (key === "children" && Array.isArray(value)) {
-      out.children = (value as Node[]).map((child) => normalise(child, opts));
-    } else if (key === "value" && typeof value === "string") {
-      if (isDiagram && opts.blankDiagrams) continue;
-      out.value = node.type === "text" ? value.replace(/\s+/g, " ").trim() : value;
-    } else {
-      out[key] = value;
-    }
+    if (blank && isStringValue(key, value)) continue;
+    out[key] = normaliseField(node, key, value, opts);
   }
   return out;
+};
+
+const isStringValue = (key: string, value: unknown): value is string => key === "value" && typeof value === "string";
+
+// One field of the copy: children normalised in turn, and a text node's value
+// with its whitespace collapsed. Every other field is kept as it is.
+const normaliseField = (node: Node, key: string, value: unknown, opts: { blankDiagrams?: boolean }): unknown => {
+  if (key === "children" && Array.isArray(value)) return (value as Node[]).map((child) => normalise(child, opts));
+  if (isStringValue(key, value)) return node.type === "text" ? value.replace(/\s+/g, " ").trim() : value;
+  return value;
 };
 
 const sameJson = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);

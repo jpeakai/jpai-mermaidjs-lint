@@ -154,87 +154,109 @@ const scorePair = (kind: PairKind, d: ContrastSource, fg: string, bg: string): C
 
 const message = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
+// Records a directive that was not scored, and why.
+const skip = (out: ContrastResult, d: ContrastSource, reason: string, blocking?: boolean): void => {
+  out.skipped.push({ selector: d.selector, line: d.line, reason, ...(blocking && { blocking }) });
+};
+
+// A foreground colour and the background it is drawn on.
+interface Colours {
+  fg: string;
+  bg: string;
+}
+
 // A linkStyle color: is edge label text, scored on the label box in both themes.
 // A linkStyle without one styles only the line, which has no label pair.
-const scoreEdgeLabel = (
-  d: StyleDirective,
-  canvas: Canvas,
-  pairs: ContrastPair[],
-  skipped: SkippedDirective[],
-): void => {
+const scoreEdgeLabel = (d: StyleDirective, canvas: Canvas, out: ContrastResult): void => {
   const { color } = d.properties;
   if (!color) return;
   try {
-    pairs.push(...THEMES.map((t) => scoreHostPair("text", d, t, color, edgeLabelBackground(t, canvas))));
+    out.pairs.push(
+      ...THEMES.map((t) => scoreHostPair("text", d, t, { fg: color, bg: edgeLabelBackground(t, canvas) })),
+    );
   } catch (err) {
-    skipped.push({
-      selector: d.selector,
-      line: d.line,
-      reason: `edge label text unparseable: ${message(err)}`,
-      blocking: true,
-    });
+    skip(out, d, `edge label text unparseable: ${message(err)}`, true);
+  }
+};
+
+// The boxes a github fill is drawn as. A translucent fill is scored on both
+// canvases and the worse result gates. An opaque fill resolves the same on both
+// and keeps one pair.
+const githubBoxes = (fill: string, alpha: number, canvas: Canvas): Array<[string, Theme | undefined]> =>
+  alpha < 1 ? THEMES.map((t): [string, Theme] => [compositeOver(fill, canvas[t]), t]) : [[fill, undefined]];
+
+// Scores one pair on one github box, or records the colour that will not parse.
+const scoreGithubPair = (
+  out: ContrastResult,
+  d: StyleDirective,
+  kind: PairKind,
+  { fg, bg, theme }: Colours & { theme: Theme | undefined },
+): void => {
+  try {
+    out.pairs.push({ ...scorePair(kind, d, fg, bg), ...(theme && { theme }) });
+  } catch (err) {
+    skip(out, d, `${kind} pair unparseable: ${message(err)}`, true);
+  }
+};
+
+// The alpha of a fill, or null after recording that it will not parse.
+const fillAlpha = (out: ContrastResult, d: StyleDirective, fill: string): number | null => {
+  try {
+    return alphaOf(fill);
+  } catch (err) {
+    skip(out, d, `fill unparseable: ${message(err)}`, true);
+    return null;
+  }
+};
+
+// A classDef or style under github: its text and border pairs on every box.
+const scoreGithubStyle = (d: StyleDirective, canvas: Canvas, out: ContrastResult): void => {
+  const { fill, color, stroke } = d.properties;
+  if (!fill) {
+    const reason =
+      color || stroke ? "no fill declared, so text and border contrast have no anchor" : "no color properties";
+    skip(out, d, reason);
+    return;
+  }
+  const alpha = fillAlpha(out, d, fill);
+  if (alpha === null) return;
+  // A fully transparent fill declares "no box": nothing to anchor contrast to,
+  // and the renderer's own theme text already tracks light and dark.
+  if (alpha === 0) {
+    skip(out, d, "fill is fully transparent, so there is no box to anchor contrast");
+    return;
+  }
+  const boxes = githubBoxes(fill, alpha, canvas);
+  if (!color) {
+    skip(
+      out,
+      d,
+      "no color: declared beside fill:, and the github profile requires one " +
+        "(if the host forces label text, use the mkdocs-material profile)",
+      true,
+    );
+  }
+  for (const [bg, theme] of boxes) {
+    if (color) scoreGithubPair(out, d, "text", { fg: color, bg, theme });
+    if (stroke) scoreGithubPair(out, d, "border", { fg: stroke, bg, theme });
   }
 };
 
 export const scoreGithub = (directives: StyleDirective[], canvas: Canvas = GITHUB_CANVAS): ContrastResult => {
-  const pairs: ContrastPair[] = [];
-  const skipped: SkippedDirective[] = [];
+  const out: ContrastResult = { pairs: [], skipped: [] };
   for (const d of directives) {
-    if (d.kind === "linkStyle") scoreEdgeLabel(d, canvas, pairs, skipped);
-    if (d.kind !== "classDef" && d.kind !== "style") continue;
-    const { fill, color, stroke } = d.properties;
-    const note = (reason: string, blocking?: boolean): void => {
-      skipped.push({ selector: d.selector, line: d.line, reason, ...(blocking && { blocking }) });
-    };
-    if (!fill) {
-      note(color || stroke ? "no fill declared, so text and border contrast have no anchor" : "no color properties");
-      continue;
-    }
-    let alpha: number;
-    try {
-      alpha = alphaOf(fill);
-    } catch (err) {
-      note(`fill unparseable: ${message(err)}`, true);
-      continue;
-    }
-    // A fully transparent fill declares "no box": nothing to anchor contrast to,
-    // and the renderer's own theme text already tracks light and dark.
-    if (alpha === 0) {
-      note("fill is fully transparent, so there is no box to anchor contrast");
-      continue;
-    }
-    // A translucent fill is scored on both canvases and the worse result gates.
-    // An opaque fill resolves the same on both and keeps one pair.
-    const boxes: Array<[string, Theme | undefined]> =
-      alpha < 1 ? THEMES.map((t): [string, Theme] => [compositeOver(fill, canvas[t]), t]) : [[fill, undefined]];
-    if (!color) {
-      note(
-        "no color: declared beside fill:, and the github profile requires one " +
-          "(if the host forces label text, use the mkdocs-material profile)",
-        true,
-      );
-    }
-    for (const [box, theme] of boxes) {
-      if (color) {
-        try {
-          pairs.push({ ...scorePair("text", d, color, box), ...(theme && { theme }) });
-        } catch (err) {
-          note(`text pair unparseable: ${message(err)}`, true);
-        }
-      }
-      if (stroke) {
-        try {
-          pairs.push({ ...scorePair("border", d, stroke, box), ...(theme && { theme }) });
-        } catch (err) {
-          note(`border pair unparseable: ${message(err)}`, true);
-        }
-      }
-    }
+    if (d.kind === "linkStyle") scoreEdgeLabel(d, canvas, out);
+    if (d.kind === "classDef" || d.kind === "style") scoreGithubStyle(d, canvas, out);
   }
-  return { pairs, skipped };
+  return out;
 };
 
-const scoreHostPair = (kind: PairKind, d: ContrastSource, theme: Theme, fgRaw: string, box: string): ContrastPair => {
+const scoreHostPair = (
+  kind: PairKind,
+  d: ContrastSource,
+  theme: Theme,
+  { fg: fgRaw, bg: box }: Colours,
+): ContrastPair => {
   // The foreground may itself be translucent, so it composites onto the box.
   const fg = compositeOver(fgRaw, box);
   const assessment = wcagAssess(fg, box);
@@ -252,56 +274,43 @@ const scoreHostPair = (kind: PairKind, d: ContrastSource, theme: Theme, fgRaw: s
   };
 };
 
-export const scoreMkdocs = (directives: StyleDirective[]): ContrastResult => {
-  const pairs: ContrastPair[] = [];
-  const skipped: SkippedDirective[] = [];
-  for (const d of directives) {
-    if (d.kind === "linkStyle" && d.properties.color) {
-      skipped.push({
-        selector: d.selector,
-        line: d.line,
-        reason: "color: ignored, because the host theme forces edge label text",
-      });
+// A classDef or style under mkdocs-material: the host text on the fill, and
+// the border, in each theme.
+const scoreMkdocsStyle = (d: StyleDirective, out: ContrastResult): void => {
+  const { fill, stroke, color } = d.properties;
+  if (!fill) {
+    skip(out, d, "no fill declared, and the host theme controls the text");
+    return;
+  }
+  if (color) skip(out, d, "color: ignored, because the host theme forces label text");
+  for (const theme of THEMES) {
+    let box: string;
+    try {
+      box = compositeOver(fill, MKDOCS_MATERIAL[theme].bg);
+    } catch (err) {
+      skip(out, d, `fill unparseable: ${message(err)}`, true);
+      break;
     }
-    if (d.kind !== "classDef" && d.kind !== "style") continue;
-    const { fill, stroke, color } = d.properties;
-    const note = (reason: string): void => {
-      skipped.push({ selector: d.selector, line: d.line, reason });
-    };
-    if (!fill) {
-      note("no fill declared, and the host theme controls the text");
-      continue;
-    }
-    if (color) note("color: ignored, because the host theme forces label text");
-    for (const theme of THEMES) {
-      let box: string;
+    out.pairs.push(scoreHostPair("text", d, theme, { fg: MKDOCS_MATERIAL[theme].text, bg: box }));
+    if (stroke) {
       try {
-        box = compositeOver(fill, MKDOCS_MATERIAL[theme].bg);
+        out.pairs.push(scoreHostPair("border", d, theme, { fg: stroke, bg: box }));
       } catch (err) {
-        skipped.push({
-          selector: d.selector,
-          line: d.line,
-          reason: `fill unparseable: ${message(err)}`,
-          blocking: true,
-        });
-        break;
-      }
-      pairs.push(scoreHostPair("text", d, theme, MKDOCS_MATERIAL[theme].text, box));
-      if (stroke) {
-        try {
-          pairs.push(scoreHostPair("border", d, theme, stroke, box));
-        } catch (err) {
-          skipped.push({
-            selector: d.selector,
-            line: d.line,
-            reason: `border pair unparseable: ${message(err)}`,
-            blocking: true,
-          });
-        }
+        skip(out, d, `border pair unparseable: ${message(err)}`, true);
       }
     }
   }
-  return { pairs, skipped };
+};
+
+export const scoreMkdocs = (directives: StyleDirective[]): ContrastResult => {
+  const out: ContrastResult = { pairs: [], skipped: [] };
+  for (const d of directives) {
+    if (d.kind === "linkStyle" && d.properties.color) {
+      skip(out, d, "color: ignored, because the host theme forces edge label text");
+    }
+    if (d.kind === "classDef" || d.kind === "style") scoreMkdocsStyle(d, out);
+  }
+  return out;
 };
 
 // An erDiagram under the github profile. The flowchart model, where the
@@ -310,43 +319,48 @@ export const scoreMkdocs = (directives: StyleDirective[]): ContrastResult => {
 // label is scored against both rows in both Mermaid themes. A missing color is
 // not a blocking gap here, because dropping it for a translucent fill is the
 // recipe that reads in both themes.
+// The two erDiagram rows in one theme, each with the surface its labels sit on.
+const erRows = (theme: Theme, fill: string | undefined): Array<[ErRow, string]> => {
+  const anchor = MERMAID_ER[theme];
+  return [
+    ["odd", anchor.odd],
+    ["even", fill ? compositeOver(fill, anchor.even) : anchor.even],
+  ];
+};
+
+// Every pair one erDiagram directive draws, on both rows in both themes. It
+// throws on a colour that will not parse, so the directive scores all or none.
+const erPairs = (d: StyleDirective): ContrastPair[] => {
+  const { fill, color, stroke } = d.properties;
+  const scored: ContrastPair[] = [];
+  const score = (kind: PairKind, theme: Theme, row: ErRow, colours: Colours): void => {
+    scored.push({ ...scoreHostPair(kind, d, theme, colours), row, advisory: kind === "border" });
+  };
+  for (const theme of THEMES) {
+    for (const [row, bg] of erRows(theme, fill)) {
+      if (color || (row === "even" && fill)) score("text", theme, row, { fg: color ?? MERMAID_ER[theme].label, bg });
+      if (stroke) score("border", theme, row, { fg: stroke, bg });
+    }
+  }
+  return scored;
+};
+
 export const scoreEr = (directives: StyleDirective[]): ContrastResult => {
-  const pairs: ContrastPair[] = [];
-  const skipped: SkippedDirective[] = [];
+  const out: ContrastResult = { pairs: [], skipped: [] };
   for (const d of directives) {
     if (d.kind !== "classDef" && d.kind !== "style") continue;
     const { fill, color, stroke } = d.properties;
-    if (!fill && !color && !stroke) {
-      skipped.push({ selector: d.selector, line: d.line, reason: "no color properties" });
+    if (!(fill || color || stroke)) {
+      skip(out, d, "no color properties");
       continue;
     }
-    const scored: ContrastPair[] = [];
-    const score = (kind: PairKind, theme: Theme, row: ErRow, fg: string, bg: string): void => {
-      scored.push({ ...scoreHostPair(kind, d, theme, fg, bg), row, advisory: kind === "border" });
-    };
     try {
-      for (const theme of THEMES) {
-        const anchor = MERMAID_ER[theme];
-        const rows: Array<[ErRow, string]> = [
-          ["odd", anchor.odd],
-          ["even", fill ? compositeOver(fill, anchor.even) : anchor.even],
-        ];
-        for (const [row, bg] of rows) {
-          if (color || (row === "even" && fill)) score("text", theme, row, color ?? anchor.label, bg);
-          if (stroke) score("border", theme, row, stroke, bg);
-        }
-      }
-      pairs.push(...scored);
+      out.pairs.push(...erPairs(d));
     } catch (err) {
-      skipped.push({
-        selector: d.selector,
-        line: d.line,
-        reason: `erDiagram pair unparseable: ${message(err)}`,
-        blocking: true,
-      });
+      skip(out, d, `erDiagram pair unparseable: ${message(err)}`, true);
     }
   }
-  return { pairs, skipped };
+  return out;
 };
 
 // The canvas applies under github only. Material draws its own page, so the
@@ -460,53 +474,169 @@ const themeVariable = (selector: string, line: number): ContrastSource => ({
   line,
 });
 
+// Where a sequence variable is set in the source. lineOf gives the line that
+// sets a variable, or the keyword line when it is inherited, and rectLines the
+// line of each rect in order.
+const sequenceLines = (source: string): { lineOf: (key: string) => number; rectLines: number[] } => {
+  const lines = source.split("\n");
+  const keywordLine = lines.findIndex((l) => /^\s*sequenceDiagram\b/.test(l)) + 1;
+  const lineOf = (key: string): number => {
+    const found = lines.findLastIndex((l) => new RegExp(`\\b${key}["']?\\s*:`).test(l));
+    return found < 0 ? keywordLine : found + 1;
+  };
+  return { lineOf, rectLines: lines.flatMap((l, i) => (/^\s*rect\s/.test(l) ? [i + 1] : [])) };
+};
+
+// The merged config and sequence DB, or null when the parser cannot read the
+// diagram. parse-diagram-unparseable reports it. As for complexity, a diagram
+// the parser cannot read has no colours to trust.
+const parseSequence = async (
+  mermaid: MermaidCore,
+  source: string,
+): Promise<{ config: Variables; db: SequenceDb } | null> => {
+  try {
+    const { config } = await mermaid.parse(source);
+    const { db } = await mermaid.mermaidAPI.getDiagramFromText(source);
+    return { config, db: db as SequenceDb };
+  } catch {
+    return null;
+  }
+};
+
+// Why a sequence config cannot be modelled, as the key to blame and the
+// reason, or null when it can. Under mkdocs-material a diagram's themeCSS
+// replaces Material's own, so neither profile can say what it draws.
+const unmodelled = (config: Variables): { selector: string; reason: string } | null => {
+  if (config.themeCSS !== undefined) {
+    return { selector: "themeCSS", reason: "themeCSS restyles the diagram with CSS the audit cannot model" };
+  }
+  const pinned = config.theme;
+  if (pinned !== undefined && !SEQUENCE_THEMES.includes(String(pinned))) {
+    return {
+      selector: "theme",
+      reason: `the ${String(pinned)} theme is not modelled, only ${SEQUENCE_THEMES.join(", ")}`,
+    };
+  }
+  return null;
+};
+
+// The Mermaid theme drawn in each reader theme: a pinned theme in both, or
+// else what the host draws.
+const sequenceThemes = (pinned: unknown, host: boolean): Record<Theme, string> => {
+  const theme = (fallback: string): string => (pinned === undefined ? fallback : String(pinned));
+  return { light: theme("default"), dark: theme(host ? "default" : "dark") };
+};
+
+// What one reader theme's sequence pairs are scored with.
+interface SequenceTheme {
+  theme: Theme;
+  page: string;
+  vars: Variables;
+  host: boolean;
+  lineOf: (key: string) => number;
+  out: ContrastResult;
+}
+
+type SequenceBackground = { key: string } | { colour: string };
+
+// Scores fgKey drawn on a background: a variable, or a colour such as the page.
+type SequencePair = (
+  kind: PairKind,
+  fgKey: string,
+  bg: SequenceBackground,
+  where?: { suffix?: string; at?: number | undefined },
+) => void;
+
+const sequencePair =
+  ({ theme: t, page, vars, host, lineOf, out }: SequenceTheme): SequencePair =>
+  (kind, fgKey, bg, { suffix = "", at } = {}) => {
+    const color = (key: string): string => {
+      const value = vars[key];
+      if (typeof value !== "string") throw new Error(`${key} is not a resolved colour`);
+      return value;
+    };
+    const selector = fgKey + suffix;
+    const line = at ?? lineOf(fgKey);
+    try {
+      const box = compositeOver("key" in bg ? color(bg.key) : bg.colour, page);
+      out.pairs.push({
+        ...scoreHostPair(kind, themeVariable(selector, line), t, { fg: color(fgKey), bg: box }),
+        advisory: host,
+      });
+    } catch (err) {
+      out.skipped.push({ selector, line, reason: `${t} sequence pair unparseable: ${message(err)}`, blocking: true });
+    }
+  };
+
+// The surfaces that escape Material's themeCSS: lifelines, arrowheads and
+// activation bars.
+const scoreHostSequence = (pair: SequencePair, page: string, features: SequenceFeatures): void => {
+  const onPage = { colour: page };
+  pair("border", "actorLineColor", onPage);
+  pair("border", "signalColor", onPage, { suffix: " (arrowhead)" });
+  if (features.activation) pair("border", "activationBorderColor", { key: "activationBkgColor" });
+};
+
+// Every pair a sequence diagram draws when the author controls its colours.
+const scoreAuthorSequence = (
+  pair: SequencePair,
+  page: string,
+  features: SequenceFeatures,
+  rectLines: number[],
+): void => {
+  const onPage = { colour: page };
+  pair("text", "actorTextColor", { key: "actorBkg" });
+  pair("border", "actorBorder", { key: "actorBkg" });
+  // A human actor's name and stick figure sit outside the box fill.
+  if (features.humanActor) {
+    pair("text", "actorTextColor", onPage, { suffix: " (human actor label)" });
+    pair("border", "actorBorder", onPage, { suffix: " (human actor glyph)" });
+  }
+  pair("border", "actorLineColor", onPage);
+  pair("text", "signalTextColor", onPage);
+  pair("border", "signalColor", onPage);
+  if (features.note) pair("text", "noteTextColor", { key: "noteBkgColor" });
+  if (features.frame) {
+    pair("text", "labelTextColor", { key: "labelBoxBkgColor" });
+    pair("text", "loopTextColor", onPage);
+    pair("border", "labelBoxBorderColor", onPage, { suffix: " (loop frame)" });
+  }
+  if (features.activation) pair("border", "activationBorderColor", { key: "activationBkgColor" });
+  if (features.numbered) pair("text", "sequenceNumberColor", { key: "signalColor" });
+  // Messages and frame text inside a rect sit on its colour, not the page.
+  for (const [i, rect] of features.rects.entries()) {
+    const fill = { colour: rect };
+    const where = { suffix: " (rect)", at: rectLines[i] };
+    pair("text", "signalTextColor", fill, where);
+    pair("border", "signalColor", fill, where);
+    if (features.frame) pair("text", "loopTextColor", fill, where);
+  }
+};
+
 export const scoreSequence = async (
   source: string,
   profile: Profile,
   canvas: Canvas = GITHUB_CANVAS,
 ): Promise<ContrastResult> => {
-  const pairs: ContrastPair[] = [];
-  const skipped: SkippedDirective[] = [];
-  const lines = source.split("\n");
-  const keywordLine = lines.findIndex((l) => /^\s*sequenceDiagram\b/.test(l)) + 1;
-  // The line that sets a variable, or the keyword line when it is inherited.
-  const lineOf = (key: string): number => {
-    const found = lines.findLastIndex((l) => new RegExp(`\\b${key}["']?\\s*:`).test(l));
-    return found < 0 ? keywordLine : found + 1;
-  };
-  const rectLines = lines.flatMap((l, i) => (/^\s*rect\s/.test(l) ? [i + 1] : []));
-
+  const out: ContrastResult = { pairs: [], skipped: [] };
+  const { lineOf, rectLines } = sequenceLines(source);
   const mermaid = await getMermaidCore();
-  let config: Variables;
-  let db: SequenceDb;
-  try {
-    config = (await mermaid.parse(source)).config;
-    db = (await mermaid.mermaidAPI.getDiagramFromText(source)).db as SequenceDb;
-  } catch {
-    // parse-diagram-unparseable reports it. As for complexity, a diagram the
-    // parser cannot read has no colours to trust.
-    return { pairs, skipped };
-  }
+  const parsed = await parseSequence(mermaid, source);
+  if (!parsed) return out;
+  const { config, db } = parsed;
 
   const block = (selector: string, reason: string): ContrastResult => {
-    skipped.push({ selector, line: lineOf(selector), reason, blocking: true });
-    return { pairs, skipped };
+    out.skipped.push({ selector, line: lineOf(selector), reason, blocking: true });
+    return out;
   };
-  // Under mkdocs-material a diagram's themeCSS replaces Material's own, so
-  // neither profile can say what it draws.
-  if (config.themeCSS !== undefined)
-    return block("themeCSS", "themeCSS restyles the diagram with CSS the audit cannot model");
-  const pinned = config.theme;
-  if (pinned !== undefined && !SEQUENCE_THEMES.includes(String(pinned))) {
-    return block("theme", `the ${String(pinned)} theme is not modelled, only ${SEQUENCE_THEMES.join(", ")}`);
-  }
+  const problem = unmodelled(config);
+  if (problem) return block(problem.selector, problem.reason);
 
   const features = sequenceFeatures(db);
   const host = profile === "mkdocs-material";
-  const theme = (fallback: string): string => (pinned === undefined ? fallback : String(pinned));
   let variables: Record<Theme, Variables>;
   try {
-    variables = resolveVariables(mermaid, config, { light: theme("default"), dark: theme(host ? "default" : "dark") });
+    variables = resolveVariables(mermaid, config, sequenceThemes(config.theme, host));
   } catch (err) {
     // A colour the theme derives others from, such as actorBorder, fails here.
     return block("themeVariables", `Mermaid could not resolve the theme: ${message(err)}`);
@@ -514,75 +644,25 @@ export const scoreSequence = async (
 
   for (const t of THEMES) {
     const page = host ? MKDOCS_MATERIAL[t].bg : canvas[t];
-    const vars = variables[t];
-    const color = (key: string): string => {
-      const value = vars[key];
-      if (typeof value !== "string") throw new Error(`${key} is not a resolved colour`);
-      return value;
-    };
-    // fgKey drawn on a background: a variable, or a colour such as the page.
-    const pair = (
-      kind: PairKind,
-      fgKey: string,
-      bg: { key: string } | { colour: string },
-      suffix = "",
-      at?: number,
-    ) => {
-      const selector = fgKey + suffix;
-      const line = at ?? lineOf(fgKey);
-      try {
-        const box = compositeOver("key" in bg ? color(bg.key) : bg.colour, page);
-        pairs.push({ ...scoreHostPair(kind, themeVariable(selector, line), t, color(fgKey), box), advisory: host });
-      } catch (err) {
-        skipped.push({ selector, line, reason: `${t} sequence pair unparseable: ${message(err)}`, blocking: true });
-      }
-    };
-    const onPage = { colour: page };
-
-    if (host) {
-      pair("border", "actorLineColor", onPage);
-      pair("border", "signalColor", onPage, " (arrowhead)");
-      if (features.activation) pair("border", "activationBorderColor", { key: "activationBkgColor" });
-      continue;
-    }
-
-    pair("text", "actorTextColor", { key: "actorBkg" });
-    pair("border", "actorBorder", { key: "actorBkg" });
-    // A human actor's name and stick figure sit outside the box fill.
-    if (features.humanActor) {
-      pair("text", "actorTextColor", onPage, " (human actor label)");
-      pair("border", "actorBorder", onPage, " (human actor glyph)");
-    }
-    pair("border", "actorLineColor", onPage);
-    pair("text", "signalTextColor", onPage);
-    pair("border", "signalColor", onPage);
-    if (features.note) pair("text", "noteTextColor", { key: "noteBkgColor" });
-    if (features.frame) {
-      pair("text", "labelTextColor", { key: "labelBoxBkgColor" });
-      pair("text", "loopTextColor", onPage);
-      pair("border", "labelBoxBorderColor", onPage, " (loop frame)");
-    }
-    if (features.activation) pair("border", "activationBorderColor", { key: "activationBkgColor" });
-    if (features.numbered) pair("text", "sequenceNumberColor", { key: "signalColor" });
-    // Messages and frame text inside a rect sit on its colour, not the page.
-    for (const [i, rect] of features.rects.entries()) {
-      const fill = { colour: rect };
-      const at = rectLines[i];
-      pair("text", "signalTextColor", fill, " (rect)", at);
-      pair("border", "signalColor", fill, " (rect)", at);
-      if (features.frame) pair("text", "loopTextColor", fill, " (rect)", at);
-    }
+    const pair = sequencePair({ theme: t, page, vars: variables[t], host, lineOf, out });
+    if (host) scoreHostSequence(pair, page, features);
+    else scoreAuthorSequence(pair, page, features, rectLines);
   }
-  return { pairs, skipped };
+  return out;
 };
+
+// What scoreDiagram reads off a diagram.
+export interface ScoredDiagram {
+  source: string;
+  directives: StyleDirective[];
+  keyword: string | null;
+}
 
 // Scores a diagram by its keyword: a sequence diagram by its theme variables,
 // any other by its style directives.
 export const scoreDiagram = (
-  source: string,
-  directives: StyleDirective[],
+  { source, directives, keyword }: ScoredDiagram,
   profile: Profile,
-  keyword: string | null,
   canvas: Canvas = GITHUB_CANVAS,
 ): Promise<ContrastResult> =>
   keyword === "sequenceDiagram"

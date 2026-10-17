@@ -50,11 +50,11 @@ sequenceDiagram
 `;
 
 const github = (source: string) => scoreSequence(source, "github");
-const failing = (pairs: ContrastPair[]): ContrastPair[] => pairs.filter((p) => !p.passes && !p.advisory);
+const failing = (pairs: ContrastPair[]): ContrastPair[] => pairs.filter((p) => !(p.passes || p.advisory));
 const find = (pairs: ContrastPair[], selector: string, theme?: string): ContrastPair | undefined =>
   pairs.find((p) => p.selector === selector && (theme === undefined || p.theme === theme));
 
-describe("ported: sequence theme contrast", () => {
+describe("ported: sequence theme contrast of actors and messages", () => {
   test("human actor labels and glyphs must also contrast with the page", async () => {
     const { pairs } = await github(GOOD_SEQUENCE.replace("participant R as Reviewer", "actor R as Reviewer"));
     expect(find(pairs, "actorTextColor (human actor label)", "dark")?.passes).toBe(false);
@@ -87,7 +87,9 @@ describe("ported: sequence theme contrast", () => {
     expect(pairs.filter((p) => p.selector === "signalColor").every((p) => p.passes)).toBe(true);
     expect(find(pairs, "loopTextColor", "dark")).toBeDefined();
   });
+});
 
+describe("ported: sequence theme contrast of directives, notes and boxes", () => {
   test("init JSON directives are audited, not silently skipped", async () => {
     const { pairs } = await github(
       '%%{init: {"themeVariables":{"signalTextColor":"#475569"}}}%%\nsequenceDiagram\nA->>B: Message',
@@ -133,7 +135,9 @@ describe("ported: sequence theme contrast", () => {
     );
     expect(find(pairs, "signalTextColor", "dark")?.passes).toBe(false);
   });
+});
 
+describe("ported: sequence theme contrast on the canvas, and failing closed", () => {
   // The skill took a custom canvas by flag. Here the profile names the canvas.
   test("the profile sets the canvas a page-backed pair is scored on", async () => {
     const { pairs } = await scoreSequence(BAD_SEQUENCE, "mkdocs-material");
@@ -206,7 +210,9 @@ describe("sequence contrast under github", () => {
       [RULE.TEXT, 4, "themeVariables signalTextColor (rect)"],
     ]);
   });
+});
 
+describe("sequence contrast under github: themes, parse and fix", () => {
   test("a pinned theme applies to both canvases", async () => {
     const { pairs } = await github("%%{init: {'theme':'base'}}%%\nsequenceDiagram\n  A->>B: hi");
     const signal = pairs.filter((p) => p.selector === "signalTextColor");

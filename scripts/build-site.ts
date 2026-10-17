@@ -149,23 +149,26 @@ const BLOCK = /````text (before|after|reported|llm)\n([\s\S]*?)\n````/g;
 
 const LLM_REASON = /<!--\s*llm:\s*(.*?)\s*-->/;
 
-const ruleExample = async (id: string, src: string, after: string | null, llmSrc: string | null): Promise<string> => {
-  const llm =
-    llmSrc === null
-      ? null
-      : await llmFix(
-          `RULES.md ${id}`,
-          { path: DOC_FILE, source: llmSrc, reason: LLM_REASON.exec(llmSrc)?.[1] ?? null },
-          "markdown",
-        );
-  if (after === null && llm === null) fail(`RULES.md ${id}`, "a reported example has no LLM fix after it");
+// An example is checked again as its page is written: it must report, and
+// --fix must produce its after, or leave a reported example alone.
+const checkRuleExample = async (
+  where: string,
+  src: string,
+  after: string | null,
+  llm: CheckedLlmFix | null,
+): Promise<Finding[]> => {
+  if (after === null && llm === null) fail(where, "a reported example has no LLM fix after it");
   const findings = await checkMarkdown(src, DOC_FILE, GITHUB);
-  if (findings.length === 0) fail(`RULES.md ${id}`, "an example reports nothing");
+  if (findings.length === 0) fail(where, "an example reports nothing");
   const fixed = await fixSource(src, DOC_FILE, GITHUB);
-  if (after === null && fixed !== src) fail(`RULES.md ${id}`, "a reported example is changed by --fix");
-  if (after !== null && fixed !== after) fail(`RULES.md ${id}`, "--fix no longer produces the after example");
+  if (after === null && fixed !== src) fail(where, "a reported example is changed by --fix");
+  if (after !== null && fixed !== after) fail(where, "--fix no longer produces the after example");
+  return findings;
+};
 
-  const draw = drawable(findings);
+// The row of cards: the example, what --fix writes, then one card per diagram
+// of the LLM fix.
+const ruleCards = (src: string, after: string | null, llm: CheckedLlmFix | null, draw: boolean): string[] => {
   const diagramOf = (markdown: string): string => {
     const d = buildDocModel(markdown).diagrams[0];
     return draw && d ? mermaid(d.source) : fenced(markdown, "markdown");
@@ -180,21 +183,35 @@ const ruleExample = async (id: string, src: string, after: string | null, llmSrc
     const label = llmDiagrams.length > 1 ? `LLM fix ${i + 1} of ${llmDiagrams.length}` : "LLM fix";
     cards.push(card(label, "after", mermaid(d)));
   }
+  return cards;
+};
 
+// The markdown behind the cards, tabbed when there is a second version.
+const ruleSource = (src: string, after: string | null, llm: CheckedLlmFix | null): string => {
+  if (after !== null)
+    return `${tab("Before", fenced(src, "markdown"))}\n${tab("After --fix", fenced(after, "markdown"))}`;
+  if (llm) return `${tab("Reported", fenced(src, "markdown"))}\n${tab("LLM fix", fenced(llm.source, "markdown"))}`;
+  return fenced(src, "markdown");
+};
+
+const ruleExample = async (id: string, src: string, after: string | null, llmSrc: string | null): Promise<string> => {
+  const where = `RULES.md ${id}`;
+  const llm =
+    llmSrc === null
+      ? null
+      : await llmFix(
+          where,
+          { path: DOC_FILE, source: llmSrc, reason: LLM_REASON.exec(llmSrc)?.[1] ?? null },
+          "markdown",
+        );
+  const findings = await checkRuleExample(where, src, after, llm);
+  const draw = drawable(findings);
   const out = [
-    compare(cards),
+    compare(ruleCards(src, after, llm, draw)),
     admonition("!!!", "failure", "What the linter reports", fenced(reportLines(findings, DOC_NAME), "text")),
   ];
   if (llm) out.push(admonition("!!!", "tip", "What an LLM would fix", llm.reason));
-  if (draw) {
-    const source =
-      after !== null
-        ? `${tab("Before", fenced(src, "markdown"))}\n${tab("After --fix", fenced(after, "markdown"))}`
-        : llm
-          ? `${tab("Reported", fenced(src, "markdown"))}\n${tab("LLM fix", fenced(llm.source, "markdown"))}`
-          : fenced(src, "markdown");
-    out.push(admonition("???", "example", "Markdown source", source));
-  }
+  if (draw) out.push(admonition("???", "example", "Markdown source", ruleSource(src, after, llm)));
   return out.join("\n");
 };
 
@@ -206,53 +223,65 @@ const optionsLine = (rule: Rule): string => {
   return `Options: ${names.map((n) => `\`${n}\``).join(", ")}, listed in [Config file](configuration.md#rule-options).`;
 };
 
-const rulesPage = async (): Promise<string> => {
-  const doc = readFileSync(RULES_PATH, "utf8");
-  const out: string[] = [
-    "# Rules",
+const RULES_INTRO = [
+  "# Rules",
+  "",
+  "Every built-in rule, grouped by what it guards.",
+  "Each example shows the exact line the linter prints and, where a fixer exists, what `--fix` writes.",
+  "Examples are scored under the `github` profile, so they are drawn the way GitHub draws them.",
+  "",
+  '!!! info "This page is checked when it is built"',
+  "",
+  "    The examples come from `RULES.md` in the repository.",
+  "    The site build runs each one through the linter, and fails if an example stops reporting its rule or `--fix` stops producing its after.",
+  "",
+  '--8<-- "rules-table.md"',
+  "",
+];
+
+// Each before, or reported, example of a rule's section, paired with the
+// after or LLM fix that follows it.
+const ruleExamples = async (rule: Rule, section: string): Promise<string[]> => {
+  const out: string[] = [];
+  const blocks = [...section.matchAll(BLOCK)].map((m) => ({ kind: m[1] as string, src: `${m[2]}\n` }));
+  for (const [i, block] of blocks.entries()) {
+    if (block.kind === "after" || block.kind === "llm") continue;
+    const next = blocks[i + 1];
+    const after = block.kind === "before" && next?.kind === "after" ? next.src : null;
+    const llm = block.kind === "reported" && next?.kind === "llm" ? next.src : null;
+    if (block.kind === "before" && after === null) fail(`RULES.md ${rule.id}`, "a before example has no after");
+    out.push(await ruleExample(rule.id, block.src, after, llm), "");
+  }
+  return out;
+};
+
+const ruleEntry = async (doc: string, rule: Rule): Promise<string[]> => {
+  const section = ruleSection(doc, rule.id);
+  if (!section) fail("RULES.md", `no section for ${rule.id}`);
+  const out = [
+    `### ${rule.id}`,
     "",
-    "Every built-in rule, grouped by what it guards.",
-    "Each example shows the exact line the linter prints and, where a fixer exists, what `--fix` writes.",
-    "Examples are scored under the `github` profile, so they are drawn the way GitHub draws them.",
-    "",
-    '!!! info "This page is checked when it is built"',
-    "",
-    "    The examples come from `RULES.md` in the repository.",
-    "    The site build runs each one through the linter, and fails if an example stops reporting its rule or `--fix` stops producing its after.",
-    "",
-    '--8<-- "rules-table.md"',
+    `${badge(rule.category)}${rule.fix ? badge("autofix", "fix") : badge("no fixer", "nofix")}`,
     "",
   ];
+  const prose = section
+    .replace(/^### .*\n/, "")
+    .replace(BLOCK, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (prose) out.push(prose, "");
+  const options = optionsLine(rule);
+  if (options) out.push(options, "");
+  out.push(...(await ruleExamples(rule, section)));
+  return out;
+};
+
+const rulesPage = async (): Promise<string> => {
+  const doc = readFileSync(RULES_PATH, "utf8");
+  const out: string[] = [...RULES_INTRO];
   for (const category of CATEGORIES) {
     out.push(`## ${titleCase(category)}`, "");
-    for (const rule of RULES.filter((r) => r.category === category)) {
-      const section = ruleSection(doc, rule.id);
-      if (!section) fail("RULES.md", `no section for ${rule.id}`);
-      out.push(
-        `### ${rule.id}`,
-        "",
-        `${badge(rule.category)}${rule.fix ? badge("autofix", "fix") : badge("no fixer", "nofix")}`,
-        "",
-      );
-      const prose = section
-        .replace(/^### .*\n/, "")
-        .replace(BLOCK, "")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
-      if (prose) out.push(prose, "");
-      const options = optionsLine(rule);
-      if (options) out.push(options, "");
-      const blocks = [...section.matchAll(BLOCK)].map((m) => ({ kind: m[1] as string, src: `${m[2]}\n` }));
-      for (let i = 0; i < blocks.length; i++) {
-        const block = blocks[i];
-        if (!block || block.kind === "after" || block.kind === "llm") continue;
-        const next = blocks[i + 1];
-        const after = block.kind === "before" && next?.kind === "after" ? next.src : null;
-        const llm = block.kind === "reported" && next?.kind === "llm" ? next.src : null;
-        if (block.kind === "before" && after === null) fail(`RULES.md ${rule.id}`, "a before example has no after");
-        out.push(await ruleExample(rule.id, block.src, after, llm), "");
-      }
-    }
+    for (const rule of RULES.filter((r) => r.category === category)) out.push(...(await ruleEntry(doc, rule)));
   }
   return out.join("\n");
 };
@@ -290,57 +319,87 @@ const llmBlock = (llm: CheckedLlmFix, draw: string[], lang: string): string => {
   return admonition("!!!", "tip", "What an LLM would fix", parts.join("\n\n"));
 };
 
-const fixtureSection = async (f: Fixture): Promise<string> => {
+// A fixture must report exactly the rules it expects, and --fix must still
+// write its pinned .fixed file. Returns its findings and what --fix writes.
+const checkFixture = async (f: Fixture): Promise<{ findings: Finding[]; fixed: string }> => {
   const findings = await checkMarkdown(f.source, f.path, GITHUB);
-  const got = distinct(findings);
+  const got = distinct(findings).join(" ");
   if (f.expected === null) fail(f.rel, "has no expect comment");
-  else if (got.join(" ") !== f.expected.join(" "))
-    fail(f.rel, `expects ${f.expected.join(" ")} but reports ${got.join(" ")}`);
+  else if (got !== f.expected.join(" ")) fail(f.rel, `expects ${f.expected.join(" ")} but reports ${got}`);
   const fixed = await fixSource(f.source, f.path, GITHUB);
   if (f.fixed !== null && fixed !== f.fixed) fail(f.rel, "--fix no longer matches its pinned .fixed file");
+  return { findings, fixed };
+};
 
-  const ext = extname(f.path);
+const fixtureBadges = (f: Fixture, findings: Finding[]): string => {
+  const got = distinct(findings);
+  const rules = got.length ? got.map((r) => badge(r)).join("") : badge("clean", "fix");
+  return `${rules}${f.fixed !== null ? badge("pinned fix", "fix") : ""}${f.llm !== null ? badge("LLM fix", "fix") : ""}`;
+};
+
+type Diagram = ReturnType<typeof buildDocModel>["diagrams"][number];
+
+// One row of cards for one diagram of a small fixture, or null when it is too
+// big to read in a card, which is the finding: the source below covers it.
+const diagramRow = (
+  d: Diagram,
+  a: Diagram | undefined,
+  findings: Finding[],
+  inlineLlm: string | null,
+): string | null => {
+  const own = findings.filter((x) => x.line >= d.startLine && x.line <= d.endLine);
+  if (own.some((x) => x.rule.startsWith("complexity-node-count-"))) return null;
+  const body = drawable(own) ? mermaid(d.source) : fenced(d.source, "text");
+  const cards =
+    a && a.source !== d.source
+      ? [card("Before", "before", body), card("After --fix", "after", mermaid(a.source))]
+      : [card(own.length ? "Before" : "Lints clean", own.length ? "before" : "after", body)];
+  if (inlineLlm !== null) cards.push(card("LLM fix", "after", mermaid(inlineLlm)));
+  return compare(cards);
+};
+
+// A small fixture gets a row of cards per diagram, then the LLM fix with any
+// of its diagrams not already drawn in those rows.
+const fixtureDrawing = (
+  { before, after }: { before: Diagram[]; after: Diagram[] },
+  findings: Finding[],
+  llm: CheckedLlmFix | null,
+  lang: string,
+): string[] => {
+  const out: string[] = [];
+  const large = before.length > DRAW_LIMIT;
+  // One diagram fixed into one diagram reads best as one row of cards.
+  const inline = llm !== null && before.length === 1 && llm.diagrams.length === 1;
+  const inlineLlm = inline ? (llm.diagrams[0] as string) : null;
+  if (!large) {
+    for (const [i, d] of before.entries()) {
+      const row = diagramRow(d, after[i], findings, inlineLlm);
+      if (row !== null) out.push(row);
+    }
+  }
+  if (llm) out.push(llmBlock(llm, inline || large ? [] : llm.diagrams, lang));
+  return out;
+};
+
+const fixtureSection = async (f: Fixture): Promise<string> => {
+  const { findings, fixed } = await checkFixture(f);
   const kind = documentKind(f.path);
   const lang = kind === "diagram" ? "text" : "markdown";
-  const out: string[] = [
-    `### ${basename(f.rel, ext)}`,
-    "",
-    `${got.length ? got.map((r) => badge(r)).join("") : badge("clean", "fix")}${f.fixed !== null ? badge("pinned fix", "fix") : ""}${f.llm !== null ? badge("LLM fix", "fix") : ""}`,
-    "",
-    `[\`${f.rel}\`](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/${f.rel})`,
-    "",
-  ];
-
   const before = buildDocModel(f.source, kind).diagrams;
   const after = buildDocModel(fixed, kind).diagrams;
   const llm = f.llm ? await llmFix(f.rel, f.llm, kind) : null;
-  // One diagram fixed into one diagram reads best as one row of cards.
-  const inline = llm !== null && before.length === 1 && llm.diagrams.length === 1;
-  if (before.length > 0 && before.length <= DRAW_LIMIT) {
-    for (const [i, d] of before.entries()) {
-      const own = findings.filter((x) => x.line >= d.startLine && x.line <= d.endLine);
-      // Too big to read in a card, which is the finding: the source below covers it.
-      if (own.some((x) => x.rule.startsWith("complexity-node-count-"))) continue;
-      const body = drawable(own) ? mermaid(d.source) : fenced(d.source, "text");
-      const a = after[i];
-      const cards =
-        a && a.source !== d.source
-          ? [card("Before", "before", body), card("After --fix", "after", mermaid(a.source))]
-          : [card(own.length ? "Before" : "Lints clean", own.length ? "before" : "after", body)];
-      if (inline && llm) cards.push(card("LLM fix", "after", mermaid(llm.diagrams[0] as string)));
-      out.push(compare(cards));
-    }
-  }
-  if (llm) out.push(llmBlock(llm, inline || before.length > DRAW_LIMIT ? [] : llm.diagrams, lang));
+  const out: string[] = [
+    `### ${basename(f.rel, extname(f.path))}`,
+    "",
+    fixtureBadges(f, findings),
+    "",
+    `[\`${f.rel}\`](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/${f.rel})`,
+    "",
+    ...fixtureDrawing({ before, after }, findings, llm, lang),
+  ];
+  const marker = before.length > DRAW_LIMIT ? "???" : "???+";
   if (findings.length)
-    out.push(
-      admonition(
-        before.length > DRAW_LIMIT ? "???" : "???+",
-        "failure",
-        `${findings.length} finding(s)`,
-        findingsTable(findings),
-      ),
-    );
+    out.push(admonition(marker, "failure", `${findings.length} finding(s)`, findingsTable(findings)));
   out.push(admonition("???", "note", "Source", fenced(f.source, lang)));
   if (fixed !== f.source) out.push(admonition("???", "success", "After --fix", fenced(fixed, lang)));
   return out.join("\n");
@@ -452,7 +511,7 @@ export const homeCompare = async (): Promise<string> => {
   const findings = await checkMarkdown(f.source, f.path, GITHUB);
   const before = buildDocModel(f.source).diagrams[0];
   const after = buildDocModel(f.fixed).diagrams[0];
-  if (!before || !after || findings.length === 0) {
+  if (!(before && after) || findings.length === 0) {
     fail(HOME_FIXTURE, "the landing example no longer reports a finding");
     return "";
   }

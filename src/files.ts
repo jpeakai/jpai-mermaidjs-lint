@@ -17,6 +17,8 @@ export const SKIP_DIRS = new Set(["node_modules", "vendor", "dist", "build", "tm
 
 const skipDir = (name: string): boolean => name.startsWith(".") || SKIP_DIRS.has(name);
 
+const isDiagramFile = (name: string): boolean => DIAGRAM_FILE_EXTS.has(extname(name).toLowerCase());
+
 // Whether a link resolves to a directory. A dangling link resolves to nothing.
 const linksToDir = (path: string): boolean => {
   try {
@@ -43,6 +45,24 @@ export const collectFiles = (paths: string[]): Collected => {
   const symlinks: string[] = [];
   const seen = new Set<string>();
 
+  // A file reached by more than one path is listed once.
+  const add = (abs: string): void => {
+    if (seen.has(abs)) return;
+    seen.add(abs);
+    files.push(abs);
+  };
+
+  const visit = (dir: string, entry: Dirent): void => {
+    const abs = join(dir, entry.name);
+    if (entry.isSymbolicLink()) {
+      if (!skipDir(entry.name) && (isDiagramFile(entry.name) || linksToDir(abs))) symlinks.push(abs);
+    } else if (entry.isDirectory()) {
+      if (!skipDir(entry.name)) walk(abs);
+    } else if (entry.isFile() && isDiagramFile(entry.name)) {
+      add(abs);
+    }
+  };
+
   const walk = (dir: string): void => {
     let entries: Dirent[];
     try {
@@ -51,21 +71,7 @@ export const collectFiles = (paths: string[]): Collected => {
       unreadable.push(dir);
       return;
     }
-    for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-      const abs = join(dir, entry.name);
-      if (entry.isSymbolicLink()) {
-        if (!skipDir(entry.name) && (DIAGRAM_FILE_EXTS.has(extname(entry.name).toLowerCase()) || linksToDir(abs))) {
-          symlinks.push(abs);
-        }
-      } else if (entry.isDirectory()) {
-        if (!skipDir(entry.name)) walk(abs);
-      } else if (entry.isFile() && DIAGRAM_FILE_EXTS.has(extname(entry.name).toLowerCase())) {
-        if (!seen.has(abs)) {
-          seen.add(abs);
-          files.push(abs);
-        }
-      }
-    }
+    for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) visit(dir, entry);
   };
 
   for (const p of paths) {
@@ -74,10 +80,9 @@ export const collectFiles = (paths: string[]): Collected => {
       const st = statSync(abs);
       if (st.isDirectory()) {
         walk(abs);
-      } else if (st.isFile() && !seen.has(abs)) {
+      } else if (st.isFile()) {
         // An explicitly named file is honoured whatever its extension.
-        seen.add(abs);
-        files.push(abs);
+        add(abs);
       }
     } catch {
       unreadable.push(p);

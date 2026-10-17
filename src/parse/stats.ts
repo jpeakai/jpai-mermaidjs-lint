@@ -71,10 +71,18 @@ export interface DiagramStats {
 
 type MermaidStats = DiagramStats;
 
-const LANGIUM_TYPES: Record<
-  string,
-  "architecture" | "info" | "pie" | "gitGraph" | "packet" | "radar" | "treemap" | "treeView" | "wardley"
-> = {
+type LangiumType =
+  | "architecture"
+  | "info"
+  | "pie"
+  | "gitGraph"
+  | "packet"
+  | "radar"
+  | "treemap"
+  | "treeView"
+  | "wardley";
+
+const LANGIUM_TYPES: Record<string, LangiumType> = {
   "architecture-beta": "architecture",
   architecture: "architecture",
   info: "info",
@@ -180,7 +188,7 @@ export const parserReason = (err: unknown): string => {
   const lines = message.split("\n");
   if (message.startsWith("No diagram type detected")) return (lines[0] ?? "").trim();
   return lines
-    .filter((line, i) => !POINTER.test(line.trim()) && !POINTER.test((lines[i + 1] ?? "").trim()))
+    .filter((line, i) => !(POINTER.test(line.trim()) || POINTER.test((lines[i + 1] ?? "").trim())))
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
@@ -217,83 +225,7 @@ async function extractLangiumStats(content: string, keyword: string): Promise<Me
   const mapped = LANGIUM_TYPES[keyword];
   if (!mapped) throw new Error(`not a langium keyword: ${keyword}`);
   const ast = (await langiumParseAny(mapped, content)) as Record<string, unknown>;
-
-  const nodeIds: string[] = [];
-  const subgraphNames: string[] = [];
-  let edges = 0;
-  let maxDepth = 0;
-  let treeDepth = 0;
-
-  switch (mapped) {
-    case "architecture": {
-      const services = (ast.services as Array<{ id?: string }> | undefined) ?? [];
-      const groups = (ast.groups as Array<{ id?: string; title?: string; in?: string }> | undefined) ?? [];
-      const edgeArr = (ast.edges as Array<unknown> | undefined) ?? [];
-      nodeIds.push(...services.map((s) => s.id ?? ""));
-      subgraphNames.push(...groups.map((g) => g.title ?? g.id ?? ""));
-      maxDepth = architectureDepth(groups);
-      edges = edgeArr.length;
-      break;
-    }
-    case "pie": {
-      const sections = (ast.sections as Array<{ label?: string }> | undefined) ?? [];
-      nodeIds.push(...sections.map((s, i) => s.label ?? `slice_${i}`));
-      break;
-    }
-    case "packet": {
-      const blocks = (ast.blocks as Array<unknown> | undefined) ?? [];
-      nodeIds.push(...blocks.map((_, i) => `block_${i}`));
-      break;
-    }
-    case "gitGraph": {
-      const statements = (ast.statements as Array<{ $type?: string; id?: string; name?: string }> | undefined) ?? [];
-      for (const s of statements) {
-        if (s.$type === "Commit") nodeIds.push(s.id ?? `commit_${nodeIds.length}`);
-        else if (s.$type === "Branch") subgraphNames.push(s.name ?? `branch_${subgraphNames.length}`);
-        else if (s.$type === "Merge") edges++;
-      }
-      break;
-    }
-    case "radar": {
-      const axes = (ast.axes as Array<{ name?: string }> | undefined) ?? [];
-      const curves = (ast.curves as Array<{ name?: string }> | undefined) ?? [];
-      nodeIds.push(...axes.map((a, i) => a.name ?? `axis_${i}`));
-      nodeIds.push(...curves.map((c, i) => c.name ?? `curve_${i}`));
-      edges = axes.length * curves.length;
-      break;
-    }
-    case "treeView": {
-      // AST shape: flat ast.nodes[] with { name, indent }. Tree structure
-      // derives from indent values; edges = nodes - roots.
-      const nodes = (ast.nodes as Array<{ name?: string; indent?: number }> | undefined) ?? [];
-      const stats = indentTreeStats(nodes.map((n, i) => ({ label: n.name ?? `node_${i}`, indent: n.indent ?? 0 })));
-      nodeIds.push(...stats.labels);
-      edges = stats.edges;
-      treeDepth = stats.depth;
-      break;
-    }
-    case "treemap": {
-      // AST shape: ast.TreemapRows[] with .indent and .item.{Section|Leaf}.name.
-      const rows = (ast.TreemapRows as Array<{ indent?: number; item?: { name?: string } }> | undefined) ?? [];
-      const stats = indentTreeStats(rows.map((r, i) => ({ label: r.item?.name ?? `row_${i}`, indent: r.indent ?? 0 })));
-      nodeIds.push(...stats.labels);
-      edges = stats.edges;
-      treeDepth = stats.depth;
-      break;
-    }
-    case "wardley": {
-      // AST shape: ast.anchors[], ast.components[], ast.links[] — NOT ast.edges.
-      const components = (ast.components as Array<{ name?: string }> | undefined) ?? [];
-      const anchors = (ast.anchors as Array<{ name?: string }> | undefined) ?? [];
-      const links = (ast.links as Array<unknown> | undefined) ?? [];
-      nodeIds.push(...anchors.map((a, i) => a.name ?? `anchor_${i}`));
-      nodeIds.push(...components.map((c, i) => c.name ?? `comp_${i}`));
-      edges = links.length;
-      break;
-    }
-    case "info":
-      break; // trivial diagram type, no structure
-  }
+  const { nodeIds, edges, subgraphNames, maxDepth, treeDepth = 0 } = LANGIUM_ADAPTERS[mapped](ast);
 
   return {
     nodes: new Set(nodeIds.filter(Boolean)).size,
@@ -306,6 +238,103 @@ async function extractLangiumStats(content: string, keyword: string): Promise<Me
     parser_used: "langium",
     diagram_type: keyword,
     error: null,
+  };
+}
+
+// ─── Per-type Langium AST adapters ──
+// Each adapter reads ONLY the typed AST its grammar produces, the way the
+// mermaid-core adapters below read only their type's DB.
+
+type LangiumAdapter = (ast: Record<string, unknown>) => Structure;
+
+const LANGIUM_ADAPTERS: Record<LangiumType, LangiumAdapter> = {
+  architecture: adaptLangiumArchitecture,
+  info: adaptLangiumInfo,
+  pie: adaptLangiumPie,
+  gitGraph: adaptLangiumGitGraph,
+  packet: adaptLangiumPacket,
+  radar: adaptLangiumRadar,
+  treemap: adaptLangiumTreemap,
+  treeView: adaptLangiumTreeView,
+  wardley: adaptLangiumWardley,
+};
+
+function adaptLangiumArchitecture(ast: Record<string, unknown>): Structure {
+  const services = (ast.services as Array<{ id?: string }> | undefined) ?? [];
+  const groups = (ast.groups as Array<{ id?: string; title?: string; in?: string }> | undefined) ?? [];
+  const edgeArr = (ast.edges as Array<unknown> | undefined) ?? [];
+  return {
+    nodeIds: services.map((s) => s.id ?? ""),
+    edges: edgeArr.length,
+    subgraphNames: groups.map((g) => g.title ?? g.id ?? ""),
+    maxDepth: architectureDepth(groups),
+  };
+}
+
+// A trivial diagram type, with no structure.
+function adaptLangiumInfo(): Structure {
+  return { nodeIds: [], edges: 0, subgraphNames: [], maxDepth: 0 };
+}
+
+function adaptLangiumPie(ast: Record<string, unknown>): Structure {
+  const sections = (ast.sections as Array<{ label?: string }> | undefined) ?? [];
+  return { nodeIds: sections.map((s, i) => s.label ?? `slice_${i}`), edges: 0, subgraphNames: [], maxDepth: 0 };
+}
+
+function adaptLangiumPacket(ast: Record<string, unknown>): Structure {
+  const blocks = (ast.blocks as Array<unknown> | undefined) ?? [];
+  return { nodeIds: blocks.map((_, i) => `block_${i}`), edges: 0, subgraphNames: [], maxDepth: 0 };
+}
+
+function adaptLangiumGitGraph(ast: Record<string, unknown>): Structure {
+  const statements = (ast.statements as Array<{ $type?: string; id?: string; name?: string }> | undefined) ?? [];
+  const nodeIds: string[] = [];
+  const subgraphNames: string[] = [];
+  let edges = 0;
+  for (const s of statements) {
+    if (s.$type === "Commit") nodeIds.push(s.id ?? `commit_${nodeIds.length}`);
+    else if (s.$type === "Branch") subgraphNames.push(s.name ?? `branch_${subgraphNames.length}`);
+    else if (s.$type === "Merge") edges++;
+  }
+  return { nodeIds, edges, subgraphNames, maxDepth: 0 };
+}
+
+function adaptLangiumRadar(ast: Record<string, unknown>): Structure {
+  const axes = (ast.axes as Array<{ name?: string }> | undefined) ?? [];
+  const curves = (ast.curves as Array<{ name?: string }> | undefined) ?? [];
+  return {
+    nodeIds: [...axes.map((a, i) => a.name ?? `axis_${i}`), ...curves.map((c, i) => c.name ?? `curve_${i}`)],
+    edges: axes.length * curves.length,
+    subgraphNames: [],
+    maxDepth: 0,
+  };
+}
+
+function adaptLangiumTreeView(ast: Record<string, unknown>): Structure {
+  // AST shape: flat ast.nodes[] with { name, indent }. Tree structure
+  // derives from indent values; edges = nodes - roots.
+  const nodes = (ast.nodes as Array<{ name?: string; indent?: number }> | undefined) ?? [];
+  const stats = indentTreeStats(nodes.map((n, i) => ({ label: n.name ?? `node_${i}`, indent: n.indent ?? 0 })));
+  return { nodeIds: stats.labels, edges: stats.edges, subgraphNames: [], maxDepth: 0, treeDepth: stats.depth };
+}
+
+function adaptLangiumTreemap(ast: Record<string, unknown>): Structure {
+  // AST shape: ast.TreemapRows[] with .indent and .item.{Section|Leaf}.name.
+  const rows = (ast.TreemapRows as Array<{ indent?: number; item?: { name?: string } }> | undefined) ?? [];
+  const stats = indentTreeStats(rows.map((r, i) => ({ label: r.item?.name ?? `row_${i}`, indent: r.indent ?? 0 })));
+  return { nodeIds: stats.labels, edges: stats.edges, subgraphNames: [], maxDepth: 0, treeDepth: stats.depth };
+}
+
+function adaptLangiumWardley(ast: Record<string, unknown>): Structure {
+  // AST shape: ast.anchors[], ast.components[], ast.links[] — NOT ast.edges.
+  const components = (ast.components as Array<{ name?: string }> | undefined) ?? [];
+  const anchors = (ast.anchors as Array<{ name?: string }> | undefined) ?? [];
+  const links = (ast.links as Array<unknown> | undefined) ?? [];
+  return {
+    nodeIds: [...anchors.map((a, i) => a.name ?? `anchor_${i}`), ...components.map((c, i) => c.name ?? `comp_${i}`)],
+    edges: links.length,
+    subgraphNames: [],
+    maxDepth: 0,
   };
 }
 

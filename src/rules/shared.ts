@@ -55,12 +55,17 @@ export const measure = async (diagram: Diagram, config: ThresholdConfig): Promis
   return { stats, metrics: calculateComplexity(stats, config) };
 };
 
+// A finding's text: what is wrong, and how to fix it when there is a way.
+export interface FindingText {
+  message: string;
+  remediation?: string | undefined;
+}
+
 export const finding = (
   ctx: RuleContext,
   diagram: Diagram,
   rule: RuleId,
-  message: string,
-  remediation?: string,
+  { message, remediation }: FindingText,
 ): Finding => ({
   file: ctx.file,
   line: diagram.startLine,
@@ -129,7 +134,7 @@ export const contrastOf = (diagram: Diagram, settings: ContrastSettings): Promis
   }
   let result = bySettings.get(key);
   if (!result) {
-    result = scoreDiagram(diagram.source, diagram.directives, profile, diagram.keyword, canvas);
+    result = scoreDiagram(diagram, profile, canvas);
     bySettings.set(key, result);
   }
   return result;

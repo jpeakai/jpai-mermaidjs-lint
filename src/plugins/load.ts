@@ -52,6 +52,47 @@ const OPTION_TYPES = new Set<OptionType>(["number", "string", "boolean", "string
 // Option names every rule shares with the built-ins. See checkRule.
 const RESERVED_OPTIONS = ["preset", "profile"] as const;
 
+// A rule's category is one word, built in or declared by its plugin, and its
+// key starts with it.
+const checkRuleCategory = (spec: string, key: string, category: unknown, own: ReadonlySet<string>): void => {
+  const where = `rule "${key}"`;
+  if (typeof category !== "string" || !CATEGORY_WORD.test(category)) {
+    throw new PluginContractError(spec, `${where} needs a category of one lower-case word`);
+  }
+  if (!(BUILTIN_CATEGORIES.has(category) || own.has(category))) {
+    throw new PluginContractError(
+      spec,
+      `${where} uses the category "${category}", which this plugin does not declare in meta.categories`,
+    );
+  }
+  if (!key.startsWith(`${category}-`)) {
+    throw new PluginContractError(spec, `${where} must start with its category, as "${category}-short-name"`);
+  }
+};
+
+const checkRuleOptions = (spec: string, where: string, options: unknown): void => {
+  if (options === undefined) return;
+  const valid = isRecord(options) && Object.values(options).every((t) => OPTION_TYPES.has(t as OptionType));
+  if (!valid) {
+    throw new PluginContractError(
+      spec,
+      `${where} options must map names to number, string, boolean, string[] or canvas`,
+    );
+  }
+  // preset and profile keep their built-in meaning for every rule: the
+  // config checks the value against the built-in names, and --preset and
+  // --profile overwrite it. A rule may declare one to follow the run's
+  // setting, as a string, but cannot give the name another meaning.
+  for (const name of RESERVED_OPTIONS) {
+    if (name in options && options[name] !== "string") {
+      throw new PluginContractError(
+        spec,
+        `${where} declares option "${name}" as ${String(options[name])}, but "${name}" is reserved for the built-in ${name}, which is a string set by --${name}; declare it as "string" to follow the run's ${name}, or pick another name`,
+      );
+    }
+  }
+};
+
 // Checks one rule's declaration and returns it, so a bad rule fails at load
 // rather than the first time it runs.
 const checkRule = (spec: string, key: string, raw: unknown, own: ReadonlySet<string>): PluginRule => {
@@ -61,44 +102,13 @@ const checkRule = (spec: string, key: string, raw: unknown, own: ReadonlySet<str
     throw new PluginContractError(spec, `${where} is not a valid key; use lower-case words joined by hyphens`);
   }
   const { category, summary, options, check, fix } = raw;
-  if (typeof category !== "string" || !CATEGORY_WORD.test(category)) {
-    throw new PluginContractError(spec, `${where} needs a category of one lower-case word`);
-  }
-  if (!BUILTIN_CATEGORIES.has(category) && !own.has(category)) {
-    throw new PluginContractError(
-      spec,
-      `${where} uses the category "${category}", which this plugin does not declare in meta.categories`,
-    );
-  }
-  if (!key.startsWith(`${category}-`)) {
-    throw new PluginContractError(spec, `${where} must start with its category, as "${category}-short-name"`);
-  }
+  checkRuleCategory(spec, key, category, own);
   if (typeof summary !== "string" || summary === "") throw new PluginContractError(spec, `${where} needs a summary`);
   if (typeof check !== "function") throw new PluginContractError(spec, `${where} needs a check function`);
   if (fix !== undefined && typeof fix !== "function") {
     throw new PluginContractError(spec, `${where} fix must be a function`);
   }
-  if (options !== undefined) {
-    const valid = isRecord(options) && Object.values(options).every((t) => OPTION_TYPES.has(t as OptionType));
-    if (!valid) {
-      throw new PluginContractError(
-        spec,
-        `${where} options must map names to number, string, boolean, string[] or canvas`,
-      );
-    }
-    // preset and profile keep their built-in meaning for every rule: the
-    // config checks the value against the built-in names, and --preset and
-    // --profile overwrite it. A rule may declare one to follow the run's
-    // setting, as a string, but cannot give the name another meaning.
-    for (const name of RESERVED_OPTIONS) {
-      if (name in options && (options as Record<string, unknown>)[name] !== "string") {
-        throw new PluginContractError(
-          spec,
-          `${where} declares option "${name}" as ${String((options as Record<string, unknown>)[name])}, but "${name}" is reserved for the built-in ${name}, which is a string set by --${name}; declare it as "string" to follow the run's ${name}, or pick another name`,
-        );
-      }
-    }
-  }
+  checkRuleOptions(spec, where, options);
   return raw as unknown as PluginRule;
 };
 
@@ -120,7 +130,7 @@ const checkCategories = (spec: string, raw: unknown): Record<string, string> => 
 // A plugin object is checked here, apart from how it was imported, so a test
 // can hold the same plugin to the same contract the loader does.
 export const parsePlugin = (spec: string, raw: unknown, reserved: ReadonlySet<string>): Plugin => {
-  if (!isRecord(raw) || !isRecord(raw.meta) || !isRecord(raw.rules)) {
+  if (!(isRecord(raw) && isRecord(raw.meta) && isRecord(raw.rules))) {
     throw new PluginContractError(spec, "the default export must be { meta, rules }");
   }
   const { name, namespace, apiVersion } = raw.meta;
@@ -157,50 +167,73 @@ export interface LocalLoad {
 // as one plugin under the fixed namespace `local`, and a file may export
 // `categories` to declare the word its rule uses. Each file fails on its own,
 // so one bad file does not hide the others, and the caller gets every failure.
+// A rule's key is its file's base name.
+const keyOf = (source: PluginSource): string => basename(source.path, extname(source.path));
+
+const groupByKey = (sources: PluginSource[]): Map<string, PluginSource[]> => {
+  const byKey = new Map<string, PluginSource[]>();
+  for (const source of sources) byKey.set(keyOf(source), [...(byKey.get(keyOf(source)) ?? []), source]);
+  return byKey;
+};
+
+const duplicateKeyError = (key: string, group: PluginSource[]): PluginContractError =>
+  new PluginContractError(
+    (group[0] as PluginSource).spec,
+    `rule "${key}" is defined by more than one file: ${group.map((s) => s.spec).join(", ")}; each rule comes from exactly one file, so rename or remove all but one`,
+  );
+
+// The categories the local files declare so far, and the file that first
+// declared each word.
+interface LocalCategories {
+  categories: Record<string, string>;
+  owner: Record<string, string>;
+}
+
+const mergeCategories = (seen: LocalCategories, spec: string, declared: Record<string, string>): void => {
+  for (const [word, description] of Object.entries(declared)) {
+    if (seen.categories[word] !== undefined && seen.categories[word] !== description) {
+      throw new PluginConflictError(
+        spec,
+        seen.owner[word] as string,
+        `declares category "${word}" with a different description than another local file`,
+      );
+    }
+    seen.categories[word] = description;
+    seen.owner[word] = spec;
+  }
+};
+
+// Imports one local file and returns its rule, unchecked until every file's
+// categories are known.
+const importLocal = async (source: PluginSource, seen: LocalCategories, runtime?: RuntimeInfo): Promise<unknown> => {
+  const mod = await importModule(source, runtime);
+  if (mod.default === undefined) {
+    throw new PluginContractError(source.spec, "has no default export; export one rule");
+  }
+  mergeCategories(seen, source.spec, checkCategories(source.spec, mod.categories));
+  return mod.default;
+};
+
 export const loadLocal = async (sources: PluginSource[], runtime?: RuntimeInfo): Promise<LocalLoad> => {
   const failures: PluginLoadError[] = [];
   const fail = (err: unknown): void => {
     if (!(err instanceof PluginLoadError)) throw err;
     failures.push(err);
   };
-  const categories: Record<string, string> = {};
-  const owner: Record<string, string> = {};
+  const seen: LocalCategories = { categories: {}, owner: {} };
+  const { categories } = seen;
   const loaded: { key: string; source: PluginSource; raw: unknown }[] = [];
   // A rule's key is its file's base name, so two files with one base name
   // (house-x.js and house-x.mjs) would claim one rule. Neither is imported,
   // and the failure names both, rather than one silently replacing the other.
-  const keyOf = (source: PluginSource): string => basename(source.path, extname(source.path));
-  const byKey = new Map<string, PluginSource[]>();
-  for (const source of sources) byKey.set(keyOf(source), [...(byKey.get(keyOf(source)) ?? []), source]);
+  const byKey = groupByKey(sources);
   for (const [key, group] of byKey) {
-    if (group.length < 2) continue;
-    fail(
-      new PluginContractError(
-        (group[0] as PluginSource).spec,
-        `rule "${key}" is defined by more than one file: ${group.map((s) => s.spec).join(", ")}; each rule comes from exactly one file, so rename or remove all but one`,
-      ),
-    );
+    if (group.length > 1) fail(duplicateKeyError(key, group));
   }
   for (const source of sources) {
     if ((byKey.get(keyOf(source))?.length ?? 0) > 1) continue;
     try {
-      const mod = await importModule(source, runtime);
-      if (mod.default === undefined) {
-        throw new PluginContractError(source.spec, "has no default export; export one rule");
-      }
-      const declared = checkCategories(source.spec, mod.categories);
-      for (const [word, description] of Object.entries(declared)) {
-        if (categories[word] !== undefined && categories[word] !== description) {
-          throw new PluginConflictError(
-            source.spec,
-            owner[word] as string,
-            `declares category "${word}" with a different description than another local file`,
-          );
-        }
-        categories[word] = description;
-        owner[word] = source.spec;
-      }
-      loaded.push({ key: keyOf(source), source, raw: mod.default });
+      loaded.push({ key: keyOf(source), source, raw: await importLocal(source, seen, runtime) });
     } catch (err) {
       fail(err);
     }
@@ -250,7 +283,7 @@ export const toRule = (namespace: string, key: string, rule: PluginRule): Rule =
     } catch (err) {
       return report(`threw: ${message(err)}`);
     }
-    if (!Array.isArray(found) || !found.every(validFinding)) {
+    if (!(Array.isArray(found) && found.every(validFinding))) {
       return report("returned something other than a list of { line, message } findings");
     }
     return found.map((f) => ({
@@ -273,7 +306,7 @@ export const toRule = (namespace: string, key: string, rule: PluginRule): Rule =
         if (!Array.isArray(edits))
           throw new PluginFixerError(id, "fixer returned something other than a list of edits");
         return edits.map((e: Edit) => {
-          if (!isRecord(e) || !isRecord(e.expect) || !EXPECTATIONS.has(e.expect.kind as string)) {
+          if (!(isRecord(e) && isRecord(e.expect) && EXPECTATIONS.has(e.expect.kind as string))) {
             throw new PluginFixerError(id, "fixer returned an edit with no valid expectation");
           }
           return { ...e, rule: id };

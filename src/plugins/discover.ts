@@ -79,23 +79,21 @@ const localSources = async (root: string): Promise<PluginSource[]> => {
 
 // An approximation of Node resolution, read from a package's package.json:
 // exports "." by node, import, default priority, then main, then index.js.
+const CONDITIONS = ["node", "import", "default"];
+
+// The first candidate that resolves to a target, in order.
+const pickFirst = (candidates: unknown[]): string | null => {
+  for (const item of candidates) {
+    const found = pick(item);
+    if (found) return found;
+  }
+  return null;
+};
+
 const pick = (target: unknown): string | null => {
   if (typeof target === "string") return target;
-  if (Array.isArray(target)) {
-    for (const item of target) {
-      const found = pick(item);
-      if (found) return found;
-    }
-    return null;
-  }
-  if (isRecord(target)) {
-    for (const condition of ["node", "import", "default"]) {
-      if (condition in target) {
-        const found = pick(target[condition]);
-        if (found) return found;
-      }
-    }
-  }
+  if (Array.isArray(target)) return pickFirst(target);
+  if (isRecord(target)) return pickFirst(CONDITIONS.filter((c) => c in target).map((c) => target[c]));
   return null;
 };
 

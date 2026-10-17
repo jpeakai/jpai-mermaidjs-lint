@@ -25,7 +25,9 @@ describe("contrast fixer", () => {
     const out = await fixSource(src, "doc.md");
     expect(out).toBe(src.replace("color:#fefefe", "color:#000000"));
   });
+});
 
+describe("contrast fixer, wherever the diagram sits", () => {
   test("fixes a fence inside a blockquote", async () => {
     const quoted = withClass("fill:#ffff00,color:#fefefe")
       .split("\n")
@@ -53,7 +55,9 @@ describe("contrast fixer", () => {
     const src = "flowchart LR\n  A --> B\n  classDef c fill:#ffff00,color:#fefefe\n";
     expect(await fixSource(src, "d.mmd")).toContain("color:#000000");
   });
+});
 
+describe("contrast fixer, when it must not act", () => {
   test("refuses to invent a colour that is not declared", async () => {
     const src = withClass("fill:#ffff00");
     const report = await fixSourceReport(src, "doc.md");

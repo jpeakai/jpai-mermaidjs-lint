@@ -19,7 +19,7 @@ describe("the four tenets", () => {
     for (const line of TENETS) expect(line).toMatch(/^- \*\*[^*]+\.\*\* \S/);
   });
 
-  for (const file of ["README.md", "CONTRIBUTING.md", "CLAUDE.md"]) {
+  for (const file of ["README.md", "CONTRIBUTING.md", "AGENTS.md"]) {
     test(`${file} repeats every tenet verbatim`, () => {
       const lines = read(file).split("\n");
       for (const tenet of TENETS) expect(lines).toContain(tenet);

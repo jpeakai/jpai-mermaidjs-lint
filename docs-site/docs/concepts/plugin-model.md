@@ -33,6 +33,16 @@ Discovery reads three places, in this order:
 Only declared names and local rule files load, and a declared name resolves from the nearest `node_modules` at or above the project root.
 That matters because a plugin is code that runs on your machine.
 
+Discovery runs in every plugin mode, but only a mode other than off imports what it found.
+
+--8<-- "plugin-discovery.md"
+
+??? info "Detailed: each source kind from discovery to rule id"
+
+    Local rule files load together as one plugin, while each package or config entry loads and fails on its own.
+
+    --8<-- "plugin-discovery-detail.md"
+
 A plugin is not the only code a run can execute.
 A `mermaidjs-lint.config.mjs` is a module, so reading it runs it, and each `plugins` entry in the config names more code to load.
 `--no-plugins` loads no plugin and never imports a `.mjs` config, so a run uses the built-in rules and at most a `.json` config.
@@ -76,6 +86,16 @@ Without that rule, two plugins could produce identical rule ids, and a config li
 | off | `--no-plugins`, or `"plugins": false` | Nothing is loaded. Discovery still runs, and every plugin it found is reported as skipped. |
 
 Strict is the default because a gate that silently drops a rule would pass files it never checked.
+
+A failed source stops a strict run, and the other modes leave it out and say so.
+
+--8<-- "plugin-modes.md"
+
+??? info "Detailed: how each mode is chosen and what the run prints"
+
+    Off wins over collect and collect over lenient, and only a lenient run goes on to check files after a failure.
+
+    --8<-- "plugin-modes-detail.md"
 Outside strict mode, a config setting for a plugin rule that did not load is set aside.
 A run that checks files or lists rules says so on standard error.
 A setting for a built-in id that does not exist still fails with `error[unknown-rule]`.
@@ -90,6 +110,16 @@ The gate still fails, so the broken rule is noticed.
 A plugin fixer gets no special trust.
 It stops the run if it throws, returns something other than a list, or returns an edit with no valid expectation.
 An edit with offsets outside the source is refused like any other edit that fails verification, and the finding stays.
+
+A plugin rule's check and fix pass through a wrapper, and its edits then meet the same verifier as a built-in's.
+
+--8<-- "plugin-rule.md"
+
+??? info "Detailed: every failure path of a plugin check and fix"
+
+    The wrapper turns a broken check into a finding, and turns a broken fixer into an error that stops the run.
+
+    --8<-- "plugin-rule-detail.md"
 
 ## Next
 

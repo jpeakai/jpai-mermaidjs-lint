@@ -22,6 +22,16 @@ That is the nearest ancestor of the working directory holding a `package.json`, 
 It reads the config there, loads the plugins, and builds one registry of active rules.
 A bad config or a broken plugin therefore stops the run before it touches a document.
 
+Setup turns the flags and the config into one registry, and a category flag has the last word over the config.
+
+--8<-- "run-setup.md"
+
+??? info "Detailed: config, plugin mode and registry"
+
+    The config turns rules off and sets their options, then `--category` and `--disable-category` switch whole categories for this run.
+
+    --8<-- "run-setup-detail.md"
+
 ## Structure comes from mermaid's own parsers
 
 Each file is parsed to a markdown tree once.
@@ -56,6 +66,16 @@ No rule reads another rule's result, so a check starts every rule together and w
 A rule may return its findings directly or as a promise.
 The findings are then sorted by line and rule id, so output is stable from run to run.
 
+Every file is read, modelled and checked at the same time, and any finding left makes the run exit 1.
+
+--8<-- "check-run.md"
+
+??? info "Detailed: file walk, shared stats and the report"
+
+    A rule asks the parse engine for stats on first use, and every other rule reads the same result.
+
+    --8<-- "check-run-detail.md"
+
 ## Fixing is a loop with a check
 
 `--fix` does not trust a fixer.
@@ -79,6 +99,16 @@ After any accepted change the engine starts a new pass on the new source, becaus
 The loop ends when no fixer makes progress.
 The file is then written, and checked like any other.
 A fixer that never stops proposing edits stops the run after 1000 passes with [`error[fix-not-converging]`](../reference/cli.md#error-codes), and that file is not written.
+
+Each pass keeps an edit only when the verifier accepts it, and a refused edit leaves the text alone.
+
+--8<-- "fix-loop.md"
+
+??? info "Detailed: batches, both expectations and what is not compared"
+
+    The verifier compares only what each expectation lists, so edge endpoints, edge labels and node text are the fixer's own responsibility.
+
+    --8<-- "fix-loop-detail.md"
 
 !!! warning "A refused edit leaves the finding in place"
 

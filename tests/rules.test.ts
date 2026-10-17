@@ -80,7 +80,9 @@ describe("complexity rules", () => {
       await rules(fence(chain(13)), { preset: "low-density" }),
     );
   });
+});
 
+describe("complexity rules: nesting and remediation", () => {
   test("nesting three levels deep is reported", async () => {
     const src = fence(
       [

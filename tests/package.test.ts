@@ -20,6 +20,37 @@ const run = async (cmd: string[], cwd: string): Promise<{ code: number; out: str
   return { code, out: `${stdout}${stderr}` };
 };
 
+// A strict nodenext TypeScript project that imports the package as a plugin
+// author would, with skipLibCheck off so the declarations themselves are checked.
+const CONSUMER_FILES = {
+  "package.json": JSON.stringify({ name: "consumer", private: true, type: "module" }),
+  "tsconfig.json": JSON.stringify({
+    compilerOptions: {
+      target: "ES2022",
+      module: "nodenext",
+      moduleResolution: "nodenext",
+      strict: true,
+      skipLibCheck: false,
+      noEmit: true,
+      types: [],
+    },
+    files: ["rule.ts"],
+  }),
+  "rule.ts": [
+    'import { checkMarkdown, type Finding, type Plugin, type PluginRule } from "@jpeakai/mermaidjs-lint";',
+    'import { checkRule } from "@jpeakai/mermaidjs-lint/testing";',
+    "const rule: PluginRule = {",
+    '  category: "house",',
+    '  summary: "no TODO",',
+    '  check: ({ doc }) => doc.diagrams.map((d) => ({ line: d.startLine, message: "TODO" })),',
+    "};",
+    'export const plugin: Plugin = { meta: { name: "acme", namespace: "acme", apiVersion: 1 }, rules: { "house-x": rule } };',
+    'export const a: Promise<Finding[]> = checkRule(plugin, "house-x", "x");',
+    'export const b: Promise<Finding[]> = checkMarkdown("x", "a.md");',
+    "",
+  ].join("\n"),
+};
+
 describe("type declarations", () => {
   test("every types condition points at a built .d.ts file", () => {
     const targets = [pkg.types, pkg.exports["."].types, pkg.exports["./testing"].types];
@@ -30,34 +61,7 @@ describe("type declarations", () => {
   });
 
   test("a strict nodenext consumer type-checks with skipLibCheck false", async () => {
-    const root = tempProject({
-      "package.json": JSON.stringify({ name: "consumer", private: true, type: "module" }),
-      "tsconfig.json": JSON.stringify({
-        compilerOptions: {
-          target: "ES2022",
-          module: "nodenext",
-          moduleResolution: "nodenext",
-          strict: true,
-          skipLibCheck: false,
-          noEmit: true,
-          types: [],
-        },
-        files: ["rule.ts"],
-      }),
-      "rule.ts": [
-        'import { checkMarkdown, type Finding, type Plugin, type PluginRule } from "@jpeakai/mermaidjs-lint";',
-        'import { checkRule } from "@jpeakai/mermaidjs-lint/testing";',
-        "const rule: PluginRule = {",
-        '  category: "house",',
-        '  summary: "no TODO",',
-        '  check: ({ doc }) => doc.diagrams.map((d) => ({ line: d.startLine, message: "TODO" })),',
-        "};",
-        'export const plugin: Plugin = { meta: { name: "acme", namespace: "acme", apiVersion: 1 }, rules: { "house-x": rule } };',
-        'export const a: Promise<Finding[]> = checkRule(plugin, "house-x", "x");',
-        'export const b: Promise<Finding[]> = checkMarkdown("x", "a.md");',
-        "",
-      ].join("\n"),
-    });
+    const root = tempProject(CONSUMER_FILES);
     // The package as installed: a folder in node_modules whose package.json
     // is this one, so its exports map is what TypeScript resolves.
     mkdirSync(join(root, "node_modules", "@jpeakai"), { recursive: true });

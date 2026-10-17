@@ -84,6 +84,18 @@ const setsAside = (rule: Rule, options: Record<string, unknown>, flags: RunFlags
   canvasOptions(rule).some((name) => options[name] !== undefined) &&
   detectProfile(file) === "mkdocs-material";
 
+// A canvas option with each side the flag gives laid over the configured one.
+const mergeCanvas = (current: unknown, canvas: CanvasSetting): Record<string, string> => {
+  const merged: Record<string, string> = {
+    ...(typeof current === "object" && current !== null ? (current as Record<string, string>) : {}),
+  };
+  for (const side of THEMES) {
+    const value = canvas[side];
+    if (value !== undefined) merged[side] = value;
+  }
+  return merged;
+};
+
 // The options a rule runs with: its configured options, then a flag for any
 // option the rule declares. A preset reaches the rule by its canonical name,
 // so a plugin rule never has to resolve an alias such as `high` or `H`. Given
@@ -105,17 +117,7 @@ export const optionsFor = (
   // canvas type, not only one named canvas.
   const canvas = flags.canvas;
   if (canvas && hasFlagCanvas(flags)) {
-    for (const name of canvasOptions(rule)) {
-      const current = options[name];
-      const merged: Record<string, string> = {
-        ...(typeof current === "object" && current !== null ? (current as Record<string, string>) : {}),
-      };
-      for (const side of THEMES) {
-        const value = canvas[side];
-        if (value !== undefined) merged[side] = value;
-      }
-      options[name] = merged;
-    }
+    for (const name of canvasOptions(rule)) options[name] = mergeCanvas(options[name], canvas);
   }
   if (file !== undefined && setsAside(rule, options, flags, file)) {
     for (const name of canvasOptions(rule)) delete options[name];

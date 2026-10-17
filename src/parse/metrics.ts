@@ -111,7 +111,7 @@ export const canonicalPreset = (name: string): string | null => {
 export const configFromPreset = (name: string): ThresholdConfig => {
   const canonical = canonicalPreset(name);
   const preset = canonical ? PRESETS[canonical] : undefined;
-  if (!canonical || !preset) {
+  if (!(canonical && preset)) {
     throw new Error(`Unknown preset '${name}'. Valid: ${PRESET_NAMES.join(", ")}`);
   }
   return {

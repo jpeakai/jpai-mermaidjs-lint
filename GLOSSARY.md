@@ -26,6 +26,7 @@ flowchart LR
     CFG["Config File"]:::record
     PRT["Project Root"]:::record
     ERR["Error Code"]:::info
+    DMD["Document Model"]:::info
 
     RUL -- serves --> TEN
     RUL -- is a --> GAT
@@ -41,6 +42,8 @@ flowchart LR
     CFG -- configures --> REG
     PRT -- locates --> CFG
     CFG -- can fail with --> ERR
+    RUL -- reads --> DMD
+    DMD -- holds --> DIA
 
     classDef people    fill:#1e40af,stroke:#93c5fd,color:#fff,stroke-width:2px
     classDef info      fill:#92400e,stroke:#fcd34d,color:#fff,stroke-width:2px
@@ -123,6 +126,7 @@ flowchart LR
     LRL["Local Rule"]:::rule
     SRC["Source Kind"]:::info
     PMD["Plugin Mode"]:::rule
+    VER["Verification"]:::rule
 
     FIX -- proposes --> EDT
     EDT -- carries --> EXP
@@ -134,6 +138,8 @@ flowchart LR
     LRL -- uses the reserved --> NSP
     SRC -- says where it came from --> PLG
     PMD -- treats a failed load of --> PLG
+    VER -- checks --> EXP
+    VER -- can end in --> REF
 
     classDef people    fill:#1e40af,stroke:#93c5fd,color:#fff,stroke-width:2px
     classDef info      fill:#92400e,stroke:#fcd34d,color:#fff,stroke-width:2px
@@ -161,6 +167,9 @@ flowchart LR
     PIN["Pinned Fix"]:::record
     LLM["LLM Fix"]:::record
     DOC["Docs Site"]:::pipeline
+    OSK["OsakaNights"]:::record
+    DTK["Design Token"]:::info
+    DUD["Dual Density"]:::rule
 
     MNT -- publishes --> REL
     REL -- is listed in --> CHL
@@ -173,6 +182,9 @@ flowchart LR
     PIN -- sits beside --> FXT
     LLM -- sits beside --> FXT
     DOC -- generates pages from --> FXT
+    DOC -- is styled by --> OSK
+    OSK -- reads its colours from --> DTK
+    DOC -- draws diagrams in --> DUD
 
     classDef people    fill:#1e40af,stroke:#93c5fd,color:#fff,stroke-width:2px
     classDef info      fill:#92400e,stroke:#fcd34d,color:#fff,stroke-width:2px
@@ -236,6 +248,11 @@ Its Unreleased section holds what is on main but not yet released.
 
 The optional `mermaidjs-lint.config.json` or `.mjs` that switches Rules off and sets their options.
 
+## Design Token
+
+One named brand colour in `docs-site/theme/osakanights/design-tokens.json`.
+`make theme` writes the theme's CSS colour block from these tokens.
+
 ## Diagram
 
 One Mermaid source: a mermaid Fence in a markdown file, or a whole `.mmd` or `.mermaid` file.
@@ -248,6 +265,16 @@ This repo's declared documentation conventions, in [docs/CONVENTIONS.md](docs/CO
 
 The MkDocs Material site under `docs-site/`.
 Its reference pages are generated from the Fixtures, `RULES.md` and `examples/`.
+
+## Document Model
+
+What a Rule reads for one file: the source, its kind, the markdown tree and its Diagrams.
+`buildDocModel` in `src/model.ts` builds it once per file.
+
+## Dual Density
+
+A diagram drawn twice: a simplified one inline with a one-sentence summary, and a detailed one in a collapsible block beneath it.
+The docs and the Docs Site draw their diagrams this way.
 
 ## Edit
 
@@ -326,6 +353,11 @@ The Maintainer cuts each Release by the steps in [docs/PUBLISHING.md](docs/PUBLI
 
 The word before the slash in a Plugin Rule ID, such as acme in acme/parse-no-todo.
 A core Rule ID has none.
+
+## OsakaNights
+
+The Docs Site's theme, in `docs-site/theme/osakanights/`, which another MkDocs Material site can adopt.
+Its colours come from Design Tokens.
 
 ## Pair
 
@@ -442,6 +474,11 @@ It weighs on the Visual Complexity Score, but it is not subgraph nesting.
 
 A directive the Profile requires to be scoreable but cannot be, such as a `fill` with no `color`.
 A sequence diagram config the tool does not model, such as `themeCSS`, is Unauditable too.
+
+## Verification
+
+The reparse after an Edit that decides whether the Edit is kept.
+It checks only what the Edit's Expectation lists, in `src/fix/verify.ts`, and anything it cannot prove ends in a Refusal.
 
 ## Visual Complexity Score
 

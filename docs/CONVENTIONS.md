@@ -14,6 +14,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 - **Regenerate:** `make adrs` for the decision bundle, which `make fix` runs, and `make site` for the docs site
 - **Diagrams on the site:** each lives once in `docs-site/diagrams/` and is included into pages, so it is linted on its own
 - **Shared text:** text that both the site and the root markdown carry, such as the four tenets, lives once in `docs-site/includes/`. The site includes it, and a test holds each root copy to it verbatim.
+- **Home mirrors the README:** the site home page opens with the README's sections, in the same order. Sections only the site has come after them. `tests/readme-site.test.ts` holds the order and the shared includes.
 - **Agent files:** `CLAUDE.md` at root, with no nested agent files
 - **Prose gates:** `make docs-ci` gates every authored markdown file and its diagrams. That is the root files, `docs/`, `adrs/`, the site's authored pages, diagrams and includes, the skill's markdown and `tests/fixtures/README.md`. Inputs under test are outside it: the fixtures, `examples/` and the skill's eval fixtures in `skills/mermaidjs-lint/evals/fixtures/`. The site's generated pages are checked by `make site` instead.
 - **Changelog:** `CHANGELOG.md` at root, in Keep a Changelog style, curated by hand. A user-visible change adds a line under `Unreleased` in the same change, and a release renames that section to its version. The Publish workflow copies that section into the GitHub release notes.
@@ -24,7 +25,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 
 | Path | Charter | Audience | Changes when |
 |---|---|---|---|
-| `README.md` | Orientation, the four tenets, usage, installing the agent skill, compatibility, versioning and support | Consumers | Purpose, flags, requirements or the release policy change |
+| `README.md` | Orientation, one command and its output, the fix, the four tenets, links into the site and compatibility | Consumers | Purpose, flags, requirements or the release policy change |
 | `SECURITY.md` | Supported versions, private vulnerability reporting and the plugin trust model | Consumers | The support window, the reporting route or plugin loading changes |
 | `RULES.md` | Every rule by category, with failing examples and their fixes, held true by a test | Both | A rule, its category or its fix behaviour changes |
 | `CHANGELOG.md` | User-visible changes per release, and what is on `main` but unreleased | Consumers | A user-visible change lands, or a release is cut |
@@ -40,7 +41,7 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 | `docs-site/mkdocs.yml` | The site's config and navigation | Consumers | A page is added, moved or renamed |
 | `docs-site/docs/` | The site's authored pages, scored under `mkdocs-material` | Consumers | Behaviour, flags, config or the plugin contract changes |
 | `docs-site/diagrams/` | One diagram per file, included into site pages | Consumers | The model, the plugin loader or the run pipeline changes |
-| `docs-site/includes/` | Text the site includes and the root markdown repeats verbatim, starting with `tenets.md` | Both | A tenet is reworded |
+| `docs-site/includes/` | Text the site includes and the root markdown repeats verbatim: the tenets and the README text the home page shares | Both | A tenet or a shared README line is reworded |
 | `docs-site/docs/gallery/agent-evals.md` | Whether AI coding agents can fix the rule fixtures it lists that `--fix` leaves, with a results table, its run date and the skill commit it measured | Consumers | The eval suite is run again |
 | `docs-site/docs/assets/examples/` | One PNG per example, drawn with the mermaid CLI and committed | Consumers | An example is added or changed |
 | `skills/mermaidjs-lint/` | The agent skill that drives the linter, copied into an agent's skills folder rather than shipped on npm | Consumers | The CLI's flags, output or rules change |

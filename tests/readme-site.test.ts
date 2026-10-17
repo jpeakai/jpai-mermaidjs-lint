@@ -21,7 +21,7 @@ const h2s = (text: string): string[] =>
     .map((line) => line.slice(3).trim());
 
 // The includes the home page shares with the README.
-const SHARED = ["intro.md", "sample-output.md", "fix-check.md", "tenets.md", "runs-on.md"];
+const SHARED = ["badges.md", "intro.md", "sample-output.md", "fix-check.md", "tenets.md", "runs-on.md"];
 
 describe("the home page mirrors the README", () => {
   test("the home page opens with the README's sections, in the same order", () => {

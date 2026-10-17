@@ -2,6 +2,8 @@
 
 # mermaidjs-lint
 
+--8<-- "badges.md"
+
 --8<-- "intro.md"
 
 [Get started](get-started.md){ .md-button .md-button--primary } [Browse the rules](reference/rules.md){ .md-button }

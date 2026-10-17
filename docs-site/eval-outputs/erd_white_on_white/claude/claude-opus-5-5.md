@@ -5,6 +5,6 @@ A directive whose text and fill are both white, in a diagram type where the pair
 ```mermaid
 erDiagram
   CAR ||--o{ WHEEL : has
-  classDef c stroke:#333333,stroke-width:2px
+  classDef c stroke:#d9480f,stroke-width:2px
   class CAR c
 ```

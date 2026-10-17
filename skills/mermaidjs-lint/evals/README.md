@@ -62,6 +62,7 @@ make evals ARGS="--harness claude -k label_colour"
 ```
 
 Session logs and a browsable report land in `.xharness_eval_cache/` at the repository root, which is git-ignored.
+Each cell's workspace is kept there too, so `make eval-outputs` can copy the run to `docs-site/eval-outputs/` for the docs site's agent evals page.
 
 ## Changing a fixture
 

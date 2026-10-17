@@ -1,0 +1,172 @@
+# A long chain
+
+```mermaid
+flowchart LR
+  P1["Part 1: N0 to N20"]
+  P2["Part 2: N20 to N40"]
+  P3["Part 3: N40 to N60"]
+  P4["Part 4: N60 to N80"]
+  P5["Part 5: N80 to N100"]
+  P6["Part 6: N100 to N120"]
+  P1 --> P2
+  P2 --> P3
+  P3 --> P4
+  P4 --> P5
+  P5 --> P6
+```
+
+```mermaid
+flowchart LR
+  subgraph Part1["Part 1: N0 to N20"]
+  N0 --> N1
+  N1 --> N2
+  N2 --> N3
+  N3 --> N4
+  N4 --> N5
+  N5 --> N6
+  N6 --> N7
+  N7 --> N8
+  N8 --> N9
+  N9 --> N10
+  N10 --> N11
+  N11 --> N12
+  N12 --> N13
+  N13 --> N14
+  N14 --> N15
+  N15 --> N16
+  N16 --> N17
+  N17 --> N18
+  N18 --> N19
+  N19 --> N20
+  end
+```
+
+```mermaid
+flowchart LR
+  subgraph Part2["Part 2: N20 to N40"]
+  N20 --> N21
+  N21 --> N22
+  N22 --> N23
+  N23 --> N24
+  N24 --> N25
+  N25 --> N26
+  N26 --> N27
+  N27 --> N28
+  N28 --> N29
+  N29 --> N30
+  N30 --> N31
+  N31 --> N32
+  N32 --> N33
+  N33 --> N34
+  N34 --> N35
+  N35 --> N36
+  N36 --> N37
+  N37 --> N38
+  N38 --> N39
+  N39 --> N40
+  end
+```
+
+```mermaid
+flowchart LR
+  subgraph Part3["Part 3: N40 to N60"]
+  N40 --> N41
+  N41 --> N42
+  N42 --> N43
+  N43 --> N44
+  N44 --> N45
+  N45 --> N46
+  N46 --> N47
+  N47 --> N48
+  N48 --> N49
+  N49 --> N50
+  N50 --> N51
+  N51 --> N52
+  N52 --> N53
+  N53 --> N54
+  N54 --> N55
+  N55 --> N56
+  N56 --> N57
+  N57 --> N58
+  N58 --> N59
+  N59 --> N60
+  end
+```
+
+```mermaid
+flowchart LR
+  subgraph Part4["Part 4: N60 to N80"]
+  N60 --> N61
+  N61 --> N62
+  N62 --> N63
+  N63 --> N64
+  N64 --> N65
+  N65 --> N66
+  N66 --> N67
+  N67 --> N68
+  N68 --> N69
+  N69 --> N70
+  N70 --> N71
+  N71 --> N72
+  N72 --> N73
+  N73 --> N74
+  N74 --> N75
+  N75 --> N76
+  N76 --> N77
+  N77 --> N78
+  N78 --> N79
+  N79 --> N80
+  end
+```
+
+```mermaid
+flowchart LR
+  subgraph Part5["Part 5: N80 to N100"]
+  N80 --> N81
+  N81 --> N82
+  N82 --> N83
+  N83 --> N84
+  N84 --> N85
+  N85 --> N86
+  N86 --> N87
+  N87 --> N88
+  N88 --> N89
+  N89 --> N90
+  N90 --> N91
+  N91 --> N92
+  N92 --> N93
+  N93 --> N94
+  N94 --> N95
+  N95 --> N96
+  N96 --> N97
+  N97 --> N98
+  N98 --> N99
+  N99 --> N100
+  end
+```
+
+```mermaid
+flowchart LR
+  subgraph Part6["Part 6: N100 to N120"]
+  N100 --> N101
+  N101 --> N102
+  N102 --> N103
+  N103 --> N104
+  N104 --> N105
+  N105 --> N106
+  N106 --> N107
+  N107 --> N108
+  N108 --> N109
+  N109 --> N110
+  N110 --> N111
+  N111 --> N112
+  N112 --> N113
+  N113 --> N114
+  N114 --> N115
+  N115 --> N116
+  N116 --> N117
+  N117 --> N118
+  N118 --> N119
+  N119 --> N120
+  end
+```

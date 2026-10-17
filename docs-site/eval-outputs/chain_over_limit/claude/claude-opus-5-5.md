@@ -1,20 +1,37 @@
 # A long chain
 
-## Overview
-
 ```mermaid
 flowchart LR
-  Part1["Part 1: N0-N30"]
-  Part2["Part 2: N31-N60"]
-  Part3["Part 3: N61-N90"]
-  Part4["Part 4: N91-N120"]
-  
-  Part1 --> Part2
-  Part2 --> Part3
-  Part3 --> Part4
+  subgraph P1["Part 1: N0 to N19"]
+    N0
+    N19
+  end
+  subgraph P2["Part 2: N20 to N39"]
+    N20
+    N39
+  end
+  subgraph P3["Part 3: N40 to N59"]
+    N40
+    N59
+  end
+  subgraph P4["Part 4: N60 to N79"]
+    N60
+    N79
+  end
+  subgraph P5["Part 5: N80 to N99"]
+    N80
+    N99
+  end
+  subgraph P6["Part 6: N100 to N120"]
+    N100
+    N120
+  end
+  N19 --> N20
+  N39 --> N40
+  N59 --> N60
+  N79 --> N80
+  N99 --> N100
 ```
-
-## Part 1: N0-N30
 
 ```mermaid
 flowchart LR
@@ -37,7 +54,10 @@ flowchart LR
   N16 --> N17
   N17 --> N18
   N18 --> N19
-  N19 --> N20
+```
+
+```mermaid
+flowchart LR
   N20 --> N21
   N21 --> N22
   N22 --> N23
@@ -48,12 +68,7 @@ flowchart LR
   N27 --> N28
   N28 --> N29
   N29 --> N30
-```
-
-## Part 2: N31-N60
-
-```mermaid
-flowchart LR
+  N30 --> N31
   N31 --> N32
   N32 --> N33
   N33 --> N34
@@ -62,7 +77,10 @@ flowchart LR
   N36 --> N37
   N37 --> N38
   N38 --> N39
-  N39 --> N40
+```
+
+```mermaid
+flowchart LR
   N40 --> N41
   N41 --> N42
   N42 --> N43
@@ -82,13 +100,11 @@ flowchart LR
   N56 --> N57
   N57 --> N58
   N58 --> N59
-  N59 --> N60
 ```
-
-## Part 3: N61-N90
 
 ```mermaid
 flowchart LR
+  N60 --> N61
   N61 --> N62
   N62 --> N63
   N63 --> N64
@@ -107,7 +123,10 @@ flowchart LR
   N76 --> N77
   N77 --> N78
   N78 --> N79
-  N79 --> N80
+```
+
+```mermaid
+flowchart LR
   N80 --> N81
   N81 --> N82
   N82 --> N83
@@ -118,12 +137,7 @@ flowchart LR
   N87 --> N88
   N88 --> N89
   N89 --> N90
-```
-
-## Part 4: N91-N120
-
-```mermaid
-flowchart LR
+  N90 --> N91
   N91 --> N92
   N92 --> N93
   N93 --> N94
@@ -132,7 +146,10 @@ flowchart LR
   N96 --> N97
   N97 --> N98
   N98 --> N99
-  N99 --> N100
+```
+
+```mermaid
+flowchart LR
   N100 --> N101
   N101 --> N102
   N102 --> N103

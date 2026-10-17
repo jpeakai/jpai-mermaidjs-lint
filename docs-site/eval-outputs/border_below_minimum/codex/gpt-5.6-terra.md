@@ -5,6 +5,6 @@ The label passes, the stroke does not. There is no fixer, because the stroke is 
 ```mermaid
 flowchart LR
   A --> B
-  classDef c fill:#ffffff,color:#000000,stroke:#737373
+  classDef c fill:#ffffff,color:#000000,stroke:#767676
   class A c
 ```

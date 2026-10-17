@@ -2,14 +2,11 @@
 
 ```mermaid
 flowchart LR
-  N0 --> N24
-  N24 --> N48
-  N48 --> N72
-  N72 --> N96
-  N96 --> N120
+  Part1["N0–N24"] --> Part2["N25–N49"]
+  Part2 --> Part3["N50–N74"]
+  Part3 --> Part4["N75–N99"]
+  Part4 --> Part5["N100–N120"]
 ```
-
-### Nodes N0–N24
 
 ```mermaid
 flowchart LR
@@ -39,11 +36,8 @@ flowchart LR
   N23 --> N24
 ```
 
-### Nodes N24–N48
-
 ```mermaid
 flowchart LR
-  N24 --> N25
   N25 --> N26
   N26 --> N27
   N27 --> N28
@@ -67,14 +61,11 @@ flowchart LR
   N45 --> N46
   N46 --> N47
   N47 --> N48
+  N48 --> N49
 ```
-
-### Nodes N48–N72
 
 ```mermaid
 flowchart LR
-  N48 --> N49
-  N49 --> N50
   N50 --> N51
   N51 --> N52
   N52 --> N53
@@ -97,15 +88,12 @@ flowchart LR
   N69 --> N70
   N70 --> N71
   N71 --> N72
+  N72 --> N73
+  N73 --> N74
 ```
-
-### Nodes N72–N96
 
 ```mermaid
 flowchart LR
-  N72 --> N73
-  N73 --> N74
-  N74 --> N75
   N75 --> N76
   N76 --> N77
   N77 --> N78
@@ -127,16 +115,13 @@ flowchart LR
   N93 --> N94
   N94 --> N95
   N95 --> N96
-```
-
-### Nodes N96–N120
-
-```mermaid
-flowchart LR
   N96 --> N97
   N97 --> N98
   N98 --> N99
-  N99 --> N100
+```
+
+```mermaid
+flowchart LR
   N100 --> N101
   N101 --> N102
   N102 --> N103

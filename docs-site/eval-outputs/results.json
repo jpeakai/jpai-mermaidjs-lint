@@ -1,0 +1,368 @@
+{
+  "run": "20261017T120705Z",
+  "date": "2026-10-17",
+  "skill_commit": "9df8f56",
+  "cost_usd": 1.73,
+  "cells": [
+    {
+      "case": "border_contrast",
+      "fixture": "border_below_minimum",
+      "harness": "claude",
+      "model": "claude-haiku-5-5",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.00403
+    },
+    {
+      "case": "border_contrast",
+      "fixture": "border_below_minimum",
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.062076
+    },
+    {
+      "case": "border_contrast",
+      "fixture": "border_below_minimum",
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.116956
+    },
+    {
+      "case": "border_contrast",
+      "fixture": "border_below_minimum",
+      "harness": "codex",
+      "model": "gpt-6-luna",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 4,
+      "cost_usd": 0.001847
+    },
+    {
+      "case": "border_contrast",
+      "fixture": "border_below_minimum",
+      "harness": "codex",
+      "model": "gpt-5.6-terra",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 5,
+      "cost_usd": 0.050485
+    },
+    {
+      "case": "border_contrast",
+      "fixture": "border_below_minimum",
+      "harness": "codex",
+      "model": "gpt-6.1-sol",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 4,
+      "cost_usd": 0.041806
+    },
+    {
+      "case": "erd_contrast",
+      "fixture": "erd_white_on_white",
+      "harness": "claude",
+      "model": "claude-haiku-5-5",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 4,
+      "cost_usd": 0.004109
+    },
+    {
+      "case": "erd_contrast",
+      "fixture": "erd_white_on_white",
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.058067
+    },
+    {
+      "case": "erd_contrast",
+      "fixture": "erd_white_on_white",
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.116101
+    },
+    {
+      "case": "erd_contrast",
+      "fixture": "erd_white_on_white",
+      "harness": "codex",
+      "model": "gpt-6-luna",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 5,
+      "cost_usd": 0.002684
+    },
+    {
+      "case": "erd_contrast",
+      "fixture": "erd_white_on_white",
+      "harness": "codex",
+      "model": "gpt-5.6-terra",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 6,
+      "cost_usd": 0.055508
+    },
+    {
+      "case": "erd_contrast",
+      "fixture": "erd_white_on_white",
+      "harness": "codex",
+      "model": "gpt-6.1-sol",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 5,
+      "cost_usd": 0.031805
+    },
+    {
+      "case": "label_colour",
+      "fixture": "label_colour_missing",
+      "harness": "claude",
+      "model": "claude-haiku-5-5",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 4,
+      "cost_usd": 0.0038
+    },
+    {
+      "case": "label_colour",
+      "fixture": "label_colour_missing",
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.052869
+    },
+    {
+      "case": "label_colour",
+      "fixture": "label_colour_missing",
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.106153
+    },
+    {
+      "case": "label_colour",
+      "fixture": "label_colour_missing",
+      "harness": "codex",
+      "model": "gpt-6-luna",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 7,
+      "cost_usd": 0.002583
+    },
+    {
+      "case": "label_colour",
+      "fixture": "label_colour_missing",
+      "harness": "codex",
+      "model": "gpt-5.6-terra",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 6,
+      "cost_usd": 0.056352
+    },
+    {
+      "case": "label_colour",
+      "fixture": "label_colour_missing",
+      "harness": "codex",
+      "model": "gpt-6.1-sol",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 5,
+      "cost_usd": 0.030005
+    },
+    {
+      "case": "large_chain",
+      "fixture": "chain_over_limit",
+      "harness": "claude",
+      "model": "claude-haiku-5-5",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 5,
+      "cost_usd": 0.006148
+    },
+    {
+      "case": "large_chain",
+      "fixture": "chain_over_limit",
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.069775
+    },
+    {
+      "case": "large_chain",
+      "fixture": "chain_over_limit",
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.145239
+    },
+    {
+      "case": "large_chain",
+      "fixture": "chain_over_limit",
+      "harness": "codex",
+      "model": "gpt-6-luna",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 7,
+      "cost_usd": 0.004591
+    },
+    {
+      "case": "large_chain",
+      "fixture": "chain_over_limit",
+      "harness": "codex",
+      "model": "gpt-5.6-terra",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 13,
+      "cost_usd": 0.150034
+    },
+    {
+      "case": "large_chain",
+      "fixture": "chain_over_limit",
+      "harness": "codex",
+      "model": "gpt-6.1-sol",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 6,
+      "cost_usd": 0.053265
+    },
+    {
+      "case": "nesting",
+      "fixture": "nesting_too_deep",
+      "harness": "claude",
+      "model": "claude-haiku-5-5",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.003517
+    },
+    {
+      "case": "nesting",
+      "fixture": "nesting_too_deep",
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.055797
+    },
+    {
+      "case": "nesting",
+      "fixture": "nesting_too_deep",
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.113996
+    },
+    {
+      "case": "nesting",
+      "fixture": "nesting_too_deep",
+      "harness": "codex",
+      "model": "gpt-6-luna",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 5,
+      "cost_usd": 0.00318
+    },
+    {
+      "case": "nesting",
+      "fixture": "nesting_too_deep",
+      "harness": "codex",
+      "model": "gpt-5.6-terra",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 5,
+      "cost_usd": 0.048304
+    },
+    {
+      "case": "nesting",
+      "fixture": "nesting_too_deep",
+      "harness": "codex",
+      "model": "gpt-6.1-sol",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 4,
+      "cost_usd": 0.042744
+    },
+    {
+      "case": "parse_repair",
+      "fixture": "unparseable_edge",
+      "harness": "claude",
+      "model": "claude-haiku-5-5",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 4,
+      "cost_usd": 0.004104
+    },
+    {
+      "case": "parse_repair",
+      "fixture": "unparseable_edge",
+      "harness": "claude",
+      "model": "claude-sonnet-5-5",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.05465
+    },
+    {
+      "case": "parse_repair",
+      "fixture": "unparseable_edge",
+      "harness": "claude",
+      "model": "claude-opus-5-5",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 3,
+      "cost_usd": 0.111866
+    },
+    {
+      "case": "parse_repair",
+      "fixture": "unparseable_edge",
+      "harness": "codex",
+      "model": "gpt-6-luna",
+      "tier": 1,
+      "verdict": "pass",
+      "turns": 5,
+      "cost_usd": 0.002464
+    },
+    {
+      "case": "parse_repair",
+      "fixture": "unparseable_edge",
+      "harness": "codex",
+      "model": "gpt-5.6-terra",
+      "tier": 2,
+      "verdict": "pass",
+      "turns": 4,
+      "cost_usd": 0.03491
+    },
+    {
+      "case": "parse_repair",
+      "fixture": "unparseable_edge",
+      "harness": "codex",
+      "model": "gpt-6.1-sol",
+      "tier": 3,
+      "verdict": "pass",
+      "turns": 4,
+      "cost_usd": 0.028701
+    }
+  ]
+}

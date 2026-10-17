@@ -27,12 +27,17 @@ package = false
 testpaths = ["tests"]
 # The plugin's build workspaces, dependencies and scratch are never test sources.
 norecursedirs = [".xharness_eval_cache", "node_modules", "dist", "tmp", ".venv", "docs-site"]
-# Tier 1 and tier 2 models of each harness. The task is a bounded fix with a
-# deterministic grader, so the question worth paying for is whether the smaller
-# models can do it, not whether the flagship can. Add a flagship with --model.
+# Tier 1, 2 and 3 models of each harness. The task is a bounded fix with a
+# deterministic grader, so the flagship tier 4 is left out. Add one with --model.
 xharness_matrix = [
+    "claude/claude-haiku-5-5",
     "claude/claude-sonnet-5-5",
-    "claude/claude-haiku-4-5-20251001",
-    "codex/gpt-5.6-terra",
+    "claude/claude-opus-5-5",
     "codex/gpt-6-luna",
+    "codex/gpt-5.6-terra",
+    "codex/gpt-6.1-sol",
 ]
+# Keep each cell's workspace, so `make eval-outputs` can copy the file each
+# agent left into docs-site/eval-outputs/. A cell's workspace is named for its
+# case, harness and model, so the next run replaces it rather than adding one.
+xharness_keep_workspaces = true

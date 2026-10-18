@@ -189,6 +189,9 @@ const membersIn = (part: Partition, c: Candidate): number =>
 // as many nodes as the rules ask, so the nodes left open gather into groups
 // of about the same size.
 const evenOut = (part: Partition, tier: Tier, rules: FoldRules): ((c: Candidate) => boolean) | null => {
+  if (tier === "T2") {
+    return part.groups.some((g) => g.reason === "decision region") ? (c) => c.reason === "decision region" : null;
+  }
   if (tier === "T3") {
     const parents = new Set(part.groups.filter((g) => g.tier === "T3").map((g) => g.parent));
     return (c) => parents.has(c.parent) && c.keys.length > 1;

@@ -4,8 +4,9 @@
 // A chain of single-in single-out nodes folds in stages sized to the target,
 // never a long chain into one node.
 
+import { type FlowRegion, flowRegionsOf } from "./flow.ts";
 import { byNatural, byText } from "./graph.ts";
-import { membersOfKey, overviewKeys, parentOfKey, type QEdge } from "./quotient.ts";
+import { membersOfKey, over, overviewKeys, parentOfKey, type QEdge } from "./quotient.ts";
 import {
   type Adjacency,
   adjacencyOf,
@@ -135,4 +136,33 @@ export const proposeChains = (ctx: TierContext): Candidate[] => {
   );
 };
 
-export const proposeT2 = (ctx: TierContext): Candidate[] => [...proposeTwins(ctx), ...proposeChains(ctx)];
+// A decision region folded whole: every overview node inside it, none
+// straddling its boundary. Null when it is already one group.
+const regionCandidate = (ctx: TierContext, r: FlowRegion): Candidate | null => {
+  const inside = new Set(r.members);
+  const keys = [...new Set(r.members.map((m) => over(ctx.work, ctx.part, m)))].sort(byText);
+  if (keys.length < 2 || !keys.every((k) => membersOfKey(ctx.part, k).every((m) => inside.has(m)))) return null;
+  const parent = ctx.work.nodes.get(r.head)?.parent ?? null;
+  const c: Candidate = { keys, parent, tier: "T2", reason: "decision region", head: r.head };
+  return mergeFits(ctx, c) ? c : null;
+};
+
+const within = (inner: FlowRegion, outer: FlowRegion): boolean =>
+  inner.members.length < outer.members.length && inner.members.every((m) => outer.members.includes(m));
+
+// Decision regions, innermost first: a region is offered once every region
+// inside it has folded or cannot fold.
+export const proposeRegions = (ctx: TierContext): Candidate[] => {
+  const regions = flowRegionsOf(ctx.work);
+  const open = new Map(regions.map((r) => [r, regionCandidate(ctx, r)]));
+  return regions.flatMap((r) => {
+    const c = open.get(r);
+    return c && !regions.some((x) => within(x, r) && open.get(x)) ? [c] : [];
+  });
+};
+
+export const proposeT2 = (ctx: TierContext): Candidate[] => [
+  ...proposeTwins(ctx),
+  ...proposeChains(ctx),
+  ...proposeRegions(ctx),
+];

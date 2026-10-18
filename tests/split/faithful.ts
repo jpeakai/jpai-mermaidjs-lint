@@ -6,7 +6,10 @@
 // its text, by the forms a plan writes, against every label the diagram and
 // the overview show, and must have exactly one reading. Only the order of the
 // plan's details is read from memory, to pair each detail with its group node,
-// since the emitted text carries no link. Nothing here calls the split code.
+// since the emitted text carries no link. A decision, choice, fork or join
+// folded into a group must sit in a whole region the group folds: an author
+// region, or a single-entry single-exit region of the original, found here
+// by its own search. Nothing here calls the split code.
 
 import { type DiagramGraph, extractGraph, type GraphEdge, type GraphNode } from "../../src/parse/graph.ts";
 import type { SplitPlan } from "../../src/split/types.ts";
@@ -279,9 +282,89 @@ const elementProblems = (r: Reading): string[] => {
   ];
 };
 
+const DECIDING = new Set(["diamond", "choice", "fork", "join"]);
+
+type Links = Map<string, Set<string>>;
+
+// The original's flow: each edge, both ways when it has no direction, and
+// each start or end transition.
+const flowOf = (g: DiagramGraph): { succ: Links; pred: Links } => {
+  const succ: Links = new Map();
+  const pred: Links = new Map();
+  const add = (a: string, b: string): void => {
+    succ.set(a, new Set([...(succ.get(a) ?? []), b]));
+    pred.set(b, new Set([...(pred.get(b) ?? []), a]));
+  };
+  for (const e of [...g.edges, ...(g.pseudo?.edges ?? [])]) {
+    add(e.source, e.target);
+    if (UNDIRECTED.has(e.kind ?? "")) add(e.target, e.source);
+  }
+  return { succ, pred };
+};
+
+const reachAvoiding = (succ: Links, from: string, avoid: string | null): Set<string> => {
+  const seen = new Set([from]);
+  const stack = [from];
+  while (stack.length > 0) {
+    for (const w of succ.get(stack.pop() as string) ?? []) {
+      if (w === avoid || seen.has(w)) continue;
+      seen.add(w);
+      stack.push(w);
+    }
+  }
+  return seen;
+};
+
+// Whether the group holds a set around the node that every edge enters at one
+// member and leaves towards one outside node or none: a single-entry
+// single-exit region folded whole. End markers may sit in the set.
+const inRegion = (g: DiagramGraph, held: Set<string>, node: string): boolean => {
+  const { succ, pred } = flowOf(g);
+  const markers = new Set((g.pseudo?.nodes ?? []).filter((m) => MARKERS.has(m.shape ?? "")).map((m) => m.id));
+  const inside = (v: string): boolean => held.has(v) || markers.has(v);
+  const outs = [...held].flatMap((v) => [...(succ.get(v) ?? [])]).filter((x) => !inside(x));
+  return [...held].some((h) =>
+    [null, ...new Set(outs)].some((x) => {
+      const set = reachAvoiding(succ, h, x);
+      return (
+        set.has(node) &&
+        [...set].every(
+          (v) =>
+            inside(v) &&
+            (v === h || [...(pred.get(v) ?? [])].every((u) => set.has(u))) &&
+            [...(succ.get(v) ?? [])].every((w) => set.has(w) || w === x),
+        )
+      );
+    }),
+  );
+};
+
+// A decision, choice, fork or join folded into a group sits in an author
+// region the group folds, or in a single-entry single-exit region the group
+// holds whole.
+const protectionProblems = (r: Reading): string[] => {
+  const parentOf = new Map(r.original.subgraphs.map((s) => [s.id, s.parent]));
+  return r.original.nodes.flatMap((n) => {
+    const g = r.groupOf.get(n.id);
+    if (g === undefined || !DECIDING.has(n.shape ?? "")) return [];
+    for (let p = n.parent; p !== null && p !== undefined; p = parentOf.get(p) ?? null) {
+      if (r.groupOf.get(p) === g) return [];
+    }
+    const held = new Set([...r.groupOf].filter(([, x]) => x === g).map(([id]) => id));
+    return inRegion(r.original, held, n.id) ? [] : [`protected ${n.id} is folded in ${g} outside a whole region`];
+  });
+};
+
 export const faithful = async (source: string, plan: SplitPlan): Promise<string[]> => {
   const r = await read(source, plan);
   if (Array.isArray(r)) return r;
   const { of, problems } = stubReadings(r);
-  return [...labelProblems(r), ...problems, ...elementProblems(r), ...edgeProblems(r, of, plan), ...markerProblems(r)];
+  return [
+    ...labelProblems(r),
+    ...problems,
+    ...elementProblems(r),
+    ...edgeProblems(r, of, plan),
+    ...markerProblems(r),
+    ...protectionProblems(r),
+  ];
 };

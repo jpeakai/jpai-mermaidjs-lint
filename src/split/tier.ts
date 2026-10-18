@@ -66,9 +66,14 @@ export const neighboursOf = (adj: Adjacency, key: string): Set<string> => {
 export const groupable = (ctx: TierContext, key: string): boolean =>
   isGroupKey(key) || (ctx.work.nodes.has(key) && !ctx.work.protectedIds.has(key));
 
-// A hub kept in view by the rules.
-export const keptHub = (ctx: TierContext, key: string): boolean =>
-  ctx.rules.keepHubs && !isGroupKey(key) && hubsOf(ctx.work).has(key);
+// A hub kept in view by the rules, or a decision region holding one, which
+// T2 folded and which T5 and T6 fold no further.
+export const keptHub = (ctx: TierContext, key: string): boolean => {
+  if (!ctx.rules.keepHubs) return false;
+  const g = groupOfKey(ctx.part, key);
+  if (!g) return hubsOf(ctx.work).has(key);
+  return g.reason === "decision region" && g.members.some((m) => hubsOf(ctx.work).has(m));
+};
 
 // What T5 and T6 may fold: a groupable key that is no hub kept in view.
 export const foldable = (ctx: TierContext, key: string): boolean => groupable(ctx, key) && !keptHub(ctx, key);

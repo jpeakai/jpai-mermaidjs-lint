@@ -95,6 +95,57 @@ export const DIAGRAM: Step = {
 `,
 };
 
+// A loan underwriting flow with no author subgraphs, where nearly every step
+// is a decision. Each decision folds with its branches into one decision
+// region, so every preset gets a plan.
+export const DECISIONS: Step = {
+  slug: "decisions",
+  alt: "A loan underwriting flowchart with forty-one nodes, eighteen of them decisions, and forty-eight edges",
+  source: `flowchart TD
+  start(["Application received"]) --> kyc{"Identity verified?"}
+  kyc -->|No| kycdoc["Request ID documents"] --> kycwait{"Documents within 14 days?"}
+  kycwait -->|No| declinekyc(["Decline: identity"])
+  kycwait -->|Yes| kyc
+  kyc -->|Yes| sanctions{"Sanctions list hit?"}
+  sanctions -->|Yes| compliance["Refer to compliance"] --> compok{"Compliance clears?"}
+  compok -->|No| declinesan(["Decline: sanctions"])
+  compok -->|Yes| bureau
+  sanctions -->|No| bureau["Pull credit bureau file"]
+  bureau --> thin{"Thin file?"}
+  thin -->|Yes| alt["Score with open banking data"] --> altscore{"Alt score above 620?"}
+  altscore -->|No| declinethin(["Decline: insufficient history"])
+  altscore -->|Yes| income
+  thin -->|No| score{"Bureau score above 680?"}
+  score -->|No| score2{"Score above 600?"}
+  score2 -->|No| declinescore(["Decline: credit score"])
+  score2 -->|Yes| secured{"Offer secured product?"}
+  secured -->|Yes| collat["Collateral valuation"] --> ltv{"LTV under 80%?"}
+  ltv -->|No| declineltv(["Decline: collateral"])
+  ltv -->|Yes| income
+  secured -->|No| declinescore
+  score -->|Yes| income["Verify income"]
+  income --> dti{"Debt-to-income under 40%?"}
+  dti -->|No| reduce{"Lower amount fits DTI?"}
+  reduce -->|No| declinedti(["Decline: affordability"])
+  reduce -->|Yes| counter["Counter-offer lower amount"] --> accept{"Applicant accepts?"}
+  accept -->|No| withdrawn(["Withdrawn"])
+  accept -->|Yes| fraud
+  dti -->|Yes| fraud{"Fraud model flags?"}
+  fraud -->|Yes| manual["Manual fraud review"] --> fraudok{"Reviewer clears?"}
+  fraudok -->|No| declinefraud(["Decline: fraud"])
+  fraudok -->|Yes| pricing
+  fraud -->|No| pricing["Risk-based pricing"]
+  pricing --> large{"Amount above 50k?"}
+  large -->|Yes| senior["Senior underwriter sign-off"] --> signed{"Signed off?"}
+  signed -->|No| declinesenior(["Decline: underwriter"])
+  signed -->|Yes| offer
+  large -->|No| offer["Issue offer"]
+  offer --> esign{"E-signed within 30 days?"}
+  esign -->|No| expired(["Offer expired"])
+  esign -->|Yes| disburse(["Disburse funds"])
+`,
+};
+
 export interface PlannedPreset {
   name: string;
   config: ThresholdConfig;

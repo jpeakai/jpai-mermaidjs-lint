@@ -14,6 +14,8 @@ export interface Group {
   parent: string | null;
   tier: Tier;
   reason: string;
+  // The decision a decision region starts at, which names the group.
+  head?: string;
 }
 
 export interface Partition {
@@ -59,6 +61,7 @@ export interface Merge {
   parent: string | null;
   tier: Tier;
   reason: string;
+  head?: string;
 }
 
 export const merge = (part: Partition, m: Merge): Partition => {
@@ -82,6 +85,7 @@ export const merge = (part: Partition, m: Merge): Partition => {
     parent: m.parent,
     tier: m.tier,
     reason: m.reason,
+    ...(m.head !== undefined ? { head: m.head } : {}),
   };
   return partitionOf([...part.groups.filter((_, i) => !taken.has(i)), group]);
 };
@@ -266,10 +270,14 @@ export const flowOrder = (work: WorkGraph): Map<string, number> => {
 // The members a group may be named after, best first. A suggested group (T5
 // or T6) is named after the member on its main path: the one with the most
 // edges crossing the group's boundary, either way, a start or end transition
-// counted as one, then the one the flow reaches first. Any other group is
-// named after its best-connected member, the one of highest degree. Ties go
-// to the smallest id as a reader counts.
-export const rankedMembers = (work: WorkGraph, g: Pick<Group, "members" | "tier">): string[] => {
+// counted as one, then the one the flow reaches first. A chain stage is named
+// after the member the flow reaches first, where the stage starts. Any other
+// group is named after its best-connected member, the one of highest degree.
+// Ties go to the smallest id as a reader counts.
+export const rankedMembers = (work: WorkGraph, g: Pick<Group, "members" | "tier"> & { reason?: string }): string[] => {
+  const flow = flowOrder(work);
+  const at = (id: string): number => flow.get(id) ?? Number.POSITIVE_INFINITY;
+  if (g.reason === "chain stage") return [...g.members].sort((a, b) => at(a) - at(b) || byNatural(a, b));
   if (g.tier !== "T5" && g.tier !== "T6")
     return [...g.members].sort((a, b) => (work.degree.get(b) ?? 0) - (work.degree.get(a) ?? 0) || byNatural(a, b));
   const inside = new Set(g.members);
@@ -281,8 +289,6 @@ export const rankedMembers = (work: WorkGraph, g: Pick<Group, "members" | "tier"
     if (inside.has(e.source) !== inside.has(e.target)) add(inside.has(e.source) ? e.source : e.target);
   }
   for (const e of work.markerEdges) for (const end of [e.source, e.target]) if (inside.has(end)) add(end);
-  const flow = flowOrder(work);
-  const at = (id: string): number => flow.get(id) ?? Number.POSITIVE_INFINITY;
   return [...g.members].sort(
     (a, b) => (crossing.get(b) ?? 0) - (crossing.get(a) ?? 0) || at(a) - at(b) || byNatural(a, b),
   );
@@ -302,8 +308,9 @@ export interface LabelParts {
 const markdownOf = (x: { markdown?: true } | undefined): { markdown?: true } => (x?.markdown ? { markdown: true } : {});
 
 // The labels a group may carry, best first. A group folded from one author
-// region carries that region's label; otherwise the label of a member, the
-// named one first. N counts the members the label does not already name.
+// region carries that region's label; otherwise the label of a member: the
+// group's head (a decision region's decision, an aggregate's root) first, then
+// the named one. N counts the members the label does not already name.
 export const labelChoices = (work: WorkGraph, g: Group): LabelParts[] => {
   const roots = regionRoots(work, g.regions);
   const root = roots.length === 1 ? roots[0] : undefined;
@@ -313,7 +320,9 @@ export const labelChoices = (work: WorkGraph, g: Group): LabelParts[] => {
     whole && region
       ? [{ base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) }]
       : [];
-  const fromMembers = rankedMembers(work, g).map((m) => {
+  const ranked = rankedMembers(work, g);
+  const head = g.head !== undefined && ranked.includes(g.head) ? [g.head] : [];
+  const fromMembers = [...head, ...ranked.filter((m) => !head.includes(m))].map((m) => {
     const node = work.nodes.get(m);
     return { base: node?.label ?? m, n: g.members.length - 1, ...markdownOf(node) };
   });

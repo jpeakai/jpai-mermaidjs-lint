@@ -3,6 +3,7 @@
 // a single node. A plan holds to these first and relaxes them, in order, only
 // when the target cannot be met otherwise.
 
+import { type Decision, decisionsOf, flowRegionsOf } from "./flow.ts";
 import { byNatural, type WorkGraph } from "./graph.ts";
 
 export interface FoldRules {
@@ -43,33 +44,6 @@ export const hubsOf = (work: WorkGraph): Set<string> => {
   return hubs;
 };
 
-// Labels name conditions or events only in flowcharts and stateDiagrams; an
-// erDiagram or classDiagram label names a relationship.
-const BRANCHING = new Set(["flowchart", "state"]);
-
-// A decision: a node whose outgoing edges carry two labels or more, with the
-// labels of the edges reaching each of its targets.
-type Decision = Map<string, Set<string>>;
-
-const decisionCache = new WeakMap<WorkGraph, Decision[]>();
-
-export const decisionsOf = (work: WorkGraph): Decision[] => {
-  const known = decisionCache.get(work);
-  if (known) return known;
-  const bySource = new Map<string, Decision>();
-  if (BRANCHING.has(work.family)) {
-    for (const e of work.edges) {
-      if (e.label === undefined || e.source === e.target) continue;
-      const d = bySource.get(e.source) ?? new Map<string, Set<string>>();
-      d.set(e.target, new Set([...(d.get(e.target) ?? []), e.label]));
-      bySource.set(e.source, d);
-    }
-  }
-  const decisions = [...bySource.values()].filter((d) => new Set([...d.values()].flatMap((l) => [...l])).size >= 2);
-  decisionCache.set(work, decisions);
-  return decisions;
-};
-
 // The members a member reaches along edges between members, itself included.
 const reachInside = (work: WorkGraph, members: Set<string>, start: string): Set<string> => {
   const seen = new Set<string>([start]);
@@ -89,17 +63,23 @@ const reachInside = (work: WorkGraph, members: Set<string>, start: string): Set<
 const apart = (a: Set<string>, b: Set<string>): boolean => [...a].some((x) => [...b].some((y) => x !== y));
 
 // Whether a group of these members would hold two targets of one decision's
-// differently labelled branches that do not rejoin inside the group.
+// differently labelled branches that do not rejoin inside the group. A group
+// holding a whole decision region holds the decision's branches with it.
 export const splitsBranches = (work: WorkGraph, members: readonly string[]): boolean => {
   const inside = new Set(members);
-  return decisionsOf(work).some((d) => splitsDecision(work, inside, d));
+  const whole = new Set(
+    flowRegionsOf(work)
+      .filter((r) => r.members.every((m) => inside.has(m)))
+      .map((r) => r.head),
+  );
+  return decisionsOf(work).some((d) => !whole.has(d.source) && splitsDecision(work, inside, d));
 };
 
 const splitsDecision = (work: WorkGraph, inside: Set<string>, d: Decision): boolean => {
-  const held = [...d.keys()].filter((t) => inside.has(t)).sort(byNatural);
+  const held = [...d.targets.keys()].filter((t) => inside.has(t)).sort(byNatural);
   return held.some((x, i) =>
     held.slice(i + 1).some((y) => {
-      if (!apart(d.get(x) ?? new Set(), d.get(y) ?? new Set())) return false;
+      if (!apart(d.targets.get(x) ?? new Set(), d.targets.get(y) ?? new Set())) return false;
       const ry = reachInside(work, inside, y);
       return ![...reachInside(work, inside, x)].some((v) => ry.has(v));
     }),

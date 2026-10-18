@@ -11,6 +11,7 @@ import { type DiagramGraph, extractGraph, type GraphEdge } from "../parse/graph.
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats } from "../parse/stats.ts";
 import { type Build, overviewMarkers, partFromGroups } from "./assemble.ts";
+import { flowRegionsOf } from "./flow.ts";
 import { byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
 import { groupLabels, readerOf, readingsOf } from "./label.ts";
 import { floorOf } from "./plan.ts";
@@ -284,14 +285,18 @@ const checkRecoverable = (build: Build): Violations => {
   return out;
 };
 
-// 6. A protected node folds only inside a whole region the group folds: its
-// own, or for a state a composite's marker touches, that composite.
+// 6. A protected node folds only inside a whole region the group folds: an
+// author region, its own or, for a state a composite's marker touches, that
+// composite; or a decision region holding it, single-entry single-exit in the
+// original graph, every node of which the group holds.
 const checkProtected = (build: Build): Violations => {
   const { plan, work } = build;
   const out: Violations = [];
   for (const g of plan.groups) {
+    const held = new Set(g.members);
+    const flows = flowRegionsOf(work).filter((r) => r.members.every((x) => held.has(x)));
     for (const m of g.members) {
-      if (!work.protectedIds.has(m)) continue;
+      if (!work.protectedIds.has(m) || flows.some((r) => r.members.includes(m))) continue;
       const pin = work.pins.get(m) ?? homeOf(work, m);
       if (!g.regions.some((r) => regionWithin(work, pin, r))) out.push(`6: protected ${m} is folded in ${g.id}`);
     }

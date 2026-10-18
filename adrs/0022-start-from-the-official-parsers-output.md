@@ -20,6 +20,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 - Extends [MJL-0001](0001-parse-with-mermaids-own-parsers.md) (MJL-0001 covers counting, and this record covers every feature, emitted text and every other dependency)
 - See also [MJL-0023](0023-markdown-is-read-only-through-mdast.md) (the same rule for markdown and every other dependency)
 - See also [MJL-0025](0025-a-fold-is-offered-as-a-split.md) (a split plan reads the parser's graph and parses its emitted text again)
+- See also [MJL-0027](0027-gaps-in-the-official-parsers-are-recorded.md) (the places the official parsers' output falls short, each with its pinned workaround)
 
 ## Decision
 

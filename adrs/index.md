@@ -30,6 +30,7 @@
 | [MJL-0024](0024-colour-and-contrast-come-from-colorjs.md) | Colour parsing and WCAG contrast come only from colorjs.io | accepted |
 | [MJL-0025](0025-a-fold-is-offered-as-a-split.md) | A fold is offered only as the overview half of a split | accepted |
 | [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) | A split plan follows the author's structure, and refuses what it cannot draw faithfully | accepted |
+| [MJL-0027](0027-gaps-in-the-official-parsers-are-recorded.md) | Gaps in the official parsers are recorded, each with the one narrow workaround allowed | accepted |
 # By group
 
 ## cli
@@ -70,6 +71,7 @@
 * [MJL-0009](0009-a-diagram-is-read-from-the-markdown-tree.md) - Fences come from mdast, and offsets are mapped back to the source by line
 * [MJL-0022](0022-start-from-the-official-parsers-output.md) - Diagrams are read through mermaid's parsers and markdown through mdast, never a custom parser
 * [MJL-0023](0023-markdown-is-read-only-through-mdast.md) - No custom markdown parser, and code that duplicates an installed dependency is refactored onto it
+* [MJL-0027](0027-gaps-in-the-official-parsers-are-recorded.md) - Where mermaid exposes no source map, export or detector, the gap and its pinned workaround are listed here
 ## plugins
 
 * [MJL-0007](0007-plugins-follow-the-prose-gates-contract.md) - A plugin is { meta, rules } with a namespace, an apiVersion and declared categories
@@ -113,9 +115,11 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0022 --extends--> MJL-0001
 * MJL-0022 --see_also--> MJL-0023
 * MJL-0022 --see_also--> MJL-0025
+* MJL-0022 --see_also--> MJL-0027
 * MJL-0023 --extends--> MJL-0009
 * MJL-0023 --see_also--> MJL-0022
 * MJL-0023 --see_also--> MJL-0024
+* MJL-0023 --extended_by--> MJL-0027
 * MJL-0024 --see_also--> MJL-0023
 * MJL-0024 --see_also--> MJL-0017
 * MJL-0025 --extended_by--> MJL-0026
@@ -125,3 +129,5 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0025 --see_also--> MJL-0021
 * MJL-0025 --see_also--> MJL-0022
 * MJL-0026 --extends--> MJL-0025
+* MJL-0027 --extends--> MJL-0023
+* MJL-0027 --see_also--> MJL-0022

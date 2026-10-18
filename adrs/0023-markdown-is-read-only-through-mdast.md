@@ -19,6 +19,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 - Extends [MJL-0009](0009-a-diagram-is-read-from-the-markdown-tree.md) (a diagram is read from the markdown tree, and that tree comes only from mdast)
 - See also [MJL-0022](0022-start-from-the-official-parsers-output.md) (the same rule for diagram text and mermaid's parsers)
 - See also [MJL-0024](0024-colour-and-contrast-come-from-colorjs.md) (the same rule for colour parsing and contrast)
+- Extended by [MJL-0027](0027-gaps-in-the-official-parsers-are-recorded.md) (the recorded gaps in mermaid, each with the one narrow workaround allowed)
 
 ## Decision
 

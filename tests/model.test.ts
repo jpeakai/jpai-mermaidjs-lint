@@ -43,6 +43,32 @@ describe("document model", () => {
   });
 });
 
+describe("value offsets, from micromark's codeFlowValue tokens", () => {
+  test("a span in a quoted or listed fence maps from its line's codeFlowValue token", async () => {
+    const body = "flowchart LR\n  classDef c fill:#ffff00,color:#fefefe";
+    const quoted = `# T\n\n${fence(body)
+      .split("\n")
+      .map((l) => (l ? `> ${l}` : l))
+      .join("\n")}`;
+    const listed = `- item\n\n${fence(body)
+      .split("\n")
+      .map((l) => (l ? `  ${l}` : l))
+      .join("\n")}`;
+    for (const src of [quoted, listed]) {
+      const d = buildDocModel(src).diagrams[0];
+      const span = (await d?.styles())?.directives[0]?.spans.color;
+      const at = span ? (d?.offsetOf(span) ?? -1) : -1;
+      expect(src.slice(at, at + 7)).toBe("#fefefe");
+    }
+  });
+
+  test("a blank line holds no codeFlowValue token, so nothing on it maps", () => {
+    const d = buildDocModel(fence("flowchart LR\n\n  A --> B")).diagrams[0];
+    expect(d?.offsetOf({ line: 2, start: 0, end: 0 })).toBeNull();
+    expect(d?.offsetOf({ line: 3, start: 2, end: 3 })).toBe("```mermaid\nflowchart LR\n\n  ".length);
+  });
+});
+
 describe("detectKeyword, from mermaid's own detection", () => {
   test("looks past frontmatter, a multi-line directive and comments", () => {
     expect(detectKeyword("---\ntitle: x\n---\n%% note\nsequenceDiagram\n")).toBe("sequenceDiagram");

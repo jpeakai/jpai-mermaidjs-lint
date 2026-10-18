@@ -438,6 +438,19 @@
     },
     {
       "data": {
+        "id": "MJL-0027",
+        "label": "0027",
+        "parent": "group-parsing",
+        "colour": "#6366f1",
+        "file": "0027-gaps-in-the-official-parsers-are-recorded.md",
+        "title": "Gaps in the official parsers are recorded, each with the one narrow workaround allowed",
+        "description": "Where mermaid exposes no source map, export or detector, the gap and its pinned workaround are listed here",
+        "status": "accepted",
+        "tags": "parsing, dependencies, architecture"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -658,6 +671,16 @@
     },
     {
       "data": {
+        "id": "MJL-0022-see_also-MJL-0027",
+        "source": "MJL-0022",
+        "target": "MJL-0027",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the places the official parsers' output falls short, each with its pinned workaround"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0023-extends-MJL-0009",
         "source": "MJL-0023",
         "target": "MJL-0009",
@@ -684,6 +707,16 @@
         "label": "see also",
         "relation": "see_also",
         "note": "the same rule for colour parsing and contrast"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0023-extended_by-MJL-0027",
+        "source": "MJL-0023",
+        "target": "MJL-0027",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "the recorded gaps in mermaid, each with the one narrow workaround allowed"
       }
     },
     {
@@ -774,6 +807,26 @@
         "label": "extends",
         "relation": "extends",
         "note": "how a fold offered as a split is chosen and drawn"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0027-extends-MJL-0023",
+        "source": "MJL-0027",
+        "target": "MJL-0023",
+        "label": "extends",
+        "relation": "extends",
+        "note": "MJL-0023 says a dependency gap is recorded rather than hand-written, and this record is that list"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0027-see_also-MJL-0022",
+        "source": "MJL-0027",
+        "target": "MJL-0022",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "every feature starts from the official parsers' output, and these are the places that output falls short"
       }
     }
   ],

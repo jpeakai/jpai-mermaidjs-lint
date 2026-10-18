@@ -20,23 +20,24 @@ export const apcaLc = (fg: string, bg: string): number => new Color(fg).contrast
 
 export const alphaOf = (color: string): number => new Color(color).to("srgb").alpha ?? 1;
 
+// A colour in sRGB with any out-of-gamut channel clipped, as a browser paints
+// it on an sRGB page.
+const inSrgb = (color: string): Color => new Color(color).to("srgb").toGamut({ method: "clip" });
+
 // Simple alpha-over in gamma-encoded sRGB, the model browsers use for opacity.
 // A translucent fill has no contrast of its own until the backdrop behind it is
-// known, so this resolves it to the box a reader sees. An out-of-gamut channel
-// is clipped, as a browser paints it on an sRGB page.
+// known, so this resolves it to the box a reader sees. colorjs.io blends it, per
+// MJL-0024: a premultiplied mix in sRGB from the backdrop to the opaque
+// foreground, by the foreground's alpha, is alpha-over exactly, its alpha
+// fa + ba(1 - fa). Each colour is clipped to sRGB before the blend.
 export const compositeOver = (fg: string, bg: string): string => {
-  const f = new Color(fg).to("srgb");
-  const b = new Color(bg).to("srgb");
+  const f = inSrgb(fg);
   const fa = f.alpha ?? 1;
-  const ba = b.alpha ?? 1;
-  const outA = fa + ba * (1 - fa);
-  const ch = (i: number): number => {
-    if (outA === 0) return 0;
-    return (fa * (f.coords[i] ?? 0) + ba * (1 - fa) * (b.coords[i] ?? 0)) / outA;
-  };
-  return new Color("srgb", [ch(0), ch(1), ch(2)], outA)
-    .toGamut({ method: "clip" })
-    .toString({ format: "hex", collapse: false });
+  f.alpha = 1;
+  const mixed = Color.mix(inSrgb(bg), f, fa, { space: "srgb", premultiplied: true });
+  // Nothing over nothing leaves no colour to divide the alpha back out of.
+  const out = mixed.alpha === 0 ? new Color("srgb", [0, 0, 0], 0) : mixed;
+  return out.toGamut({ method: "clip" }).toString({ format: "hex", collapse: false });
 };
 
 export const wcagRating = (ratio: number): WcagRating => {

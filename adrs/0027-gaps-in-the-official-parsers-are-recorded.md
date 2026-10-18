@@ -1,0 +1,55 @@
+---
+type: Architecture Decision
+title: Gaps in the official parsers are recorded, each with the one narrow workaround allowed
+description: Where mermaid exposes no source map, export or detector, the gap and its pinned workaround are listed here
+tags: [parsing, dependencies, architecture]
+status: accepted
+accepted_on: 2026-10-18
+provenance: A review against MJL-0022 and MJL-0023 found four places where mermaid does not expose what the package needs. Each had been solved by a copy or a text match. The maintainer ruled that each gap is recorded with the narrowest workaround, and that a text match which can guess must refuse instead
+enforced_in:
+  - src/parse/styles.ts, whose sourceLines places a parsed line only when one source line can be it, and whose declarations mirror styles2Map
+  - src/split/emit.ts, whose htmlEntities copies decodeEntities
+  - src/parse/stats.ts, which registers the zenuml detector through registerExternalDiagrams
+  - tests/mermaid-mirrors.test.ts, which pins each copy to the function in the installed mermaid
+  - tests/styles.test.ts, which holds the adversarial cases for placing a line and a value
+generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
+---
+
+<!-- GENERATED from MJL-0027 by okf_render.py. Do not edit; edit the .yml and regenerate. -->
+
+## Relates to
+
+- Extends [MJL-0023](0023-markdown-is-read-only-through-mdast.md) (MJL-0023 says a dependency gap is recorded rather than hand-written, and this record is that list)
+- See also [MJL-0022](0022-start-from-the-official-parsers-output.md) (every feature starts from the official parsers' output, and these are the places that output falls short)
+
+## Decision
+
+### The lens
+
+#### Given
+
+a feature needs something mermaid does not expose. There are four such gaps. First, mermaid keeps no source map from the preprocessed text it parses back to the diagram source. Second, decodeEntities is exported only from a hash-named chunk. Third, mermaid core has no zenuml detector. Fourth, styles2Map, which reads a style declaration, is internal
+
+#### We prefer
+
+one narrow workaround per gap, each pinned by a test. A position is recovered only from the official lexer's tokens. A parsed line is placed in the source only when exactly one body line past the frontmatter can be it. Otherwise the span is refused. decodeEntities is a copy whose behaviour a test pins to mermaid's. The zenuml detector is a one-line type detector registered through registerExternalDiagrams. styles2Map is a mirror whose output a test pins to mermaid's compiled styles. That is preferred over a custom parser, and over a text match that picks a best guess
+
+#### Because
+
+each workaround stays as small as the gap, and its test fails the day mermaid's behaviour drifts from it. A refusal keeps a fixer from rewriting text it cannot place, per MJL-0005
+
+#### Unless
+
+mermaid exposes the missing piece, when the workaround is deleted and the dependency is called instead. A new gap is added to this record by a superseding record, never worked around unrecorded
+
+## Consequences
+
+### Pros
+
+- Every place the package does not call mermaid directly is listed in one record, with the test that pins it.
+- A position that could be wrong is refused, so a fix never edits frontmatter or a line mermaid dropped.
+
+### Cons
+
+- Some values, such as a classDiagram's or one after text mermaid edited out, are never placed, so their contrast findings are reported without a fix.
+- The tests read mermaid's hash-named chunks, which a mermaid upgrade renames, so they find each chunk by its source text.

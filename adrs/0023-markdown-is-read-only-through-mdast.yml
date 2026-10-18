@@ -23,6 +23,9 @@ relates_to:
   - relation: see_also
     target: MJL-0024
     note: the same rule for colour parsing and contrast
+  - relation: extended_by
+    target: MJL-0027
+    note: the recorded gaps in mermaid, each with the one narrow workaround allowed
 
 decision:
   given: a feature needs a markdown structure, such as a fence, its language, its position, a heading or frontmatter. Or it needs something an installed dependency already provides

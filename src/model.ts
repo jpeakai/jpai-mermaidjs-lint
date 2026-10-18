@@ -71,6 +71,16 @@ interface FenceFacts {
   // only its opening fence.
   terminated: boolean;
   closingFence: string | null;
+  // Where each line of the block's content starts in the source, by its file
+  // line: the start offset of the line's codeFlowValue token and the text it
+  // holds. A blank content line has no token.
+  values: Map<number, CodeLine>;
+}
+
+// One line of a fenced block's content, as micromark read it.
+interface CodeLine {
+  offset: number;
+  text: string;
 }
 
 // The tokens that may stand before a fence on its line: indentation, a quote
@@ -131,9 +141,22 @@ const fencedBlocks = (src: string, lineStarts: number[]): Map<number, FenceFacts
     const lineStart = sequence ? lineStarts[sequence[1].start.line - 1] : undefined;
     const closingFence = sequence && lineStart !== undefined ? closingFenceOf(events, sequence, lineStart) : null;
     const fences = block.filter(([, token]) => token.type === "codeFencedFence").length;
-    blocks.set(block[0]?.[1].start.offset ?? -1, { terminated: fences === 2, closingFence });
+    blocks.set(block[0]?.[1].start.offset ?? -1, { terminated: fences === 2, closingFence, values: codeLines(block) });
   }
   return blocks;
+};
+
+// The codeFlowValue tokens of one block, by the file line each starts on. A
+// line holding more than one is left out, so no span on it is mapped.
+const codeLines = (block: MicromarkEvent[]): Map<number, CodeLine> => {
+  const lines = new Map<number, CodeLine | null>();
+  for (const event of block) {
+    const [, token] = event;
+    if (token.type !== "codeFlowValue") continue;
+    const { line, offset } = token.start;
+    lines.set(line, lines.has(line) ? null : { offset, text: serialise(event) });
+  }
+  return new Map([...lines].flatMap(([line, value]): Array<[number, CodeLine]> => (value ? [[line, value]] : [])));
 };
 
 const lineStartsOf = (src: string): number[] => {
@@ -142,9 +165,13 @@ const lineStartsOf = (src: string): number[] => {
   return starts;
 };
 
+// Where each line of a diagram's text starts in the source, by file line, or
+// null for a standalone file, whose lines are the file's own.
+type LineOffsets = Map<number, CodeLine> | null;
+
 const makeDiagram = (
-  src: string,
   lineStarts: number[],
+  values: LineOffsets,
   fields: {
     index: number;
     source: string;
@@ -168,15 +195,19 @@ const makeDiagram = (
       styled ??= readStyles(source);
       return styled;
     },
+    // A span's line is a line of the diagram's text. In a fence it starts at
+    // its codeFlowValue token, which holds that line's text unless mdast
+    // expanded a tab in it, when the span is not mapped.
     offsetOf: (span) => {
-      const fileLine = firstLine + span.line - 1;
-      const start = lineStarts[fileLine - 1];
-      const next = lineStarts[fileLine];
       const content = contentLines[span.line - 1];
-      if (start === undefined || content === undefined) return null;
-      const raw = src.slice(start, next === undefined ? src.length : next - 1);
-      if (!raw.endsWith(content)) return null;
-      return start + (raw.length - content.length) + span.start;
+      if (content === undefined) return null;
+      const fileLine = firstLine + span.line - 1;
+      if (values === null) {
+        const start = lineStarts[fileLine - 1];
+        return start === undefined ? null : start + span.start;
+      }
+      const value = values.get(fileLine);
+      return value && value.text === content ? value.offset + span.start : null;
     },
     stats: () => {
       pending ??= extractStats(source);
@@ -208,7 +239,7 @@ export const buildDocModel = (src: string, kind: "markdown" | "diagram" = "markd
   const lineStarts = lineStartsOf(src);
   if (kind === "diagram") {
     const endLine = lineStarts.length;
-    const diagram = makeDiagram(src, lineStarts, {
+    const diagram = makeDiagram(lineStarts, null, {
       index: 0,
       source: src,
       startLine: 1,
@@ -230,13 +261,14 @@ export const buildDocModel = (src: string, kind: "markdown" | "diagram" = "markd
     const block = blocks.get(start.offset);
     if (!block) throw new Error(`micromark read no fenced code block at line ${start.line}, where mdast has one`);
     return [
-      makeDiagram(src, lineStarts, {
+      makeDiagram(lineStarts, block.values, {
         index,
         source: node.value,
         startLine: start.line,
         endLine: end.line,
         firstLine: start.line + 1,
-        ...block,
+        terminated: block.terminated,
+        closingFence: block.closingFence,
         endOffset: end.offset,
       }),
     ];

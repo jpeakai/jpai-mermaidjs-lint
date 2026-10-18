@@ -12,8 +12,11 @@ import type { DiagramGraph, GraphEdge, GraphNode } from "../parse/graph.ts";
 import { byNatural, byText, type Family } from "./graph.ts";
 
 // Mermaid's parser stores an entity such as #quot; or #35; in a label as
-// marks around its name (its encodeEntities), and these put back what the
-// source wrote, as mermaid's decodeEntities does, which it does not export.
+// marks around its name (its encodeEntities). htmlEntities is a copy of
+// mermaid's decodeEntities, which mermaid exports only from a hash-named
+// chunk, a gap MJL-0027 records. sourceEntities undoes encodeEntities, putting
+// back what the source wrote. tests/mermaid-mirrors.test.ts pins both to the
+// functions in the installed mermaid.
 export const sourceEntities = (s: string): string =>
   s.replaceAll("ﬂ°°", "#").replaceAll("ﬂ°", "#").replaceAll("¶ß", ";");
 export const htmlEntities = (s: string): string =>

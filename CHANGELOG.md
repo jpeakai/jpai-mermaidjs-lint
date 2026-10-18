@@ -57,8 +57,19 @@ Anything under `Unreleased` is on `main` but not yet released.
 - **Breaking for the library:** `Diagram.directives` is now `Diagram.styles()`, which returns a promise of a `StyleReading`.
   `StyleDirective` loses the `inlineClass` kind and `class_name`.
 - `micromark`, `stemmer` and `yaml` are new runtime dependencies.
+- A contrast value is placed from the tokens the lexer read for it, and `--fix` refuses more often rather than guess, per [MJL-0027](adrs/0027-gaps-in-the-official-parsers-are-recorded.md).
+  A classDiagram's colours are reported but never rewritten, because its lexer reads a statement's declarations as one run of text.
+  A value after text mermaid edits out of the line, such as a `;` before a comma, is not rewritten.
+  Nor is a value colorjs.io does not read as a colour, such as `rgb(255` where mermaid cuts `rgb(255,255,255)` at its commas.
+- A style declaration is read as mermaid's renderer reads it: its value is the text between its first colon and its second.
+- A translucent out-of-gamut colour is clipped to sRGB before it is blended over its backdrop, as colorjs.io mixes it.
 
 ### Fixed
+
+- A style statement is never placed inside the frontmatter, even when a block scalar there repeats its text.
+  The finding pointed at the frontmatter line, and `--fix` rewrote the frontmatter title instead of the diagram.
+  A parsed line that more than one source line could be is no longer placed, so its value is not rewritten.
+- A stateDiagram `style` inside a composite state, which mermaid does not apply, no longer takes the span of a root state's value.
 
 - A flowchart edge to a subgraph's id, such as `A --> S` where `S` is a subgraph, no longer counts `S` as a node as well.
   Mermaid draws that edge to the subgraph's box, so the diagram's node count drops by one for each such subgraph.

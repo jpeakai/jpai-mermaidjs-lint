@@ -24,6 +24,9 @@ relates_to:
   - relation: see_also
     target: MJL-0025
     note: a split plan reads the parser's graph and parses its emitted text again
+  - relation: see_also
+    target: MJL-0027
+    note: the places the official parsers' output falls short, each with its pinned workaround
 
 decision:
   given: a feature needs something a diagram or a document says. That may be a node, an edge label, a shape, an arrow, a block or a fence

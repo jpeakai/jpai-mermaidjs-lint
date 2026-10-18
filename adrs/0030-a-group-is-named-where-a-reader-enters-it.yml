@@ -24,7 +24,7 @@ enforced_in:
   - src/split/rules.ts, whose shared terminal also covers a node whose every successor leads nowhere
   - src/split/quotient.ts detailView, which draws edges from one group that would repeat from a stub each
   - src/split/graph.ts byOverviewEdge and src/split/contract.ts check 8, which order an overview's edges by the pair they join
-  - src/split/plan.ts better, which prefers the fold leaving fewer overview edges at an equal saving
+  - src/split/plan.ts better, which prefers the aggregate leaving fewer overview edges at an equal saving
   - src/split/plan.ts tidy, which undoes a decision region hiding one node when the target still holds
 
 relates_to:
@@ -53,7 +53,7 @@ decision:
     Two edges from different members of one outside group can draw one edge twice in a detail.
     Each then gets a stub of its own, when the detail still meets its target, as its rows are drawn.
     An overview's edges are ordered by the pair of nodes they join, whichever way each is written, so parallel edges sit side by side.
-    Of two folds that save as much score per node hidden, the one leaving fewer edges between overview nodes goes first.
+    Of two aggregates that save as much score per node hidden, the one leaving fewer edges between overview nodes goes first.
     A decision region hiding one node is undone when the overview and every detail still meet the target without it.
     That is how a suggested group hiding one node is undone, but a region is never merged into a neighbour
   because: >-

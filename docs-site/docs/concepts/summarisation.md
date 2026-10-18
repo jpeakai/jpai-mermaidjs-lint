@@ -181,7 +181,7 @@ The plan applies its folds in tiers, least lossy first.
 A diagram with author regions climbs `T3` first, since a reader finds the author's own boundaries first.
 When that plan fails, it climbs in the order below.
 Within a tier, it applies the fold that saves the most score per node hidden, then measures the overview again.
-Of two folds that save as much, the one leaving fewer edges between overview nodes goes first.
+In `T4`, of two aggregates that save as much, the one leaving fewer edges between overview nodes goes first.
 A chain folds in even stages and a set of twins in even runs, all in one step.
 It stops at the first overview that meets the preset's `nodeTarget` and `vcsTarget`.
 No fold may leave the overview with fewer than four nodes, unless the diagram has fewer than eight.

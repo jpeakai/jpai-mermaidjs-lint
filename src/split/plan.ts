@@ -1,7 +1,7 @@
 // The tier ladder. T1 always applies (rows dropped from the overview); then
 // each tier in turn proposes groups, and the best one applies, by score saved
-// per node hidden, then by fewer overview edges, then by member ids in
-// natural order. After each the
+// per node hidden, then, for aggregates, by fewer overview edges, then by
+// member ids in natural order. After each the
 // overview is measured again, and the walk stops at the first state that
 // meets node_target and vcs_target. A detail diagram must meet them too. A
 // diagram with author regions is walked with T3 first, since a reader finds
@@ -66,8 +66,8 @@ interface Scored {
   priority: number;
   tie: number;
   members: string[];
-  // The overview edges left, so at an equal saving the fold with fewer edges
-  // between overview nodes goes first.
+  // The overview edges left, so at an equal saving the aggregate with fewer
+  // edges between overview nodes goes first.
   edges: number;
 }
 
@@ -127,13 +127,15 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
   };
 };
 
+// Of two aggregates that save as much, the one leaving fewer overview edges
+// goes first, so fewer relationships run between groups.
 const better =
-  (byPriority: boolean) =>
+  (byPriority: boolean, byEdges = false) =>
   (a: Scored, b: Scored): number => {
     if (byPriority && Math.abs(a.priority - b.priority) > EPSILON) return b.priority - a.priority;
     if (byPriority && Math.abs(a.tie - b.tie) > EPSILON) return b.tie - a.tie;
     if (Math.abs(a.ratio - b.ratio) > EPSILON) return b.ratio - a.ratio;
-    if (a.edges !== b.edges) return a.edges - b.edges;
+    if (byEdges && a.edges !== b.edges) return a.edges - b.edges;
     return byNaturalTuple(a.members, b.members);
   };
 
@@ -153,7 +155,7 @@ const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null 
     .filter(only)
     .map((c) => evaluate(ctx, c, current, step))
     .filter((s): s is Scored => s !== null);
-  return scored.sort(better(tier === "T6"))[0] ?? null;
+  return scored.sort(better(tier === "T6", tier === "T4"))[0] ?? null;
 };
 
 interface Measure {

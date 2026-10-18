@@ -52,7 +52,7 @@ Anything under `Unreleased` is on `main` but not yet released.
 - Two edges from different members of one outside group can repeat one edge in a detail.
   The detail now draws them from a stub each, when it still meets its target.
 - An overview lists the parallel edges between two nodes side by side, whichever way each is written.
-- Of two folds that save as much score per node hidden, the one leaving fewer overview edges goes first.
+- In `T4`, of two aggregates that save as much score per node hidden, the one leaving fewer overview edges goes first.
 - A decision region hiding one node, such as `Signed off? (+1)`, is undone when the overview and every detail still meet the target without it.
 
 ## [0.9.0] - 2026-10-19

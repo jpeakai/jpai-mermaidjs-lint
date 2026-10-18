@@ -275,3 +275,16 @@ describe("a decision region hiding one node", () => {
     SLOW,
   );
 });
+
+describe("a decision region that ends the flow", () => {
+  test(
+    "stays in view under a large target, so the overview ends at its outcomes",
+    async () => {
+      const plan = await planOf(DECISIONS.source, configFromPreset("high-density"));
+      const ids = plan.overview.nodes.map((n) => n.id);
+      expect(ids).toContain("disburse");
+      expect(ids).toContain("expired");
+    },
+    SLOW,
+  );
+});

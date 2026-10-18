@@ -12,7 +12,8 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ### Added
 
-- **Decision regions in split plans.** A flowchart or `stateDiagram` decision now folds with its branches, from the decision to where they rejoin, into one group named after the decision, per [MJL-0028](adrs/0028-decision-regions-and-aggregates-fold-whole.md).
+- **Decision regions in split plans.** A flowchart or `stateDiagram` decision now folds with its branches, up to where they rejoin.
+  The group is named after the decision, per [MJL-0028](adrs/0028-decision-regions-and-aggregates-fold-whole.md).
   The region is single-entry single-exit, found from dominators and post-dominators, so the fold adds no reachable pair and belongs to `T2`.
   A branch that ends the flow folds inside the region, regions fold innermost first, and a chain stage may pass through a folded region.
   A decision-heavy flowchart that got no plan before now gets one under every preset.

@@ -303,7 +303,8 @@ A decision shape folds only with a whole Decision Region or author region around
 
 The single-entry single-exit region from a branching node to the node where its branches rejoin, its immediate post-dominator.
 The branching node is a Decision, a decision shape, a choice, a fork, or any node with a labelled branch.
-Every edge into it enters the branching node, every edge out of it reaches the rejoin node, and a branch that ends the flow is folded inside it.
+Every edge into it enters the branching node, and every edge out of it reaches the rejoin node.
+A branch that ends the flow is folded inside it.
 A Split Plan's `T2` folds it whole, innermost first, into a Group Node named after the branching node.
 
 ## Design Token

@@ -78,14 +78,18 @@ Its branches only make sense together, so a plan folds a decision with everythin
 A node d dominates a node v when every path from where the flow enters to v passes through d.
 Run on the reversed graph, from where the flow leaves, the same idea gives post-dominators.
 The immediate post-dominator of a decision is the nearest node every one of its branches must reach, the rejoin point.
-The plan computes both with the iterative algorithm of [Cooper, Harvey and Kennedy (2001)](https://www.cs.tufts.edu/comp/150FP/archive/keith-cooper/dom14.pdf), from a virtual entry joined to every node nothing leads into, and towards a virtual exit.
+The plan computes both with the iterative algorithm of [Cooper, Harvey and Kennedy (2001)](https://www.cs.tufts.edu/comp/150FP/archive/keith-cooper/dom14.pdf).
+It starts from a virtual entry joined to every node nothing leads into, and works towards a virtual exit.
 
-The region from a decision to its rejoin point is single-entry single-exit (SESE): every edge into it enters the decision, and every edge out of it reaches the rejoin point.
+The region from a decision to its rejoin point is single-entry single-exit (SESE).
+Every edge into it enters the decision, and every edge out of it reaches the rejoin point.
 [Johnson, Pearson and Pingali (1994)](https://doi.org/10.1145/178243.178258) build the program structure tree from these regions, nested one inside another.
-A branch that ends the flow, such as `Decline`, is an outcome of the decision, not a way out of its region, so post-dominators are computed without the nodes where the flow ends, and those nodes fold inside the region.
+A branch that ends the flow, such as `Decline`, is an outcome of the decision, not a way out of its region.
+So post-dominators are computed without the nodes where the flow ends, and those nodes fold inside the region.
 
 Folding a SESE region whole invents no path.
-Everything that reached the decision reaches the group, and the group reaches only what the rejoin point reaches, so the fold belongs to `T2`, the lossless tier.
+Everything that reached the decision reaches the group, and the group reaches only what the rejoin point reaches.
+So the fold belongs to `T2`, the lossless tier.
 Regions fold innermost first, and each group is named after its decision.
 The branch labels stay in the detail diagram, and a chain stage may pass through a folded region.
 
@@ -173,7 +177,8 @@ A plan names the last tier that changed it.
 
 When the target cannot be met under the first two rules, the plan is walked again without them, and the third still holds.
 As a last resort, the plan is walked once more with groups that hide one node allowed.
-A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk, unless a whole decision region or author region around them folds.
+A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk.
+Each folds only with a whole decision region or author region around it.
 An `erDiagram` junction between two aggregates is kept in view under the first two rules, like a hub.
 
 The declared loss is the number of pairs of overview nodes where one reaches the other in the overview but not in the original.
@@ -252,7 +257,8 @@ Every other type is not planned, and its finding keeps the subgraph hint.
 
 The site build plans two diagrams under every preset, with the split code itself.
 Each overview, detail, tier and loss below is what `splitPlan` returns, never typed by hand.
-Each plan's `ladder` line lists the overview after each tier that changed it, so every preset shows the climb to the tier that met its target.
+Each plan's `ladder` line lists the overview after each tier that changed it.
+So every preset shows the climb to the tier that met its target.
 
 ### The diagram
 

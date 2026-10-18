@@ -23,6 +23,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extends [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) (the author's structure now includes the regions a flow's decisions make and the aggregates an erDiagram's identifying relationships make)
 - Extended by [MJL-0029](0029-runs-meshes-and-terminals-read-as-they-are.md) (runs named by range, dense meshes folded by cliques, shared terminals kept in view)
 - Excepted by [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) (an aggregate whose root is a lookup is named after its most crossed member)
+- Excepted by [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (held to no target, any owner's aggregate may fold, not only a root's, and never one swallowing a group already over the target)
 
 ## Decision
 

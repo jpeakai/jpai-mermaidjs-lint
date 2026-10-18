@@ -489,10 +489,16 @@ The code that reads a Diagram's structure from mermaid's own parsers.
 
 ## Pipeline Stage
 
-The stage of a data pipeline a node names.
+The stage of a data pipeline a node names: a Prefix Family read from a dotted prefix such as `bronze.` or an id prefix such as `br_`.
+
+## Prefix Family
+
+The family of names a node's label or id belongs to.
 It is a dotted prefix leading the node's label, such as `bronze.`.
+Failing that, it is the letters leading a label that leads with an id, such as `PLAT-` in `PLAT-1201`.
 Failing that, it is letters and an underscore leading its id, such as `br_`.
-In `T6`, a pair that would mix two Pipeline Stages loses a tie between equal modularity gains, and only a tie.
+Under the strict rules, no `T5` or `T6` group holds two Prefix Families, per [MJL-0031](adrs/0031-a-plan-keeps-groups-even-and-names-each-stub-once.md).
+In `T6`, a pair within one family goes before any other.
 
 ## Pinned Fix
 
@@ -618,6 +624,8 @@ A node in a Detail Diagram that stands for a node, subgraph or interface outside
 An edge in from another group starts at one Stub for that whole group.
 Two edges from different members of that group can draw one edge twice.
 They start at a Stub each, when the Detail Diagram still meets its target.
+Each such Stub names the member its edges leave, as `Checkout domain (+5) from paymentservice`, or the Detail Diagram draws one Stub.
+So does a whole-group Stub beside a Stub for the member its group is named after.
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
 It adds the node's group label when that differs.

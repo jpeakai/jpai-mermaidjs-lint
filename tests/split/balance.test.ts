@@ -110,3 +110,21 @@ describe("a detail never draws two stubs with one text", () => {
     SLOW,
   );
 });
+
+describe("a whole-group stub beside a stub for the member it is named after", () => {
+  test(
+    "names the member its edges leave, so the two never read alike",
+    async () => {
+      const source = read("state08-jira-workflow-ids");
+      const plan = await planOf(source, "low-density");
+      for (const d of plan.details) {
+        const stubs = d.graph.nodes.filter((n) => d.stubs[n.id] !== undefined);
+        for (const g of plan.groups.filter((x) => stubs.some((n) => n.label === `${x.labelBase} (in group)`))) {
+          const whole = stubs.filter((n) => d.stubs[n.id] === g.id);
+          expect(whole.filter((n) => !n.label.startsWith(`${g.label} from `)).map((n) => n.label)).toEqual([]);
+        }
+      }
+    },
+    SLOW,
+  );
+});

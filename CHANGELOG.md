@@ -54,6 +54,18 @@ Anything under `Unreleased` is on `main` but not yet released.
 - An overview lists the parallel edges between two nodes side by side, whichever way each is written.
 - In `T4`, of two aggregates that save as much score per node hidden, the one leaving fewer overview edges goes first.
 - A decision region hiding one node, such as `Signed off? (+1)`, is undone when the overview and every detail still meet the target without it.
+- **A plan lands near its target.** When a greedy walk leaves the overview below 60% of `nodeTarget`, the plan undoes the group whose undoing still meets every target, per [MJL-0031](adrs/0031-a-plan-keeps-groups-even-and-names-each-stub-once.md).
+  A compiler's class diagram now keeps six overview nodes at low density, not four.
+- **No one aggregate takes most of a diagram.** An aggregate folded over the target is never folded again into its owner's, and any owner's aggregate may fold when none fits.
+- **Suggested groups keep to one prefix family.** Under the strict rules, a `T5` or `T6` group never holds two families, read from a dotted label such as `bronze.`, an id-led label such as `PLAT-1201`, or an id prefix such as `br_`.
+  In `T6`, a pair within one family goes first, not only on a tie.
+  A plan that cannot meet its target so is walked again with families mixed.
+- In `T4`, `T5` and `T6`, of the folds within 5% of the best saving, the one leaving the fewest parallel overview edges goes first.
+  A SaaS billing overview no longer draws five parallel edges between two aggregates.
+- **Stubs for one group drawn apart name their member.** Each reads like `Checkout domain (+5) from paymentservice`, so a detail never shows two stubs with one text.
+  When that text would not name the group alone, the detail draws one stub.
+  A stub for a whole group beside one for the member it is named after is named the same way.
+  The contract checks that the member named draws every edge its stub draws.
 
 ## [0.9.0] - 2026-10-19
 

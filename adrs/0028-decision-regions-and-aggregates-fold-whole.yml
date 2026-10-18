@@ -30,6 +30,9 @@ relates_to:
   - relation: excepted_by
     target: MJL-0030
     note: an aggregate whose root is a lookup is named after its most crossed member
+  - relation: excepted_by
+    target: MJL-0031
+    note: held to no target, any owner's aggregate may fold, not only a root's, and never one swallowing a group already over the target
 
 decision:
   given: some diagrams are mostly decisions, a flowchart or stateDiagram. In others, an erDiagram overview groups entities by leaves and junctions, not by what owns what

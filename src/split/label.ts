@@ -189,11 +189,13 @@ export const stubTexts = (ctx: LabelContext, stubs: Stub[]): Map<string, StubTex
   );
 };
 
-// Stubs for one whole group drawn apart share its shown label. Each that
-// shares it takes FROM and the label of the one member its edges leave, when
+// A stub for a whole group reads alike another stub when they show one text,
+// as stubs for one group drawn apart do, or when the other stands for the
+// member the group is named after ("QA (in group)" beside "QA (+2)"). Each
+// such stub takes FROM and the label of the one member its edges leave, when
 // that text has exactly the one reading. Null when two stubs would still
 // show one text: the detail then draws one stub for the group.
-export const namedApart = (
+export const namedStubs = (
   ctx: LabelContext,
   stubs: Stub[],
   texts: Map<string, StubText>,
@@ -202,17 +204,19 @@ export const namedApart = (
   const reader = contextReader(ctx);
   const count = new Map<string, number>();
   for (const t of texts.values()) count.set(t.label, (count.get(t.label) ?? 0) + 1);
+  const alike = (endpoint: string, label: string): boolean =>
+    (count.get(label) ?? 0) > 1 || count.has(`${ctx.groups.get(endpoint)?.base}${IN_GROUP}`);
   const out = new Map(texts);
   for (const s of stubs) {
     const t = texts.get(s.id);
     const [source, ...more] = sourcesOf(s.id);
-    if (!t || (count.get(t.label) ?? 0) < 2 || !isGroupKey(s.endpoint) || t.markdown || !source || more.length > 0)
+    if (!(t && isGroupKey(s.endpoint) && alike(s.endpoint, t.label)) || t.markdown || !source || more.length > 0)
       continue;
     const member = endpointLabel(ctx.work, source);
     const label = `${t.label}${FROM}${member}`;
     const read = readingsOf(reader, label);
-    if (MARKUP.test(member) || ctx.work.nodes.get(source)?.markdown || read.size !== 1 || !read.has(t.endpoint))
-      continue;
+    const node = ctx.work.nodes.get(source);
+    if (!node || MARKUP.test(member) || node.markdown || read.size !== 1 || !read.has(t.endpoint)) continue;
     out.set(s.id, { ...t, label });
   }
   const labels = [...out.values()].map((t) => t.label);

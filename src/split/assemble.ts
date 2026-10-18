@@ -17,7 +17,7 @@ import {
   type WNode,
   type WorkGraph,
 } from "./graph.ts";
-import { groupLabels, ID_LEAD, type LabelContext, namedApart, rangeLabel, type StubText, stubTexts } from "./label.ts";
+import { groupLabels, ID_LEAD, type LabelContext, namedStubs, rangeLabel, type StubText, stubTexts } from "./label.ts";
 import {
   chainEntries,
   type DetailView,
@@ -298,21 +298,22 @@ interface Assembly {
 }
 
 // A detail's view and its stubs' texts: drawn apart when it still meets the
-// target so and every stub drawn apart can be named by the member its edges
-// leave (namedApart), else with one stub per outside end.
+// target so and every stub that reads alike another can be named by the
+// member its edges leave (namedStubs), else with one stub per outside end,
+// named so where it can be.
 const viewOf = (a: Assembly, group: Group): { view: DetailView; texts: Map<string, StubText> } => {
   const { work, part } = a.folded;
+  const origin = new Map(work.edges.map((e) => [e.id, e.source]));
+  const named = (view: DetailView): Map<string, StubText> | null =>
+    namedStubs(a.labels, view.stubs, stubTexts(a.labels, view.stubs), (stub) =>
+      sorted(new Set(view.edges.filter((e) => e.source === stub).map((e) => origin.get(e.id) ?? e.source))),
+    );
   const apart = detailView(work, part, group, true);
   const shape = detailShape(work, apart);
-  if (meets(shape.nodes, scoreOf(shape, 0, a.config), a.config)) {
-    const origin = new Map(work.edges.map((e) => [e.id, e.source]));
-    const sourcesOf = (stub: string): string[] =>
-      sorted(new Set(apart.edges.filter((e) => e.source === stub).map((e) => origin.get(e.id) ?? e.source)));
-    const texts = namedApart(a.labels, apart.stubs, stubTexts(a.labels, apart.stubs), sourcesOf);
-    if (texts) return { view: apart, texts };
-  }
+  const texts = meets(shape.nodes, scoreOf(shape, 0, a.config), a.config) ? named(apart) : null;
+  if (texts) return { view: apart, texts };
   const view = detailView(work, part, group);
-  return { view, texts: stubTexts(a.labels, view.stubs) };
+  return { view, texts: named(view) ?? stubTexts(a.labels, view.stubs) };
 };
 
 // A detail draws edges a whole-group stub would repeat apart, and its

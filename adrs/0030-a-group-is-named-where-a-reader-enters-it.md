@@ -25,6 +25,8 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 
 - Extends [MJL-0029](0029-runs-meshes-and-terminals-read-as-they-are.md) (how groups are named and when a dense mesh is planned at all, beyond ranges, cliques and terminals)
 - Scoped exception to [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) (an aggregate whose root is a lookup is named after another member, not its root)
+- Extended by [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (stubs drawn apart for one group are told apart by the member each one's edges leave)
+- Excepted by [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (a pair across two prefix families is never proposed under the strict rules, and a pair within one goes first, not only on a tie)
 
 ## Decision
 

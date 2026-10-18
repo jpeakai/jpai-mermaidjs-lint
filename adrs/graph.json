@@ -490,6 +490,19 @@
     },
     {
       "data": {
+        "id": "MJL-0031",
+        "label": "0031",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0031-a-plan-keeps-groups-even-and-names-each-stub-once.md",
+        "title": "A plan lands near its target, keeps groups even and to one family, and names each stub once",
+        "description": "How a split plan balances its groups, keeps them to one family and tells stubs apart",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -910,6 +923,16 @@
     },
     {
       "data": {
+        "id": "MJL-0028-excepted_by-MJL-0031",
+        "source": "MJL-0028",
+        "target": "MJL-0031",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "held to no target, any owner's aggregate may fold, not only a root's, and never one swallowing a group already over the target"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0029-extends-MJL-0028",
         "source": "MJL-0029",
         "target": "MJL-0028",
@@ -946,6 +969,56 @@
         "label": "excepts",
         "relation": "excepts",
         "note": "an aggregate whose root is a lookup is named after another member, not its root"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0030-extended_by-MJL-0031",
+        "source": "MJL-0030",
+        "target": "MJL-0031",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "stubs drawn apart for one group are told apart by the member each one's edges leave"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0030-excepted_by-MJL-0031",
+        "source": "MJL-0030",
+        "target": "MJL-0031",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a pair across two prefix families is never proposed under the strict rules, and a pair within one goes first, not only on a tie"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0031-extends-MJL-0030",
+        "source": "MJL-0031",
+        "target": "MJL-0030",
+        "label": "extends",
+        "relation": "extends",
+        "note": "stubs drawn apart for one group are told apart by the member each one's edges leave"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0031-excepts-MJL-0030",
+        "source": "MJL-0031",
+        "target": "MJL-0030",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a pair across two prefix families is never proposed under the strict rules, and a pair within one goes first, not only on a tie"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0031-excepts-MJL-0028",
+        "source": "MJL-0031",
+        "target": "MJL-0028",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "held to no target, any owner's aggregate may fold, not only a root's, and never one swallowing a group already over the target"
       }
     }
   ],

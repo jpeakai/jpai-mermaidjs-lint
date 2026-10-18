@@ -19,6 +19,9 @@ It has two halves:
 A dashed stub in a detail stands for each outside node an edge reaches, or for a whole group an edge comes in from.
 Two edges from different members of one group can draw the same edge twice.
 When the detail still meets its target, each gets a stub, so a reader sees two sources.
+Each such stub names the member its edges leave, as `Checkout domain (+5) from paymentservice`.
+When that text would not name the group alone, the detail draws one stub instead.
+A stub for a whole group beside a stub for the member the group is named after is named the same way, so `10007 QA (+2) from 10008 Ready for Release` sits beside `10007 QA (in group)`.
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
@@ -112,7 +115,8 @@ Owners chain to a root, and an aggregate is a root with everything it owns.
 This is the aggregate of domain-driven design, read from the author's own notation.
 
 `T4` folds the largest aggregate whose detail fits, named after its root, so the overview's edges run between roots.
-When none fits, it folds each root's aggregate and splits the detail again.
+When none fits, it may fold any owner's aggregate and split the detail again.
+An aggregate folded over the target is never folded again into its owner's, so no one group takes most of the diagram.
 A junction, an entity identified by entities in two aggregates, such as a review joining a product and a customer, is owned by neither.
 It stays in the overview, since folding it into one side would draw the other side's relationship onto the wrong root.
 
@@ -182,6 +186,8 @@ A diagram with author regions climbs `T3` first, since a reader finds the author
 When that plan fails, it climbs in the order below.
 Within a tier, it applies the fold that saves the most score per node hidden, then measures the overview again.
 In `T4`, of two aggregates that save as much, the one leaving fewer edges between overview nodes goes first.
+In `T4`, `T5` and `T6`, of the folds within 5% of the best one's saving (in `T6`, its gain), the one leaving the fewest parallel edges goes first.
+A parallel edge is an overview edge beside another between the same two nodes, at least one of them a group.
 A chain folds in even stages and a set of twins in even runs, all in one step.
 It stops at the first overview that meets the preset's `nodeTarget` and `vcsTarget`.
 No fold may leave the overview with fewer than four nodes, unless the diagram has fewer than eight.
@@ -189,21 +195,26 @@ No fold may leave the overview with fewer than four nodes, unless the diagram ha
 Once the target is met, the plan evens out what it folded.
 It does so only while the overview keeps at least 60% of `nodeTarget`, rounded up, so an overview lands near its target.
 If a detail then fails its target, the evening goes on below that share, down to the fewest nodes a fold may leave.
+A greedy walk can also overshoot below that share, when an early fold leaves a later one needed.
+The plan then undoes the group whose undoing gives back the most nodes and still meets every target, until the share is met.
+A `T2` group stays, since undoing one run would leave its pattern half folded.
 In `T2` it folds the remaining decision regions, so every decision reads alike.
 In `T3` it folds the sibling regions of the ones folded, so sibling regions read alike.
 In `T5` and `T6` it gathers what is left open into groups of three or more, no larger than the largest.
 A detail diagram must meet the same targets, and one that does not is split once more.
 A plan names the last tier that changed it.
 
-`T5` and `T6` follow four rules, so the overview still tells the diagram's story:
+`T5` and `T6` follow five rules, so the overview still tells the diagram's story:
 
 - **Hubs stay in view.** A hub is a node of degree at least four and at least the 90th percentile degree. It keeps its own overview node, and the leaves hanging from it fold beside it as one group. An `erDiagram` never merges two relationship labels, so there its leaves stay open.
 - **Shared terminals stay in view.** A shared terminal is a flowchart or `stateDiagram` node that at least three other nodes lead into and that ends the flow, by directed edges. It leads nowhere, or everything it leads to leads nowhere. A `Notify on-call` step every failure ends at is one, and so is a final `Refunded` state. So is a `Cancelled` state that leads only to `Refunded` and `Voided`. Folded into one branch's group, it would read as that branch's own end.
 - **A decision's branches stay apart.** A decision is a node whose outgoing edges carry two labels or more, in a flowchart or a `stateDiagram`. Two targets of its differently labelled branches never share a group, unless one reaches the other, or both reach a common member, inside the group.
+- **A group keeps to one prefix family.** A prefix family is the dotted prefix leading a label, such as `bronze.`, the letters leading an id-led label, such as `PLAT-`, or the letters and underscore leading an id, such as `br_`. No suggested group holds members of two families. In `T6`, a pair within one family goes before any other pair.
 - **Every group hides two nodes or more.** Once the target is met, a group hiding one node is undone when the overview and every detail still meet the target without it. Otherwise it is merged into a neighbouring node or suggested group. One that can be neither stays. A decision region from `T2` hiding one node is undone the same way. It is never merged, since a merged region would no longer be a region.
 
-When the target cannot be met under these rules, the plan is walked again with hubs and branches folded, while shared terminals stay in view.
-When that fails too, it is walked without the first three rules, and the last still holds.
+When the target cannot be met under these rules, the plan is walked again with prefix families mixed.
+When that fails, it is walked with hubs and branches folded too, while shared terminals stay in view.
+When that fails too, it is walked without the first four rules, and the last still holds.
 As a last resort, the plan is walked once more with groups that hide one node allowed.
 A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk.
 Each folds only with a whole decision region or author region around it.
@@ -219,7 +230,7 @@ The plan reports it after each tier.
 | `T3` | Author regions, innermost first: subgraphs, composite states and namespaces | New reachable pairs between nodes folded into one region |
 | `T4` | `erDiagram` aggregates: the largest aggregate that fits, named after its root, or after its most crossed member when the root is a lookup. A junction stays out of both sides. | New reachable pairs. Cardinalities are never merged. |
 | `T5` | Leaves into the node they hang from, repeated, or beside it as one group when it is a hub | New reachable pairs through the group |
-| `T6` | Suggested groups from greedy modularity, over pairs an edge joins, with alike labels and shared pipeline stages breaking ties, and tight cliques once the overview is dense | New reachable pairs, and groups the author may not recognise |
+| `T6` | Suggested groups from greedy modularity, over pairs an edge joins, within one prefix family first, with alike labels breaking ties, and tight cliques once the overview is dense | New reachable pairs, and groups the author may not recognise |
 
 ## What "meaning is preserved" means
 
@@ -232,7 +243,7 @@ The contract is what this page means by "meaning is preserved".
 - **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
 - **Honest ranges.** A range label, such as `DATA-0381 … DATA-0383 (+1)`, is the group's first and last member labels in natural order. Its count is of the members neither names. No member of another group has a label from the first to the last.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
-- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it.
+- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it. `Checkout domain (+5) from paymentservice` is the whole group, drawn from its member paymentservice, and paymentservice must draw every edge the stub draws.
 - **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. That region is an author region, or a decision region that is single-entry single-exit in the original graph, every node of which the group holds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
@@ -273,9 +284,10 @@ A reader would look for that member here.
 An author region's label and a decision region's question still come first.
 An id-led group with no honest range is named by its first label in natural order, so `10002 Backlog (+2)` rather than a side state.
 
-In `T6`, when two merges gain the same modularity, a pair that would mix two pipeline stages goes last.
-A stage is a dotted prefix leading a label, such as `bronze.`.
+In `T6`, a pair within one prefix family goes before any other, and under the strict rules a pair across two families is never proposed.
+A family is a dotted prefix leading a label, such as `bronze.`, or the letters leading an id-led label, such as `PLAT-`.
 Failing that, it is letters and an underscore leading an id, such as `br_`.
+When families are mixed, a pair across two still loses a tie between equal gains.
 Among the rest, the pair with alike labels goes first.
 Two nodes no edge joins never pair, however alike their labels.
 

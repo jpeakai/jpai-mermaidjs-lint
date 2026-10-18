@@ -373,12 +373,35 @@
     },
     {
       "data": {
+        "id": "MJL-0022",
+        "label": "0022",
+        "parent": "group-parsing",
+        "colour": "#6366f1",
+        "file": "0022-start-from-the-official-parsers-output.md",
+        "title": "Every feature starts from the official parsers' output, and no parsing logic is reinvented",
+        "description": "Diagrams are read through mermaid's parsers and markdown through mdast, never a custom parser",
+        "status": "accepted",
+        "tags": "parsing, architecture"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
         "label": "depended on by",
         "relation": "depended_on_by",
         "note": "every complexity rule reads these stats"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0001-extended_by-MJL-0022",
+        "source": "MJL-0001",
+        "target": "MJL-0022",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "every feature starts from the official parsers' output, not only counting"
       }
     },
     {
@@ -479,6 +502,16 @@
         "label": "see also",
         "relation": "see_also",
         "note": "every count is still read from the parser's result, never the text"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0022-extends-MJL-0001",
+        "source": "MJL-0022",
+        "target": "MJL-0001",
+        "label": "extends",
+        "relation": "extends",
+        "note": "MJL-0001 covers counting, and this record covers every feature, emitted text and every other dependency"
       }
     }
   ],

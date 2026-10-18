@@ -15,6 +15,9 @@ relates_to:
   - relation: depended_on_by
     target: MJL-0002
     note: every complexity rule reads these stats
+  - relation: extended_by
+    target: MJL-0022
+    note: every feature starts from the official parsers' output, not only counting
 
 decision:
   given: a rule needs the nodes, edges and subgraphs of a diagram

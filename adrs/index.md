@@ -25,6 +25,7 @@
 | [MJL-0019](0019-a-material-file-sets-a-config-canvas-aside.md) | A Material file sets a config canvas aside | accepted |
 | [MJL-0020](0020-category-flags-have-the-last-word-for-a-run.md) | Category flags have the last word for a run | accepted |
 | [MJL-0021](0021-the-score-counts-what-a-reader-must-read.md) | The score counts what a reader must read, not every record the parser keeps | accepted |
+| [MJL-0022](0022-start-from-the-official-parsers-output.md) | Every feature starts from the official parsers' output, and no parsing logic is reinvented | accepted |
 # By group
 
 ## cli
@@ -60,6 +61,7 @@
 
 * [MJL-0001](0001-parse-with-mermaids-own-parsers.md) - Structure comes from the Langium grammars and mermaid core, never from regexes over the text
 * [MJL-0009](0009-a-diagram-is-read-from-the-markdown-tree.md) - Fences come from mdast, and offsets are mapped back to the source by line
+* [MJL-0022](0022-start-from-the-official-parsers-output.md) - Diagrams are read through mermaid's parsers and markdown through mdast, never a custom parser
 ## plugins
 
 * [MJL-0007](0007-plugins-follow-the-prose-gates-contract.md) - A plugin is { meta, rules } with a namespace, an apiVersion and declared categories
@@ -82,6 +84,7 @@ Open [graph.html](graph.html) to explore the records visually: click a node to r
 The same edge set is rendered as prose in [graph.md](graph.md), and as data in [graph.json](graph.json).
 
 * MJL-0001 --depended_on_by--> MJL-0002
+* MJL-0001 --extended_by--> MJL-0022
 * MJL-0002 --depends_on--> MJL-0001
 * MJL-0003 --depended_on_by--> MJL-0020
 * MJL-0005 --depended_on_by--> MJL-0006
@@ -92,3 +95,4 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0019 --excepts--> MJL-0018
 * MJL-0020 --depends_on--> MJL-0003
 * MJL-0021 --see_also--> MJL-0001
+* MJL-0022 --extends--> MJL-0001

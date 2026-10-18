@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { buildDocModel, checkMarkdown, fixSource, RULE, RULES } from "../src/index.ts";
+import { readFile } from "node:fs/promises";
+import { buildDocModel, checkMarkdown, fixSource, RULE, RULES, splitOutcome } from "../src/index.ts";
 import { edgeLabelBackground, scoreMkdocs } from "../src/parse/contrast.ts";
 import { calculateComplexity, configFromPreset, DEFAULT_PRESET, parseFailed } from "../src/parse/metrics.ts";
 import { extractStats, parserError } from "../src/parse/stats.ts";
 import { MAX_NESTING } from "../src/rules/complexity-subgraph-nesting-too-deep.ts";
+import { splitOutcomeOf, splitSentence } from "../src/rules/shared.ts";
 import { chain, fence, rules } from "./helpers.ts";
 
 describe("parse rules", () => {
@@ -135,6 +137,54 @@ describe("complexity rules: nesting and remediation", () => {
     const found = await checkMarkdown(fence(body), "doc.md", { preset: "low" });
     const hit = found.find((f) => f.rule === RULE.NODES_ACCEPTABLE);
     expect(hit?.remediation).toContain("core");
+  });
+});
+
+describe("complexity rules: split plan in the remediation", () => {
+  const BANDS = "tests/fixtures/complexity/bands.md";
+
+  // The fixture quotes section 10's remediation, so its prose is checked
+  // against the finding word for word.
+  test("a plan that meets the contract ends the remediation, as bands.md quotes it", async () => {
+    const src = await readFile(BANDS, "utf8");
+    const start = src.indexOf("## 10.");
+    const quoted = src.slice(start).match(/```text\n(.+)\n```/)?.[1];
+    const sectionLine = src.slice(0, start).split("\n").length;
+    const found = await checkMarkdown(src, BANDS);
+    const ten = found.find((f) => f.line > sectionLine && f.rule === RULE.NODES_COGNITIVE);
+    expect(quoted).toStartWith("Split into sub-diagrams along existing subgraph boundaries");
+    expect(ten?.remediation).toBe(quoted as string);
+    expect(ten?.remediation).toContain(" Split plan: an overview folding 7 groups (");
+  });
+
+  test("with no plan the remediation keeps today's text", async () => {
+    const loose = Array.from({ length: 51 }, (_, i) => `  n${i}`).join("\n");
+    const found = await checkMarkdown(fence(`flowchart LR\n${loose}`), "doc.md");
+    expect(found.find((f) => f.rule === RULE.NODES_COGNITIVE)?.remediation).toBe(
+      "Split into sub-diagrams introduce subgraphs to group related nodes before splitting. " +
+        "Target at most 25 nodes and 40 VCS per sub-diagram.",
+    );
+  });
+
+  test("the plan and the graph are worked out once per diagram and thresholds", async () => {
+    const diagram = buildDocModel(fence(chain(40))).diagrams[0];
+    if (!diagram) throw new Error("no diagram");
+    const config = configFromPreset(DEFAULT_PRESET);
+    expect(splitOutcomeOf(diagram, config)).toBe(splitOutcomeOf(diagram, { ...config }));
+    expect(splitOutcomeOf(diagram, config)).not.toBe(splitOutcomeOf(diagram, configFromPreset("low-density")));
+    expect(diagram.graph()).toBe(diagram.graph());
+    expect((await diagram.graph()).nodes).toHaveLength(40);
+  });
+
+  test("a sentence names at most four groups and counts the rest", async () => {
+    const outcome = await splitOutcome(chain(200), configFromPreset(DEFAULT_PRESET));
+    const plan = outcome.plan;
+    if (!plan) throw new Error(`no plan: ${outcome.reason}`);
+    const sentence = splitSentence(plan);
+    expect(sentence).toStartWith(` Split plan: an overview folding ${plan.groups.length} groups (`);
+    expect(sentence).toEndWith("), and one detail diagram per group.");
+    if (plan.groups.length > 4) expect(sentence).toContain(`+${plan.groups.length - 4} more`);
+    expect(sentence.match(/ nodes\)/g)?.length).toBe(Math.min(4, plan.groups.length));
   });
 });
 

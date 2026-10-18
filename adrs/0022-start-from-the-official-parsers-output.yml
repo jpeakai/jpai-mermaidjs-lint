@@ -21,6 +21,9 @@ relates_to:
   - relation: see_also
     target: MJL-0023
     note: the same rule for markdown and every other dependency
+  - relation: see_also
+    target: MJL-0025
+    note: a split plan reads the parser's graph and parses its emitted text again
 
 decision:
   given: a feature needs something a diagram or a document says. That may be a node, an edge label, a shape, an arrow, a block or a fence

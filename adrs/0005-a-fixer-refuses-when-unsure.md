@@ -16,6 +16,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-15T00:00:00Z }
 ## Relates to
 
 - Depended on by [MJL-0006](0006-every-fix-is-verified-by-reparse.md) (the verifier backs a refusal with proof)
+- See also [MJL-0025](0025-a-fold-is-offered-as-a-split.md) (a split plan that breaks its contract is not offered, as an unsure fixer refuses)
 
 ## Decision
 

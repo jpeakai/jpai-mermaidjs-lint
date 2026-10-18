@@ -56,6 +56,7 @@ One mermaid source.
 | `styles()` | `Promise<StyleReading>` | The style directives mermaid's parser reads, read once on first call and shared by every rule |
 | `offsetOf(span)` | `number` or `null` | The offset in `doc.src` of a directive value, or `null` when it cannot be mapped back |
 | `stats()` | `Promise<DiagramStats>` | Structure as mermaid's parser reads it, parsed once on first call and shared by every rule |
+| `graph()` | `Promise<DiagramGraph>` | Each node, edge and subgraph mermaid's parser reads, read once on first call |
 
 !!! tip "A fixer must use `offsetOf`"
 

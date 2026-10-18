@@ -5,7 +5,7 @@ Each term is written in Title Case wherever it is used, to mark it as this gloss
 When a new domain term enters the code or the conversation, add it here in the same change.
 Give it its own H2 and a place in the diagram.
 
-One diagram of every term would fail this tool's own complexity gates, so the diagram is split into five, one per area.
+One diagram of every term would fail this tool's own complexity gates, so the diagram is split into six, one per area.
 
 Running the gates over a Diagram.
 
@@ -75,6 +75,36 @@ flowchart LR
     PRE -- sets the thresholds of --> LAD
     LAD -- divides into --> BND
     VCS -- lands in --> BND
+
+    classDef people    fill:#1e40af,stroke:#93c5fd,color:#fff,stroke-width:2px
+    classDef info      fill:#92400e,stroke:#fcd34d,color:#fff,stroke-width:2px
+    classDef rule      fill:#6d28d9,stroke:#c4b5fd,color:#fff,stroke-width:2px
+    classDef forbidden fill:#b91c1c,stroke:#fca5a5,color:#fff,stroke-width:2px
+    classDef pipeline  fill:#047857,stroke:#6ee7b7,color:#fff,stroke-width:2px
+    classDef record    fill:#334155,stroke:#cbd5e1,color:#fff,stroke-width:2px
+```
+
+Splitting an oversized Diagram.
+
+```mermaid
+flowchart LR
+    REM["Remediation"]:::info
+    SPL["Split Plan"]:::info
+    TIR["Tier"]:::rule
+    OVR["Overview"]:::info
+    GRP["Group Node"]:::info
+    DET["Detail Diagram"]:::info
+    STB["Stub"]:::info
+    VCS["Visual Complexity Score"]:::info
+
+    REM -- may end with --> SPL
+    SPL -- is reached at a --> TIR
+    SPL -- holds one --> OVR
+    SPL -- holds one per group --> DET
+    OVR -- folds members into --> GRP
+    DET -- details one --> GRP
+    DET -- stands in for outside ends with --> STB
+    VCS -- scores --> OVR
 
     classDef people    fill:#1e40af,stroke:#93c5fd,color:#fff,stroke-width:2px
     classDef info      fill:#92400e,stroke:#fcd34d,color:#fff,stroke-width:2px
@@ -257,6 +287,12 @@ The optional `mermaidjs-lint.config.json` or `.mjs` that switches Rules off and 
 One named brand colour in `docs-site/theme/osakanights/design-tokens.json`.
 `make theme` writes the theme's CSS colour block from these tokens.
 
+## Detail Diagram
+
+The half of a Split Plan that shows one Group Node's members, with every edge between them.
+A Stub stands in for each node outside the group that an edge reaches.
+A Detail Diagram still over the target is split once more.
+
 ## Diagram
 
 One Mermaid source: a mermaid Fence in a markdown file, or a whole `.mmd` or `.mermaid` file.
@@ -329,6 +365,11 @@ Every Rule is a Gate, and `make docs-ci` runs the Gates over this repo's markdow
 A file rendered from a source by a regenerate command, and never edited by hand.
 In `adrs/` that is everything rendered from the Records, as [AGENTS.md](AGENTS.md) lists.
 
+## Group Node
+
+One node of an Overview that stands for a set of the original nodes, folded together.
+Its label is an author label or its best-connected member's, with the count of the rest, such as `ingest (+5)`.
+
 ## Host
 
 Where a Diagram is drawn for a reader, such as GitHub or a MkDocs Material site.
@@ -368,6 +409,11 @@ A core Rule ID has none.
 
 The Docs Site's theme, in `docs-site/theme/osakanights/`, which another MkDocs Material site can adopt.
 Its colours come from Design Tokens.
+
+## Overview
+
+The half of a Split Plan that keeps the whole Diagram's shape, with each group of nodes folded into one Group Node.
+It is scored against the target like any Diagram.
 
 ## Pair
 
@@ -464,9 +510,20 @@ Where a Plugin came from, shown in `--list-rules` and `--json`.
 It is local for a file in `.mermaidjs-lint/rules`, and package for a declared `mermaidjs-lint-plugin-*` dependency.
 It is config for an entry in the Config File's `plugins` list.
 
+## Split Plan
+
+A recommendation for a Diagram over a node count or score threshold: one Overview and one Detail Diagram per Group Node.
+It is offered only when a contract parses the emitted text and finds every node and edge kept.
+It ends the Remediation, and `--split-plan` prints it, but nothing applies it, per [MJL-0025](adrs/0025-a-fold-is-offered-as-a-split.md).
+
 ## Stats
 
 The nodes, edges, Rows, subgraphs, subgraph nesting depth and Tree Depth the Parse Engine reads from a Diagram.
+
+## Stub
+
+A node in a Detail Diagram that stands for a node, subgraph or interface outside its group.
+It is drawn dashed, so the reader sees where an edge leaves the group.
 
 ## Style Directive
 
@@ -486,6 +543,11 @@ See [MJL-0015](adrs/0015-four-tenets-define-the-tool.md).
 A colour Mermaid's theme supplies, such as `signalTextColor`.
 It is set in frontmatter or an `%%{init}%%` directive, or derived by the theme.
 A `sequenceDiagram` is coloured by Theme Variables alone.
+
+## Tier
+
+One step of how a Split Plan groups nodes, from `T1`, which only drops Rows and duplicate edges, to `T6`.
+The Tiers run least lossy first, and a plan names the last Tier that changed it.
 
 ## Tree Depth
 

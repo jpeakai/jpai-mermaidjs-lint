@@ -124,6 +124,33 @@ PRESETS["high-density"]?.node_hard_limit; // the hard limit nodeHardLimit overri
 
 `ThresholdConfig` adds `edge_weight`, `row_weight`, `subgraph_weight`, `depth_weight` and `preset_name` to the `Preset` fields.
 
+## Split plans
+
+A split plan is what `--split-plan` prints: an overview where groups of nodes fold into one group node each, and one detail diagram per group.
+It is offered only when a contract on the emitted text proves the overview and details keep every node and edge.
+Nothing is applied, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
+
+| Export | Signature | Returns |
+|---|---|---|
+| `splitPlan` | `(source: string, config: ThresholdConfig)` | `Promise<SplitPlan \| null>`, a plan for one diagram's text, or `null` when none is offered |
+| `splitOutcome` | `(source: string, config: ThresholdConfig)` | `Promise<SplitOutcome>`, which is `{ plan, reason, violations }`: the plan, or why there is none |
+| `SplitPlan` | `{ diagram_type, tier, groups, overview, overviewSource, overviewNodes, overviewScore, details, loss }` | `overviewSource` is the overview's mermaid text, and `tier` the last tier that changed the plan |
+| `SplitGroup` | `{ id, label, labelBase, hidden, members, regions, parent, tier, reason, shape? }` | One group node: its id `g1`, `g2` and on, its label, and the original nodes it folds |
+| `SplitDetail` | `{ group, graph, stubs, source, nodes, score, split }` | One detail diagram, its stubs mapped to what each stands for, and a further plan when the detail is still over the target |
+| `SplitLoss` | `{ newReachablePairs, byTier, droppedRows }` | What the overview draws that the original does not, and the rows left out |
+| `Tier` | `"T1"` to `"T6"` | The tiers, least lossy first |
+
+`splitPlan` returns `null` for a diagram already within the target, and for one where no plan meets the contract.
+It also returns `null` for a type it does not split, such as a sequence diagram.
+`splitOutcome` names which:
+
+```ts
+import { splitOutcome, thresholdsFrom } from "@jpeakai/mermaidjs-lint";
+
+const { plan, reason } = await splitOutcome(source, thresholdsFrom({ preset: "medium-density" }));
+console.log(plan ? plan.overviewSource : reason);
+```
+
 ## Rules and categories
 
 | Export | Holds |

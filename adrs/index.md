@@ -28,6 +28,7 @@
 | [MJL-0022](0022-start-from-the-official-parsers-output.md) | Every feature starts from the official parsers' output, and no parsing logic is reinvented | accepted |
 | [MJL-0023](0023-markdown-is-read-only-through-mdast.md) | Markdown is read only through mdast, and reimplementing a dependency is non-compliance | accepted |
 | [MJL-0024](0024-colour-and-contrast-come-from-colorjs.md) | Colour parsing and WCAG contrast come only from colorjs.io | accepted |
+| [MJL-0025](0025-a-fold-is-offered-as-a-split.md) | A fold is offered only as the overview half of a split | accepted |
 # By group
 
 ## cli
@@ -36,6 +37,7 @@
 ## complexity
 
 * [MJL-0021](0021-the-score-counts-what-a-reader-must-read.md) - Control lines, markers and notes are left out, and boxes, blocks and attribute rows are counted
+* [MJL-0025](0025-a-fold-is-offered-as-a-split.md) - A split plan is checked by a contract and applied by a human
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -92,9 +94,12 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0001 --see_also--> MJL-0021
 * MJL-0002 --depends_on--> MJL-0001
 * MJL-0003 --depended_on_by--> MJL-0020
+* MJL-0004 --extended_by--> MJL-0025
 * MJL-0005 --depended_on_by--> MJL-0006
+* MJL-0005 --see_also--> MJL-0025
 * MJL-0006 --depends_on--> MJL-0005
 * MJL-0009 --extended_by--> MJL-0023
+* MJL-0015 --see_also--> MJL-0025
 * MJL-0017 --see_also--> MJL-0018
 * MJL-0017 --see_also--> MJL-0024
 * MJL-0018 --see_also--> MJL-0017
@@ -102,10 +107,17 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0019 --excepts--> MJL-0018
 * MJL-0020 --depends_on--> MJL-0003
 * MJL-0021 --see_also--> MJL-0001
+* MJL-0021 --see_also--> MJL-0025
 * MJL-0022 --extends--> MJL-0001
 * MJL-0022 --see_also--> MJL-0023
+* MJL-0022 --see_also--> MJL-0025
 * MJL-0023 --extends--> MJL-0009
 * MJL-0023 --see_also--> MJL-0022
 * MJL-0023 --see_also--> MJL-0024
 * MJL-0024 --see_also--> MJL-0023
 * MJL-0024 --see_also--> MJL-0017
+* MJL-0025 --extends--> MJL-0004
+* MJL-0025 --see_also--> MJL-0005
+* MJL-0025 --see_also--> MJL-0015
+* MJL-0025 --see_also--> MJL-0021
+* MJL-0025 --see_also--> MJL-0022

@@ -11,6 +11,7 @@ import { parse as parseMicromark, postprocess, preprocess } from "micromark";
 import { frontmatter } from "micromark-extension-frontmatter";
 import { gfm } from "micromark-extension-gfm";
 import type { ValueSpan } from "./parse/color.ts";
+import { type DiagramGraph, extractGraph } from "./parse/graph.ts";
 import { type DiagramStats, detectKeyword, extractStats } from "./parse/stats.ts";
 import { readStyles, type StyleReading } from "./parse/styles.ts";
 
@@ -44,6 +45,8 @@ export interface Diagram {
   offsetOf: (span: ValueSpan) => number | null;
   // What mermaid's own parser reads from the diagram, parsed once on first use.
   stats: () => Promise<DiagramStats>;
+  // Each node, edge and subgraph mermaid's parser reads, read once on first use.
+  graph: () => Promise<DiagramGraph>;
 }
 
 export interface DocModel {
@@ -157,6 +160,7 @@ const makeDiagram = (
   const contentLines = source.split("\n");
   let pending: Promise<DiagramStats> | undefined;
   let styled: Promise<StyleReading> | undefined;
+  let graphed: Promise<DiagramGraph> | undefined;
   return {
     ...fields,
     keyword: detectKeyword(source),
@@ -177,6 +181,10 @@ const makeDiagram = (
     stats: () => {
       pending ??= extractStats(source);
       return pending;
+    },
+    graph: () => {
+      graphed ??= extractGraph(source);
+      return graphed;
     },
   };
 };

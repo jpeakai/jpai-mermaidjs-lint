@@ -335,3 +335,54 @@ describe("help layout", () => {
     expect(stdout).toContain("and from the config's plugins list");
   });
 });
+
+describe("--split-plan", () => {
+  test("prints the overview and every detail as mermaid fences, and writes no file", async () => {
+    const root = tempProject({ "a.md": fence(chain(60)) });
+    const r = await runCli(root, ["a.md", "--split-plan"]);
+    expect(r.code).toBe(1);
+    expect(r.stdout).toContain("complexity-node-count-cognitive-limit");
+    expect(r.stdout).toMatch(/\n## a\.md:1: split plan \(T[2-6]\)\n\n### Overview\n\n```mermaid\nflowchart LR\n/);
+    const details = r.stdout.match(/^### Detail g\d+: /gm) ?? [];
+    expect(details.length).toBeGreaterThan(0);
+    expect(r.stdout.match(/^```mermaid$/gm)?.length).toBe(details.length + 1);
+    expect(readFileSync(join(root, "a.md"), "utf8")).toBe(fence(chain(60)));
+  });
+
+  // The printed plan is markdown, so the linter itself reads it back: every
+  // fence parses, and the overview and each detail are within the target.
+  test("every printed diagram parses and passes the complexity rules", async () => {
+    const root = tempProject({ "a.md": fence(chain(60)) });
+    const printed = (await runCli(root, ["a.md", "--split-plan"])).stdout;
+    const plan = tempProject({ "plan.md": printed.slice(printed.indexOf("\n## ")) });
+    const r = await runCli(plan, ["plan.md", "--category", "parse,complexity", "--disable-category", "contrast"]);
+    expect(r.stdout).toContain("0 finding(s) in 1 file(s)");
+  });
+
+  test("a diagram with no plan says why", async () => {
+    const loose = Array.from({ length: 51 }, (_, i) => `  n${i}`).join("\n");
+    const root = tempProject({ "a.md": fence(`flowchart LR\n${loose}`) });
+    const r = await runCli(root, ["a.md", "--split-plan"]);
+    expect(r.code).toBe(1);
+    expect(r.stdout).toContain("\n## a.md:1: no split plan\n\nNo tier reaches the target");
+    expect(r.stdout).not.toContain("```mermaid");
+  });
+
+  test("a clean file prints no plan and exits 0", async () => {
+    const r = await runCli(tempProject({ "a.md": fence(chain(5)) }), ["a.md", "--split-plan"]);
+    expect(r.code).toBe(0);
+    expect(r.stdout).toBe("0 finding(s) in 1 file(s)\n");
+  });
+
+  test.each([["--fix"], ["--json"], ["--list-rules"], ["--validate-plugins"]])(
+    "refuses %s with a usage error",
+    async (flag) => {
+      const args = flag === "--fix" || flag === "--json" ? ["a.md", flag, "--split-plan"] : [flag, "--split-plan"];
+      const r = await runCli(tempProject({ "a.md": fence(chain(60)) }), args);
+      expect(r.code).toBe(2);
+      expect(r.stderr).toContain(
+        `error[flag]: --split-plan prints plans after a check's text report, so it takes no ${flag}`,
+      );
+    },
+  );
+});

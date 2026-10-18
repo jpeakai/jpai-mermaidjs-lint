@@ -412,6 +412,19 @@
     },
     {
       "data": {
+        "id": "MJL-0025",
+        "label": "0025",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0025-a-fold-is-offered-as-a-split.md",
+        "title": "A fold is offered only as the overview half of a split",
+        "description": "A split plan is checked by a contract and applied by a human",
+        "status": "accepted",
+        "tags": "complexity, fixing, safety"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -462,12 +475,32 @@
     },
     {
       "data": {
+        "id": "MJL-0004-extended_by-MJL-0025",
+        "source": "MJL-0004",
+        "target": "MJL-0025",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "the split recommendation carries a concrete plan, checked by a contract and still never applied"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0005-depended_on_by-MJL-0006",
         "source": "MJL-0005",
         "target": "MJL-0006",
         "label": "depended on by",
         "relation": "depended_on_by",
         "note": "the verifier backs a refusal with proof"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0005-see_also-MJL-0025",
+        "source": "MJL-0005",
+        "target": "MJL-0025",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "a split plan that breaks its contract is not offered, as an unsure fixer refuses"
       }
     },
     {
@@ -488,6 +521,16 @@
         "label": "extended by",
         "relation": "extended_by",
         "note": "the markdown tree comes only from mdast"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0015-see_also-MJL-0025",
+        "source": "MJL-0015",
+        "target": "MJL-0025",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "split plans serve the visual complexity tenet"
       }
     },
     {
@@ -562,6 +605,16 @@
     },
     {
       "data": {
+        "id": "MJL-0021-see_also-MJL-0025",
+        "source": "MJL-0021",
+        "target": "MJL-0025",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "a split plan's overview and details are scored by this score"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0022-extends-MJL-0001",
         "source": "MJL-0022",
         "target": "MJL-0001",
@@ -578,6 +631,16 @@
         "label": "see also",
         "relation": "see_also",
         "note": "the same rule for markdown and every other dependency"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0022-see_also-MJL-0025",
+        "source": "MJL-0022",
+        "target": "MJL-0025",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "a split plan reads the parser's graph and parses its emitted text again"
       }
     },
     {
@@ -628,6 +691,56 @@
         "label": "see also",
         "relation": "see_also",
         "note": "sequence colours come from mermaid's theme engine, and their contrast from colorjs.io"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-extends-MJL-0004",
+        "source": "MJL-0025",
+        "target": "MJL-0004",
+        "label": "extends",
+        "relation": "extends",
+        "note": "the split recommendation now carries a concrete plan, and is still never applied"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-see_also-MJL-0005",
+        "source": "MJL-0025",
+        "target": "MJL-0005",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "like a fixer that is unsure, a plan that breaks the contract is not offered"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-see_also-MJL-0015",
+        "source": "MJL-0025",
+        "target": "MJL-0015",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the plan serves the visual complexity tenet"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-see_also-MJL-0021",
+        "source": "MJL-0025",
+        "target": "MJL-0021",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the overview and every detail are scored by the same visual complexity score"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-see_also-MJL-0022",
+        "source": "MJL-0025",
+        "target": "MJL-0022",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the plan reads the parser's graph, and its emitted text is checked by parsing it again"
       }
     }
   ],

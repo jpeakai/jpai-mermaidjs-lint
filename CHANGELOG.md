@@ -10,6 +10,19 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+### Added
+
+- **Split plans for an oversized diagram.** A diagram over a node count or score threshold gets a split plan when one is found.
+  The plan is an overview where groups of nodes fold into group nodes, plus one detail diagram per group.
+  A plan is offered only when a contract parses the emitted text and finds every node and edge kept, per [MJL-0025](adrs/0025-a-fold-is-offered-as-a-split.md).
+- Each node count and score rule ends its remediation with the plan when one is offered.
+  The added sentence reads like `Split plan: an overview folding 7 groups (...), and one detail diagram per group`.
+  The text before it is unchanged, and no complexity rule gains a fixer.
+- `--split-plan` prints, after the report, the overview and every detail diagram of each plan as mermaid fences, under a heading naming `file:line` and the tier.
+  It writes no file, exits as a check does, and refuses `--fix`, `--json`, `--list-rules` and `--validate-plugins`.
+- The library exports `splitPlan`, `splitOutcome` and the `SplitPlan`, `SplitGroup`, `SplitDetail`, `SplitLoss`, `SplitOutcome` and `Tier` types.
+  `Diagram` gains `graph()`, the parser's nodes, edges and subgraphs, read once.
+
 ### Changed
 
 - **A diagram's keyword now comes from mermaid's own type detection, so some values change.** For example, `graph` now reads as `flowchart` and `C4Context` as `c4`.

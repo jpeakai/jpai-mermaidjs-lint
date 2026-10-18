@@ -539,7 +539,9 @@ A node in a Detail Diagram that stands for a node, subgraph or interface outside
 An edge in from another group starts at one Stub for that whole group.
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
-It adds the node's group label when that differs, and the node's id when another label reads the same.
+It adds the node's group label when that differs.
+Its text must have exactly one reading.
+When the text could name anything else, it adds the node's id in brackets, as often as it takes.
 
 ## Style Directive
 

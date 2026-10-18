@@ -50,6 +50,7 @@ interface Scored {
   part: Partition;
   ratio: number;
   priority: number;
+  tie: number;
   members: string[];
 }
 
@@ -74,18 +75,29 @@ const applyAll = (ctx: TierContext, merges: Merge[], capped: boolean): { part: P
   return { part, groups };
 };
 
-const evaluate = (ctx: TierContext, cand: Candidate, current: number, capped: boolean): Scored | null => {
+// The fewest nodes an overview may keep: four, a chunk count a reader holds
+// at once, unless the diagram has fewer than eight nodes. A fold that would
+// leave fewer is not taken, so a plan keeps the overview closest to the
+// target rather than a handful of huge groups.
+export const MIN_OVERVIEW = 4;
+const SMALL_DIAGRAM = 8;
+export const floorOf = (work: WorkGraph): number => (work.ids.length < SMALL_DIAGRAM ? 1 : MIN_OVERVIEW);
+
+const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step): Scored | null => {
   const { work, config } = ctx;
   const merges = [cand, ...(cand.also ?? [])];
-  const applied = applyAll(ctx, merges, capped);
+  const applied = applyAll(ctx, merges, step.capped);
   if (!applied) return null;
-  const saved = current - scoreOf(overviewShape(work, applied.part, quotientEdges(work, applied.part)), 0, config);
+  const shape = overviewShape(work, applied.part, quotientEdges(work, applied.part));
+  if (shape.nodes < (step.floor ?? floorOf(work))) return null;
+  const saved = current - scoreOf(shape, 0, config);
   if (saved <= EPSILON) return null;
   const hidden = merges.reduce((s, m) => s + Math.max(1, m.keys.length - 1), 0);
   return {
     part: applied.part,
     ratio: saved / hidden,
     priority: cand.priority ?? 0,
+    tie: cand.tie ?? 0,
     members: applied.groups[0]?.members ?? [],
   };
 };
@@ -94,6 +106,7 @@ const better =
   (byPriority: boolean) =>
   (a: Scored, b: Scored): number => {
     if (byPriority && Math.abs(a.priority - b.priority) > EPSILON) return b.priority - a.priority;
+    if (byPriority && Math.abs(a.tie - b.tie) > EPSILON) return b.tie - a.tie;
     if (Math.abs(a.ratio - b.ratio) > EPSILON) return b.ratio - a.ratio;
     return byNaturalTuple(a.members, b.members);
   };
@@ -104,13 +117,15 @@ interface Step {
   tier: Tier;
   capped: boolean;
   only?: (c: Candidate) => boolean;
+  // The fewest overview nodes a fold may leave, floorOf by default.
+  floor?: number;
 }
 
 const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null => {
-  const { tier, capped, only = () => true } = step;
+  const { tier, only = () => true } = step;
   const scored = PROPOSE[tier](ctx)
     .filter(only)
-    .map((c) => evaluate(ctx, c, current, capped))
+    .map((c) => evaluate(ctx, c, current, step))
     .filter((s): s is Scored => s !== null);
   return scored.sort(better(tier === "T6"))[0] ?? null;
 };
@@ -148,13 +163,20 @@ const evenOut = (part: Partition, tier: Tier): ((c: Candidate) => boolean) | nul
   return (c) => c.keys.reduce((n, k) => n + membersOfKey(part, k).length, 0) <= largest;
 };
 
-// Takes what evenOut allows, one best step at a time.
-const foldEvenly = (start: Measure, config: ThresholdConfig, step: Step): Measure => {
+// Takes what evenOut allows, one best step at a time. Regions folded unevenly
+// because the next sibling would leave too few overview nodes give no plan on
+// this ladder, so a ladder that folds inside the regions is tried instead.
+const foldEvenly = (start: Measure, config: ThresholdConfig, step: Step): Measure | string => {
   let m = start;
   for (let only = evenOut(m.ctx.part, step.tier); only; only = evenOut(m.ctx.part, step.tier)) {
     const best = bestStep(m.ctx, { ...step, only }, m.score);
-    if (!best) break;
-    m = measure(m.ctx.work, best.part, config);
+    if (best) {
+      m = measure(m.ctx.work, best.part, config);
+      continue;
+    }
+    if (step.tier === "T3" && bestStep(m.ctx, { ...step, only, floor: 0 }, m.score))
+      return `folding every sibling region leaves fewer than ${floorOf(m.ctx.work)} overview nodes`;
+    break;
   }
   return m;
 };
@@ -172,7 +194,9 @@ export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Wal
       m = measure(work, best.part, config);
       tier = t;
       if (meets(m.nodes, m.score, config)) {
-        m = foldEvenly(m, config, step);
+        const even = foldEvenly(m, config, step);
+        if (typeof even === "string") return even;
+        m = even;
         return { work, part: m.ctx.part, snapshots: [...snapshots, snapshotOf(t, m.ctx.part)], tier };
       }
       best = bestStep(m.ctx, step, m.score);

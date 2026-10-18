@@ -87,6 +87,7 @@ Once a leaf sits inside its hub's group, the overview may show the group reachin
 When structure alone finds no more folds, the plan looks for communities: sets of nodes with more edges inside than out.
 Modularity scores a partition by how far its inside edges exceed what chance would give.
 Greedy agglomeration starts with every node alone, then repeatedly merges the pair that gains the most modularity.
+The plan only merges two nodes an edge joins,, so a suggested group is always connected.
 That is the method of [Clauset, Newman and Moore (2004)](https://doi.org/10.1103/PhysRevE.70.066111).
 
 --8<-- "summarise-communities.md"
@@ -116,6 +117,8 @@ Within a tier, it applies the fold that saves the most score per node hidden, th
 A chain folds in even stages and a set of twins in even runs, all in one step.
 It stops at the first overview that meets the preset's `nodeTarget` and `vcsTarget`.
 Once there, it folds the sibling regions of the ones folded, so the plan reads evenly.
+No fold may leave the overview with fewer than four nodes, unless the diagram has fewer than eight.
+So a plan keeps the overview closest to the target, rather than a few huge groups.
 In `T5` and `T6` it gathers what is left open into groups no larger than the largest.
 A detail diagram must meet the same targets, and one that does not is split once more.
 A plan names the last tier that changed it.
@@ -130,7 +133,7 @@ The plan reports it after each tier.
 | `T3` | Author regions, innermost first: subgraphs, composite states and namespaces | New reachable pairs between nodes folded into one region |
 | `T4` | `erDiagram` aggregates: a root with the weak entities it identifies, and a junction table into the smaller entity it joins | New reachable pairs. Cardinalities are never merged. |
 | `T5` | Leaves into the node they hang from, repeated | New reachable pairs through the hub's group |
-| `T6` | Suggested groups from greedy modularity, with a bonus for alike labels | New reachable pairs, and groups the author may not recognise |
+| `T6` | Suggested groups from greedy modularity, over pairs an edge joins, with alike labels breaking ties | New reachable pairs, and groups the author may not recognise |
 
 ## What "meaning is preserved" means
 
@@ -141,6 +144,8 @@ The contract is what this page means by "meaning is preserved".
 - **Sound attributes.** An overview edge keeps a label or an arrow kind only when every edge it stands for agrees.
 - **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds.
 - **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
+- **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
+- **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
 - **Declared loss.** The new reachable pairs the plan reports are recounted, and must be zero after `T2`.
 - **Order independent.** Every tie is broken by sorted ids, so reordering the statements of a diagram gives the same plan.
@@ -157,7 +162,8 @@ The contract does not promise everything a reader might assume.
 
 Labels feed grouping in two places.
 A group without an author label is named after its best-connected member.
-In `T6`, two nodes with alike labels earn a bonus, and two unconnected nodes may pair on labels alone.
+In `T6`, when two merges gain the same modularity, the pair with alike labels goes first.
+Two nodes no edge joins never pair, however alike their labels.
 
 Labels are compared by stems.
 Each label is split into words by the platform's word segmenter.
@@ -176,9 +182,9 @@ On diagram labels it gave the same groupings as the stemmer, for an install of a
 | Diagram type | Planned | Its regions | Notes |
 |---|---|---|---|
 | `flowchart`, `flowchart-elk`, `graph` | Yes | Subgraphs | A decision node is protected. |
-| `stateDiagram` | Yes | Composite states | A fork, a join and a choice are protected. A diagram with concurrent regions is not split. |
+| `stateDiagram` | Yes | Composite states | A fork, a join and a choice are protected. A state's description lines are carried with it. A diagram with concurrent regions is not split. |
 | `erDiagram` | Yes | None | `T4` folds aggregates. Attribute rows are drawn in details and row diagrams, and any that fit in none are counted. |
-| `classDiagram` | Yes | Namespaces | Members are drawn like attribute rows. A stub carries a `<<stub>>` annotation and a group a `<<group>>` one, since the grammar takes no dashed style. |
+| `classDiagram` | Yes | Namespaces | Members are drawn like attribute rows. A stub carries a `<<stub>>` annotation and a group a `<<group>>` one, since the grammar takes no dashed style. A lollipop interface is never folded: the overview hangs it from the group folding its class. |
 | `sequenceDiagram` | No | None | The graph drops message order, so a fold would lose the story. The finding keeps its subgraph hint. |
 
 Every other type is not planned, and its finding keeps the subgraph hint.

@@ -386,3 +386,26 @@ describe("--split-plan", () => {
     },
   );
 });
+
+describe("--split-plan over a detail split once more", () => {
+  // A detail over the target is printed only as its own split, never whole,
+  // so every fence printed still meets the target at the same preset.
+  test("a detail split once more is printed as its split, and the printout lints clean", async () => {
+    const work = Array.from({ length: 24 }, (_, i) => `    w${i} --> w${i + 1}`);
+    const other = Array.from({ length: 6 }, (_, i) => `    v${i} --> v${i + 1}`);
+    const source = [
+      "flowchart LR",
+      ...["  subgraph W[Work]", ...work, "  end", "  subgraph V[Other]", ...other, "  end"],
+      ...["  a --> w0", "  w24 --> v0", "  v6 --> b"],
+    ].join("\n");
+    for (const preset of ["low-density", "medium-density", "high-density"]) {
+      const root = tempProject({ "a.md": fence(source) });
+      const printed = (await runCli(root, ["a.md", "--split-plan", "--preset", preset])).stdout;
+      expect(printed).toContain("is over the target, so it is split once more");
+      expect(printed).toMatch(/### Detail (g\d+): [^\n]*\n\nDetail \1 is over the target/);
+      const plan = tempProject({ "plan.md": printed.slice(printed.indexOf("\n## ")) });
+      const r = await runCli(plan, ["plan.md", "--preset", preset, "--category", "parse,complexity"]);
+      expect(r.stdout).toContain("0 finding(s) in 1 file(s)");
+    }
+  });
+});

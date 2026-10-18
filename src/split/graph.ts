@@ -33,6 +33,8 @@ export interface WNode {
   markdown?: true;
   // An erDiagram entity's attributes or a class's members, as the source writes them.
   rows?: string[];
+  // A state's description lines under its name.
+  descriptions?: string[];
 }
 
 // A flowchart subgraph, a composite state's box or a class namespace.
@@ -146,20 +148,20 @@ const regionsOf = (graph: DiagramGraph, owners: Map<string, string>): Map<string
   return regions;
 };
 
+// What a node carries beyond its id, label and place.
+const extrasOf = (n: GraphNode): Pick<WNode, "shape" | "markdown" | "rows" | "descriptions"> => ({
+  ...(n.shape ? { shape: n.shape } : {}),
+  ...(n.markdown ? { markdown: true as const } : {}),
+  ...(n.rows?.length ? { rows: n.rows } : {}),
+  ...(n.descriptions?.length ? { descriptions: n.descriptions } : {}),
+});
+
 const nodesOf = (graph: DiagramGraph, regions: Map<string, WRegion>): Map<string, WNode> => {
   const nodes = new Map<string, WNode>();
   for (const n of graph.nodes) {
     const owned = n.parent !== null && regions.get(n.parent)?.owner === n.id ? n.parent : undefined;
     const parent = owned ? (regions.get(owned)?.parent ?? null) : n.parent;
-    nodes.set(n.id, {
-      id: n.id,
-      label: n.label,
-      parent,
-      ...(n.shape ? { shape: n.shape } : {}),
-      ...(owned ? { owns: owned } : {}),
-      ...(n.markdown ? { markdown: true as const } : {}),
-      ...(n.rows?.length ? { rows: n.rows } : {}),
-    });
+    nodes.set(n.id, { id: n.id, label: n.label, parent, ...(owned ? { owns: owned } : {}), ...extrasOf(n) });
   }
   return nodes;
 };

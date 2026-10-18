@@ -137,14 +137,13 @@ describe("stubs", () => {
 });
 
 describe("evenly folded plans", () => {
-  test("nodes alike in label and unconnected gather into groups of one size, in natural order", async () => {
+  test("nodes alike in label but unconnected are never gathered on their labels alone", async () => {
     const isolated = Array.from({ length: 20 }, (_, i) => `  iso${i}[Isolated ${i}]`);
-    const plan = await must(
+    const out = await splitOutcome(
       lines("flowchart TD", ...isolated, "  a --> b", "  b --> c"),
       configFromPreset("low-density"),
     );
-    const alike = plan.groups.filter((g) => g.reason === "suggested grouping").map((g) => g.members.length);
-    expect(alike).toEqual([10, 10]);
-    expect(plan.groups.map((g) => g.label)).toContain("Isolated 0 (+9)");
+    expect(out.plan).toBeNull();
+    expect(out.reason).toStartWith("no tier reaches the target");
   });
 });

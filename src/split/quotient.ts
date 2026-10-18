@@ -46,13 +46,11 @@ export const groupOfKey = (part: Partition, key: string): Group | undefined =>
   isGroupKey(key) ? part.groups[part.groupOf.get(key.slice(1)) ?? -1] : undefined;
 
 // The overview node an original endpoint is drawn in: its group, or itself. A
-// lollipop interface goes with the class it hangs from.
-export const over = (work: WorkGraph, part: Partition, id: string): string => {
+// lollipop interface is never folded, so the overview draws it on the group
+// of the class it hangs from, and the class's detail draws it too.
+export const over = (_work: WorkGraph, part: Partition, id: string): string => {
   const g = part.groupOf.get(id) ?? part.regionOf.get(id);
-  if (g !== undefined) return keyOf(part.groups[g] as Group);
-  const owner = work.lollipops.get(id)?.owner;
-  const og = owner === undefined ? undefined : part.groupOf.get(owner);
-  return og === undefined ? id : keyOf(part.groups[og] as Group);
+  return g === undefined ? id : keyOf(part.groups[g] as Group);
 };
 
 export interface Merge {
@@ -329,9 +327,11 @@ const detailMarkers = (work: WorkGraph, g: Group): { markers: GraphNode[]; marke
 
 // What a detail's outside end stands for. An edge into the group from inside
 // another group stands for that whole group: the source's own detail draws it
-// to this exact node, so it reads back exactly once. Every other outside end
-// stands for itself.
+// to this exact node, so it reads back exactly once. A lollipop interface is
+// drawn as itself, hanging from its member. Every other outside end stands
+// for itself.
 const outsideEnd = (work: WorkGraph, part: Partition, e: GraphEdge, inside: (id: string) => boolean): string | null => {
+  if (work.lollipops.has(e.source) || work.lollipops.has(e.target)) return null;
   if (inside(e.target) && !inside(e.source)) {
     const from = over(work, part, e.source);
     return isGroupKey(from) ? from : e.source;

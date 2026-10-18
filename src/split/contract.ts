@@ -10,9 +10,10 @@
 import { type DiagramGraph, extractGraph, type GraphEdge } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats } from "../parse/stats.ts";
-import { type Build, partFromGroups } from "./assemble.ts";
+import { type Build, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { groupLabels } from "./label.ts";
+import { groupLabels, readerOf, readingsOf } from "./label.ts";
+import { floorOf } from "./plan.ts";
 import { idMaker, isGroupKey, over, type Partition, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
 import type { SplitGroup, SplitPlan } from "./types.ts";
@@ -202,25 +203,34 @@ const detailNodes = (build: Build): Violations => {
   return out;
 };
 
-// A stub's label names one thing: across the plan, one label always stands
-// for one endpoint, one endpoint always reads one label, and no stub reads
-// as a member beside it.
+// A stub's text names one thing: read by every form a plan writes, against
+// every label the diagram and the plan's groups show, it has exactly one
+// reading, the endpoint it stands for. One endpoint always reads one text.
 const stubNames = (build: Build): Violations => {
-  const byLabel = new Map<string, Set<string>>();
+  const { plan, work } = build;
+  const groupOf = new Map(plan.groups.flatMap((g) => [...g.members, ...g.regions].map((m) => [m, g.id] as const)));
+  const reader = readerOf(
+    work,
+    plan.groups.map((g) => ({
+      id: g.id,
+      label: g.label,
+      base: g.labelBase,
+      ...(g.markdown ? { markdown: true as const } : {}),
+    })),
+    (id) => groupOf.get(id),
+  );
   const byEnd = new Map<string, Set<string>>();
   const out: Violations = [];
-  for (const d of build.plan.details) {
+  for (const d of plan.details) {
     const labelOf = new Map(d.graph.nodes.map((n) => [n.id, n.label]));
-    const memberLabels = new Set(d.graph.nodes.filter((n) => d.stubs[n.id] === undefined).map((n) => n.label));
     for (const [stub, end] of Object.entries(d.stubs)) {
       const label = labelOf.get(stub) ?? "";
-      byLabel.set(label, new Set([...(byLabel.get(label) ?? []), end]));
       byEnd.set(end, new Set([...(byEnd.get(end) ?? []), label]));
-      if (memberLabels.has(label)) out.push(`5: stub ${stub} of ${d.group} reads as a member, "${label}"`);
+      const read = sorted(readingsOf(reader, label));
+      if (read.join("\u0000") !== end)
+        out.push(`5: stub ${stub} of ${d.group}, "${label}", reads as ${read.join(" or ") || "nothing"}, not ${end}`);
     }
   }
-  for (const [label, ends] of byLabel)
-    if (ends.size > 1) out.push(`5: the stub label "${label}" stands for ${sorted(ends).join(", ")}`);
   for (const [end, labels] of byEnd) if (labels.size > 1) out.push(`5: the stubs for ${end} read differently`);
   return out;
 };
@@ -281,11 +291,44 @@ const checkProtected = (build: Build): Violations => {
   return out;
 };
 
+// A start or end transition the overview draws onto a group stands for
+// transitions of that marker into the group's members, carries a label only
+// when they all do, and every such transition is drawn onto its group.
+const checkMarkers = (build: Build): Violations => {
+  const { plan, work } = build;
+  if (work.family !== "state") return [];
+  const overId = overOf(build);
+  const groups = groupIds(plan);
+  const markers = new Set(work.markers.map((m) => m.id));
+  const drawn = new Set((plan.overview.pseudo?.nodes ?? []).map((m) => m.id));
+  const pairOf = (e: GraphEdge): [string, string] =>
+    markers.has(e.source) ? [e.source, overId(e.target)] : [e.target, overId(e.source)];
+  const onGroups = (plan.overview.pseudo?.edges ?? []).filter((o) => groups.has(o.source) || groups.has(o.target));
+  const sound = onGroups.flatMap((o) => {
+    const [m, g] = pairOf(o);
+    const witnesses = work.markerEdges.filter((e) => pairOf(e).join("\u0000") === `${m}\u0000${g}`);
+    if (witnesses.length === 0) return [`7: the transition of ${m} onto ${g} stands for none`];
+    return o.label !== undefined && witnesses.some((e) => e.label !== o.label)
+      ? [`7: the transition of ${m} onto ${g} carries a label not all of its transitions carry`]
+      : [];
+  });
+  const shown = new Set(onGroups.map((o) => pairOf(o).join("\u0000")));
+  const complete = work.markerEdges
+    .map(pairOf)
+    .filter(([m, g]) => drawn.has(m) && groups.has(g) && !shown.has(`${m}\u0000${g}`))
+    .map(([m, g]) => `7: the transition of ${m} into ${g} is not drawn onto its group`);
+  const declared =
+    overviewMarkers(work, partFromGroups(plan.groups)).merged === plan.loss.mergedMarkers
+      ? []
+      : ["7: the declared merged start and end transitions are wrong"];
+  return [...sound, ...complete, ...declared];
+};
+
 // 7. The declared loss is the loss: new reachable pairs recounted for the
 // final partition and after each tier, zero after T2.
 const checkLoss = (build: Build): Violations => {
   const { plan, work, snapshots } = build;
-  const out: Violations = [];
+  const out: Violations = [...checkMarkers(build)];
   if (newReachablePairs(work, partFromGroups(plan.groups)) !== plan.loss.newReachablePairs)
     out.push("7: the declared new reachable pairs are wrong");
   for (const s of snapshots) {
@@ -356,6 +399,7 @@ const elements = (graph: DiagramGraph, plan: DiagramGraph): string[] => {
         n.parent,
         shaped.get(n.id) ? n.shape : null,
         n.rows ?? [],
+        n.descriptions ?? [],
       ]),
     ),
     ...graph.subgraphs.map((s) => JSON.stringify(["subgraph", s.id, s.label, s.markdown ?? false, s.parent])),
@@ -431,6 +475,9 @@ const checkRoundTrip = async (build: Build, config: ThresholdConfig): Promise<Vi
 // Every check, on the plan and on each detail split again.
 export const checkContract = async (build: Build, config: ThresholdConfig): Promise<Violations> => {
   const out = [
+    ...(build.plan.overviewNodes < floorOf(build.work)
+      ? [`9: the overview holds ${build.plan.overviewNodes} nodes, fewer than ${floorOf(build.work)}`]
+      : []),
     ...checkPartition(build),
     ...checkEdges(build),
     ...checkAttributes(build),

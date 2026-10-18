@@ -69,6 +69,7 @@ const graphNode = (n: WNode, parent: string | null, rows: boolean): GraphNode =>
   ...(n.shape ? { shape: n.shape } : {}),
   ...(n.markdown ? { markdown: true as const } : {}),
   ...(rows && n.rows?.length ? { rows: n.rows } : {}),
+  ...(n.descriptions?.length ? { descriptions: n.descriptions } : {}),
 });
 
 const regionNode = (work: WorkGraph, id: string, parent: string | null): GraphNode => {
@@ -98,31 +99,63 @@ const qEdge = (e: QEdge, idOf: (k: string) => string): GraphEdge & { covers: str
 const markerIds = (work: WorkGraph): Set<string> => new Set(work.markers.map((m) => m.id));
 
 // What the overview draws but does not count: the markers of regions still
-// drawn, with each transition's other end moved to its overview node, and the
-// lollipops of classes still drawn on their own.
+// drawn, with each transition's other end moved to its overview node, and
+// every lollipop interface, on its class or on the group folding its class.
 const overviewPseudo = (
   work: WorkGraph,
   part: Partition,
   idOf: (k: string) => string,
 ): DiagramGraph["pseudo"] | undefined => {
   if (work.family === "class") {
-    const kept = [...work.lollipops].filter(([id]) => over(work, part, id) === id);
-    return { nodes: kept.map(([id, l]) => ({ id, label: l.label, parent: null, shape: "lollipop" })), edges: [] };
+    const nodes = [...work.lollipops].map(([id, l]) => ({ id, label: l.label, parent: null, shape: "lollipop" }));
+    return { nodes, edges: [] };
   }
   if (work.family !== "state") return undefined;
+  const { nodes, edges } = overviewMarkers(work, part);
+  const move = (x: string): string => idOf(x);
+  return {
+    nodes,
+    edges: edges.map((e) => ({ ...e, source: move(e.source), target: move(e.target) })),
+  };
+};
+
+export interface OverviewMarkers {
+  nodes: GraphNode[];
+  // Each transition by its ends as partition keys.
+  edges: GraphEdge[];
+  // The start and end transitions drawn merged onto a group, less the ones
+  // drawn for them.
+  merged: number;
+}
+
+// The start and end markers an overview draws, with their transitions: one
+// from a marker to a kept state for each written, and one from a marker to a
+// group for all the marker's transitions into the group's members, labelled
+// only when every one of them carries that label. The group's detail draws
+// each one as written, so the merge is presentation only.
+export const overviewMarkers = (work: WorkGraph, part: Partition): OverviewMarkers => {
   const nodes = work.markers.filter((m) => m.parent === null || !part.regionOf.has(m.parent));
   const kept = new Set(nodes.map((m) => m.id));
   const all = markerIds(work);
-  const seen = new Map<string, GraphEdge>();
+  const buckets = new Map<string, GraphEdge[]>();
   for (const e of work.markerEdges) {
     const marker = all.has(e.source) ? e.source : e.target;
     if (!kept.has(marker)) continue;
-    const move = (x: string): string => (x === marker ? x : idOf(over(work, part, x)));
+    const move = (x: string): string => (x === marker ? x : over(work, part, x));
     const edge = { ...e, source: move(e.source), target: move(e.target) };
-    seen.set(edgeKey(edge), edge);
+    const grouped = isGroupKey(edge.source) || isGroupKey(edge.target);
+    const key = grouped ? `${edge.source}\u0000${edge.target}` : edgeKey(edge);
+    buckets.set(key, [...(buckets.get(key) ?? []), edge]);
   }
-  const edges = sortEdges([...seen.values()]).map((e, i) => ({ ...e, id: `p${i}` }));
-  return { nodes, edges };
+  let merged = 0;
+  const edges = [...buckets.values()].map((bucket) => {
+    const [first, ...rest] = bucket as [GraphEdge, ...GraphEdge[]];
+    if (!(isGroupKey(first.source) || isGroupKey(first.target))) return first;
+    merged += rest.length;
+    const { label: _label, ...bare } = first;
+    return bucket.every((e) => e.label === first.label) ? first : bare;
+  });
+  return { nodes, edges: sortEdges(edges).map((e, i) => ({ ...e, id: `p${i}` })), merged };
 };
 
 // The id of the overview node a partition key stands for.
@@ -216,7 +249,12 @@ const drawnRows = (work: WorkGraph, details: SplitDetail[], rowDetails: RowDetai
 const lossOf = (work: WorkGraph, folded: Folded, drawn: number): SplitPlan["loss"] => {
   const byTier: Partial<Record<Tier, number>> = {};
   for (const s of folded.snapshots) byTier[s.tier] = newReachablePairs(work, partFromSnapshot(s));
-  return { newReachablePairs: newReachablePairs(work, folded.part), byTier, droppedRows: work.rows - drawn };
+  return {
+    newReachablePairs: newReachablePairs(work, folded.part),
+    byTier,
+    droppedRows: work.rows - drawn,
+    mergedMarkers: work.family === "state" ? overviewMarkers(work, folded.part).merged : 0,
+  };
 };
 
 export const partFromGroups = (groups: Array<{ members: string[]; regions: string[] }>): Partition =>

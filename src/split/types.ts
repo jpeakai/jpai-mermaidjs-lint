@@ -69,6 +69,9 @@ export interface SplitLoss {
   byTier: Partial<Record<Tier, number>>;
   // ER attributes and class members drawn in no diagram of the plan.
   droppedRows: number;
+  // Start and end transitions the overview draws merged onto a group, beyond
+  // the one drawn for them: each is drawn as written in the group's detail.
+  mergedMarkers: number;
 }
 
 export interface SplitPlan {

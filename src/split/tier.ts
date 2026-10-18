@@ -18,8 +18,10 @@ import {
 } from "./quotient.ts";
 
 export interface Candidate extends Merge {
-  // T6 orders by modularity gain plus a label bonus, not by score per node.
+  // T6 orders by modularity gain, not by score per node.
   priority?: number;
+  // T6 breaks a tie between equal gains by label similarity.
+  tie?: number;
   // Merges of the same pattern applied in the same step: every stage of one
   // chain, every run of one twin class. A plan then folds the pattern evenly,
   // not one stage of it.

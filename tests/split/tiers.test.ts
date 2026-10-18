@@ -176,10 +176,19 @@ describe("T6 suggested grouping", () => {
     expect(best?.keys).toEqual(["a", "b"]);
   });
 
-  test("pairs alike in label with no edge between them", async () => {
+  test("never pairs two nodes no edge joins, however alike their labels", async () => {
     const src = lines("flowchart LR", '  a["Order service"]', '  b["Orders DB"]', '  c["Payment gateway"]');
-    const cands = proposeT6(ctxOf(await workOf(src), roomy));
-    expect(cands.map((c) => c.keys)).toEqual([["a", "b"]]);
+    expect(proposeT6(ctxOf(await workOf(src), roomy))).toEqual([]);
+  });
+
+  test("breaks a tie between equal gains by label similarity alone", async () => {
+    const src = lines("flowchart LR", '  hub["Order service"] --> a["Orders DB"]', '  hub --> b["Payment gateway"]');
+    const [x, y] = proposeT6(ctxOf(await workOf(src), roomy));
+    expect(x?.priority).toBe(y?.priority);
+    expect([x, y].map((c) => [c?.keys.join(""), (c?.tie ?? 0) > 0])).toEqual([
+      ["ahub", true],
+      ["bhub", false],
+    ]);
   });
 
   test("never pairs across an author region", async () => {

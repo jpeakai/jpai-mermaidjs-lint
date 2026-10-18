@@ -22,22 +22,25 @@ export const sourceEntities = (s: string): string =>
 export const htmlEntities = (s: string): string =>
   s.replaceAll("ﬂ°°", "&#").replaceAll("ﬂ°", "&").replaceAll("¶ß", ";");
 
-// A label as source text. Mermaid's sanitizer writes a "<" or ">" that opens
-// no tag as &lt; or &gt;, and writes it so again when it reads the bare sign,
-// so the bare sign goes back: a state or class line ends at the ";" of the
-// entity otherwise.
-const sourceText = (label: string): string => sourceEntities(label).replaceAll("&lt;", "<").replaceAll("&gt;", ">");
+// A label at the end of a line, as source text. Mermaid's sanitizer writes a
+// "<" or ">" that opens no tag as &lt; or &gt;, and writes it so again when it
+// reads the bare sign, so the bare sign goes back: a state or class line ends
+// at the ";" of the entity otherwise.
+const lineText = (label: string): string => sourceEntities(label).replaceAll("&lt;", "<").replaceAll("&gt;", ">");
 
 const oneLine = (s: string): string => s.replaceAll("\r\n", "<br>").replaceAll("\n", "<br>");
 
-export const quoteLabel = (label: string): string => oneLine(sourceText(label).replaceAll('"', "#quot;"));
+// A label inside double quotes keeps an HTML entity as it is: the sanitizer
+// reads &lt;tag&gt; back as itself, where a bare <tag> would open a tag and be
+// dropped.
+export const quoteLabel = (label: string): string => oneLine(sourceEntities(label).replaceAll('"', "#quot;"));
 
 // A label inside double quotes; a markdown label keeps its lines in backticks.
 const quoted = (label: string, markdown: true | undefined): string =>
-  markdown ? `"\`${sourceText(label)}\`"` : `"${quoteLabel(label)}"`;
+  markdown ? `"\`${sourceEntities(label)}\`"` : `"${quoteLabel(label)}"`;
 
 // A label at the end of a line, after a colon, where a quote is plain text.
-const tail = (label: string | undefined): string => (label ? ` : ${oneLine(sourceText(label))}` : "");
+const tail = (label: string | undefined): string => (label ? ` : ${oneLine(lineText(label))}` : "");
 
 const STUB_STYLE = "classDef stub stroke-dasharray:4";
 const GROUP_STYLE = "classDef group stroke-width:3px,stroke-dasharray:6 3";
@@ -127,7 +130,7 @@ const childrenIn = (graph: DiagramGraph, scope: string | null): { nodes: GraphNo
 // A shape with no bracket is written in mermaid's shape data, whose label is
 // always read as markdown, so a plain label is written only when it is the id.
 const shapeData = (n: GraphNode): string => {
-  if (n.markdown) return `${n.id}@{ shape: ${n.shape}, label: "${sourceText(n.label)}" }`;
+  if (n.markdown) return `${n.id}@{ shape: ${n.shape}, label: "${sourceEntities(n.label)}" }`;
   return n.label === n.id
     ? `${n.id}@{ shape: ${n.shape} }`
     : `${n.id}@{ shape: ${n.shape}, label: "${quoteLabel(n.label)}" }`;
@@ -191,9 +194,14 @@ const emitFlowchart = (head: Head, scene: Scene): string =>
 
 const STATE_PSEUDO = new Set(["choice", "fork", "join"]);
 
-const stateNode = (n: GraphNode): string => {
-  if (STATE_PSEUDO.has(n.shape ?? "")) return `state ${n.id} <<${n.shape}>>`;
-  return n.label === n.id ? n.id : `state ${quoted(n.label, undefined)} as ${n.id}`;
+// A state, then each description line under its name. A state with a
+// description names itself in quotes even when its name is its id, since
+// stateDb takes the first `id : text` line as the name otherwise.
+const stateNode = (n: GraphNode): string[] => {
+  if (STATE_PSEUDO.has(n.shape ?? "")) return [`state ${n.id} <<${n.shape}>>`];
+  const lines = (n.descriptions ?? []).map((d) => `${n.id}${tail(d)}`);
+  if (n.label === n.id && lines.length === 0) return [n.id];
+  return [`state ${quoted(n.label, undefined)} as ${n.id}`, ...lines];
 };
 
 // A start or end transition, with its label, inside the box its marker sits in.
@@ -212,7 +220,7 @@ const stateScope = (graph: DiagramGraph, scope: string | null, depth: number): s
   const { nodes, boxes } = childrenIn(graph, scope);
   const labelOf = new Map(graph.nodes.map((n) => [n.id, n.label]));
   return [
-    ...nodes.map((n) => `${pad(depth)}${stateNode(n)}`),
+    ...nodes.flatMap((n) => stateNode(n).map((line) => `${pad(depth)}${line}`)),
     ...boxes.flatMap((b) => {
       const owner = graph.nodes.find((n) => `${n.id}__group` === b.id)?.id ?? b.id;
       const label = labelOf.get(owner) ?? owner;
@@ -256,9 +264,11 @@ const emitEr = (head: Head, scene: Scene): string =>
 const classDecl = (n: GraphNode, depth: number): string[] =>
   withRows(n.label === n.id ? `class ${n.id}` : `class ${n.id}[${quoted(n.label, undefined)}]`, n, depth);
 
+// A relation an overview merges from relations of several kinds carries none,
+// and is drawn as a plain directed association, the way the overview reads.
 const classEdge = (e: GraphEdge, names: Map<string, string>): string => {
   const [a, b] = [names.get(e.source) ?? e.source, names.get(e.target) ?? e.target];
-  return `${pad(0)}${a} ${e.cardinality ?? e.kind ?? "--"} ${b}${tail(e.label)}`;
+  return `${pad(0)}${a} ${e.cardinality ?? e.kind ?? "-->"} ${b}${tail(e.label)}`;
 };
 
 const annotations = (ids: ReadonlySet<string> | undefined, name: string): string[] =>

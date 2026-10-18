@@ -28,6 +28,9 @@ export interface GraphNode {
   rows?: string[];
   // A stateDiagram composite's concurrency regions, when it has two or more.
   regions?: number;
+  // A stateDiagram state's description lines under its name, as stateDb
+  // keeps them: each `id : text` after the first, which names the state.
+  descriptions?: string[];
 }
 
 export interface GraphEdge {
@@ -360,6 +363,7 @@ interface StateNode {
   shape?: string;
   isGroup?: boolean;
   parentId?: string;
+  description?: string[];
 }
 interface StateEdge {
   start?: string;
@@ -434,6 +438,7 @@ const stateGraph = (type: string, db: AnyDb): DiagramGraph => {
     label: n.label ?? n.id ?? "",
     parent: n.isGroup ? groupId(n.id ?? "") : parentOf(n),
     ...(n.shape ? { shape: n.shape } : {}),
+    ...(n.description?.length ? { descriptions: [...n.description] } : {}),
   });
   const id = edgeIds();
   const edge = (e: StateEdge): GraphEdge => {

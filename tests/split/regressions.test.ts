@@ -5,7 +5,9 @@
 import { describe, expect, test } from "bun:test";
 import { configFromPreset } from "../../src/parse/metrics.ts";
 import { splitOutcome } from "../../src/split/index.ts";
+import type { SplitPlan } from "../../src/split/types.ts";
 import { faithful } from "./faithful.ts";
+import { lines, target } from "./helpers.ts";
 
 // The larger random cases walk two ladders and parse every emitted source,
 // which takes longer than bun's default under a full coverage run.
@@ -161,3 +163,205 @@ describe("concurrency regions", () => {
     expect(out.reason).toBe("concurrent state regions are not split");
   });
 });
+
+// The round-3 review's cases, each a plan that read back wrong or no plan for
+// a diagram that has one. Each must now give a plan that reads back whole.
+const ROUND3: Array<{ title: string; source: string; check: (plan: SplitPlan) => void }> = [
+  {
+    title: "a stub for a node whose label looks like a tagged stub reads as that node alone",
+    source: lines(
+      "flowchart TB",
+      "  subgraph P[Pipeline]",
+      "    p0[Stage 0] --> p1[Stage 1] --> p2[Stage 2] --> p3[Stage 3] --> p4[Stage 4]",
+      "  end",
+      "  subgraph Q[Queue]",
+      "    q0[Item 0] --> q1[Item 1] --> q2[Item 2] --> q3[Item 3] --> q4[Item 4]",
+      "  end",
+      '  x4["Stage 1 [p1]"]',
+      "  p2 --> x4",
+      "  x4 --> q0",
+      "  p4 --> q4",
+    ),
+    check: (plan) => {
+      const stubs = plan.details.flatMap((d) => d.graph.nodes.filter((n) => d.stubs[n.id] === "x4"));
+      expect(stubs.length).toBeGreaterThan(0);
+      for (const s of stubs) expect(s.label).toBe("Stage 1 [p1] [x4]");
+    },
+  },
+  {
+    title: "a stub whose tagged text is another node's label is tagged again",
+    source: lines(
+      "flowchart TB",
+      "  subgraph H[Group two]",
+      "    h0[Inside 0] --> h1[Inside 1] --> h2[Inside 2] --> h3[Inside 3] --> h4[Inside 4] --> h5[Inside 5] --> h6[Inside 6]",
+      "  end",
+      "  b[Foo]",
+      "  c[Foo]",
+      '  d["Foo [b]"]',
+      "  b --> h0",
+      "  c --> h1",
+      "  h6 --> d",
+      "  d --> b",
+      "  a1[A1] --> a2[A2] --> a3[A3] --> a4[A4] --> a5[A5] --> a6[A6] --> a7[A7] --> a8[A8] --> a9[A9] --> b",
+    ),
+    check: (plan) => {
+      const texts = plan.details.flatMap((d) => d.graph.nodes.filter((n) => d.stubs[n.id] !== undefined));
+      expect(texts.map((n) => n.label)).not.toContain("Foo [b]");
+    },
+  },
+  {
+    title: "a label holding an HTML entity reads back as itself",
+    source: lines(
+      "flowchart LR",
+      "  subgraph A[Area]",
+      "    a0[A0] --> a1[A1] --> a2[A2] --> a3[A3] --> a4[A4] --> a5[A5]",
+      "  end",
+      "  subgraph B[Block]",
+      "    b0[B0] --> b1[B1] --> b2[B2] --> b3[B3] --> b4[B4] --> b5[B5]",
+      "  end",
+      '  o0["&lt;tag&gt; 0"] --> a0',
+      "  a5 --> b0",
+    ),
+    check: (plan) => expect(plan.overviewSource).toContain('o0["&lt;tag&gt; 0"]'),
+  },
+  {
+    title: "a folded class's lollipop hangs from its group in the overview",
+    source: lines(
+      "classDiagram",
+      ...Array.from({ length: 12 }, (_, i) => `  D${i} --> D${i + 1}`),
+      "  D0 --> D1",
+      "  D0 --> D1",
+      "  D2 --> D3 : x",
+      "  D2 --> D3 : x",
+      "  D4 --() IFoo",
+      "  D8 --() IFoo",
+      "  D10 --() IBar",
+    ),
+    check: (plan) => {
+      const group = plan.groups.find((g) => g.members.includes("D10"));
+      expect(group).toBeDefined();
+      expect(plan.overviewSource).toContain(`${group?.id} --> IBar`.replace("-->", "--()"));
+    },
+  },
+  {
+    title: "a state's description lines are carried, not refused",
+    source: lines(
+      "stateDiagram-v2",
+      ...Array.from({ length: 14 }, (_, i) => `  state "Description number ${i} & more" as d${i}`),
+      ...Array.from({ length: 13 }, (_, i) => `  d${i} --> d${i + 1} : t${i}`),
+      "  d0 : extra line",
+      "  [*] --> d0",
+      "  d13 --> [*]",
+      "  d5 --> d1 : back",
+    ),
+    check: (plan) => {
+      const drawn = [plan.overview, ...plan.details.map((d) => d.graph)].flatMap((g) => g.nodes);
+      expect(drawn.find((n) => n.id === "d0")?.descriptions).toEqual(["extra line"]);
+    },
+  },
+];
+
+describe("the round-3 review's cases read back whole", () => {
+  for (const c of ROUND3) {
+    test(
+      c.title,
+      async () => {
+        const out = await splitOutcome(c.source, configFromPreset("low-density"));
+        expect(out.violations).toEqual([]);
+        expect(out.plan).not.toBeNull();
+        const plan = out.plan as SplitPlan;
+        expect(await faithful(c.source, plan)).toEqual([]);
+        c.check(plan);
+      },
+      SLOW,
+    );
+  }
+
+  test("start transitions into a group's members are drawn onto the group once, and declared", async () => {
+    const source = lines(
+      "stateDiagram-v2",
+      ...Array.from({ length: 12 }, (_, i) => `  [*] --> S${i} : start ${i % 3}`),
+      ...Array.from({ length: 11 }, (_, i) => `  S${i} --> S${i + 1}`),
+    );
+    const plan = (await splitOutcome(source, configFromPreset("low-density"))).plan as SplitPlan;
+    expect(await faithful(source, plan)).toEqual([]);
+    const groups = new Set(plan.groups.map((g) => g.id));
+    const onGroups = (plan.overview.pseudo?.edges ?? []).filter((e) => groups.has(e.target));
+    expect(onGroups.map((e) => e.target)).toEqual([...new Set(onGroups.map((e) => e.target))]);
+    const merged = plan.groups.reduce((n, g) => n + g.members.length - 1, 0);
+    expect(plan.loss.mergedMarkers).toBe(merged);
+  });
+
+  test("no plan keeps an overview of fewer than four nodes for a diagram of eight or more", async () => {
+    const source = lines(
+      "flowchart LR",
+      ...["A", "B", "C"].flatMap((r) => [
+        `  subgraph ${r}`,
+        ...Array.from({ length: 7 }, (_, i) => `    ${r}${i} --> ${r}${i + 1}`),
+        "  end",
+      ]),
+      "  A7 --> B0",
+      "  B7 --> C0",
+    );
+    for (const preset of ["low-density", "medium-density", "high-density"]) {
+      const plan = (await splitOutcome(source, configFromPreset(preset))).plan;
+      if (plan) expect(plan.overviewNodes).toBeGreaterThanOrEqual(4);
+    }
+  });
+});
+
+// The reading in faithful.ts must catch a plan broken after the fact: each
+// mutation of an emitted source is one a faithful plan never shows.
+describe("the independent reading catches broken plans", () => {
+  const SOURCE = lines(
+    "flowchart TB",
+    "  subgraph P[Payments]",
+    "    p0[Charge] --> p1[Capture] --> p2[Settle]",
+    '    p2 -->|"fail"| e0["Error"]',
+    "  end",
+    "  subgraph S[Shipping]",
+    "    s0[Pick] --> s1[Pack] --> s2[Ship]",
+    "    s2 --> e1[Error]",
+    "  end",
+    "  start[Start] --> p0",
+    "  p2 --> s0",
+    "  e0 --> start",
+    "  e1 --> start",
+    "  start --> x1[X1] --> x2[X2] --> x3[X3]",
+  );
+  const MUTATIONS: Array<[string, (p: SplitPlan) => void]> = [
+    ["an edge dropped from a detail", (p) => mutateDetail(p, (s) => s.replace(/\n\s*p0 --> p1/, ""))],
+    ["an edge label changed", (p) => mutateDetail(p, (s) => s.replace('|"fail"|', '|"oops"|'))],
+    [
+      "a stub relabelled to read as another node",
+      (p) => mutateDetail(p, (s) => s.replace(/(s\d+)\(\["Start"\]\)/, '$1(["Error"])')),
+    ],
+    ["a group label not cut by the rule", (p) => mutateOverview(p, (s) => s.replace("Payments (+", "Paymen (+"))],
+  ];
+  for (const [title, mutate] of MUTATIONS) {
+    test(title, async () => {
+      const plan = (await splitOutcome(SOURCE, target(9, 14))).plan as SplitPlan;
+      expect(plan).not.toBeNull();
+      expect(await faithful(SOURCE, plan)).toEqual([]);
+      const broken = structuredClone(plan);
+      const before = JSON.stringify([broken.overviewSource, broken.details.map((d) => d.source)]);
+      mutate(broken);
+      expect(JSON.stringify([broken.overviewSource, broken.details.map((d) => d.source)])).not.toBe(before);
+      expect((await faithful(SOURCE, broken)).length).toBeGreaterThan(0);
+    });
+  }
+});
+
+const mutateDetail = (plan: SplitPlan, change: (s: string) => string): void => {
+  for (const d of plan.details) {
+    const next = change(d.source);
+    if (next !== d.source) {
+      d.source = next;
+      return;
+    }
+  }
+};
+
+const mutateOverview = (plan: SplitPlan, change: (s: string) => string): void => {
+  plan.overviewSource = change(plan.overviewSource);
+};

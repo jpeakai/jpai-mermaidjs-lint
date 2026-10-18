@@ -21,19 +21,22 @@ export interface CheckedFile {
 
 const mermaidFence = (source: string): string => `\`\`\`mermaid\n${source.trimEnd()}\n\`\`\``;
 
-// The lines of one plan: its overview, then each detail, and a detail split
-// once more nests its own overview and details one heading level down, and
-// the diagrams drawing the rows of nodes the overview keeps come last.
+// The lines of one plan: its overview, then each detail, and the diagrams
+// drawing the rows of nodes the overview keeps last. Only diagrams that meet
+// the target are printed: a detail split once more is drawn as its own
+// overview and details one heading level down, never whole.
 export const planLines = (plan: SplitPlan, level: number, parent: string | null = null): string[] => {
   const hashes = "#".repeat(level);
   const lines = ["", `${hashes} Overview${parent ? ` of ${parent}` : ""}`, "", mermaidFence(plan.overviewSource)];
   for (const detail of plan.details) {
     const group = plan.groups.find((g) => g.id === detail.group);
     const name = parent ? `${parent}.${detail.group}` : detail.group;
-    lines.push("", `${hashes} Detail ${name}: ${group?.label ?? detail.group}`, "", mermaidFence(detail.source));
+    lines.push("", `${hashes} Detail ${name}: ${group?.label ?? detail.group}`, "");
     if (detail.split) {
-      lines.push("", `Detail ${name} is over the target, so it is split once more (${detail.split.tier}).`);
+      lines.push(`Detail ${name} is over the target, so it is split once more (${detail.split.tier}).`);
       lines.push(...planLines(detail.split, level + 1, name));
+    } else {
+      lines.push(mermaidFence(detail.source));
     }
   }
   for (const [i, rows] of plan.rowDetails.entries()) {

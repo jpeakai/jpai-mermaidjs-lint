@@ -125,7 +125,7 @@ describe("erDiagram", () => {
   );
 
   test("folds an aggregate, drawing its rows in its detail, never merging cardinalities", async () => {
-    const plan = await must(src, 4, 8);
+    const plan = await must(src, 5, 8);
     expect(plan.loss.droppedRows).toBe(0);
     expect(plan.details[0]?.source).toContain("CUSTOMER {\n    string id PK\n    string name\n  }");
     expect(plan.overviewSource.split("\n")[0]).toBe("erDiagram");

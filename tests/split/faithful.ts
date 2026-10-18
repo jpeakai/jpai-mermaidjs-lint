@@ -6,7 +6,10 @@
 // its text, by the forms a plan writes, against every label the diagram and
 // the overview show, and must have exactly one reading. Only the order of the
 // plan's details is read from memory, to pair each detail with its group node,
-// since the emitted text carries no link. Nothing here calls the split code.
+// since the emitted text carries no link. A decision, choice, fork or join
+// folded into a group must sit in a whole region the group folds: an author
+// region, or a single-entry single-exit region of the original, found here
+// by its own search. Nothing here calls the split code.
 
 import { type DiagramGraph, extractGraph, type GraphEdge, type GraphNode } from "../../src/parse/graph.ts";
 import type { SplitPlan } from "../../src/split/types.ts";
@@ -53,6 +56,22 @@ export const cutOf = (shown: string, label: string): boolean => {
   const c = chars(label);
   if (c.length <= 40 || /[<&*_`#]/.test(label)) return false;
   return shown === `${c.slice(0, 27).join("").trimEnd()}…${c.slice(-12).join("").trimStart()}`;
+};
+
+// The range the docs promise, written out: three members or more, their
+// first and last labels in natural order (digit runs by value, then code
+// units) joined by " … ", at most forty characters, no markup, and no member
+// of another group labelled from the first to the last.
+const natural = new Intl.Collator("en", { numeric: true, sensitivity: "variant" });
+const byNatural = (a: string, b: string): number => natural.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0);
+
+export const rangeOf = (labels: string[], hidden: string[]): string | null => {
+  const order = [...labels].sort(byNatural);
+  const [first, last] = [order[0] ?? "", order.at(-1) ?? ""];
+  if (labels.length < 3 || first === last || order.some((l) => /[<&*_`#]/.test(l) || l.includes(" … "))) return null;
+  if (hidden.some((l) => byNatural(first, l) <= 0 && byNatural(l, last) <= 0)) return null;
+  const base = `${first} … ${last}`;
+  return chars(base).length <= 40 ? base : null;
 };
 
 interface Shown {
@@ -102,11 +121,7 @@ const read = async (source: string, plan: SplitPlan): Promise<Reading | string[]
   return { original, overview, details, groups, groupOf, isOriginal };
 };
 
-// Every node, region or group a stub's text names, by each form a plan
-// writes: a label as it is, a group's shown label, a label with " (in group)"
-// or the shown label of the group holding it in brackets, and any of these
-// with " [id]" naming one of its readings.
-const readerOf = (r: Reading): ((text: string) => Set<string>) => {
+const literalOf = (r: Reading): Map<string, string[]> => {
   const literal = new Map<string, string[]>();
   const add = (label: string, id: string): void => {
     literal.set(label, [...(literal.get(label) ?? []), id]);
@@ -114,13 +129,35 @@ const readerOf = (r: Reading): ((text: string) => Set<string>) => {
   for (const n of r.original.nodes) add(n.label, n.id);
   for (const s of r.original.subgraphs) if (s.label !== "") add(s.label, s.id);
   for (const p of r.original.pseudo?.nodes ?? []) if (p.shape === "lollipop") add(p.label, `()${p.label}`);
+  return literal;
+};
+
+// The members of a group a stub's text names as the one its edges leave: the
+// group's shown label, " from ", then a label of the group's own members.
+const fromOf = (r: Reading, literal: Map<string, string[]>, text: string): Map<string, string[]> => {
+  const out = new Map<string, string[]>();
+  for (const [gid, g] of r.groups) {
+    if (!text.startsWith(`${g.label} from `)) continue;
+    const ids = (literal.get(text.slice(g.label.length + 6)) ?? []).filter((id) => r.groupOf.get(id) === gid);
+    if (ids.length > 0) out.set(gid, ids);
+  }
+  return out;
+};
+
+// Every node, region or group a stub's text names, by each form a plan
+// writes: a label as it is, a group's shown label, a label with " (in group)"
+// or the shown label of the group holding it in brackets, a group's shown
+// label with " from " and one of its members' labels, and any of these with
+// " [id]" naming one of its readings.
+const readerOf = (r: Reading): ((text: string) => Set<string>) => {
+  const literal = literalOf(r);
   const held = (own: string, fits: (g: Shown) => boolean): string[] =>
     (literal.get(own) ?? []).filter((id) => {
       const g = r.groups.get(r.groupOf.get(id) ?? "");
       return g !== undefined && fits(g);
     });
   const readings = (text: string): Set<string> => {
-    const out = new Set<string>(literal.get(text) ?? []);
+    const out = new Set<string>([...(literal.get(text) ?? []), ...fromOf(r, literal, text).keys()]);
     for (const [id, g] of r.groups) if (g.label === text) out.add(id);
     const tag = /^(.*) \[([^\]]+)\]$/s.exec(text);
     if (tag && readings(tag[1] ?? "").has(tag[2] ?? "")) out.add(tag[2] ?? "");
@@ -148,9 +185,18 @@ const labelProblems = (r: Reading): string[] =>
     const folded = d.graph.subgraphs.filter((s) => r.groupOf.get(s.id) === d.group);
     const byMember = members.some((m) => cutOf(g.base, m.label)) && g.n === members.length - 1;
     const byRegion = folded.some((s) => cutOf(g.base, s.label)) && g.n >= members.length - 1;
+    const others = r.details.filter((x) => x.group !== d.group);
+    const hidden = others.flatMap((x) => x.graph.nodes.filter((n) => r.isOriginal(n.id)).map((n) => n.label));
+    const byRange =
+      rangeOf(
+        members.map((m) => m.label),
+        hidden,
+      ) === g.base && g.n === members.length - 2;
     const named = r.original.nodes.some((n) => n.label === g.label);
     return [
-      ...(byMember || byRegion ? [] : [`group ${d.group} label "${g.label}" is not its members' or region's`]),
+      ...(byMember || byRegion || byRange
+        ? []
+        : [`group ${d.group} label "${g.label}" is not its members' or region's`]),
       ...(named ? [`group ${d.group} label "${g.label}" is a node's label`] : []),
     ];
   });
@@ -170,6 +216,26 @@ const stubReadings = (r: Reading): { of: Map<string, Map<string, string>>; probl
     of.set(d.group, stubs);
   }
   return { of, problems };
+};
+
+// A stub naming the member its edges leave draws only that member's edges:
+// each edge from it, read from that member, is an original edge.
+const fromProblems = (r: Reading): string[] => {
+  const literal = literalOf(r);
+  const end = endsOf(r.original);
+  const original = new Set(r.original.edges.map((e) => edgeKey(e, end(e.source), end(e.target))));
+  return r.details.flatMap((d) =>
+    d.graph.nodes
+      .filter((n) => !r.isOriginal(n.id))
+      .flatMap((s) => {
+        const named = [...fromOf(r, literal, s.label).values()].flat();
+        const drawn = d.graph.edges.filter((e) => e.source === s.id);
+        const held = drawn.every((e) => named.some((m) => original.has(edgeKey(e, m, e.target))));
+        return named.length === 0 || (drawn.length > 0 && held)
+          ? []
+          : [`detail ${d.group} stub "${s.label}" draws an edge its member has not`];
+      }),
+  );
 };
 
 // Each original edge once: from the overview between two kept nodes, else
@@ -245,23 +311,33 @@ type Mark = [string, string | null, string, string, string];
 
 // Start and end transitions: each original once on a real state, and a
 // transition the overview draws onto a group only for transitions into its
-// members, labelled only when they all carry the label.
-const markerProblems = (r: Reading): string[] => {
+// members, labelled exactly with the label they all carry, drawn once, and
+// every transition it merges beyond the first declared.
+const markerProblems = (r: Reading, plan: SplitPlan): string[] => {
   const want = markerKeys(r.original, () => true);
   const real = (x: string): boolean => r.isOriginal(x) && !r.groups.has(x);
   const got = [...markerKeys(r.overview, real), ...r.details.flatMap((d) => markerKeys(d.graph, real))];
   const onStubs = r.details.flatMap((d) => markerKeys(d.graph, (x) => !real(x)));
   const wanted = want.map((k) => JSON.parse(k) as Mark);
-  const onGroups = markerKeys(r.overview, (x) => r.groups.has(x)).flatMap((k) => {
-    const [shape, parent, g, dir, label] = JSON.parse(k) as Mark;
+  const drawn = markerKeys(r.overview, (x) => r.groups.has(x)).map((k) => JSON.parse(k) as Mark);
+  let merged = 0;
+  const onGroups = drawn.flatMap(([shape, parent, g, dir, label]) => {
     const wit = wanted.filter((w) => w[0] === shape && w[1] === parent && w[3] === dir && r.groupOf.get(w[2]) === g);
     if (wit.length === 0) return [`the transition onto ${g} stands for none`];
-    return label !== "" && wit.some((w) => w[4] !== label) ? [`the transition onto ${g} claims "${label}"`] : [];
+    merged += wit.length - 1;
+    // labelled exactly when every transition it stands for agrees
+    const agreed = wit.every((w) => w[4] === wit[0]?.[4]) ? (wit[0]?.[4] ?? "") : "";
+    return label === agreed ? [] : [`the transition onto ${g} claims "${label}", not "${agreed}"`];
   });
+  const keys = drawn.map((m) => JSON.stringify(m.slice(0, 4)));
   return [
     ...diff(want, got, "marker transition"),
     ...onStubs.map((k) => `marker transition on a stub: ${k}`),
     ...onGroups,
+    ...(new Set(keys).size === keys.length ? [] : ["a transition onto a group is drawn twice"]),
+    ...(merged === plan.loss.mergedMarkers
+      ? []
+      : [`${merged} marker transitions merged, ${plan.loss.mergedMarkers} declared`]),
   ];
 };
 
@@ -279,9 +355,90 @@ const elementProblems = (r: Reading): string[] => {
   ];
 };
 
+const DECIDING = new Set(["diamond", "choice", "fork", "join"]);
+
+type Links = Map<string, Set<string>>;
+
+// The original's flow: each edge, both ways when it has no direction, and
+// each start or end transition.
+const flowOf = (g: DiagramGraph): { succ: Links; pred: Links } => {
+  const succ: Links = new Map();
+  const pred: Links = new Map();
+  const add = (a: string, b: string): void => {
+    succ.set(a, new Set([...(succ.get(a) ?? []), b]));
+    pred.set(b, new Set([...(pred.get(b) ?? []), a]));
+  };
+  for (const e of [...g.edges, ...(g.pseudo?.edges ?? [])]) {
+    add(e.source, e.target);
+    if (UNDIRECTED.has(e.kind ?? "")) add(e.target, e.source);
+  }
+  return { succ, pred };
+};
+
+const reachAvoiding = (succ: Links, from: string, avoid: string | null): Set<string> => {
+  const seen = new Set([from]);
+  const stack = [from];
+  while (stack.length > 0) {
+    for (const w of succ.get(stack.pop() as string) ?? []) {
+      if (w === avoid || seen.has(w)) continue;
+      seen.add(w);
+      stack.push(w);
+    }
+  }
+  return seen;
+};
+
+// Whether the group holds a set around the node that every edge enters at one
+// member and leaves towards one outside node or none: a single-entry
+// single-exit region folded whole. End markers may sit in the set.
+const inRegion = (g: DiagramGraph, held: Set<string>, node: string): boolean => {
+  const { succ, pred } = flowOf(g);
+  const markers = new Set((g.pseudo?.nodes ?? []).filter((m) => MARKERS.has(m.shape ?? "")).map((m) => m.id));
+  const inside = (v: string): boolean => held.has(v) || markers.has(v);
+  const outs = [...held].flatMap((v) => [...(succ.get(v) ?? [])]).filter((x) => !inside(x));
+  return [...held].some((h) =>
+    [null, ...new Set(outs)].some((x) => {
+      const set = reachAvoiding(succ, h, x);
+      return (
+        set.has(node) &&
+        [...set].every(
+          (v) =>
+            inside(v) &&
+            (v === h || [...(pred.get(v) ?? [])].every((u) => set.has(u))) &&
+            [...(succ.get(v) ?? [])].every((w) => set.has(w) || w === x),
+        )
+      );
+    }),
+  );
+};
+
+// A decision, choice, fork or join folded into a group sits in an author
+// region the group folds, or in a single-entry single-exit region the group
+// holds whole.
+const protectionProblems = (r: Reading): string[] => {
+  const parentOf = new Map(r.original.subgraphs.map((s) => [s.id, s.parent]));
+  return r.original.nodes.flatMap((n) => {
+    const g = r.groupOf.get(n.id);
+    if (g === undefined || !DECIDING.has(n.shape ?? "")) return [];
+    for (let p = n.parent; p !== null && p !== undefined; p = parentOf.get(p) ?? null) {
+      if (r.groupOf.get(p) === g) return [];
+    }
+    const held = new Set([...r.groupOf].filter(([, x]) => x === g).map(([id]) => id));
+    return inRegion(r.original, held, n.id) ? [] : [`protected ${n.id} is folded in ${g} outside a whole region`];
+  });
+};
+
 export const faithful = async (source: string, plan: SplitPlan): Promise<string[]> => {
   const r = await read(source, plan);
   if (Array.isArray(r)) return r;
   const { of, problems } = stubReadings(r);
-  return [...labelProblems(r), ...problems, ...elementProblems(r), ...edgeProblems(r, of, plan), ...markerProblems(r)];
+  return [
+    ...labelProblems(r),
+    ...problems,
+    ...elementProblems(r),
+    ...edgeProblems(r, of, plan),
+    ...fromProblems(r),
+    ...markerProblems(r, plan),
+    ...protectionProblems(r),
+  ];
 };

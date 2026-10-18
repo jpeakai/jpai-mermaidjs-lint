@@ -1,0 +1,41 @@
+flowchart TB
+  subgraph M["`**Markdown** zone`"]
+    m0["`**Step** 0
+second line`"]
+    m1["`**Step** 1
+second line`"]
+    m2["`**Step** 2
+second line`"]
+    m3["`**Step** 3
+second line`"]
+    m4["`**Step** 4
+second line`"]
+    m5["`**Step** 5
+second line`"]
+  end
+  subgraph N[Plain zone]
+    k0["`_italic_ 0`"]
+    k1["`_italic_ 1`"]
+    k2["`_italic_ 2`"]
+    k3["`_italic_ 3`"]
+    k4["`_italic_ 4`"]
+    k5["`_italic_ 5`"]
+  end
+  m0 --> m1
+  m1 --> m2
+  m2 --> m3
+  m3 --> m4
+  m4 --> m5
+  k0 -->|"`**go**`"| k1
+  k1 -->|"`**go**`"| k2
+  k2 -->|"`**go**`"| k3
+  k3 -->|"`**go**`"| k4
+  k4 -->|"`**go**`"| k5
+  m5 -->|"`multi
+line`"| k0
+  k5 --> m0
+  z0[Z 0] --> m0
+  z1[Z 1] --> m1
+  z2[Z 2] --> m2
+  z3[Z 3] --> m3
+  z4[Z 4] --> m4

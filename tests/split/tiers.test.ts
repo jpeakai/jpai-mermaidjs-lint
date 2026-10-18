@@ -2,8 +2,10 @@
 // proposes, and what it never proposes.
 
 import { describe, expect, test } from "bun:test";
+import { isJunction, rootOf } from "../../src/split/aggregate.ts";
 import { EMPTY_PARTITION, merge } from "../../src/split/quotient.ts";
 import { hubsOf, LOOSE, splitsBranches } from "../../src/split/rules.ts";
+import { keptHub } from "../../src/split/tier.ts";
 import { proposeChains, proposeT2, proposeTwins } from "../../src/split/tier2.ts";
 import { proposeT3 } from "../../src/split/tier3.ts";
 import { proposeT4 } from "../../src/split/tier4.ts";
@@ -119,6 +121,17 @@ describe("T3 author regions", () => {
   });
 });
 
+// A customer owns orders, an order owns lines, a line owns adjustments.
+const OWNER_CHAIN = lines(
+  "erDiagram",
+  "  CUSTOMER ||--o{ ORDER : places",
+  "  ORDER ||--|{ LINE : contains",
+  "  LINE ||--o{ ADJUSTMENT : adjusted",
+  "  CUSTOMER }o..|| REGION : in",
+  "  ORDER }o..|| CARRIER : ships",
+  "  LINE }o..|| SKU : sells",
+);
+
 describe("T4 erDiagram aggregates", () => {
   test("a root folds with the weak entities it alone identifies", async () => {
     const src = lines(
@@ -134,7 +147,7 @@ describe("T4 erDiagram aggregates", () => {
     expect(cands.some((c) => c.keys.includes("LINE") && c.reason === "aggregate root")).toBe(false);
   });
 
-  test("a junction table folds into the smaller entity it joins", async () => {
+  test("a junction between two roots folds into neither, and T5 and T6 keep it in view", async () => {
     const src = lines(
       "erDiagram",
       "  FILM ||--o{ FILM_ACTOR : casts",
@@ -143,13 +156,39 @@ describe("T4 erDiagram aggregates", () => {
       "  FILM ||--o{ REVIEW : reviewed",
     );
     const work = await workOf(src);
-    const junction = proposeT4(ctxOf(work, roomy)).filter((c) => c.reason === "junction table");
-    expect(junction.map((c) => c.keys)).toEqual([["ACTOR", "FILM_ACTOR"]]);
+    const cands = proposeT4(ctxOf(work, roomy));
+    expect(cands.map((c) => [c.keys, c.head])).toEqual([[["FILM", "RENTAL", "REVIEW"], "FILM"]]);
+    expect(isJunction(work, "FILM_ACTOR")).toBe(true);
+    expect(keptHub(ctxOf(work, roomy), "FILM_ACTOR")).toBe(true);
+    expect(keptHub(ctxOf(work, roomy, EMPTY_PARTITION, LOOSE), "FILM_ACTOR")).toBe(false);
+  });
+
+  test("an owner chain folds into its root, and the largest aggregate that fits is offered", async () => {
+    const work = await workOf(OWNER_CHAIN);
+    expect(rootOf(work, "ADJUSTMENT")).toBe("CUSTOMER");
+    expect(proposeT4(ctxOf(work, roomy)).map((c) => c.head)).toEqual(["CUSTOMER"]);
+    expect(proposeT4(ctxOf(work, target(4, 40))).map((c) => c.head)).toEqual(["LINE"]);
   });
 
   test("only an erDiagram has aggregates", async () => {
     const work = await workOf(lines("flowchart LR", "  a --> b"));
     expect(proposeT4(ctxOf(work, roomy))).toEqual([]);
+  });
+});
+
+describe("T4 aggregates held to no target", () => {
+  test("offer every owner's aggregate, but never one swallowing a group over the target", async () => {
+    const work = await workOf(OWNER_CHAIN);
+    // Held to no target, every owner's aggregate is offered, so the walk may
+    // take the smallest that reaches the target.
+    const uncapped = { ...ctxOf(work, target(3, 40)), uncapped: true };
+    expect(proposeT4(uncapped).map((c) => c.head)).toEqual(["CUSTOMER", "LINE", "ORDER"]);
+    // An aggregate already folded over the target is never folded again
+    // into its owner's.
+    const order = proposeT4(uncapped).find((c) => c.head === "ORDER");
+    if (!order) throw new Error("no ORDER aggregate");
+    const part = merge(EMPTY_PARTITION, order);
+    expect(proposeT4({ ...ctxOf(work, target(3, 40), part), uncapped: true }).map((c) => c.head)).toEqual([]);
   });
 });
 

@@ -1,0 +1,42 @@
+flowchart TB
+  subgraph R1[Region one]
+    o0[Shared 0]
+    o1[Shared 1]
+    o2[Shared 2]
+    o3[Shared 3]
+    o4[Shared 4]
+    o5[Shared 5]
+  end
+  subgraph R2[Region two]
+    o2
+    o3
+    t0[Two 0]
+    t1[Two 1]
+    t2[Two 2]
+    t3[Two 3]
+    t4[Two 4]
+  end
+  subgraph R3[Region three]
+    o4
+    r0[Three 0]
+    r1[Three 1]
+    r2[Three 2]
+    r3[Three 3]
+    r4[Three 4]
+  end
+  o0 --> o1
+  o1 --> o2
+  o2 --> o3
+  o3 --> o4
+  o4 --> o5
+  t0 --> t1
+  t1 --> t2
+  t2 --> t3
+  t3 --> t4
+  r0 --> r1
+  r1 --> r2
+  r2 --> r3
+  r3 --> r4
+  t4 --> o0
+  r4 --> t0
+  o5 --> r0

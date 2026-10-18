@@ -1,0 +1,29 @@
+stateDiagram-v2
+  state Left {
+    l0 --> l1 : step
+    l1 --> l2 : step
+    l2 --> l3 : step
+    l3 --> l4 : step
+    l4 --> l5 : step
+    l5 --> l6 : step
+  }
+  state Right {
+    r0 --> r1 : step
+    r1 --> r2 : step
+    r2 --> r3 : step
+    r3 --> r4 : step
+    r4 --> r5 : step
+    r5 --> r6 : step
+  }
+  l0 --> r0 : step
+  l1 --> r2 : step
+  l2 --> r4 : step
+  l3 --> r6 : step
+  l4 --> r1 : step
+  l5 --> r3 : step
+  l6 --> r5 : step
+  r0 --> l0 : step
+  r1 --> l1 : step
+  r2 --> l2 : step
+  [*] --> l0
+  r6 --> [*]

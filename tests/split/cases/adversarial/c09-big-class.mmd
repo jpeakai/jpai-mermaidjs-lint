@@ -1,0 +1,69 @@
+classDiagram
+  namespace domain {
+    class domain0["domain Service"]
+    class domain1["domain Repo"]
+    class domain2["domain Entity"]
+    class domain3["domain Factory"]
+    class domain4["domain Handler"]
+    class domain5["domain Mapper"]
+    class domain6["domain Dto"]
+    class domain7["domain Event"]
+    class domain8["domain Policy"]
+    class domain9["domain Client"]
+  }
+  namespace infra {
+    class infra0["infra Service"]
+    class infra1["infra Repo"]
+    class infra2["infra Entity"]
+    class infra3["infra Factory"]
+    class infra4["infra Handler"]
+    class infra5["infra Mapper"]
+    class infra6["infra Dto"]
+    class infra7["infra Event"]
+    class infra8["infra Policy"]
+    class infra9["infra Client"]
+  }
+  namespace web {
+    class web0["web Service"]
+    class web1["web Repo"]
+    class web2["web Entity"]
+    class web3["web Factory"]
+    class web4["web Handler"]
+    class web5["web Mapper"]
+    class web6["web Dto"]
+    class web7["web Event"]
+    class web8["web Policy"]
+    class web9["web Client"]
+  }
+  web0 --> domain0
+  domain0 ..> infra1
+  infra0 *-- infra5 : owns
+  web1 --> domain1
+  domain1 ..> infra2
+  domain1 <|-- domain4
+  web2 --> domain2
+  domain2 ..> infra3
+  infra2 *-- infra7 : owns
+  web3 --> domain3
+  domain3 ..> infra4
+  domain3 <|-- domain6
+  web4 --> domain4
+  domain4 ..> infra5
+  infra4 *-- infra9 : owns
+  web5 --> domain5
+  domain5 ..> infra6
+  domain5 <|-- domain8
+  web6 --> domain6
+  domain6 ..> infra7
+  infra6 *-- infra1 : owns
+  web7 --> domain7
+  domain7 ..> infra8
+  domain7 <|-- domain0
+  web8 --> domain8
+  domain8 ..> infra9
+  infra8 *-- infra3 : owns
+  web9 --> domain9
+  domain9 ..> infra0
+  domain9 <|-- domain2
+  Main --> web0
+  Main --> web5

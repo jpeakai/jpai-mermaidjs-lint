@@ -1,0 +1,37 @@
+stateDiagram-v2
+  state "Queue" as S_n0
+  state "Worker job" as S_n1
+  state "Gateway db" as S_n2
+  state "Order api" as S_n3
+  state "n4" as S_n4
+  state "Audit (Gateway)" as S_g2
+  state "Dup label" as S_n6
+  state "Dup label" as S_n7
+  state "Payment" as S_n8
+  state "Worker store" as S_n9
+  state "n10" as S_n10
+  state CR0 {
+    state "n11" as S_n11
+    state "Worker api" as S_n12
+    state "Order job" as S_n13
+    state "Order service" as S_n14
+    [*] --> S_n11
+  }
+  [*] --> S_n0
+  S_n0 --> S_n1
+  S_n0 --> S_n2 : reads
+  S_n1 --> S_n3 : emits
+  S_n0 --> S_n4
+  S_n1 --> S_g2 : writes
+  S_n3 --> S_n6
+  S_n2 --> S_n7 : calls
+  S_n4 --> S_n9
+  S_n6 --> S_n10
+  S_n4 --> S_n11 : reads
+  S_n2 --> S_n12 : calls
+  S_g2 --> S_n14
+  S_n8 --> S_n14
+  S_n9 --> S_n4
+  S_n0 --> S_n1
+  S_n14 --> [*]
+  S_n4 --> CR0

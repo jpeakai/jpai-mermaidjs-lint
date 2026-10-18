@@ -1,0 +1,17 @@
+classDiagram
+  Serializable ()-- User
+  Serializable2 ()-- Order
+  Comparable ()-- User
+  User --> Order
+  Order --> LineItem
+  LineItem --> Product
+  Product --> Category
+  Category --> Category2
+  Product --> Supplier
+  Supplier --> Address
+  User --> Address
+  Order --> Payment
+  Payment --> Method
+  Order --> Shipment
+  Shipment --> Carrier
+  Runnable ()-- Shipment

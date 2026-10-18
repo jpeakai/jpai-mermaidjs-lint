@@ -4,18 +4,31 @@
 // rules keep in view stays its own node, and its leaves fold beside it.
 
 import { byNatural } from "./graph.ts";
-import { overviewKeys, parentOfKey } from "./quotient.ts";
+import { isGroupKey, overviewKeys, parentOfKey } from "./quotient.ts";
 import {
   adjacencyOf,
   type Candidate,
   chunksThatFit,
+  familyOf,
   foldable,
   groupable,
   keepsBranches,
+  keepsFamilies,
   keptHub,
   neighboursOf,
   type TierContext,
 } from "./tier.ts";
+
+// The leaves that keep to the anchor's prefix family, when the rules ask:
+// the anchor's own, or for a hub or an anchor naming none, the first leaf's.
+const kin = (ctx: TierContext, anchor: string | null, leaves: string[]): string[] => {
+  if (!ctx.rules.keepFamilies) return leaves;
+  const of = (k: string): string | null => (isGroupKey(k) ? null : familyOf(ctx.work, k));
+  const family = (anchor === null ? null : of(anchor)) ?? leaves.map(of).find((f) => f !== null) ?? null;
+  return leaves.filter(
+    (k) => keepsFamilies(ctx, anchor === null ? [k] : [anchor, k]) && [null, family].includes(of(k)),
+  );
+};
 
 export const proposeT5 = (ctx: TierContext): Candidate[] => {
   const adj = adjacencyOf(ctx.qedges);
@@ -28,8 +41,8 @@ export const proposeT5 = (ctx: TierContext): Candidate[] => {
     leaves.set(anchor, [...(leaves.get(anchor) ?? []), key]);
   }
   return [...leaves.keys()].sort(byNatural).flatMap((anchor) => {
-    const own = (leaves.get(anchor) ?? []).filter((k) => k !== anchor).sort(byNatural);
     const hub = keptHub(ctx, anchor);
+    const own = kin(ctx, hub ? null : anchor, (leaves.get(anchor) ?? []).filter((k) => k !== anchor).sort(byNatural));
     // An erDiagram never merges two labels, so leaves folded beside a hub
     // would draw every edge again between the hub and the group.
     if (hub && ctx.work.family === "er") return [];

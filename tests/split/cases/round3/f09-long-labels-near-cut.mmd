@@ -1,0 +1,41 @@
+flowchart TB
+  subgraph LA["Customer onboarding and verification pipeline A1"]
+    la0["This is a fairly long label about alpha0 near the cut"]
+    la1["This is a fairly long label about alpha1 near the cut"]
+    la2["This is a fairly long label about alpha2 near the cut"]
+    la3["This is a fairly long label about alpha3 near the cut"]
+    la4["This is a fairly long label about alpha4 near the cut"]
+  end
+  subgraph LB["Customer onboarding and verification pipeline B1"]
+    lb0["This is a fairly long label about beta0 near the cut"]
+    lb1["This is a fairly long label about beta1 near the cut"]
+    lb2["This is a fairly long label about beta2 near the cut"]
+    lb3["This is a fairly long label about beta3 near the cut"]
+    lb4["This is a fairly long label about beta4 near the cut"]
+  end
+  subgraph LC["Exactly forty characters long label!!!!"]
+    lc0["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+    lc1["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+    lc2["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+    lc3["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+    lc4["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
+  end
+  la0 --> la1
+  la1 --> la2
+  la2 --> la3
+  la3 --> la4
+  lb0 --> lb1
+  lb1 --> lb2
+  lb2 --> lb3
+  lb3 --> lb4
+  lc0 --> lc1
+  lc1 --> lc2
+  lc2 --> lc3
+  lc3 --> lc4
+  la4 --> lb0
+  lb4 --> lc0
+  lc4 --> la0
+  t0[Top 0] --> la0
+  t1[Top 1] --> la1
+  t2[Top 2] --> la2
+  t3[Top 3] --> la3

@@ -1,0 +1,21 @@
+stateDiagram-v2
+  [*] --> Active
+  state Active {
+    [*] --> NumOff
+    NumOff --> NumOn
+    NumOn --> NumOff
+    --
+    [*] --> CapsOff
+    CapsOff --> CapsOn
+    CapsOn --> CapsOff
+  }
+  Active --> X0
+  Active --> X1
+  Active --> X2
+  Active --> X3
+  Active --> X4
+  Active --> X5
+  Active --> X6
+  Active --> X7
+  Active --> X8
+  Active --> X9

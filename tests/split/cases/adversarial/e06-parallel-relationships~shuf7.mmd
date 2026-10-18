@@ -1,0 +1,15 @@
+erDiagram
+  POST ||--o{ MEDIA : attaches
+  USER }o--o{ POST : likes
+  USER ||..o{ POST : writes
+  USER ||--o{ NOTIFY : gets
+  COMMENT ||--o{ COMMENT : replies
+  POST }o--o{ TAG : tagged
+  USER ||--o{ POST : edits
+  USER ||--o{ FOLLOW : follower
+  USER ||--o{ COMMENT : writes
+  USER ||--o{ FOLLOW : followee
+  USER ||--o{ POST : writes
+  POST ||--o{ COMMENT : has
+  TAG ||--o{ TAG : parent
+  MEDIA }o--|| STORAGE : in

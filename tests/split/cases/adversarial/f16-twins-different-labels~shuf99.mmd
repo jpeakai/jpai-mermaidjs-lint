@@ -1,0 +1,18 @@
+flowchart LR
+  t5 --> sink
+  src -->|a| t4[Twin]
+  t4 --> sink
+  sink --> z1 --> z2 --> z3
+  u1 --> sink
+  t1 --> sink[Sink]
+  t2 --> sink
+  t6 --> sink
+  t3 --> sink
+  src --> u1(Round twin)
+  src -->|a| t2[Twin]
+  src --> u2[Twin]
+  src -.->|a| t5[Twin]
+  u2 --> sink
+  src -->|b| t3[Twin]
+  src[Source] -->|a| t1[Twin]
+  src ==>|a| t6[Twin]

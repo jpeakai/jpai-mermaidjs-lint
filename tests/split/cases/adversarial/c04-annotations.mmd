@@ -1,0 +1,25 @@
+classDiagram
+  class Shape {
+    <<interface>>
+    +area() double
+  }
+  class Color {
+    <<enumeration>>
+    RED
+    GREEN
+  }
+  Shape <|.. Circle
+  Shape <|.. Square
+  Shape <|.. Triangle
+  Shape <|.. Hexagon
+  Base <|-- Circle
+  Base <|-- Square
+  Circle --> Color
+  Square --> Color
+  Svc ..> Shape
+  Svc ..> Base
+  Svc --> Repo
+  Repo --> Db
+  Db --> Pool
+  <<abstract>> Base
+  <<service>> Svc

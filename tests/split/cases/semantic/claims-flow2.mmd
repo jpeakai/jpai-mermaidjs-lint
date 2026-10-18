@@ -1,0 +1,24 @@
+flowchart LR
+  subgraph R1["Region one"]
+    a["Hello <b>World</b> tail"]
+    b["Bravo"]
+    c["`**bold** text`"]
+    d["Delta"]
+  end
+  subgraph R2["Region two"]
+    e["Echo"]
+    f["Fox"]
+    g2x["Golf"]
+  end
+  h["Hotel"] -->|"a < b"| a
+  a --> b
+  b --> c
+  c --> d
+  d -->|"x <i>y</i>"| e
+  e --> f
+  f --> g2x
+  h --> i["India"]
+  i --> j["Juliet"]
+  j --> k["Kilo"]
+  k --> l["Lima"]
+  l --> m["Mike"]

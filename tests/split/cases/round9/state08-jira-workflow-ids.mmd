@@ -1,0 +1,50 @@
+%% source: authored (Jira workflow export with status ids as state names)
+%% kind: stateDiagram id-like state names
+stateDiagram-v2
+  [*] --> S10000
+  S10000 : 10000 Open
+  S10001 : 10001 Triage
+  S10002 : 10002 Backlog
+  S10003 : 10003 Selected
+  S10004 : 10004 In Progress
+  S10005 : 10005 Blocked
+  S10006 : 10006 Code Review
+  S10007 : 10007 QA
+  S10008 : 10008 Ready for Release
+  S10009 : 10009 Released
+  S10010 : 10010 Closed
+  S10011 : 10011 Wont Do
+  S10012 : 10012 Duplicate
+  S10013 : 10013 Reopened
+  S10014 : 10014 Needs Info
+  S10015 : 10015 UAT
+  S10016 : 10016 Hotfix
+  S10000 --> S10001 : T11
+  S10001 --> S10002 : T21
+  S10001 --> S10011 : T31
+  S10001 --> S10012 : T41
+  S10001 --> S10014 : T51
+  S10014 --> S10001 : T61
+  S10002 --> S10003 : T71
+  S10003 --> S10004 : T81
+  S10004 --> S10005 : T91
+  S10005 --> S10004 : T101
+  S10004 --> S10006 : T111
+  S10006 --> S10004 : T121
+  S10006 --> S10007 : T131
+  S10007 --> S10004 : T141
+  S10007 --> S10015 : T151
+  S10015 --> S10004 : T161
+  S10015 --> S10008 : T171
+  S10007 --> S10008 : T181
+  S10008 --> S10009 : T191
+  S10009 --> S10010 : T201
+  S10010 --> S10013 : T211
+  S10013 --> S10004 : T221
+  S10009 --> S10016 : T231
+  S10016 --> S10006 : T241
+  S10011 --> S10010 : T251
+  S10012 --> S10010 : T261
+  S10002 --> S10011 : T271
+  S10003 --> S10002 : T281
+  S10010 --> [*]

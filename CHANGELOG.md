@@ -10,7 +10,65 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Decision regions in split plans.** A flowchart or `stateDiagram` decision now folds with its branches, up to where they rejoin.
+  The group is named after the decision, per [MJL-0028](adrs/0028-decision-regions-and-aggregates-fold-whole.md).
+  The region is single-entry single-exit, found from dominators and post-dominators, so the fold adds no reachable pair and belongs to `T2`.
+  A branch that ends the flow folds inside the region, regions fold innermost first, and a chain stage may pass through a folded region.
+  A decision-heavy flowchart that got no plan before now gets one under every preset.
+- `SplitPlan` gains `ladder`, the overview's node count and score after each tier the plan walked, and the library exports its `LadderStep` type.
+  The contract recounts it.
+- The Summarising a diagram page explains dominators and decision regions, and plans a second, decision-heavy diagram under every preset.
+
+### Changed
+
+- **erDiagram plans group entities by aggregate root.** An entity belongs to the aggregate of its single identifying parent, or, as a leaf, of the one entity it depends on.
+  `T4` folds the largest aggregate that fits, named after its root, and splits a root's aggregate again when none fits.
+  A junction identified by two roots no longer folds into one side, and `T5` and `T6` keep it in view.
+- A chain stage is named after the member where it starts, not its best-connected member.
+- A twin class too large for one group is cut into runs of even size.
+- After the target is met, `T2` folds the remaining decision regions evenly, while the overview keeps 60% of `nodeTarget`.
+- **Groups of alike nodes are named by range.** This covers twins, sibling leaves and members whose labels all lead with an id, per [MJL-0029](adrs/0029-runs-meshes-and-terminals-read-as-they-are.md).
+  The range is the first and last label in natural order, such as `accounts-service … feature-flag-service (+9)`.
+  A range is refused when a member of another group falls inside it.
+  An id-led group with no honest range is named by its first label.
+  A twin class is put in label order before it is cut into runs.
+- **A shared terminal stays in view.** A flowchart or `stateDiagram` node that three nodes or more lead into and that leads nowhere is no longer folded into one branch's group.
+  This holds under the strict rules and under a new second rule set that folds hubs and branches.
+- **Dense meshes fold by tight cliques.** When the overview joins at least half of all node pairs, `T6` also proposes maximal cliques, found by Bron and Kerbosch's algorithm with Tomita's pivot.
+- The contract accepts a range label only in its one exact form, with a count two fewer than the members.
+- **A group is named where a reader enters it.** A chain-like group in a flowchart or `stateDiagram` is named after its entry, not its exit, per [MJL-0030](adrs/0030-a-group-is-named-where-a-reader-enters-it.md).
+  So a pipeline's first group reads `git push to main (+5)`.
+  Twin chains are named after their first entry, never by a range across two stages.
+- An aggregate whose root is a lookup is named after the member with the most edges crossing its boundary.
+  A lookup root has every edge joining one other member, so Sakila now reads `FILM (+1)`, not `LANGUAGE (+1)`.
+- In `T6`, a pair that would mix two pipeline stages, such as `bronze.` and `gold.`, loses a tie between equal gains.
+- **A dense mesh is refused.** A dense mesh joins at least half of its node pairs, and more pairs than twice its nodes.
+  A diagram, or a plan's overview, that is one gets no plan.
+  The reason given is "dense mesh: a matrix or table reads better than a diagram".
+- A shared terminal also covers a node whose every successor leads nowhere, so it stays in view.
+  An example is a `Cancelled` state leading only to `Refunded` and `Voided`.
+- Two edges from different members of one outside group can repeat one edge in a detail.
+  The detail now draws them from a stub each, when it still meets its target.
+- An overview lists the parallel edges between two nodes side by side, whichever way each is written.
+- In `T4`, of two aggregates that save as much score per node hidden, the one leaving fewer overview edges goes first.
+- A decision region hiding one node, such as `Signed off? (+1)`, is undone when the overview and every detail still meet the target without it.
+- **A plan lands near its target.** A greedy walk can leave the overview below 60% of `nodeTarget`.
+  The plan then undoes a group whose undoing still meets every target, per [MJL-0031](adrs/0031-a-plan-keeps-groups-even-and-names-each-stub-once.md).
+  A compiler's class diagram now keeps six overview nodes at low density, not four.
+- **No one aggregate takes most of a diagram.** An aggregate folded over the target is never folded again into its owner's, and any owner's aggregate may fold when none fits.
+- **Suggested groups keep to one prefix family.** Under the strict rules, a `T5` or `T6` group never holds two families.
+  A family comes from a dotted label such as `bronze.`, an id-led label such as `PLAT-1201`, or an id prefix like `br_`.
+  In `T6`, a pair within one family goes first, not only on a tie.
+  A plan that cannot meet its target so is walked again with families mixed.
+- In `T4`, `T5` and `T6`, some folds come within 5% of the best saving.
+  Of those, the one leaving the fewest parallel overview edges goes first.
+  A SaaS billing overview no longer draws five parallel edges between two aggregates.
+- **Stubs for one group drawn apart name their member.** Each reads like `Checkout domain (+5) from paymentservice`, so a detail never shows two stubs with one text.
+  When that text would not name the group alone, the detail draws one stub.
+  A stub for a whole group beside one for the member it is named after is named the same way.
+  The contract checks that the member named draws every edge its stub draws.
 
 ## [0.9.0] - 2026-10-19
 

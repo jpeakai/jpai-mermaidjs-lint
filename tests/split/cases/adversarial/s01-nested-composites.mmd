@@ -1,0 +1,26 @@
+stateDiagram-v2
+  [*] --> Idle
+  Idle --> Active : start
+  state Active {
+    [*] --> Loading
+    Loading --> Ready
+    state Ready {
+      [*] --> Waiting
+      Waiting --> Busy : job
+      Busy --> Waiting : done
+      state Busy {
+        [*] --> Fetch
+        Fetch --> Parse
+        Parse --> Store
+        Store --> [*]
+      }
+    }
+    Ready --> Draining : stop
+    Draining --> [*]
+  }
+  Active --> Idle : reset
+  Parse --> Error : bad input
+  Error --> Idle
+  Idle --> Off
+  Off --> [*]
+  Fetch --> Waiting : timeout

@@ -7,9 +7,19 @@
 import type { DiagramGraph, GraphEdge, GraphNode } from "../parse/graph.ts";
 import type { ThresholdConfig } from "../parse/metrics.ts";
 import { emitSource } from "./emit.ts";
-import { buildWorkGraph, byNatural, byText, edgeKey, type WNode, type WorkGraph } from "./graph.ts";
-import { groupLabels, type LabelContext, type StubText, stubTexts } from "./label.ts";
 import {
+  buildWorkGraph,
+  byNatural,
+  byOverviewEdge,
+  byText,
+  edgeKey,
+  sorted,
+  type WNode,
+  type WorkGraph,
+} from "./graph.ts";
+import { groupLabels, ID_LEAD, type LabelContext, namedStubs, rangeLabel, type StubText, stubTexts } from "./label.ts";
+import {
+  chainEntries,
   type DetailView,
   detailShape,
   detailView,
@@ -31,7 +41,7 @@ import {
   usedIds,
 } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
-import type { RowDetail, SplitDetail, SplitGroup, SplitPlan, Tier } from "./types.ts";
+import type { LadderStep, RowDetail, SplitDetail, SplitGroup, SplitPlan, Tier } from "./types.ts";
 
 export interface Snapshot {
   tier: Tier;
@@ -173,7 +183,10 @@ const overviewGraph = (
   const idOf = idOfKey(part, groups);
   const kept = work.ids.filter((id) => !part.groupOf.has(id)).map((id) => work.nodes.get(id) as WNode);
   const pseudo = overviewPseudo(work, part, idOf);
-  const edges = sortEdges(quotientEdges(work, part).map((e) => qEdge(e, idOf))).map((e, i) => ({ ...e, id: `o${i}` }));
+  const edges = quotientEdges(work, part)
+    .map((e) => qEdge(e, idOf))
+    .sort(byOverviewEdge)
+    .map((e, i) => ({ ...e, id: `o${i}` }));
   const graph: DiagramGraph = {
     diagram_type: work.type,
     nodes: [
@@ -259,6 +272,14 @@ const lossOf = (work: WorkGraph, folded: Folded, drawn: number): SplitPlan["loss
   };
 };
 
+// The overview's size after each tier walked, measured as the plan is.
+export const ladderOf = (work: WorkGraph, snapshots: Snapshot[], config: ThresholdConfig): LadderStep[] =>
+  snapshots.map((s) => {
+    const part = partFromSnapshot(s);
+    const shape = overviewShape(work, part, quotientEdges(work, part));
+    return { tier: s.tier, nodes: shape.nodes, score: scoreOf(shape, 0, config) };
+  });
+
 export const partFromGroups = (groups: Array<{ members: string[]; regions: string[] }>): Partition =>
   partitionOf(groups.map((g) => ({ members: g.members, regions: g.regions, parent: null, tier: "T1", reason: "" })));
 
@@ -276,16 +297,35 @@ interface Assembly {
   labels: LabelContext;
 }
 
-// A detail draws its members' rows when it still meets the target with them.
+// A detail's view and its stubs' texts: drawn apart when it still meets the
+// target so and every stub that reads alike another can be named by the
+// member its edges leave (namedStubs), else with one stub per outside end,
+// named so where it can be.
+const viewOf = (a: Assembly, group: Group): { view: DetailView; texts: Map<string, StubText> } => {
+  const { work, part } = a.folded;
+  const origin = new Map(work.edges.map((e) => [e.id, e.source]));
+  const named = (view: DetailView): Map<string, StubText> | null =>
+    namedStubs(a.labels, view.stubs, stubTexts(a.labels, view.stubs), (stub) =>
+      sorted(new Set(view.edges.filter((e) => e.source === stub).map((e) => origin.get(e.id) ?? e.source))),
+    );
+  const apart = detailView(work, part, group, true);
+  const shape = detailShape(work, apart);
+  const texts = meets(shape.nodes, scoreOf(shape, 0, a.config), a.config) ? named(apart) : null;
+  if (texts) return { view: apart, texts };
+  const view = detailView(work, part, group);
+  return { view, texts: named(view) ?? stubTexts(a.labels, view.stubs) };
+};
+
+// A detail draws edges a whole-group stub would repeat apart, and its
+// members' rows, each when it still meets the target with them.
 const buildDetail = (a: Assembly, g: SplitGroup): DetailBuilt | string => {
   const { work, part } = a.folded;
   const group = part.groups[part.groupOf.get(g.members[0] ?? "") ?? -1] as Group;
-  const view = detailView(work, part, group);
+  const { view, texts } = viewOf(a, group);
   const shape = detailShape(work, view);
   const rowsHere = rowCount(work, view.members);
   const rows = rowsHere > 0 && meets(shape.nodes, scoreOf(shape, rowsHere, a.config), a.config);
   const score = scoreOf(shape, rows ? rowsHere : 0, a.config);
-  const texts = stubTexts(a.labels, view.stubs);
   const graph = detailGraph(work, view, texts, rows);
   const stubs = Object.fromEntries(view.stubs.map((s) => [s.id, texts.get(s.id)?.endpoint ?? s.endpoint]));
   const source = emitSource(work, { graph, stubs: new Set(Object.keys(stubs)) });
@@ -296,6 +336,23 @@ const buildDetail = (a: Assembly, g: SplitGroup): DetailBuilt | string => {
   return { detail: { ...detail, split: nested.plan }, nested };
 };
 
+const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.label ?? id;
+
+// How a group may be named beyond its region and head: the range of its
+// members' labels, for twins and sibling leaves or for members whose labels
+// all lead with an id, when no other group's member falls in it; and, for
+// id-led labels, its members in natural order of their labels, so a group
+// with no honest range is named by its first id.
+const namingOf = (work: WorkGraph, part: Partition, g: Group): { range: string | null; byLabel: boolean } => {
+  const labels = g.members.map((m) => labelOf(work, m));
+  const idLed = labels.every((l) => ID_LEAD.test(l));
+  // Twin chains are named by an entry, so a range never spans two stages of them.
+  const runs = (g.reason === "twins" || g.reason === "sibling leaves") && chainEntries(work, g.members) === null;
+  if (g.members.some((m) => work.nodes.get(m)?.markdown) || !(runs || idLed)) return { range: null, byLabel: false };
+  const hidden = part.groups.filter((x) => x !== g).flatMap((x) => x.members.map((m) => labelOf(work, m)));
+  return { range: rangeLabel(labels, hidden), byLabel: idLed };
+};
+
 // Each group's label: the first of its choices no original node, region or
 // earlier group already shows, so a group never reads as another node.
 const groupsOf = (work: WorkGraph, part: Partition): SplitGroup[] => {
@@ -304,7 +361,7 @@ const groupsOf = (work: WorkGraph, part: Partition): SplitGroup[] => {
   for (const r of work.regions.values()) taken.add(r.label);
   return part.groups.map((g) => {
     const id = next();
-    const options = labelChoices(work, g).flatMap((c) =>
+    const options = labelChoices(work, g, namingOf(work, part, g)).flatMap((c) =>
       groupLabels(c.base, c.n, c.markdown, id).map((label) => ({ ...c, label })),
     );
     const pick = options.find((o) => !taken.has(o.label)) ?? options[0];
@@ -398,6 +455,7 @@ export const assemble = (folded: Folded, config: ThresholdConfig, split: SplitDe
     details,
     rowDetails,
     loss: lossOf(work, folded, drawnRows(work, details, rowDetails)),
+    ladder: ladderOf(work, folded.snapshots, config),
   };
   return { plan, work, covers, snapshots: folded.snapshots, nested };
 };

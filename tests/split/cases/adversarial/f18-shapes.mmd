@@ -1,0 +1,20 @@
+flowchart TD
+  a[Square] --> b(Round)
+  b --> c([Stadium])
+  c --> d[[Sub]]
+  d --> e[(Db)]
+  e --> f((Circle))
+  f --> g>Odd]
+  g --> h{Diamond}
+  h --> i{{Hex}}
+  i --> j[/LeanR/]
+  j --> k[\LeanL\]
+  k --> l[/Trap\]
+  l --> m[\InvTrap/]
+  m --> n(((Dbl)))
+  n --> o@{ shape: cyl, label: "New cyl" }
+  o --> p@{ shape: doc, label: "Doc" }
+  p --> q@{ shape: bolt }
+  q --> r@{ shape: fork }
+  h --> s@{ shape: diamond, label: "New diamond" }
+  s --> a

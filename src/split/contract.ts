@@ -10,9 +10,10 @@
 import { type DiagramGraph, extractGraph, type GraphEdge } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats } from "../parse/stats.ts";
-import { type Build, overviewMarkers, partFromGroups } from "./assemble.ts";
-import { byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { groupLabels, readerOf, readingsOf } from "./label.ts";
+import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
+import { flowRegionsOf } from "./flow.ts";
+import { byOverviewEdge, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
+import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf } from "./label.ts";
 import { floorOf } from "./plan.ts";
 import { idMaker, isGroupKey, over, type Partition, reversible, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
@@ -138,7 +139,8 @@ const checkAttributes = (build: Build): Violations => {
 const regionLabels = (work: WorkGraph, g: SplitGroup): string[] =>
   g.regions.map((r) => work.regions.get(r)?.label ?? "").filter((l) => l !== "");
 
-// 4. A group label is an author label or a member's label, shown cut by the
+// 4. A group label is an author label, a member's label or the range of its
+// members' labels (label.ts), shown cut by the
 // one rule in label.ts, then " (+N)", N counting the members it does not
 // name, and the group's id when the label is taken. No two groups show one
 // label, and no group shows a node's label.
@@ -149,9 +151,12 @@ const checkLabels = (build: Build): Violations => {
   for (const g of plan.groups) {
     const [base, n] = [g.labelBase, g.hidden];
     if (!groupLabels(base, n, g.markdown, g.id).includes(g.label)) out.push(`4: group ${g.id} label is not its parts`);
-    if (!(regionLabels(work, g).includes(base) || memberLabels(g).includes(base)))
+    const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
+    const range = base === rangeLabel(memberLabels(g), hidden);
+    if (!(range || regionLabels(work, g).includes(base) || memberLabels(g).includes(base)))
       out.push(`4: group ${g.id} label "${base}" is not from the data`);
-    if (n !== g.members.length && n !== g.members.length - 1) out.push(`4: group ${g.id} counts ${n} hidden members`);
+    const counts = range ? [g.members.length - 2] : [g.members.length, g.members.length - 1];
+    if (!counts.includes(n)) out.push(`4: group ${g.id} counts ${n} hidden members`);
   }
   const labels = plan.groups.map((g) => g.label);
   const nodeLabels = new Set([...work.nodes.values()].map((n) => n.label));
@@ -211,9 +216,24 @@ const detailNodes = (build: Build): Violations => {
   return out;
 };
 
+const fromSuffix = (work: WorkGraph, from: string[]): string =>
+  `${FROM}${work.nodes.get(from[0] ?? "")?.label ?? from[0] ?? ""}`;
+
+// A stub for a whole group that names a member its edges leave draws only
+// edges that member has: each, read from that member, is an original edge.
+const fromHolds = (build: Build, d: SplitPlan["details"][number], stub: string, from: string[]): Violations => {
+  if (from.length === 0) return [];
+  const original = new Set(build.work.edges.map(tuple));
+  const drawn = d.graph.edges.filter((e) => e.source === stub);
+  const held = drawn.every((e) => from.some((m) => original.has(tuple({ ...e, source: m }))));
+  return drawn.length > 0 && held ? [] : [`5: stub ${stub} of ${d.group} names a member that does not draw its edges`];
+};
+
 // A stub's text names one thing: read by every form a plan writes, against
 // every label the diagram and the plan's groups show, it has exactly one
-// reading, the endpoint it stands for. One endpoint always reads one text.
+// reading, the endpoint it stands for. One endpoint always reads one text,
+// but for the member FROM names on a whole group's stub drawn apart, and
+// that member draws every edge the stub draws.
 const stubNames = (build: Build): Violations => {
   const { plan, work } = build;
   const groupOf = new Map(plan.groups.flatMap((g) => [...g.members, ...g.regions].map((m) => [m, g.id] as const)));
@@ -233,10 +253,13 @@ const stubNames = (build: Build): Violations => {
     const labelOf = new Map(d.graph.nodes.map((n) => [n.id, n.label]));
     for (const [stub, end] of Object.entries(d.stubs)) {
       const label = labelOf.get(stub) ?? "";
-      byEnd.set(end, new Set([...(byEnd.get(end) ?? []), label]));
+      const from = fromMembers(reader, label, end);
+      const base = from.length > 0 ? label.slice(0, label.length - fromSuffix(work, from).length) : label;
+      byEnd.set(end, new Set([...(byEnd.get(end) ?? []), base]));
       const read = sorted(readingsOf(reader, label));
       if (read.join("\u0000") !== end)
         out.push(`5: stub ${stub} of ${d.group}, "${label}", reads as ${read.join(" or ") || "nothing"}, not ${end}`);
+      out.push(...fromHolds(build, d, stub, from));
     }
   }
   for (const [end, labels] of byEnd) if (labels.size > 1) out.push(`5: the stubs for ${end} read differently`);
@@ -284,14 +307,18 @@ const checkRecoverable = (build: Build): Violations => {
   return out;
 };
 
-// 6. A protected node folds only inside a whole region the group folds: its
-// own, or for a state a composite's marker touches, that composite.
+// 6. A protected node folds only inside a whole region the group folds: an
+// author region, its own or, for a state a composite's marker touches, that
+// composite; or a decision region holding it, single-entry single-exit in the
+// original graph, every node of which the group holds.
 const checkProtected = (build: Build): Violations => {
   const { plan, work } = build;
   const out: Violations = [];
   for (const g of plan.groups) {
+    const held = new Set(g.members);
+    const flows = flowRegionsOf(work).filter((r) => r.members.every((x) => held.has(x)));
     for (const m of g.members) {
-      if (!work.protectedIds.has(m)) continue;
+      if (!work.protectedIds.has(m) || flows.some((r) => r.members.includes(m))) continue;
       const pin = work.pins.get(m) ?? homeOf(work, m);
       if (!g.regions.some((r) => regionWithin(work, pin, r))) out.push(`6: protected ${m} is folded in ${g.id}`);
     }
@@ -352,7 +379,8 @@ const isSorted = <T>(xs: readonly T[], compare: (a: T, b: T) => number): boolean
 
 // 8. The plan is in canonical order: members sorted, groups by member tuple
 // and numbered in that order, kept nodes by id, edges by their ends and
-// attributes, details in group order.
+// attributes, the edges between one pair of nodes side by side whichever
+// way each is written, details in group order.
 const checkCanonical = (build: Build): Violations => {
   const { plan, work } = build;
   const out: Violations = [];
@@ -370,8 +398,9 @@ const checkCanonical = (build: Build): Violations => {
   const kept = plan.overview.nodes.filter((n) => !groupIds(plan).has(n.id)).map((n) => n.id);
   if (!isSorted(kept, byText)) out.push("8: overview nodes are not sorted");
   // An edge written twice between kept nodes is drawn twice, so equal keys sit side by side.
-  const keys = plan.overview.edges.map((e) => edgeKey(e));
-  if (!keys.every((k, i) => i === 0 || byText(keys[i - 1] ?? "", k) <= 0)) out.push("8: overview edges are not sorted");
+  const edges = plan.overview.edges;
+  if (!edges.every((e, i) => i === 0 || byOverviewEdge(edges[i - 1] ?? e, e) <= 0))
+    out.push("8: overview edges are not sorted");
   if (plan.details.some((d, i) => d.group !== plan.groups[i]?.id)) out.push("8: details are not in group order");
   return out;
 };
@@ -493,6 +522,9 @@ export const checkContract = async (build: Build, config: ThresholdConfig): Prom
     ...checkRecoverable(build),
     ...checkProtected(build),
     ...checkLoss(build),
+    ...(JSON.stringify(ladderOf(build.work, build.snapshots, config)) === JSON.stringify(build.plan.ladder)
+      ? []
+      : ["7: the declared ladder is not the overview after each tier"]),
     ...checkCanonical(build),
     ...(await checkRoundTrip(build, config)),
   ];

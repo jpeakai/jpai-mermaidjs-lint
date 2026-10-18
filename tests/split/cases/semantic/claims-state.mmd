@@ -1,0 +1,19 @@
+stateDiagram-v2
+  [*] --> A
+  A --> B
+  B --> C
+  C --> D
+  D --> E
+  E --> F
+  F --> G
+  G --> Comp
+  state Comp {
+    [*] --> X1
+    X1 --> X2
+    X2 --> X3
+    X3 --> X4
+    X4 --> [*] : finished
+  }
+  Comp --> H
+  H --> I
+  I --> [*]

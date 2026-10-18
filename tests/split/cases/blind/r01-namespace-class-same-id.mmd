@@ -1,0 +1,19 @@
+classDiagram
+  namespace Observer {
+    class Subject
+    class Observer
+    class Ticker
+  }
+  namespace Other {
+    class A
+    class B
+    class C
+  }
+  Subject <|.. Ticker
+  Ticker o-- Observer
+  Observer <|.. A
+  A --> B
+  B --> C
+  C --> D
+  D --> E
+  E --> F

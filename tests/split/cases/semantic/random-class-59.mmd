@@ -1,0 +1,74 @@
+classDiagram
+  class K_n0["Search db"]
+  class K_n1
+  class K_n2
+  class K_n3["Queue api"]
+  class K_n4
+  class K_n5
+  class K_n6
+  class K_n7["n7"]
+  class K_s1
+  class K_n9
+  class K_n10
+  class K_n11
+  class K_n16
+  class K_n25
+  class K_n26
+  class K_n27
+  class K_n28["Dup label"]
+  class K_n29
+  namespace R0 {
+    class K_n12
+    class K_n13
+    class K_n14
+    class K_n15
+  }
+  namespace R1 {
+    class K_n17
+    class K_n18["Queue api"]
+    class K_n19
+    class K_n20["Report api"]
+    class K_n21
+  }
+  namespace R2 {
+    class K_n22
+    class K_n23
+    class K_n24["Store store"]
+  }
+  K_n0 *-- K_n1
+  K_n1 -- K_n2
+  K_n0 *-- K_n3 : writes
+  K_n1 -- K_n4 : reads
+  K_n3 "1" ..> "*" K_n5 : calls
+  K_n1 "1" --> "*" K_n6
+  K_n0 -- K_s1
+  K_n5 ..> K_n11
+  K_n7 -- K_n12 : calls
+  K_n7 --> K_n13
+  K_n0 o-- K_n14 : reads
+  K_n0 --> K_n15
+  K_s1 "1" <|-- "*" K_n16
+  K_n1 -- K_n17
+  K_n3 ..> K_n18
+  K_n13 "1" o-- "*" K_n20 : writes
+  K_n18 *-- K_n21
+  K_n0 "1" <|-- "*" K_n22
+  K_n13 *-- K_n24 : calls
+  K_n22 <|-- K_n25 : calls
+  K_n16 <|-- K_n26
+  K_n21 -- K_n27 : emits
+  K_n1 --> K_n29
+  K_n27 --> K_n22
+  K_n19 o-- K_n18
+  K_n3 ..|> K_n2
+  K_n26 <|-- K_n3
+  K_n18 ..> K_n4 : emits
+  K_n9 ..|> K_n3
+  K_n25 <|-- K_n1
+  K_n4 ..|> K_n26
+  K_n14 o-- K_n20
+  K_n26 -- K_n9
+  K_n10 *-- K_n22
+  K_n26 -- K_n15 : writes
+  K_n26 --> K_n13
+  K_n0 --> K_n1

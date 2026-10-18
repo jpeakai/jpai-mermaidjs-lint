@@ -1,0 +1,49 @@
+erDiagram
+  CUST["Customer Account"] {
+    string id PK
+  }
+  ORD["Sales Order"] {
+    string id PK
+  }
+  LI["Line Item"] {
+    string id PK
+  }
+  PROD["Product #quot;SKU#quot;"] {
+    string id PK
+  }
+  CAT["Catégorie 🚀"] {
+    string id PK
+  }
+  ADDR["CUST"] {
+    string id PK
+  }
+  INV["Invoice"] {
+    string id PK
+  }
+  PAY["Payment"] {
+    string id PK
+  }
+  PM["Payment"] {
+    string id PK
+  }
+  SHIP["Shipment"] {
+    string id PK
+  }
+  CARR["Carrier"] {
+    string id PK
+  }
+  REV["Review"] {
+    string id PK
+  }
+  CUST ||--o{ ORD : places
+  ORD ||--|{ LI : contains
+  PROD ||--o{ LI : in
+  PROD }o--|| CAT : in
+  CUST ||--o{ ADDR : lives
+  ORD ||--|| INV : billed
+  INV ||--o{ PAY : paid
+  PAY }o--|| PM : via
+  ORD ||--o{ SHIP : ships
+  SHIP }o--|| CARR : by
+  CUST ||--o{ REV : writes
+  PROD ||--o{ REV : about

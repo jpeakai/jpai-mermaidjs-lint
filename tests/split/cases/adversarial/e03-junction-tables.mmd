@@ -1,0 +1,13 @@
+erDiagram
+  STUDENT ||--o{ ENROLLMENT : enrolls
+  COURSE ||--o{ ENROLLMENT : has
+  COURSE ||--o{ COURSE_TEACHER : taught
+  TEACHER ||--o{ COURSE_TEACHER : teaches
+  STUDENT ||--o{ STUDENT_CLUB : joins
+  CLUB ||--o{ STUDENT_CLUB : members
+  TEACHER ||--o{ CLUB_ADVISOR : advises
+  CLUB ||--o{ CLUB_ADVISOR : advised
+  COURSE ||--o{ COURSE_ROOM : in
+  ROOM ||--o{ COURSE_ROOM : hosts
+  STUDENT ||--o{ STUDENT_GUARDIAN : has
+  GUARDIAN ||--o{ STUDENT_GUARDIAN : of

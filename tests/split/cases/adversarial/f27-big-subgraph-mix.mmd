@@ -1,0 +1,59 @@
+flowchart TD
+  subgraph SG0[Service 0]
+    s0n0[Svc 0 part 0]
+    s0n1[Svc 0 part 1]
+    s0n2[Svc 0 part 2]
+    s0n3[Svc 0 part 3]
+    s0n4[Svc 0 part 4]
+    s0n5[Svc 0 part 5]
+    s0n0 --> s0n1
+    s0n1 --> s0n2
+    s0n2 --> s0n3
+    s0n3 --> s0n4
+    s0n4 --> s0n5
+  end
+  subgraph SG1[Service 1]
+    s1n0[Svc 1 part 0]
+    s1n1[Svc 1 part 1]
+    s1n2[Svc 1 part 2]
+    s1n3[Svc 1 part 3]
+    s1n4[Svc 1 part 4]
+    s1n5[Svc 1 part 5]
+    s1n0 --> s1n1
+    s1n1 --> s1n2
+    s1n2 --> s1n3
+    s1n3 --> s1n4
+    s1n4 --> s1n5
+  end
+  subgraph SG2[Service 2]
+    s2n0[Svc 2 part 0]
+    s2n1[Svc 2 part 1]
+    s2n2[Svc 2 part 2]
+    s2n3[Svc 2 part 3]
+    s2n4[Svc 2 part 4]
+    s2n5[Svc 2 part 5]
+    s2n0 --> s2n1
+    s2n1 --> s2n2
+    s2n2 --> s2n3
+    s2n3 --> s2n4
+    s2n4 --> s2n5
+  end
+  subgraph SG3[Service 3]
+    s3n0[Svc 3 part 0]
+    s3n1[Svc 3 part 1]
+    s3n2[Svc 3 part 2]
+    s3n3[Svc 3 part 3]
+    s3n4[Svc 3 part 4]
+    s3n5[Svc 3 part 5]
+    s3n0 --> s3n1
+    s3n1 --> s3n2
+    s3n2 --> s3n3
+    s3n3 --> s3n4
+    s3n4 --> s3n5
+  end
+  s0n5 --> s1n0
+  s1n5 --> s2n0
+  s2n5 --> s3n0
+  s3n5 --> s0n0
+  gw[Gateway] --> s0n0
+  gw --> s2n0

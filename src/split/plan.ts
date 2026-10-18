@@ -1,6 +1,7 @@
 // The tier ladder. T1 always applies (rows dropped from the overview); then
 // each tier in turn proposes groups, and the best one applies, by score saved
-// per node hidden, ties by member ids in natural order. After each the
+// per node hidden, then, for aggregates, by fewer overview edges, then by
+// member ids in natural order. After each the
 // overview is measured again, and the walk stops at the first state that
 // meets node_target and vcs_target. A detail diagram must meet them too. A
 // diagram with author regions is walked with T3 first, since a reader finds
@@ -8,13 +9,14 @@
 
 import type { ThresholdConfig } from "../parse/metrics.ts";
 import { assemble, type Build, type Folded, type Snapshot, snapshotOf } from "./assemble.ts";
-import { byNaturalTuple, type WorkGraph } from "./graph.ts";
+import { byNaturalTuple, byText, type WorkGraph } from "./graph.ts";
 import {
   detailShape,
   detailView,
   EMPTY_PARTITION,
   type Group,
   groupOfKey,
+  isGroupKey,
   keyOf,
   type Merge,
   meets,
@@ -24,6 +26,7 @@ import {
   type Partition,
   parentOfKey,
   partitionOf,
+  type QEdge,
   quotientEdges,
   scoreOf,
 } from "./quotient.ts";
@@ -33,6 +36,7 @@ import {
   type Candidate,
   foldable,
   keepsBranches,
+  keepsFamilies,
   mergedGroup,
   neighboursOf,
   type TierContext,
@@ -64,7 +68,14 @@ interface Scored {
   ratio: number;
   priority: number;
   tie: number;
+  kin: number;
   members: string[];
+  // The overview edges left, so at an equal saving the aggregate with fewer
+  // edges between overview nodes goes first.
+  edges: number;
+  // The overview edges left beside another between the same two nodes, at
+  // least one a group: what a reader sees as parallel lines.
+  parallel: number;
 }
 
 const EPSILON = 1e-9;
@@ -103,12 +114,22 @@ export const MIN_OVERVIEW = 4;
 const SMALL_DIAGRAM = 8;
 export const floorOf = (work: WorkGraph): number => (work.ids.length < SMALL_DIAGRAM ? 1 : MIN_OVERVIEW);
 
+// The edges beyond the first between each pair of overview nodes, whichever
+// way each is written, at least one end a group.
+const parallelOf = (qedges: readonly QEdge[]): number => {
+  const pairs = qedges
+    .filter((e) => isGroupKey(e.source) || isGroupKey(e.target))
+    .map((e) => [e.source, e.target].sort(byText).join("\u0000"));
+  return pairs.length - new Set(pairs).size;
+};
+
 const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step): Scored | null => {
   const { work, config } = ctx;
   const merges = [cand, ...(cand.also ?? [])];
   const applied = applyAll(ctx, merges, step.capped);
   if (!applied) return null;
-  const shape = overviewShape(work, applied.part, quotientEdges(work, applied.part));
+  const qedges = quotientEdges(work, applied.part);
+  const shape = overviewShape(work, applied.part, qedges);
   if (shape.nodes < (step.floor ?? floorOf(work))) return null;
   const saved = current - scoreOf(shape, 0, config);
   if (saved <= EPSILON) return null;
@@ -118,16 +139,23 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
     ratio: saved / hidden,
     priority: cand.priority ?? 0,
     tie: cand.tie ?? 0,
+    kin: cand.kin ?? 0,
     members: applied.groups[0]?.members ?? [],
+    edges: shape.edges,
+    parallel: parallelOf(qedges),
   };
 };
 
+// Of two aggregates that save as much, the one leaving fewer overview edges
+// goes first, so fewer relationships run between groups.
 const better =
-  (byPriority: boolean) =>
+  (byPriority: boolean, byEdges = false) =>
   (a: Scored, b: Scored): number => {
+    if (byPriority && a.kin !== b.kin) return b.kin - a.kin;
     if (byPriority && Math.abs(a.priority - b.priority) > EPSILON) return b.priority - a.priority;
     if (byPriority && Math.abs(a.tie - b.tie) > EPSILON) return b.tie - a.tie;
     if (Math.abs(a.ratio - b.ratio) > EPSILON) return b.ratio - a.ratio;
+    if (byEdges && a.edges !== b.edges) return a.edges - b.edges;
     return byNaturalTuple(a.members, b.members);
   };
 
@@ -143,11 +171,29 @@ interface Step {
 
 const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null => {
   const { tier, only = () => true } = step;
-  const scored = PROPOSE[tier](ctx)
+  const scored = PROPOSE[tier]({ ...ctx, uncapped: !step.capped })
     .filter(only)
     .map((c) => evaluate(ctx, c, current, step))
     .filter((s): s is Scored => s !== null);
-  return scored.sort(better(tier === "T6"))[0] ?? null;
+  const ranked = scored.sort(better(tier === "T6", tier === "T4"));
+  return NEAR_TIERS.has(tier) ? nearest(ranked, tier === "T6") : (ranked[0] ?? null);
+};
+
+// How near a candidate's saving (or, in T6, its gain) must come to the best
+// one's, as a share of it, to count as nearly equal.
+export const NEAR = 0.05;
+const NEAR_TIERS: ReadonlySet<Tier> = new Set(["T4", "T5", "T6"]);
+
+// Of the candidates nearly as good as the best, in T6 of the same kin, the
+// first leaving the fewest parallel overview edges: a plan then draws fewer
+// relationships side by side between groups at a saving nearly as large.
+const nearest = (ranked: Scored[], byPriority: boolean): Scored | null => {
+  const top = ranked[0];
+  if (!top) return null;
+  const primary = (x: Scored): number => (byPriority ? x.priority : x.ratio);
+  const slack = Math.max(EPSILON, NEAR * Math.abs(primary(top)));
+  const near = ranked.filter((x) => (!byPriority || x.kin === top.kin) && primary(top) - primary(x) <= slack);
+  return near.reduce((best, x) => (x.parallel < best.parallel ? x : best), top);
 };
 
 interface Measure {
@@ -189,6 +235,9 @@ const membersIn = (part: Partition, c: Candidate): number =>
 // as many nodes as the rules ask, so the nodes left open gather into groups
 // of about the same size.
 const evenOut = (part: Partition, tier: Tier, rules: FoldRules): ((c: Candidate) => boolean) | null => {
+  if (tier === "T2") {
+    return part.groups.some((g) => g.reason === "decision region") ? (c) => c.reason === "decision region" : null;
+  }
   if (tier === "T3") {
     const parents = new Set(part.groups.filter((g) => g.tier === "T3").map((g) => g.parent));
     return (c) => parents.has(c.parent) && c.keys.length > 1;
@@ -217,10 +266,14 @@ const foldEvenly = (start: Measure, step: Step, deep: boolean): Measure => {
 
 const LEAF_TIERS: ReadonlySet<Tier> = new Set(["T5", "T6"]);
 
-// A T5 or T6 group hiding fewer nodes than the rules ask, not yet given up on.
+// A T5 or T6 group, or a decision region, hiding fewer nodes than the rules
+// ask, not yet given up on.
 const smallGroup = (m: Measure, stuck: Set<string>): Group | undefined =>
   m.ctx.part.groups.find(
-    (g) => LEAF_TIERS.has(g.tier) && g.members.length - 1 < m.ctx.rules.minHidden && !stuck.has(keyOf(g)),
+    (g) =>
+      (LEAF_TIERS.has(g.tier) || g.reason === "decision region") &&
+      g.members.length - 1 < m.ctx.rules.minHidden &&
+      !stuck.has(keyOf(g)),
   );
 
 // The overview without the group, when it still meets the target and every
@@ -243,7 +296,8 @@ const grow = (m: Measure, g: Group): Measure | null => {
   const joinable = (k: string): boolean => {
     const other = groupOfKey(ctx.part, k);
     const kind = other ? LEAF_TIERS.has(other.tier) : foldable(ctx, k);
-    return kind && parentOfKey(ctx.work, ctx.part, k) === g.parent && keepsBranches(ctx, [key, k]);
+    const near = parentOfKey(ctx.work, ctx.part, k) === g.parent;
+    return kind && near && keepsBranches(ctx, [key, k]) && keepsFamilies(ctx, [key, k]);
   };
   const step: Step = { tier: g.tier, capped: true };
   const best = [...neighboursOf(adjacencyOf(ctx.qedges), key)]
@@ -256,14 +310,40 @@ const grow = (m: Measure, g: Group): Measure | null => {
 
 // Each T5 or T6 group hiding fewer nodes than the rules ask is undone when
 // the overview meets the target without it, else grown into a neighbour. One
-// that can be neither stays, since the target cannot be met otherwise.
+// that can be neither stays, since the target cannot be met otherwise. A
+// decision region hiding one node is only undone: grown, it would no longer
+// be a region.
 const tidy = (start: Measure): Measure => {
   let m = start;
   const stuck = new Set<string>();
   for (let g = smallGroup(m, stuck); g; g = smallGroup(m, stuck)) {
-    const next = undo(m, g) ?? grow(m, g);
+    const next = undo(m, g) ?? (LEAF_TIERS.has(g.tier) ? grow(m, g) : null);
     if (next) m = next;
     else stuck.add(keyOf(g));
+  }
+  return m;
+};
+
+// A greedy walk can overshoot: an early fold that saved the most per node
+// leaves a later one needed, and the two together leave the overview below
+// evenFloorOf. While it is below, the group whose undoing gives back the most
+// nodes and still meets the target, every fitting detail still fitting, is
+// undone, so the overview lands nearest its target. A T2 group is one run of
+// a pattern folded evenly (twins, sibling leaves, chain stages), so it stays:
+// undone alone, it would leave its pattern half folded.
+const loosen = (start: Measure): Measure => {
+  const floor = evenFloorOf(start.ctx.work, start.ctx.config);
+  let m = start;
+  while (m.nodes < floor) {
+    const best = m.ctx.part.groups
+      .filter((g) => g.tier !== "T2")
+      .flatMap((g) => {
+        const next = undo(m, g);
+        return next ? [{ next, members: g.members }] : [];
+      })
+      .sort((a, b) => b.next.nodes - a.next.nodes || byNaturalTuple(a.members, b.members))[0];
+    if (!best) break;
+    m = best.next;
   }
   return m;
 };
@@ -275,13 +355,14 @@ export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Wal
   if (meets(m.nodes, m.score, config)) return { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
   let tier: Tier = "T1";
   for (const t of walk.order) {
-    const capped = t !== "T3" || walk.capT3;
+    const capped = (t !== "T3" && t !== "T4") || walk.capT3;
     const step: Step = { tier: t, capped };
     for (let best = bestStep(m.ctx, step, m.score); best; ) {
       m = measure(work, best.part, config, walk.rules);
       tier = t;
       if (meets(m.nodes, m.score, config)) {
         m = tidy(foldEvenly(m, step, walk.deep === true));
+        if (walk.deep !== true) m = loosen(m);
         return { work, part: m.ctx.part, snapshots: [...snapshots, snapshotOf(t, m.ctx.part)], tier };
       }
       best = bestStep(m.ctx, step, m.score);

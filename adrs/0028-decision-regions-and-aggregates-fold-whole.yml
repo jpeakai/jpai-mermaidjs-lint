@@ -1,0 +1,60 @@
+id: MJL-0028
+slug: decision-regions-and-aggregates-fold-whole
+plan_id: null
+title: Decision regions and erDiagram aggregates fold whole, named after their decision or root
+description: A decision folds with its single-entry single-exit region, and an entity with the aggregate its root owns
+status: accepted
+accepted_on: 2026-10-19
+last_changed_on: 2026-10-19
+tags: [complexity, split]
+
+provenance: >-
+  A usefulness evaluation rated split plans 3.75 out of 5 on realistic diagrams.
+  A decision-heavy flowchart got no plan under any preset, since every decision was protected and blocked every fold.
+  erDiagram plans folded a junction table into one side, giving lines such as a product joined to a customer group by "receives"
+enforced_in:
+  - src/split/dominators.ts, which computes dominators and post-dominators by the algorithm of Cooper, Harvey and Kennedy
+  - src/split/flow.ts, which finds each decision's single-entry single-exit region
+  - src/split/tier2.ts, which folds decision regions innermost first, and chain stages through them
+  - src/split/aggregate.ts and src/split/tier4.ts, which group entities by aggregate root and keep junctions out of either side
+  - src/split/contract.ts check 6 and tests/split/faithful.ts, which accept a folded decision only inside a whole region, each by its own search
+  - tests/split/regions.test.ts and tests/split/tiers.test.ts
+
+relates_to:
+  - relation: extends
+    target: MJL-0026
+    note: the author's structure now includes the regions a flow's decisions make and the aggregates an erDiagram's identifying relationships make
+  - relation: extended_by
+    target: MJL-0029
+    note: runs named by range, dense meshes folded by cliques, shared terminals kept in view
+  - relation: excepted_by
+    target: MJL-0030
+    note: an aggregate whose root is a lookup is named after its most crossed member
+  - relation: excepted_by
+    target: MJL-0031
+    note: any owner's aggregate may fold uncapped, never one swallowing a group over the target
+
+decision:
+  given: some diagrams are mostly decisions, a flowchart or stateDiagram. In others, an erDiagram overview groups entities by leaves and junctions, not by what owns what
+  we_prefer: >-
+    folding a decision with its region, from the decision to its immediate post-dominator, where its branches rejoin.
+    Dominators and post-dominators come from the algorithm of Cooper, Harvey and Kennedy (2001), with a virtual entry and exit.
+    A branch ending at a terminal node is an outcome folded inside the region, not an exit from it.
+    Every edge into the region enters the decision, and every edge out reaches the rejoin node.
+    These are the regions of the program structure tree of Johnson, Pearson and Pingali (1994).
+    Such a fold invents no path, so it belongs to T2, the lossless tier.
+    Regions fold innermost first, are named after their decision, and keep their branch labels in the detail.
+    A chain stage may pass through a folded region.
+    In an erDiagram an entity is owned by its single identifying parent, or as a leaf by the one entity it depends on.
+    T4 folds the largest aggregate whose detail fits, named after its root, or each root's aggregate split again when none fits.
+    A junction identified by two roots folds into neither side, and T5 and T6 keep it in view
+  because: a decision's branches only make sense together, and a region folded whole keeps them together without adding reachability. Identifying relationships are the author's statement of ownership, so an overview whose edges run between aggregate roots reads as the author's model
+  unless: a region has a second entry or a second exit. Then the decision stays protected. An erDiagram with no identifying relationship is folded by T5 and T6 as before
+consequences:
+  pros:
+    - Decision-heavy flowcharts get plans that read as a sequence of named checks.
+    - The declared loss after T2 stays zero, since a decision region adds no reachable pair.
+    - erDiagram overviews connect aggregate roots, and a junction table stays a junction.
+  cons:
+    - A decision whose branches leave through two different nodes is still protected, so some flows get no region.
+    - An aggregate split again draws no rows, so more attribute rows are declared dropped.

@@ -1,0 +1,34 @@
+flowchart TB
+  subgraph G0[Orders]
+    v0[Validate]
+    s0[Save]
+    n0[Notify]
+    r0[Retry]
+    e0[Error]
+  end
+  v0 --> s0 --> n0
+  s0 -->|fail| e0 --> r0 --> s0
+  subgraph G1[Payments]
+    v1[Validate]
+    s1[Save]
+    n1[Notify]
+    r1[Retry]
+    e1[Error]
+  end
+  v1 --> s1 --> n1
+  s1 -->|fail| e1 --> r1 --> s1
+  subgraph G2[Shipping]
+    v2[Validate]
+    s2[Save]
+    n2[Notify]
+    r2[Retry]
+    e2[Error]
+  end
+  v2 --> s2 --> n2
+  s2 -->|fail| e2 --> r2 --> s2
+  in[Validate] --> v0
+  n0 --> v1
+  n1 --> v2
+  n2 --> out[Save]
+  e0 --> e1 --> e2
+  r2 --> v0

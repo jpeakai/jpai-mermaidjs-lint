@@ -1,0 +1,38 @@
+classDiagram
+  namespace Core {
+    class K0
+    class K1
+    class K2
+    class K3
+    class K4
+    class K5
+  }
+  namespace Edge {
+    class G0
+    class G1
+    class G2
+    class G3
+    class G4
+    class G5
+  }
+  namespace One {
+    class Lonely
+  }
+  K0 --> K1 : uses
+  K1 --> K2 : uses
+  K2 --> K3 : uses
+  K3 --> K4 : uses
+  K4 --> K5 : uses
+  G0 --> G1 : uses
+  G1 --> G2 : uses
+  G2 --> G3 : uses
+  G3 --> G4 : uses
+  G4 --> G5 : uses
+  K0 ..> G0 : uses
+  K1 ..> G5 : uses
+  K2 ..> G4 : uses
+  K3 ..> G3 : uses
+  K4 ..> G2 : uses
+  K5 ..> G1 : uses
+  Lonely --> K0 : uses
+  G5 --> Lonely

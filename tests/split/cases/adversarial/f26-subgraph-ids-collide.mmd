@@ -1,0 +1,14 @@
+flowchart TD
+  subgraph g1[Group named g1]
+    a --> b
+  end
+  subgraph g2[g2]
+    c --> d
+  end
+  subgraph S__group[weird id]
+    e --> f
+  end
+  b --> c --> e
+  f --> h --> i --> j --> k --> l --> m
+  m --> a
+  a --> g1x["g1 (+1)"]

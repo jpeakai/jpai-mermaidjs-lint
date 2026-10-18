@@ -1,0 +1,16 @@
+flowchart TD
+  classDef hot fill:#f96,color:#000
+  classDef cold fill:#69f,color:#000
+  a[A]:::hot --> b[B]:::hot
+  b --> c[C]:::cold
+  c --> d[D]:::cold
+  d --> e[E]
+  e --> f[F]:::hot
+  f --> g[G]
+  g --> h[H]
+  h --> i[I]
+  i --> j[J]
+  j --> k[K]
+  k --> a
+  style e fill:#ff0,color:#000
+  linkStyle 0 stroke:#f00

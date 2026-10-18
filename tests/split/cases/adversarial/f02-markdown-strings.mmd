@@ -1,0 +1,16 @@
+flowchart LR
+  A["`**Bold** start`"] --> B["`_italic_ step`"]
+  B --> C["`Line one
+  Line two`"]
+  C --> D["`**a** and _b_`"]
+  D --> E["`plain`"]
+  E --> F["`more **md**`"]
+  F --> G["`G`"]
+  G --> H["`🚀 **rocket**`"]
+  H --> I["`I`"]
+  I --> J["`J`"]
+  J --> K["`K`"]
+  K --> M["`M`"]
+  A --> F
+  C --> I
+  B -->|"`**edge md**`"| G

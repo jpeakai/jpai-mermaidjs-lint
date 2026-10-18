@@ -4,8 +4,9 @@
 // A chain of single-in single-out nodes folds in stages sized to the target,
 // never a long chain into one node.
 
+import { type FlowRegion, flowRegionsOf } from "./flow.ts";
 import { byNatural, byText } from "./graph.ts";
-import { membersOfKey, overviewKeys, parentOfKey, type QEdge } from "./quotient.ts";
+import { groupOfKey, membersOfKey, over, overviewKeys, parentOfKey, type QEdge, rankedMembers } from "./quotient.ts";
 import {
   type Adjacency,
   adjacencyOf,
@@ -30,6 +31,8 @@ const signature = (adj: Adjacency, key: string): string | null => {
   return `${[...ins].sort(byText).join(",")}>${[...outs].sort(byText).join(",")}`;
 };
 
+// Each class of twins in natural order of their labels, then ids, so runs cut
+// from it read as alphabetical ranges, as an index is cut into volumes.
 const twinClasses = (ctx: TierContext, adj: Adjacency): string[][] => {
   const classes = new Map<string, string[]>();
   for (const key of overviewKeys(ctx.work, ctx.part)) {
@@ -39,22 +42,46 @@ const twinClasses = (ctx: TierContext, adj: Adjacency): string[][] => {
     const k = [parentOfKey(ctx.work, ctx.part, key) ?? "", shapeOfKey(ctx, key), sig].join("\u0002");
     classes.set(k, [...(classes.get(k) ?? []), key]);
   }
-  return [...classes.values()].filter((c) => c.length > 1).map((c) => c.sort(byNatural));
+  // A group by the label it is named after, so twin chains sort by their entries.
+  const labelOf = (key: string): string => {
+    const g = groupOfKey(ctx.part, key);
+    const named = g ? rankedMembers(ctx.work, g)[0] : key;
+    return ctx.work.nodes.get(named ?? key)?.label ?? key;
+  };
+  return [...classes.values()]
+    .filter((c) => c.length > 1)
+    .map((c) => c.sort((a, b) => byNatural(labelOf(a), labelOf(b)) || byNatural(a, b)));
 };
 
 const isLeaf = (adj: Adjacency, key: string): boolean =>
   (adj.in.get(key)?.length ?? 0) + (adj.out.get(key)?.length ?? 0) === 1;
+
+// The runs cut again to sizes that differ by one at most, as many runs as
+// before, when every run still fits; else the runs as they were.
+const evenRuns = (ctx: TierContext, runs: Candidate[]): Candidate[] => {
+  const keys = runs.flatMap((r) => r.keys);
+  const [first] = runs;
+  if (!first || runs.length < 2 || keys.length !== runs.reduce((n, r) => n + r.keys.length, 0)) return runs;
+  const even = runs.map((r, i) => ({
+    ...r,
+    keys: keys.slice(Math.round((i * keys.length) / runs.length), Math.round(((i + 1) * keys.length) / runs.length)),
+  }));
+  return even.every((r) => r.keys.length >= 2 && mergeFits(ctx, r)) ? even : runs;
+};
 
 // Every run of one twin class folds in one step, so the class folds evenly.
 export const proposeTwins = (ctx: TierContext): Candidate[] => {
   const adj = adjacencyOf(ctx.qedges);
   return twinClasses(ctx, adj).flatMap((keys) =>
     together(
-      chunksThatFit(ctx, keys, {
-        parent: parentOfKey(ctx.work, ctx.part, keys[0] ?? ""),
-        tier: "T2",
-        reason: keys.every((k) => isLeaf(adj, k)) ? "sibling leaves" : "twins",
-      }),
+      evenRuns(
+        ctx,
+        chunksThatFit(ctx, keys, {
+          parent: parentOfKey(ctx.work, ctx.part, keys[0] ?? ""),
+          tier: "T2",
+          reason: keys.every((k) => isLeaf(adj, k)) ? "sibling leaves" : "twins",
+        }),
+      ),
     ),
   );
 };
@@ -135,4 +162,33 @@ export const proposeChains = (ctx: TierContext): Candidate[] => {
   );
 };
 
-export const proposeT2 = (ctx: TierContext): Candidate[] => [...proposeTwins(ctx), ...proposeChains(ctx)];
+// A decision region folded whole: every overview node inside it, none
+// straddling its boundary. Null when it is already one group.
+const regionCandidate = (ctx: TierContext, r: FlowRegion): Candidate | null => {
+  const inside = new Set(r.members);
+  const keys = [...new Set(r.members.map((m) => over(ctx.work, ctx.part, m)))].sort(byText);
+  if (keys.length < 2 || !keys.every((k) => membersOfKey(ctx.part, k).every((m) => inside.has(m)))) return null;
+  const parent = ctx.work.nodes.get(r.head)?.parent ?? null;
+  const c: Candidate = { keys, parent, tier: "T2", reason: "decision region", head: r.head };
+  return mergeFits(ctx, c) ? c : null;
+};
+
+const within = (inner: FlowRegion, outer: FlowRegion): boolean =>
+  inner.members.length < outer.members.length && inner.members.every((m) => outer.members.includes(m));
+
+// Decision regions, innermost first: a region is offered once every region
+// inside it has folded or cannot fold.
+export const proposeRegions = (ctx: TierContext): Candidate[] => {
+  const regions = flowRegionsOf(ctx.work);
+  const open = new Map(regions.map((r) => [r, regionCandidate(ctx, r)]));
+  return regions.flatMap((r) => {
+    const c = open.get(r);
+    return c && !regions.some((x) => within(x, r) && open.get(x)) ? [c] : [];
+  });
+};
+
+export const proposeT2 = (ctx: TierContext): Candidate[] => [
+  ...proposeTwins(ctx),
+  ...proposeChains(ctx),
+  ...proposeRegions(ctx),
+];

@@ -71,3 +71,33 @@ export const similarity = (a: ReadonlySet<string>, b: ReadonlySet<string>): numb
   }
   return union === 0 ? 0 : shared / union;
 };
+
+// The prefix family a node names: a dotted namespace leading its label, as
+// bronze.orders; else the letters leading a label that leads with an id, as
+// PLAT-1201 or OPS_12; else the letters before an underscore leading its id,
+// as br_orders. Null for a node that names none, as "10002 Backlog".
+const STAGE_LABEL = /^([A-Za-z][A-Za-z0-9-]*)\.[A-Za-z0-9_]/;
+const FAMILY_ID_LEAD = /^([A-Za-z]{1,5})[-_]?\d{2,}(?=$|[\s:._-])/;
+const STAGE_ID = /^([A-Za-z]+)_[A-Za-z0-9]/;
+
+export const stageOf = (label: string, id: string): string | null => {
+  const text = label.trim();
+  const found = STAGE_LABEL.exec(text)?.[1] ?? FAMILY_ID_LEAD.exec(text)?.[1] ?? STAGE_ID.exec(id)?.[1] ?? null;
+  return found?.toLowerCase() ?? null;
+};
+
+const named = (xs: Iterable<string | null>): Set<string> => new Set([...xs].filter((s): s is string => s !== null));
+
+// Whether two sets of members name families and share none: merging them
+// would mix two stages of a pipeline, such as an extract and a gold table.
+export const crossesStages = (a: Iterable<string | null>, b: Iterable<string | null>): boolean => {
+  const [sa, sb] = [named(a), named(b)];
+  return sa.size > 0 && sb.size > 0 && ![...sa].some((s) => sb.has(s));
+};
+
+// Whether members name two prefix families or more between them.
+export const mixesFamilies = (families: Iterable<string | null>): boolean => named(families).size > 1;
+
+// Whether two sets of members name one prefix family between them, and only one.
+export const oneFamily = (a: Iterable<string | null>, b: Iterable<string | null>): boolean =>
+  named([...a, ...b]).size === 1 && named(a).size === 1 && named(b).size === 1;

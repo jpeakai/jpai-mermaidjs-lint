@@ -1,0 +1,16 @@
+stateDiagram-v2
+  [*] --> A
+  A --> B : a: b
+  B --> C : "quoted"
+  C --> D : x #59; y
+  D --> E : <b>html</b>
+  E --> F : 🚀 go
+  F --> G : déjà vu
+  G --> H : -->
+  H --> I : a, b, c
+  I --> J
+  J --> K
+  K --> A : loop
+  A --> B : second
+  A --> B : a: b
+  K --> [*]

@@ -1,0 +1,46 @@
+flowchart TB
+  subgraph R0[Room 0]
+    r0a[Desk 0]
+    r0b[Chair 0]
+  end
+  subgraph R1[Room 1]
+    r1a[Desk 1]
+    r1b[Chair 1]
+  end
+  subgraph R2[Room 2]
+    r2a[Desk 2]
+    r2b[Chair 2]
+  end
+  subgraph R3[Room 3]
+    r3a[Desk 3]
+    r3b[Chair 3]
+  end
+  subgraph R4[Room 4]
+    r4a[Desk 4]
+    r4b[Chair 4]
+  end
+  subgraph R5[Room 5]
+    r5a[Desk 5]
+    r5b[Chair 5]
+  end
+  subgraph R6[Room 6]
+    r6a[Desk 6]
+    r6b[Chair 6]
+  end
+  subgraph R7[Room 7]
+    r7a[Desk 7]
+    r7b[Chair 7]
+  end
+  R0 --> R1
+  R1 --> R2
+  R2 --> R3
+  R3 --> R4
+  R4 --> R5
+  R5 --> R6
+  R6 --> R7
+  R7 --> R0
+  R2 --> R5
+  r0a --> r0b
+  r3a --> R6
+  lobby[Lobby] --> R0
+  R4 --> lobby

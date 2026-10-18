@@ -95,6 +95,57 @@ export const DIAGRAM: Step = {
 `,
 };
 
+// A loan underwriting flow with no author subgraphs, where nearly every step
+// is a decision. Each decision folds with its branches into one decision
+// region, so every preset gets a plan.
+export const DECISIONS: Step = {
+  slug: "decisions",
+  alt: "A loan underwriting flowchart with forty-one nodes, eighteen of them decisions, and forty-eight edges",
+  source: `flowchart TD
+  start(["Application received"]) --> kyc{"Identity verified?"}
+  kyc -->|No| kycdoc["Request ID documents"] --> kycwait{"Documents within 14 days?"}
+  kycwait -->|No| declinekyc(["Decline: identity"])
+  kycwait -->|Yes| kyc
+  kyc -->|Yes| sanctions{"Sanctions list hit?"}
+  sanctions -->|Yes| compliance["Refer to compliance"] --> compok{"Compliance clears?"}
+  compok -->|No| declinesan(["Decline: sanctions"])
+  compok -->|Yes| bureau
+  sanctions -->|No| bureau["Pull credit bureau file"]
+  bureau --> thin{"Thin file?"}
+  thin -->|Yes| alt["Score with open banking data"] --> altscore{"Alt score above 620?"}
+  altscore -->|No| declinethin(["Decline: insufficient history"])
+  altscore -->|Yes| income
+  thin -->|No| score{"Bureau score above 680?"}
+  score -->|No| score2{"Score above 600?"}
+  score2 -->|No| declinescore(["Decline: credit score"])
+  score2 -->|Yes| secured{"Offer secured product?"}
+  secured -->|Yes| collat["Collateral valuation"] --> ltv{"LTV under 80%?"}
+  ltv -->|No| declineltv(["Decline: collateral"])
+  ltv -->|Yes| income
+  secured -->|No| declinescore
+  score -->|Yes| income["Verify income"]
+  income --> dti{"Debt-to-income under 40%?"}
+  dti -->|No| reduce{"Lower amount fits DTI?"}
+  reduce -->|No| declinedti(["Decline: affordability"])
+  reduce -->|Yes| counter["Counter-offer lower amount"] --> accept{"Applicant accepts?"}
+  accept -->|No| withdrawn(["Withdrawn"])
+  accept -->|Yes| fraud
+  dti -->|Yes| fraud{"Fraud model flags?"}
+  fraud -->|Yes| manual["Manual fraud review"] --> fraudok{"Reviewer clears?"}
+  fraudok -->|No| declinefraud(["Decline: fraud"])
+  fraudok -->|Yes| pricing
+  fraud -->|No| pricing["Risk-based pricing"]
+  pricing --> large{"Amount above 50k?"}
+  large -->|Yes| senior["Senior underwriter sign-off"] --> signed{"Signed off?"}
+  signed -->|No| declinesenior(["Decline: underwriter"])
+  signed -->|Yes| offer
+  large -->|No| offer["Issue offer"]
+  offer --> esign{"E-signed within 30 days?"}
+  esign -->|No| expired(["Offer expired"])
+  esign -->|Yes| disburse(["Disburse funds"])
+`,
+};
+
 export interface PlannedPreset {
   name: string;
   config: ThresholdConfig;
@@ -116,6 +167,14 @@ const lossByTier = (plan: SplitPlan): string =>
   Object.entries(plan.loss.byTier)
     .map(([tier, n]) => `${tier} ${n}`)
     .join(", ");
+
+// The overview after each tier that changed it, ending at the tier that met
+// the target.
+export const ladderText = (plan: SplitPlan): string =>
+  plan.ladder
+    .filter((s, i) => i === 0 || s.nodes !== plan.ladder[i - 1]?.nodes || s.score !== plan.ladder[i - 1]?.score)
+    .map((s) => `${s.tier} ${s.nodes} nodes, score ${num(s.score)}`)
+    .join("; then ");
 
 // Every emitted source a plan draws, in page order: its overview, then each
 // detail, with a detail that is split again followed by its own plan.
@@ -175,6 +234,7 @@ const summary = (plan: SplitPlan, config: ThresholdConfig): string =>
       `groups:        ${plan.groups.map((g) => `${g.label} [${g.tier}, ${g.reason}]`).join("; ")}`,
       `declared loss: ${plan.loss.newReachablePairs} new reachable pairs (after each tier: ${lossByTier(plan)})`,
       `rows dropped:  ${plan.loss.droppedRows}`,
+      `ladder:        ${ladderText(plan)}`,
     ].join("\n"),
     "text",
   );
@@ -213,13 +273,21 @@ export const tableSnippet = (planned: PlannedPreset[]): string => {
   ].join("\n");
 };
 
+// The worked examples, in page order: the shop architecture, with its
+// snippets named as before, then the decision-heavy flow, its names prefixed.
+export const EXAMPLES: Array<{ step: Step; prefix: string }> = [
+  { step: DIAGRAM, prefix: "" },
+  { step: DECISIONS, prefix: "decisions-" },
+];
+
 // Every snippet, keyed by its path under docs-site/snippets/, in page order.
 export const splitSnippets = async (): Promise<Record<string, string>> => {
-  const planned = await planPresets();
-  const out: Record<string, string> = {
-    [`summarisation/${DIAGRAM.slug}.md`]: stepSnippet(await measureStep(DIAGRAM)),
-    "summarisation/presets.md": tableSnippet(planned),
-  };
-  for (const p of planned) out[`summarisation/${p.name}.md`] = await presetSnippet(p);
+  const out: Record<string, string> = {};
+  for (const { step, prefix } of EXAMPLES) {
+    const planned = await planPresets(step.source);
+    out[`summarisation/${step.slug}.md`] = stepSnippet(await measureStep(step));
+    out[`summarisation/${prefix}presets.md`] = tableSnippet(planned);
+    for (const p of planned) out[`summarisation/${prefix}${p.name}.md`] = await presetSnippet(p);
+  }
   return out;
 };

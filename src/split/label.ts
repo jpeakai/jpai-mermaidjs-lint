@@ -2,9 +2,11 @@
 // diagram's own labels. A long author label is shown cut, with an ellipsis,
 // and kept whole in the plan data. A stub names the outside node it stands
 // for; a stub for a node inside another group adds that group's label, and a
-// label several stubs could share adds the id it stands for.
+// label several stubs could share adds the id it stands for. Stubs for one
+// whole group that one detail draws apart name the member each one's edges
+// leave, as "Checkout domain (+5) from paymentservice".
 
-import type { WorkGraph } from "./graph.ts";
+import { byNatural, type WorkGraph } from "./graph.ts";
 import { endpointLabel, isGroupKey, over, type Partition, type Stub } from "./quotient.ts";
 
 // The longest label a group node shows, in user-perceived characters.
@@ -28,6 +30,33 @@ export const shorten = (label: string, markdown?: true): string => {
     .trimEnd();
   return `${head}…${chars.slice(-TAIL).join("").trimStart()}`;
 };
+
+// A range label: a group's first and last member labels in natural order,
+// joined by a spaced ellipsis, which a cut label never shows. It names a run
+// of interchangeable members as an index names a volume, so it is offered for
+// twins and sibling leaves, and for members whose labels all lead with an id
+// (DATA-0381, S10004, "10011 Wont Do"), where one member's label says little.
+// It counts the members it does not name, two fewer than the group holds, and
+// is offered only for three members or more, with no markup, within LABEL_CAP.
+// A range must not mislead: no member of another group (hidden, so a reader
+// would look for it here) has a label from the first to the last.
+export const RANGE_SEPARATOR = " … ";
+
+const MARKUP = /[<&*_`#]/;
+
+export const rangeLabel = (labels: readonly string[], hidden: readonly string[] = []): string | null => {
+  const order = [...labels].sort(byNatural);
+  const [first, last] = [order[0], order.at(-1)];
+  if (labels.length < 3 || first === undefined || last === undefined || first === last) return null;
+  if (order.some((l) => MARKUP.test(l) || l.includes(RANGE_SEPARATOR))) return null;
+  if (hidden.some((l) => byNatural(first, l) <= 0 && byNatural(l, last) <= 0)) return null;
+  const base = `${first}${RANGE_SEPARATOR}${last}`;
+  return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
+};
+
+// A label that leads with an id: up to five letters, an optional dash or
+// underscore, then two digits or more, ending there or at a separator.
+export const ID_LEAD = /^[A-Za-z]{0,5}[-_]?\d{2,}(?=$|[\s:._-])/;
 
 // The labels a group may show, preferred first: the label cut, the whole
 // label, then the label cut with the group's id, for when another node or
@@ -91,15 +120,28 @@ export const readerOf = (work: WorkGraph, groups: Reader["groups"], groupOf: Rea
 };
 
 const IN_GROUP = " (in group)";
+
+// What joins a whole group's shown label to the member a stub's edges leave.
+export const FROM = " from ";
+
+// The members of group gid a text names after its shown label and FROM: none
+// unless the text is that form.
+export const fromMembers = (r: Reader, text: string, gid: string): string[] => {
+  const g = r.groups.find((x) => x.id === gid);
+  if (!(g && text.startsWith(`${g.label}${FROM}`))) return [];
+  return (r.literal.get(text.slice(g.label.length + FROM.length)) ?? []).filter((id) => r.groupOf(id) === gid);
+};
 const TAG = /^(.*) \[([^\]]+)\]$/s;
 
 // Every node or group a stub's text can be read as naming, by each form the
 // plan writes: a label as it is, a group's shown label, a label with " (in
-// group)" or the label of the group folding it in brackets, and any of these
-// followed by " [id]" naming one of its readings. A stub is drawn only with a
+// group)" or the label of the group folding it in brackets, a group's shown
+// label with FROM and one of its members' labels, and any of these followed
+// by " [id]" naming one of its readings. A stub is drawn only with a
 // text that has exactly one reading.
 export const readingsOf = (r: Reader, text: string): Set<string> => {
-  const out = new Set<string>(r.literal.get(text) ?? []);
+  const fromGroups = r.groups.filter((g) => fromMembers(r, text, g.id).length > 0).map((g) => g.id);
+  const out = new Set<string>([...(r.literal.get(text) ?? []), ...fromGroups]);
   for (const g of r.groups) if (g.label === text) out.add(g.id);
   const tag = TAG.exec(text);
   if (tag && readingsOf(r, tag[1] ?? "").has(tag[2] ?? "")) out.add(tag[2] ?? "");
@@ -145,4 +187,38 @@ export const stubTexts = (ctx: LabelContext, stubs: Stub[]): Map<string, StubTex
       return [s.id, { ...text, label }];
     }),
   );
+};
+
+// A stub for a whole group reads alike another stub when they show one text,
+// as stubs for one group drawn apart do, or when the other stands for the
+// member the group is named after ("QA (in group)" beside "QA (+2)"). Each
+// such stub takes FROM and the label of the one member its edges leave, when
+// that text has exactly the one reading. Null when two stubs would still
+// show one text: the detail then draws one stub for the group.
+export const namedStubs = (
+  ctx: LabelContext,
+  stubs: Stub[],
+  texts: Map<string, StubText>,
+  sourcesOf: (stub: string) => string[],
+): Map<string, StubText> | null => {
+  const reader = contextReader(ctx);
+  const count = new Map<string, number>();
+  for (const t of texts.values()) count.set(t.label, (count.get(t.label) ?? 0) + 1);
+  const alike = (endpoint: string, label: string): boolean =>
+    (count.get(label) ?? 0) > 1 || count.has(`${ctx.groups.get(endpoint)?.base}${IN_GROUP}`);
+  const out = new Map(texts);
+  for (const s of stubs) {
+    const t = texts.get(s.id);
+    const [source, ...more] = sourcesOf(s.id);
+    if (!(t && isGroupKey(s.endpoint) && alike(s.endpoint, t.label)) || t.markdown || !source || more.length > 0)
+      continue;
+    const member = endpointLabel(ctx.work, source);
+    const label = `${t.label}${FROM}${member}`;
+    const read = readingsOf(reader, label);
+    const node = ctx.work.nodes.get(source);
+    if (!node || MARKUP.test(member) || node.markdown || read.size !== 1 || !read.has(t.endpoint)) continue;
+    out.set(s.id, { ...t, label });
+  }
+  const labels = [...out.values()].map((t) => t.label);
+  return new Set(labels).size === labels.length ? out : null;
 };

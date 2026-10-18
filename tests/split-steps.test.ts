@@ -7,15 +7,18 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cytoscapeElements, measureStep, num } from "../scripts/complexity-steps.ts";
 import {
+  DECISIONS,
   DIAGRAM,
   drawnSources,
+  EXAMPLES,
+  ladderText,
   planPresets,
   presetSnippet,
   splitSnippets,
   tableSnippet,
 } from "../scripts/split-steps.ts";
 import { configFromPreset, PRESETS } from "../src/parse/metrics.ts";
-import { splitPlan } from "../src/split/index.ts";
+import { type SplitPlan, splitPlan } from "../src/split/index.ts";
 import { PROJECT_ROOT } from "./helpers.ts";
 
 const PAGE = readFileSync(join(PROJECT_ROOT, "docs-site", "docs", "concepts", "summarisation.md"), "utf8");
@@ -26,59 +29,103 @@ const fences = (snippet: string, lang: string): string[] =>
 const decode = (attr: string): unknown =>
   JSON.parse(attr.replaceAll("&quot;", '"').replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&amp;", "&"));
 
+// A preset's section of the page: from its heading to its snippet, less the
+// sentence naming the tier selected.
+const prose = (snippet: string): string => {
+  const end = PAGE.indexOf(`--8<-- "${snippet}"`);
+  return PAGE.slice(PAGE.lastIndexOf("\n### ", end), end).replace(/Under `[\w-]+`, the plan selects `T\d`\./, "");
+};
+
 describe("the summarisation page", () => {
   test("includes every snippet, in the order the generator writes them", async () => {
     const included = [...PAGE.matchAll(/--8<-- "(summarisation\/[\w-]+\.md)"/g)].map((m) => m[1]);
     expect(included).toEqual(Object.keys(await splitSnippets()));
-    expect(included).toEqual([
-      `summarisation/${DIAGRAM.slug}.md`,
-      "summarisation/presets.md",
-      ...Object.keys(PRESETS).map((p) => `summarisation/${p}.md`),
-    ]);
+    expect(included).toEqual(
+      EXAMPLES.flatMap(({ step, prefix }) => [
+        `summarisation/${step.slug}.md`,
+        `summarisation/${prefix}presets.md`,
+        ...Object.keys(PRESETS).map((p) => `summarisation/${prefix}${p}.md`),
+      ]),
+    );
   });
 
   test("each score the page states is the diagram's computed score", async () => {
     const stated = [...PAGE.matchAll(/\bscores? (\d+(?:\.\d+)?)\b/g)].map((m) => m[1]);
-    expect(stated).toEqual([num((await measureStep(DIAGRAM)).score)]);
+    expect(stated).toEqual([num((await measureStep(DIAGRAM)).score), num((await measureStep(DECISIONS)).score)]);
   });
 
   test("each tier the page states is the tier splitPlan selects, preset by preset", async () => {
     const stated = [...PAGE.matchAll(/Under `([\w-]+)`, the plan selects `(T\d)`/g)].map((m) => [m[1], m[2]]);
     const computed = [];
-    for (const name of Object.keys(PRESETS)) {
-      const plan = await splitPlan(DIAGRAM.source, configFromPreset(name));
-      if (plan) computed.push([name, plan.tier]);
+    for (const { step } of EXAMPLES) {
+      for (const name of Object.keys(PRESETS)) {
+        const plan = await splitPlan(step.source, configFromPreset(name));
+        if (plan) computed.push([name, plan.tier]);
+      }
     }
-    expect(computed.length).toBeGreaterThan(0);
+    expect(computed.length).toBe(2 * Object.keys(PRESETS).length);
     expect(stated).toEqual(computed);
   });
 
-  test("names no tier in its worked-example prose that the table does not hold", async () => {
-    const table = tableSnippet(await planPresets());
-    const worked = PAGE.slice(PAGE.indexOf("## A worked example"));
-    for (const m of worked.matchAll(/`(T\d)`/g)) expect(table).toContain(`| ${m[1]} |`);
+  test("every preset of both examples reaches its target, and its ladder ends at the tier it names", async () => {
+    for (const { step } of EXAMPLES) {
+      for (const p of await planPresets(step.source)) {
+        const plan = p.outcome.plan;
+        if (!plan) throw new Error(`${step.slug} ${p.name}: ${p.outcome.reason}`);
+        const last = plan.ladder.at(-1);
+        expect(last?.tier).toBe(plan.tier);
+        expect(last?.nodes).toBeLessThanOrEqual(p.config.node_target);
+        expect(last?.score).toBeLessThanOrEqual(p.config.vcs_target);
+        expect(ladderText(plan).endsWith(`${plan.tier} ${last?.nodes} nodes, score ${num(last?.score ?? 0)}`)).toBe(
+          true,
+        );
+      }
+    }
+  });
+
+  test("each preset's prose names every tier its ladder climbs, in order, and no other", async () => {
+    for (const { step, prefix } of EXAMPLES) {
+      for (const p of await planPresets(step.source)) {
+        const plan = p.outcome.plan;
+        if (!plan) throw new Error(`${step.slug} ${p.name}: ${p.outcome.reason}`);
+        const climbed = ladderText(plan)
+          .split("; then ")
+          .slice(1)
+          .map((s) => s.split(" ")[0]);
+        const named = [...prose(`summarisation/${prefix}${p.name}.md`).matchAll(/`(T\d)`/g)].map((m) => m[1]);
+        expect(named).toEqual(climbed);
+      }
+    }
   });
 });
+
+// A preset's snippet draws the plan it names: the parsed overview, every
+// emitted source, and its summary lines.
+const expectDrawn = (snippet: string, plan: SplitPlan): void => {
+  const graph = /data-graph="([^"]*)"/.exec(snippet)?.[1] ?? "";
+  expect(decode(graph)).toEqual(cytoscapeElements(plan.overview));
+  expect(fences(snippet, "mermaid")).toEqual(drawnSources(plan).map((s) => s.trimEnd()));
+  expect(fences(snippet, "text")[0]).toBe(plan.overviewSource.trimEnd());
+  expect(snippet).toContain(`tier:          ${plan.tier}`);
+  expect(snippet).toContain(`overview:      ${plan.overviewNodes} nodes, score ${num(plan.overviewScore)}`);
+  expect(snippet).toContain(`declared loss: ${plan.loss.newReachablePairs} new reachable pairs`);
+  expect(snippet).toContain(`ladder:        ${ladderText(plan)}`);
+};
 
 describe("the summarisation snippets", () => {
   test("each preset's overview graph is the parsed overview, and each drawn fence is an emitted source", async () => {
     const snippets = await splitSnippets();
-    for (const p of await planPresets()) {
-      const snippet = snippets[`summarisation/${p.name}.md`] ?? "";
-      expect(snippet).toContain(`targets ${p.config.node_target} nodes and a score of ${p.config.vcs_target}`);
-      const plan = p.outcome.plan;
-      if (!plan) {
-        expect(snippet).toContain(p.outcome.reason);
-        continue;
+    for (const { step, prefix } of EXAMPLES)
+      for (const p of await planPresets(step.source)) {
+        const snippet = snippets[`summarisation/${prefix}${p.name}.md`] ?? "";
+        expect(snippet).toContain(`targets ${p.config.node_target} nodes and a score of ${p.config.vcs_target}`);
+        const plan = p.outcome.plan;
+        if (!plan) {
+          expect(snippet).toContain(p.outcome.reason);
+          continue;
+        }
+        expectDrawn(snippet, plan);
       }
-      const graph = /data-graph="([^"]*)"/.exec(snippet)?.[1] ?? "";
-      expect(decode(graph)).toEqual(cytoscapeElements(plan.overview));
-      expect(fences(snippet, "mermaid")).toEqual(drawnSources(plan).map((s) => s.trimEnd()));
-      expect(fences(snippet, "text")[0]).toBe(plan.overviewSource.trimEnd());
-      expect(snippet).toContain(`tier:          ${plan.tier}`);
-      expect(snippet).toContain(`overview:      ${plan.overviewNodes} nodes, score ${num(plan.overviewScore)}`);
-      expect(snippet).toContain(`declared loss: ${plan.loss.newReachablePairs} new reachable pairs`);
-    }
   });
 
   test("the table holds each preset's targets, tier, overview and detail count", async () => {

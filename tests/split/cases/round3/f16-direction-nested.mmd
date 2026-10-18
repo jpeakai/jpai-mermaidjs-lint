@@ -1,0 +1,38 @@
+flowchart TB
+  subgraph D1[Left to right]
+    direction LR
+    d0[D 0]
+    d1[D 1]
+    d2[D 2]
+    d3[D 3]
+    d4[D 4]
+    d5[D 5]
+    d6[D 6]
+  end
+  subgraph D2[Bottom up]
+    direction BT
+    e0[E 0]
+    e1[E 1]
+    e2[E 2]
+    e3[E 3]
+    e4[E 4]
+    e5[E 5]
+    e6[E 6]
+  end
+  d0 --> d1
+  d1 --> d2
+  d2 --> d3
+  d3 --> d4
+  d4 --> d5
+  d5 --> d6
+  e0 --> e1
+  e1 --> e2
+  e2 --> e3
+  e3 --> e4
+  e4 --> e5
+  e5 --> e6
+  d6 --> e0
+  q0[Q 0] --> d0
+  q1[Q 1] --> d1
+  q2[Q 2] --> d2
+  q3[Q 3] --> d3

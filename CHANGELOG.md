@@ -30,6 +30,14 @@ Anything under `Unreleased` is on `main` but not yet released.
 - `DiagramGraph` nodes carry `markdown`, `rows` and `regions`.
   Split plans draw entity attributes and class members in details and in row diagrams, and `--split-plan` prints them.
 - A diagram whose composite state has concurrent regions gets no split plan, with the reason `concurrent state regions are not split`.
+- A stub's text in a split plan has exactly one reading.
+  A text that could name another node, region or group adds the id it stands for, and the contract refuses any stub that reads otherwise.
+- A lollipop interface on a folded class hangs from its group in the overview.
+- A state's description lines are carried into split plans, and `DiagramGraph` nodes carry `descriptions`.
+- The overview merges a start or end marker's transitions into one group into one transition, and `SplitLoss` counts them as `mergedMarkers`.
+- `--split-plan` prints a detail that is split again only as its split, so every printed diagram meets the target.
+- Suggested grouping pairs only nodes an edge joins, with alike labels breaking ties.
+  No plan leaves an overview with fewer than four nodes unless the diagram has fewer than eight.
 
 ### Changed
 
@@ -79,6 +87,7 @@ Anything under `Unreleased` is on `main` but not yet released.
 - A label holding an HTML tag, a `<br>` or a bare `<` is read whole.
   The DOM shim made mermaid's sanitiser drop the text before a tag, and all but the last line of a `<br>` label.
   It also dropped any label holding `<`.
+- A label holding an HTML entity, such as `&lt;tag&gt;`, reads back as itself in a split plan's diagrams.
 
 ## [0.8.1] - 2026-10-18
 

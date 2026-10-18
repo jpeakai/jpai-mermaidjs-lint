@@ -109,7 +109,7 @@ The `auto` profile is then found from each file's own folder, so `main` scores f
 | `documentKind` | `(file: string)` | `"markdown" \| "diagram"`, how the command reads a file of that name |
 | `DIAGRAM_EXTS` | `readonly string[]` | The extensions read as one raw diagram: `.mmd` and `.mermaid` |
 | `extractStats` | `(content: string)` | `Promise<DiagramStats>` for one diagram's text |
-| `detectKeyword` | `(content: string)` | `string \| null`, the diagram's first word past frontmatter and comments |
+| `detectKeyword` | `(content: string)` | `string \| null`, the keyword of the diagram type mermaid detects, such as `flowchart` or `erDiagram`, or `null` when it detects none |
 | `PRESETS` | `Record<string, Preset>` | Each density preset's thresholds |
 | `thresholdsFrom` | `(options: Record<string, unknown>)` | `ThresholdConfig`, the thresholds a complexity rule runs with, from its options |
 

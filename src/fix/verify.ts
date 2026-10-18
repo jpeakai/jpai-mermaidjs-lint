@@ -49,8 +49,8 @@ const sameDiagrams = async (before: DocModel, after: DocModel): Promise<boolean>
     const now = after.diagrams[i];
     if (!now || was.keyword !== now.keyword) return false;
     const [a, b] = await Promise.all([was.stats(), now.stats()]);
-    const shape = (s: typeof a, source: string): unknown => [
-      parseFailed(source, s),
+    const shape = (s: typeof a): unknown => [
+      parseFailed(s),
       s.diagram_type,
       s.nodes,
       s.edges,
@@ -61,7 +61,7 @@ const sameDiagrams = async (before: DocModel, after: DocModel): Promise<boolean>
       s.node_ids,
       s.subgraph_names,
     ];
-    if (!sameJson(shape(a, was.source), shape(b, now.source))) return false;
+    if (!sameJson(shape(a), shape(b))) return false;
   }
   return true;
 };
@@ -76,7 +76,7 @@ const breaksAParse = async (before: DocModel, after: DocModel): Promise<boolean>
     const now = after.diagrams[i];
     if (!now) continue;
     const [a, b] = await Promise.all([was.stats(), now.stats()]);
-    if (!parseFailed(was.source, a) && parseFailed(now.source, b)) return true;
+    if (!parseFailed(a) && parseFailed(b)) return true;
   }
   return false;
 };

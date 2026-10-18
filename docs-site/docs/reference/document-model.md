@@ -47,10 +47,11 @@ One mermaid source.
 |---|---|---|
 | `index` | `number` | Position in `doc.diagrams`, from 0 |
 | `source` | `string` | The diagram text. Inside a list or a quote, the indentation is already removed. |
-| `keyword` | `string` or `null` | The first word of the diagram, such as `flowchart`, past any frontmatter and comments |
+| `keyword` | `string` or `null` | The keyword of the diagram type mermaid detects, such as `flowchart` or `erDiagram`, or `null` when it detects none. A type declared two ways has one keyword, so `graph` is `flowchart`. |
 | `startLine`, `endLine` | `number` | The file lines a finding points at: the fences, or the whole raw diagram file |
 | `firstLine` | `number` | The file line of the first line of `source` |
-| `terminated` | `boolean` | `false` when the fence runs to the end of the file without closing |
+| `terminated` | `boolean` | `false` when the fence has no closing fence, so it runs to the end of the file or of its quote or list item |
+| `closingFence` | `string` or `null` | The line that closes the fence: its opening fence, after the quote markers and indentation before it. `null` for a raw diagram file, and when the opening line holds anything else before the fence, such as a list item's marker. |
 | `endOffset` | `number` | The offset in `doc.src` where the fence ends |
 | `directives` | `StyleDirective[]` | Every style line in the diagram |
 | `offsetOf(span)` | `number` or `null` | The offset in `doc.src` of a directive value, or `null` when it cannot be mapped back |
@@ -95,8 +96,9 @@ What mermaid's parser reads from a diagram.
 | `rows` | `number` | The rows drawn inside a node: an `erDiagram` entity's attributes and a `classDiagram` class's attributes and methods. It is 0 for every other type. |
 | `node_ids`, `subgraph_names` | `string[]` | Identifiers, used to suggest where to split |
 | `parser_used` | `"langium"` or `"mermaid-core"` | Which parser produced the result, or on a failure, the parser whose reason `error` carries |
-| `diagram_type` | `string` | The type the parser recognised |
+| `diagram_type` | `string` | The type the parser recognised, as mermaid's detection names it. On a failure it is the type's keyword, or `unknown` when mermaid detects no type. |
 | `error` | `string` or `null` | The parser's reason on one line, when no parser produced structure. Its line numbers count from the diagram's first line. |
+| `error_line` | `number` or `null`, optional | The diagram line the parser's error points at, from the diagram's first line, or `null` when it points at none |
 
 ## ContrastAssessment
 

@@ -108,6 +108,23 @@ describe("fence fixer", () => {
     expect(await checkMarkdown(out, "doc.md")).toEqual([]);
   });
 
+  test("closes a fence inside a quote with the quote's marker", async () => {
+    const src = "> ```mermaid\n> flowchart LR\n>   A --> B\n";
+    const out = await fixSource(src, "doc.md");
+    expect(out).toBe(`${src}> \`\`\`\n`);
+    expect(await checkMarkdown(out, "doc.md")).toEqual([]);
+  });
+
+  test("closes a long fence with its own length", async () => {
+    const src = "````mermaid\nflowchart LR\n  A --> B\n";
+    expect(await fixSource(src, "doc.md")).toBe(`${src}\`\`\`\`\n`);
+  });
+
+  test("refuses a fence that opens on a list item's marker line", async () => {
+    const src = "- ```mermaid\n  flowchart LR\n    A --> B\n";
+    expect(await fixSource(src, "doc.md")).toBe(src);
+  });
+
   test("a fixed document is stable", async () => {
     const src = "```mermaid\nflowchart LR\n  A --> B\n";
     const once = await fixSource(src, "doc.md");

@@ -82,8 +82,26 @@ describe("extractGraph for sequence, entity and state diagrams", () => {
     const graph = await extractGraph("erDiagram\n  A ||--o{ B : has\n  B }|--|| C : in\n");
     expect(graph.nodes.map((n) => n.id)).toEqual(["A", "B", "C"]);
     expect(graph.edges).toEqual([
-      { id: "L_A_B_0", source: "A", target: "B", kind: "--", cardinality: "||--o{", label: "has" },
-      { id: "L_B_C_0", source: "B", target: "C", kind: "--", cardinality: "}|--||", label: "in" },
+      {
+        id: "L_A_B_0",
+        source: "A",
+        target: "B",
+        kind: "--",
+        cardinality: "||--o{",
+        ends: { from: "ONLY_ONE", to: "ZERO_OR_MORE" },
+        identifying: true,
+        label: "has",
+      },
+      {
+        id: "L_B_C_0",
+        source: "B",
+        target: "C",
+        kind: "--",
+        cardinality: "}|--||",
+        ends: { from: "ONE_OR_MORE", to: "ONLY_ONE" },
+        identifying: true,
+        label: "in",
+      },
     ]);
   });
 

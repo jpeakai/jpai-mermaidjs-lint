@@ -7,6 +7,7 @@ import type { Code, Node, Parent, Root } from "mdast";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { frontmatterFromMarkdown } from "mdast-util-frontmatter";
 import { gfmFromMarkdown } from "mdast-util-gfm";
+import { parse as parseMicromark, postprocess, preprocess } from "micromark";
 import { frontmatter } from "micromark-extension-frontmatter";
 import { gfm } from "micromark-extension-gfm";
 import { extractStyleDirectives, type StyleDirective, type ValueSpan } from "./parse/color.ts";
@@ -16,15 +17,22 @@ export interface Diagram {
   index: number;
   // The diagram text. Inside a list or a quote the indentation is already off.
   source: string;
-  // The first word of the diagram, past any frontmatter and comments.
+  // The keyword of the diagram type mermaid detects, such as flowchart or
+  // erDiagram, or null when it detects none. See detectKeyword.
   keyword: string | null;
   // The file lines a finding points at: the fences, or the whole file.
   startLine: number;
   endLine: number;
   // The file line of the first line of `source`.
   firstLine: number;
-  // False when the fence runs to the end of the file without a closing fence.
+  // False when the fence has no closing fence, so it runs to the end of the
+  // file or of the quote or list item around it.
   terminated: boolean;
+  // The line that closes the fence: the opening fence with the quote markers
+  // and indentation before it on its line. Null for a standalone file, and
+  // when the opening line holds anything else before the fence, such as a list
+  // item's marker.
+  closingFence: string | null;
   // The source offset where the fence ends, or the end of a standalone file.
   endOffset: number;
   directives: StyleDirective[];
@@ -42,21 +50,84 @@ export interface DocModel {
   diagrams: Diagram[];
 }
 
+const micromarkExtensions = () => [frontmatter(["yaml", "toml"]), gfm()];
+
 export const parse = (src: string): Root =>
   fromMarkdown(src, {
-    extensions: [frontmatter(["yaml", "toml"]), gfm()],
+    extensions: micromarkExtensions(),
     mdastExtensions: [frontmatterFromMarkdown(["yaml", "toml"]), gfmFromMarkdown()],
   });
 
-const FENCE_OPEN = /^[ \t>]*(`{3,}|~{3,})/;
-const FENCE_CLOSE = /^[ \t>]*(`{3,}|~{3,})[ \t]*$/;
+// What micromark's events say about one fenced code block, keyed by the
+// offset where it starts, which is where its mdast code node starts.
+interface FenceFacts {
+  // A closed block has an opening and a closing fence, an unterminated one
+  // only its opening fence.
+  terminated: boolean;
+  closingFence: string | null;
+}
 
-const isTerminated = (raw: string): boolean => {
-  const lines = raw.split("\n");
-  if (lines.length < 2) return false;
-  const open = FENCE_OPEN.exec(lines[0] ?? "")?.[1];
-  const close = FENCE_CLOSE.exec(lines.at(-1) ?? "")?.[1];
-  return Boolean(open && close && close[0] === open[0] && close.length >= open.length);
+// The tokens that may stand before a fence on its line: indentation, a quote
+// marker with its space, and a list item's continuation indent.
+const FENCE_LINE_PREFIX = new Set(["linePrefix", "blockQuotePrefix", "listItemIndent"]);
+
+type MicromarkEvent = ReturnType<typeof postprocess>[number];
+
+// Each token's text, serialised by the tokenizer that made it.
+const serialise = ([, token, context]: MicromarkEvent): string => context.sliceSerialize(token);
+
+// The fence that closes a block: the opening fence sequence after the prefix
+// tokens on its line. It is null when they do not cover the whole line up to
+// the fence, as when a list item's marker stands before it.
+const closingFenceOf = (events: MicromarkEvent[], sequence: MicromarkEvent, lineStart: number): string | null => {
+  const fenceStart = sequence[1].start.offset;
+  const before = events.filter(
+    ([kind, token]) =>
+      kind === "enter" &&
+      FENCE_LINE_PREFIX.has(token.type) &&
+      token.start.offset >= lineStart &&
+      token.end.offset <= fenceStart,
+  );
+  const covered = before.reduce((n, [, token]) => n + token.end.offset - token.start.offset, 0);
+  if (covered !== fenceStart - lineStart) return null;
+  return [...before, sequence].map(serialise).join("");
+};
+
+// The enter events of each fenced code block, its own codeFenced first.
+const fenceEvents = (events: MicromarkEvent[]): MicromarkEvent[][] => {
+  const blocks: MicromarkEvent[][] = [];
+  let open: MicromarkEvent[] | null = null;
+  for (const event of events) {
+    const [kind, token] = event;
+    if (token.type === "codeFenced" && kind === "enter") open = [];
+    else if (token.type === "codeFenced" && open) {
+      blocks.push(open);
+      open = null;
+    }
+    if (kind === "enter") open?.push(event);
+  }
+  return blocks;
+};
+
+// Every fenced code block in a markdown source, read from micromark's events
+// with the same extensions the mdast tree is built with. A block's fences are
+// counted from its codeFencedFence tokens, and its opening fence is its first
+// codeFencedFenceSequence.
+const fencedBlocks = (src: string, lineStarts: number[]): Map<number, FenceFacts> => {
+  const events = postprocess(
+    parseMicromark({ extensions: micromarkExtensions() })
+      .document()
+      .write(preprocess()(src, undefined, true)),
+  );
+  const blocks = new Map<number, FenceFacts>();
+  for (const block of fenceEvents(events)) {
+    const sequence = block.find(([, token]) => token.type === "codeFencedFenceSequence");
+    const lineStart = sequence ? lineStarts[sequence[1].start.line - 1] : undefined;
+    const closingFence = sequence && lineStart !== undefined ? closingFenceOf(events, sequence, lineStart) : null;
+    const fences = block.filter(([, token]) => token.type === "codeFencedFence").length;
+    blocks.set(block[0]?.[1].start.offset ?? -1, { terminated: fences === 2, closingFence });
+  }
+  return blocks;
 };
 
 const lineStartsOf = (src: string): number[] => {
@@ -75,6 +146,7 @@ const makeDiagram = (
     endLine: number;
     firstLine: number;
     terminated: boolean;
+    closingFence: string | null;
     endOffset: number;
   },
 ): Diagram => {
@@ -128,6 +200,7 @@ export const buildDocModel = (src: string, kind: "markdown" | "diagram" = "markd
       endLine,
       firstLine: 1,
       terminated: true,
+      closingFence: null,
       endOffset: src.length,
     });
     return { src, kind, tree: { type: "root", children: [] }, diagrams: [diagram] };
@@ -135,9 +208,12 @@ export const buildDocModel = (src: string, kind: "markdown" | "diagram" = "markd
   const tree = parse(src);
   const fences: Code[] = [];
   collectMermaid(tree, fences);
+  const blocks = fences.length > 0 ? fencedBlocks(src, lineStarts) : new Map<number, FenceFacts>();
   const diagrams = fences.flatMap((node, index) => {
     const { start, end } = node.position ?? {};
     if (!(start && end) || start.offset === undefined || end.offset === undefined) return [];
+    const block = blocks.get(start.offset);
+    if (!block) throw new Error(`micromark read no fenced code block at line ${start.line}, where mdast has one`);
     return [
       makeDiagram(src, lineStarts, {
         index,
@@ -145,7 +221,7 @@ export const buildDocModel = (src: string, kind: "markdown" | "diagram" = "markd
         startLine: start.line,
         endLine: end.line,
         firstLine: start.line + 1,
-        terminated: isTerminated(src.slice(start.offset, end.offset)),
+        ...block,
         endOffset: end.offset,
       }),
     ];

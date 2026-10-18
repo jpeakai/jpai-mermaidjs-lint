@@ -48,13 +48,14 @@ The parse happens once per diagram, on first use, and every rule shares the resu
 A diagram whose parser reports an error is reported as `parse-diagram-unparseable`, on one line or many.
 The finding carries the parser's reason, and its line numbers count from the diagram's first line.
 Having no nodes is not an error on its own, so a valid `pie` with only a title line, or `info`, passes.
-Mermaid's core can read a multi-line diagram into an empty structure without complaint.
-For the types it reads, a multi-line diagram with no nodes is therefore reported as a silent parse failure.
 A `zenuml` diagram is always reported, because it is drawn by a mermaid add-on this package does not include.
 A diagram that opens with the `flowchart-elk` keyword is a flowchart drawn with the ELK layout, so it is read and measured as a flowchart.
 
-Two things are read from the text rather than the parser.
-The diagram keyword is the first word past any frontmatter and comments, and it picks which parser runs.
+The diagram type comes from mermaid's own detection, which looks past frontmatter, directives and comments, and it picks which parser runs.
+A diagram whose type mermaid does not detect is reported as `parse-diagram-unparseable`.
+Whether a fence is closed, and the line that would close it, come from micromark's reading of the markdown.
+
+One thing is read from the text rather than a parser.
 Style directives are read line by line, with the position of each value, so a fixer can rewrite it in place.
 A style joined to other statements by a semicolon is therefore not seen.
 

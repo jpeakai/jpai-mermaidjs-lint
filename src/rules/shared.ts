@@ -52,7 +52,7 @@ export interface Measured {
 // evaluated against it.
 export const measure = async (diagram: Diagram, config: ThresholdConfig): Promise<Measured | null> => {
   const stats = await diagram.stats();
-  if (parseFailed(diagram.source, stats)) return null;
+  if (parseFailed(stats)) return null;
   return { stats, metrics: calculateComplexity(stats, config) };
 };
 

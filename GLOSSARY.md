@@ -300,6 +300,7 @@ What an Edit claims about the reparsed document: same-diagrams or same-tree.
 
 The code block that holds a Diagram in markdown.
 It is unterminated when it never closes.
+Its closing fence is the line that would close it: the opening fence after the quote markers and indentation before it, as micromark reads them.
 
 ## Finding
 
@@ -332,6 +333,11 @@ In `adrs/` that is everything rendered from the Records, as [AGENTS.md](AGENTS.m
 
 Where a Diagram is drawn for a reader, such as GitHub or a MkDocs Material site.
 The Host may choose the label colour.
+
+## Keyword
+
+The word a Diagram's type is declared with, such as `flowchart` or `erDiagram`, for the type mermaid's own detection gives it.
+A type declared two ways has one keyword, so `graph` is `flowchart`.
 
 ## Ladder
 

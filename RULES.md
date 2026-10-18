@@ -26,9 +26,9 @@ An unparseable diagram skips every complexity rule, because thresholds mean noth
 
 A diagram that mermaid's parser reports an error for, on one line or many, such as `graph TD; A-->; B[[[`.
 The message carries the parser's own reason, whose line numbers count within the diagram, not the file.
-At the end of the input, that line may be one past the diagram's last line.
-A diagram the Langium parser reads without an error passes even with no nodes, such as `pie` with a `title` line, or `info`.
-A diagram mermaid core reads into zero nodes is also reported when it spans more than one line, because that is a silent parse failure.
+A diagram whose type mermaid does not detect is reported too, with mermaid's reason.
+A diagram the parser reads without an error passes even with no nodes.
+Examples are `pie` with a `title` line, `info`, and a `sequenceDiagram` under a frontmatter title.
 There is no fixer, since a syntax error needs an author.
 
 ````text reported

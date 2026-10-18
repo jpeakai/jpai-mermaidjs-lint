@@ -146,11 +146,12 @@ erDiagram
     Diagram {
         number index "position in diagrams, from 0"
         string source "the diagram text"
-        string keyword "nullable, past frontmatter and comments"
+        string keyword "nullable, the type mermaid detects"
         number startLine "file line a finding points at"
         number endLine
         number firstLine "file line of the first source line"
         boolean terminated "false when the fence never closes"
+        string closingFence "nullable, the line that closes it"
         number endOffset "where the fence or file ends"
         StyleDirective[] directives
         function offsetOf "ValueSpan to offset, or null"
@@ -181,6 +182,7 @@ erDiagram
         enum parser_used "langium or mermaid-core"
         string diagram_type
         string error "nullable, the parser's reason"
+        number error_line "optional, where the error points"
     }
 
     classDef docTint fill:#1d4ed836,stroke:#3b82f6,stroke-width:2px

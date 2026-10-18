@@ -9,8 +9,8 @@ import {
   flowchartNodeIds,
   getMermaidCore,
   isSequenceMessage,
-  SEQUENCE_BLOCK_CLOSE,
-  SEQUENCE_BLOCK_OPEN,
+  type SequenceCodes,
+  sequenceCodes,
   stateParents,
 } from "./stats.ts";
 
@@ -35,6 +35,11 @@ export interface GraphEdge {
   // An erDiagram relationship's ends, such as "||--o{", or a classDiagram
   // relation's multiplicities, such as `"1" *-- "many"`.
   cardinality?: string;
+  // An erDiagram relationship's ends by erDb's Cardinality name, such as
+  // ONLY_ONE or ZERO_OR_MORE: `from` beside the source, `to` beside the target.
+  ends?: { from: string; to: string };
+  // Whether an erDiagram relationship is identifying, drawn as a solid line.
+  identifying?: boolean;
 }
 
 export interface DiagramGraph {
@@ -185,26 +190,30 @@ const sequenceGraph = (type: string, db: AnyDb): DiagramGraph => {
     return { id, label: a.description ?? id, parent: i >= 0 ? boxId(i) : null };
   });
   const id = edgeIds();
-  const edges = messages.filter(isSequenceMessage).map((r) => {
-    const [source, target] = [r.from as string, r.to as string];
-    return { id: id(source, target), source, target };
-  });
-  return { diagram_type: type, nodes, edges, subgraphs: [...subgraphs, ...sequenceBlocks(messages, subgraphs.length)] };
+  const codes = sequenceCodes(db);
+  const edges = messages
+    .filter((r) => isSequenceMessage(codes, r))
+    .map((r) => {
+      const [source, target] = [r.from as string, r.to as string];
+      return { id: id(source, target), source, target };
+    });
+  const blocks = sequenceBlocks(codes, messages, subgraphs.length);
+  return { diagram_type: type, nodes, edges, subgraphs: [...subgraphs, ...blocks] };
 };
 
 // Each block in statement order, inside the block open around it. Ids number
 // on from the boxes, so a block and a box never share one.
-const sequenceBlocks = (records: SequenceRecord[], first: number): GraphNode[] => {
+const sequenceBlocks = (codes: SequenceCodes, records: SequenceRecord[], first: number): GraphNode[] => {
   const blocks: GraphNode[] = [];
   const open: string[] = [];
   for (const r of records) {
     if (r.type === undefined) continue;
-    if (SEQUENCE_BLOCK_OPEN.has(r.type)) {
+    if (codes.open.has(r.type)) {
       const id = `block_${first + blocks.length}`;
       const label = typeof r.message === "string" && r.message ? r.message : id;
       blocks.push({ id, label, parent: open[open.length - 1] ?? null });
       open.push(id);
-    } else if (SEQUENCE_BLOCK_CLOSE.has(r.type)) {
+    } else if (codes.close.has(r.type)) {
       open.pop();
     }
   }
@@ -222,29 +231,58 @@ interface ErRelationship {
   relSpec?: { cardA?: string; cardB?: string; relType?: string };
 }
 
-// The parser stores the marker beside entityA as cardB, and the one beside
-// entityB as cardA, so `A ||--o{ B` gives cardB ONLY_ONE and cardA ZERO_OR_MORE.
-const ER_NEAR_A: Record<string, string> = {
+// The value a db's enum table holds under a name. A name the table lacks
+// throws, because the parser's result could not then be read.
+const enumValue = <T>(db: AnyDb, table: string, name: string): T => {
+  const value = (db[table] as Readonly<Record<string, unknown>> | undefined)?.[name];
+  if (value === undefined) throw new Error(`the ${table} table in mermaid's db has no ${name}`);
+  return value as T;
+};
+
+// The name an enum table gives a value, the inverse of enumValue.
+const enumName = (db: AnyDb, table: string, value: unknown): string => {
+  const entry = Object.entries((db[table] as Readonly<Record<string, unknown>> | undefined) ?? {}).find(
+    ([, v]) => v === value,
+  );
+  if (!entry) throw new Error(`the ${table} table in mermaid's db has no value ${String(value)}`);
+  return entry[0];
+};
+
+// How each end of a relationship is drawn, by erDb's Cardinality name, beside
+// the source entity and beside the target entity.
+const ER_NEAR_SOURCE: Readonly<Record<string, string>> = {
   ONLY_ONE: "||",
   ZERO_OR_ONE: "|o",
   ONE_OR_MORE: "}|",
   ZERO_OR_MORE: "}o",
   MD_PARENT: "u",
 };
-const ER_NEAR_B: Record<string, string> = {
+const ER_NEAR_TARGET: Readonly<Record<string, string>> = {
   ONLY_ONE: "||",
   ZERO_OR_ONE: "o|",
   ONE_OR_MORE: "|{",
   ZERO_OR_MORE: "o{",
   MD_PARENT: "u",
 };
-const ER_LINE: Record<string, string> = { IDENTIFYING: "--", NON_IDENTIFYING: ".." };
 
-const erConnector = (r: ErRelationship): { kind: string; cardinality: string } => {
-  const { cardA = "", cardB = "", relType = "" } = r.relSpec ?? {};
-  const [nearA, line, nearB] = [ER_NEAR_A[cardB], ER_LINE[relType], ER_NEAR_B[cardA]];
-  if (!(nearA && line && nearB)) throw new Error(`no cardinality for the relationship ${cardB} ${relType} ${cardA}`);
-  return { kind: line, cardinality: `${nearA}${line}${nearB}` };
+// The connector of a relationship, as the source spells it, and its two ends
+// by name. The parser stores the marker beside entityA as cardB, and the one
+// beside entityB as cardA, so `A ||--o{ B` gives cardB ONLY_ONE and cardA
+// ZERO_OR_MORE: the source end is cardB and the target end cardA.
+const erConnector = (
+  db: AnyDb,
+  r: ErRelationship,
+): Pick<GraphEdge, "kind" | "cardinality" | "ends" | "identifying"> => {
+  const { cardA, cardB, relType } = r.relSpec ?? {};
+  const ends = { from: enumName(db, "Cardinality", cardB), to: enumName(db, "Cardinality", cardA) };
+  const identifying = relType === enumValue(db, "Identification", "IDENTIFYING");
+  if (!identifying && relType !== enumValue(db, "Identification", "NON_IDENTIFYING")) {
+    throw new Error(`no line for the relationship type ${relType}`);
+  }
+  const line = identifying ? "--" : "..";
+  const [nearSource, nearTarget] = [ER_NEAR_SOURCE[ends.from], ER_NEAR_TARGET[ends.to]];
+  if (!(nearSource && nearTarget)) throw new Error(`no cardinality for the relationship ${ends.from} ${ends.to}`);
+  return { kind: line, cardinality: `${nearSource}${line}${nearTarget}`, ends, identifying };
 };
 
 // An entity is a node and a relationship an edge. The db keys entities by
@@ -260,7 +298,7 @@ const erGraph = (type: string, db: AnyDb): DiagramGraph => {
     edges: rels.map((r) => {
       const source = nameOf.get(r.entityA ?? "") ?? r.entityA ?? "";
       const target = nameOf.get(r.entityB ?? "") ?? r.entityB ?? "";
-      return { id: id(source, target), source, target, ...erConnector(r), ...(r.roleA ? { label: r.roleA } : {}) };
+      return { id: id(source, target), source, target, ...erConnector(db, r), ...(r.roleA ? { label: r.roleA } : {}) };
     }),
     subgraphs: [],
   };
@@ -343,23 +381,38 @@ interface ClassRelation {
   relation?: { type1?: number | string; type2?: number | string; lineType?: number };
 }
 
-// A relation end, by mermaid's relationType number: aggregation, extension,
-// composition, dependency, lollipop. An end with no marker is "none".
-const CLASS_NEAR_1 = ["o", "<|", "*", "<", "()"];
-const CLASS_NEAR_2 = ["o", "|>", "*", ">", "()"];
+// A relation end's marker, by the name classDb's relationType table gives its
+// number, beside the first class and beside the second. An end with no marker
+// is "none".
+const CLASS_NEAR_1: Readonly<Record<string, string>> = {
+  AGGREGATION: "o",
+  EXTENSION: "<|",
+  COMPOSITION: "*",
+  DEPENDENCY: "<",
+  LOLLIPOP: "()",
+};
+const CLASS_NEAR_2: Readonly<Record<string, string>> = {
+  AGGREGATION: "o",
+  EXTENSION: "|>",
+  COMPOSITION: "*",
+  DEPENDENCY: ">",
+  LOLLIPOP: "()",
+};
 
-const classEnd = (markers: string[], type: number | string | undefined): string => {
+const classEnd = (db: AnyDb, markers: Readonly<Record<string, string>>, type: number | string | undefined): string => {
   if (type === undefined || type === "none") return "";
-  const marker = typeof type === "number" ? markers[type] : undefined;
+  const marker = markers[enumName(db, "relationType", type)];
   if (marker === undefined) throw new Error(`no marker for the class relation end ${type}`);
   return marker;
 };
 
 // A multiplicity is quoted beside its end, as the source writes it.
-const classEdge = (r: ClassRelation, id: (source: string, target: string) => string): GraphEdge => {
+const classEdge = (db: AnyDb, r: ClassRelation, id: (source: string, target: string) => string): GraphEdge => {
   const [source, target] = [r.id1 ?? "", r.id2 ?? ""];
-  const line = r.relation?.lineType === 1 ? ".." : "--";
-  const kind = `${classEnd(CLASS_NEAR_1, r.relation?.type1)}${line}${classEnd(CLASS_NEAR_2, r.relation?.type2)}`;
+  const dotted = r.relation?.lineType === enumValue(db, "lineType", "DOTTED_LINE");
+  const line = dotted ? ".." : "--";
+  const [end1, end2] = [classEnd(db, CLASS_NEAR_1, r.relation?.type1), classEnd(db, CLASS_NEAR_2, r.relation?.type2)];
+  const kind = `${end1}${line}${end2}`;
   const quoted = (t: string | undefined): string[] => (t && t !== "none" ? [`"${t}"`] : []);
   const [near1, near2] = [quoted(r.relationTitle1), quoted(r.relationTitle2)];
   const cardinality = near1.length + near2.length > 0 ? [...near1, kind, ...near2].join(" ") : "";
@@ -390,7 +443,7 @@ const classGraph = (type: string, db: AnyDb): DiagramGraph => {
       parent: c.parent ?? null,
       ...(c.shape ? { shape: c.shape } : {}),
     })),
-    edges: relations.map((r) => classEdge(r, id)),
+    edges: relations.map((r) => classEdge(db, r, id)),
     subgraphs: [...namespaces].map(([key, ns]) => ({ id: key, label: ns.label || key, parent: ns.parent ?? null })),
     pseudo: {
       nodes: interfaces.map((i) => ({ id: i.id ?? "", label: i.label ?? "", parent: null, shape: "lollipop" })),

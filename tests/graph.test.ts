@@ -86,12 +86,23 @@ describe("erDiagram graph", () => {
     const graph = await graphOf(
       'erDiagram\n  A |o--o{ B : x\n  C }|..|| D : y\n  E u--o{ F : z\n  A ||--|{ C : "w"\n  A |o--o{ B : again',
     );
-    expect(graph.edges).toEqual([
+    const shape = graph.edges.map(({ ends: _, identifying: __, ...rest }) => rest);
+    expect(shape).toEqual([
       { id: "L_A_B_0", source: "A", target: "B", kind: "--", cardinality: "|o--o{", label: "x" },
       { id: "L_C_D_0", source: "C", target: "D", kind: "..", cardinality: "}|..||", label: "y" },
       { id: "L_E_F_0", source: "E", target: "F", kind: "--", cardinality: "u--o{", label: "z" },
       { id: "L_A_C_0", source: "A", target: "C", kind: "--", cardinality: "||--|{", label: "w" },
       { id: "L_A_B_1", source: "A", target: "B", kind: "--", cardinality: "|o--o{", label: "again" },
+    ]);
+  });
+
+  test("names each relationship's source end and target end, and whether it is identifying", async () => {
+    // erDb stores the marker beside entityA as cardB, so the ends must cross back.
+    const graph = await graphOf("erDiagram\n  A |o--o{ B : x\n  C }|..|| D : y\n  E u--|{ F : z");
+    expect(graph.edges.map((e) => [e.source, e.target, e.ends, e.identifying])).toEqual([
+      ["A", "B", { from: "ZERO_OR_ONE", to: "ZERO_OR_MORE" }, true],
+      ["C", "D", { from: "ONE_OR_MORE", to: "ONLY_ONE" }, false],
+      ["E", "F", { from: "MD_PARENT", to: "ONE_OR_MORE" }, true],
     ]);
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { buildDocModel, checkMarkdown, fixSource, RULE, RULES } from "../src/index.ts";
 import { edgeLabelBackground, scoreMkdocs } from "../src/parse/contrast.ts";
 import { calculateComplexity, configFromPreset, DEFAULT_PRESET, parseFailed } from "../src/parse/metrics.ts";
-import { parserReason } from "../src/parse/stats.ts";
+import { extractStats, parserError } from "../src/parse/stats.ts";
 import { MAX_NESTING } from "../src/rules/complexity-subgraph-nesting-too-deep.ts";
 import { chain, fence, rules } from "./helpers.ts";
 
@@ -267,24 +267,30 @@ describe("zero-node diagrams", () => {
     expect(hit?.message).toContain("Parsing failed");
   });
 
-  test("mermaid core reading several lines as zero nodes is still a silent failure", async () => {
-    // A mermaid-core result with no error and no nodes, from more than one line.
-    const stats = {
-      nodes: 0,
-      edges: 0,
-      subgraphs: 0,
-      max_subgraph_depth: 0,
-      max_tree_depth: 0,
-      rows: 0,
-      node_ids: [],
-      subgraph_names: [],
-      parser_used: "mermaid-core" as const,
-      diagram_type: "flowchart",
-      error: null,
-    };
-    expect(parseFailed("flowchart LR\n  %% nothing\n  style A fill:#fff", stats)).toBe(true);
-    expect(parseFailed("flowchart LR", stats)).toBe(false);
-    expect(parseFailed("pie\n  title Pets", { ...stats, parser_used: "langium" })).toBe(false);
+  // Mermaid core reads each of these without an error into no nodes, so each
+  // parsed: frontmatter and a directive are config, not diagram source.
+  test.each([
+    "sequenceDiagram",
+    "---\ntitle: Empty\n---\nsequenceDiagram",
+    "%%{\n init: {}\n}%%\nsequenceDiagram",
+    "---\ntitle: T\n---\nerDiagram",
+  ])("%j parses with no nodes and no parser error, so it did not fail", async (src) => {
+    const stats = await extractStats(src);
+    expect(stats.nodes).toBe(0);
+    expect(stats.error).toBeNull();
+    expect(parseFailed(stats)).toBe(false);
+    expect(await rules(fence(src))).toEqual([]);
+  });
+
+  test("a parser error is a failure, and no type mermaid detects is one too", async () => {
+    expect(parseFailed(await extractStats("flowchart LR\n  A -->"))).toBe(true);
+    const unknown = await extractStats("nope\n  A --> B");
+    expect(unknown.diagram_type).toBe("unknown");
+    expect(parseFailed(unknown)).toBe(true);
+    const [hit] = await checkMarkdown(fence("nope\n  A --> B"), "doc.md");
+    expect(hit?.message).toBe(
+      "a diagram of no type mermaid detects did not parse (parser: mermaid-core): No diagram type detected matching given configuration for text: nope",
+    );
   });
 
   test("zenuml says why it cannot be checked", async () => {
@@ -293,14 +299,43 @@ describe("zero-node diagrams", () => {
     expect(hit?.message).toContain("external mermaid add-on that mermaidjs-lint does not include");
     expect(hit?.remediation).toContain("No fixer can help");
   });
+});
 
-  test("a parser reason drops the echoed source and its pointer, and keeps the rest", () => {
-    const err = new Error("Parse error on line 3:\n...A --> B  C[[[\n------^\nExpecting 'TEXT', got 'SQS'");
-    expect(parserReason(err)).toBe("Parse error on line 3: Expecting 'TEXT', got 'SQS'");
-    expect(parserReason(new Error("No diagram type detected for text: nope\n  lots\n  of source"))).toBe(
-      "No diagram type detected for text: nope",
+describe("parser reasons, from the fields each parser attaches", () => {
+  test("a JISON parse error is read from its hash: the line, what it expected and what it got", async () => {
+    const stats = await extractStats("erDiagram\n  A ||--o{ B\n");
+    expect(stats.error).toBe("Parse error on line 2: Expecting 'COLON', 'STYLE_SEPARATOR', got 'NEWLINE'");
+    expect(stats.error_line).toBe(2);
+  });
+
+  test("a JISON lexical error is read from its hash", async () => {
+    const stats = await extractStats("graph TD\n  A --> B\n  B -->|x| \u0001");
+    expect(stats.error).toBe("Lexical error on line 3: Unrecognized text");
+    expect(stats.error_line).toBe(3);
+  });
+
+  test("a Langium error is read from its lexer and parser errors", async () => {
+    const lexer = await extractStats("pie\n  bogus bogus");
+    expect(lexer.error).toBe(
+      "Parsing failed: Lexer error on line 2, column 3: unexpected character: ->b<- at offset: 6, skipped 5 characters. " +
+        "Lexer error on line 2, column 9: unexpected character: ->b<- at offset: 12, skipped 5 characters.",
     );
-    expect(parserReason("  plain  reason \n")).toBe("plain reason");
+    expect(lexer.error_line).toBe(2);
+    const parser = await extractStats("gitGraph\n  commit id: 1\n");
+    expect(parser.error).toBe(
+      "Parsing failed: Parse error on line 2, column 14: Expecting token of type 'STRING' but found `1`.",
+    );
+    // An error at the end of the diagram names no line.
+    const end = await extractStats('pie\n  "a" : x');
+    expect(end.error).toContain("Parse error at the end of the diagram: Expecting token of type 'NUMBER_PIE'");
+  });
+
+  test("any other error keeps its first line, and points at no line", () => {
+    expect(parserError(new Error("No diagram type detected for text: nope\n  lots\n  of source"))).toEqual({
+      reason: "No diagram type detected for text: nope",
+      line: null,
+    });
+    expect(parserError("  plain  reason \n")).toEqual({ reason: "plain  reason", line: null });
   });
 });
 

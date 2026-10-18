@@ -73,7 +73,7 @@ Give a rule's own setting another name, such as `mode`.
 | `doc` | `DocModel` | The parsed file. See [Document model](document-model.md). |
 | `file` | `string` | The file's path, the same in `check` and `fix`. The command passes an absolute path, and a library call passes the `file` it was given. |
 | `options` | `Record<string, unknown>` | The rule's options from the config, already type-checked. The `--preset` or `--profile` flag replaces either one the rule declares. `--canvas-light` and `--canvas-dark` set their side of every option of type `canvas`. A preset arrives by its canonical name. A rule that declares `profile` and a canvas loses its config canvas for a file the auto profile reads as `mkdocs-material`. |
-| `helpers.detectKeyword` | function | The keyword of a diagram source |
+| `helpers.detectKeyword` | function | The keyword of the diagram type mermaid detects in a diagram source, such as `flowchart`, or `null` |
 | `helpers.wcagRatio(fg, bg)` | function | The WCAG 2 contrast ratio of two colours |
 | `helpers.compositeOver(fg, bg)` | function | A translucent colour blended over a background |
 

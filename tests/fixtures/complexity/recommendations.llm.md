@@ -626,7 +626,7 @@ flowchart
 ### What the linter reported on the original
 
 ```text
-parse-diagram-unparseable not_a_known_diagram_type did not parse (parser: mermaid-core): No diagram type detected matching given configuration for text: not_a_known_diagram_type
+parse-diagram-unparseable a diagram of no type mermaid detects did not parse (parser: mermaid-core): No diagram type detected matching given configuration for text: not_a_known_diagram_type
 ```
 
 The complexity rules skip a diagram that fails to parse.

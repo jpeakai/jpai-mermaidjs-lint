@@ -22,6 +22,8 @@ Anything under `Unreleased` is on `main` but not yet released.
   It writes no file, exits as a check does, and refuses `--fix`, `--json`, `--list-rules` and `--validate-plugins`.
 - The library exports `splitPlan`, `splitOutcome` and the `SplitPlan`, `SplitGroup`, `SplitDetail`, `SplitLoss`, `SplitOutcome` and `Tier` types.
   `Diagram` gains `graph()`, the parser's nodes, edges and subgraphs, read once.
+- A docs site page, [Summarising a diagram](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/summarisation/), explains the graph theory behind split plans, the tier ladder and the contract.
+  It plans one large diagram under every preset, drawn by the site build from what `splitPlan` returns.
 
 ### Changed
 

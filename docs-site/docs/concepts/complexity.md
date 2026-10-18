@@ -211,6 +211,8 @@ This order flow has five states, three transitions and one composite state, so i
 
 Splitting a diagram changes what it says.
 A finding names the existing subgraphs to split along and a target size, and a human decides where the seams go.
+When a split plan meets its contract, the finding also carries the plan: an overview and one detail diagram per group.
+The plan is still a recommendation, as [Summarising a diagram](summarisation.md) explains.
 
 ## Diagrams that cannot be measured
 

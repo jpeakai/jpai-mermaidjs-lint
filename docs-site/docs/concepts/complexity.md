@@ -141,7 +141,7 @@ Each diagram type has its own unit, read from mermaid's parser result.
 | `flowchart`, `flowchart-elk`, `graph` | A vertex, but not a subgraph's id used as an edge's end, since that edge runs to the subgraph | A `subgraph` |
 | `classDiagram` | A class, whose attributes and methods are rows | A `namespace`, and one inside another adds nesting |
 | `sequenceDiagram` | A participant or actor | A `box`, and a block such as `loop`, `alt` or `par` |
-| `stateDiagram` | A state, including a composite state, a fork and a choice | A composite state |
+| `stateDiagram` | A state, including a composite state, a fork and a choice | A composite state, but not a concurrency region inside it |
 | `erDiagram` | An entity, whose attributes are rows | None |
 | `block` | A leaf block | A block that holds others |
 | `C4` diagrams | A shape, such as a person or system | A boundary |
@@ -198,6 +198,8 @@ These four entities, three relationships and five attributes score 6.75.
 
 A state is a node, and a transition between two states is an edge.
 A composite state is a node and also a subgraph around the states inside it.
+A `--` line splits a composite state into concurrency regions, drawn as dashed-off areas of its box.
+A region is not a state or a subgraph, and the states in it count inside the composite.
 A start or end marker, `[*]`, only marks where a path begins or ends.
 It is not a state, and its transition is not an edge.
 A fork and a choice are nodes, because each is a point where the path divides.

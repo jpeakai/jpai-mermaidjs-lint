@@ -14,6 +14,9 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 - A flowchart edge to a subgraph's id, such as `A --> S` where `S` is a subgraph, no longer counts `S` as a node as well.
   Mermaid draws that edge to the subgraph's box, so the diagram's node count drops by one for each such subgraph.
+- A stateDiagram's concurrency regions, split by `--` inside a composite state, no longer count as nodes or subgraphs.
+  Mermaid draws each region as a dashed-off area of the composite's box, so the states in it count inside the composite.
+  A composite with regions now nests one deep, not two.
 
 ## [0.8.1] - 2026-10-18
 

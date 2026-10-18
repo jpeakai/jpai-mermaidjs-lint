@@ -11,6 +11,7 @@ import {
   isSequenceMessage,
   SEQUENCE_BLOCK_CLOSE,
   SEQUENCE_BLOCK_OPEN,
+  stateParents,
 } from "./stats.ts";
 
 export interface GraphNode {
@@ -282,9 +283,13 @@ const STATE_MARKERS = new Set(["stateStart", "stateEnd"]);
 
 // The start and end markers, and each transition into or out of one. They are
 // kept apart from what stats.ts counts, so a reader of the graph still sees
-// where a path begins and ends. Notes, and their connectors, are dropped.
+// where a path begins and ends. Notes, and their connectors, are dropped. A
+// marker in a concurrency region sits in the composite, as its states do.
 const stateMarkers = (db: AnyDb, counted: StateNode[]): { nodes: StateNode[]; edges: StateEdge[] } => {
-  const nodes = ((db.nodes as StateNode[] | undefined) ?? []).filter((n) => STATE_MARKERS.has(n.shape ?? ""));
+  const parentOf = stateParents(db);
+  const nodes = ((db.nodes as StateNode[] | undefined) ?? [])
+    .filter((n) => STATE_MARKERS.has(n.shape ?? ""))
+    .map((n) => ({ ...n, parentId: parentOf(n) }));
   const markers = new Set(nodes.map((n) => n.id ?? ""));
   const drawn = new Set([...markers, ...counted.map((n) => n.id ?? "")]);
   const edges = ((db.edges as StateEdge[] | undefined) ?? []).filter(

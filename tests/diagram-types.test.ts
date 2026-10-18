@@ -171,6 +171,16 @@ describe("what a stateDiagram counts", () => {
     );
     expect(stats.nodes).toBe(4);
   });
+
+  test("stateDiagram counts a composite's concurrency regions as neither states nor subgraphs", async () => {
+    const stats = await statsOf(
+      "stateDiagram-v2\n  state Active {\n    [*] --> A\n    A --> B\n    --\n    [*] --> C\n    C --> D\n  }",
+    );
+    expect(stats.node_ids).toEqual(["A", "Active", "B", "C", "D"]);
+    expect(stats.edges).toBe(2);
+    expect(stats.subgraph_names).toEqual(["Active"]);
+    expect(stats.max_subgraph_depth).toBe(1);
+  });
 });
 
 describe("what a classDiagram counts", () => {

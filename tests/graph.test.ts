@@ -137,6 +137,21 @@ describe("stateDiagram graph", () => {
     );
     expect(graph.nodes.filter((n) => n.id === "f" || n.id === "j").map((n) => n.shape)).toEqual(["fork", "join"]);
   });
+
+  test("puts the states in each concurrency region, and its start marker, inside the composite", async () => {
+    const graph = await graphOf(
+      "stateDiagram-v2\n  state Active {\n    [*] --> A\n    A --> B\n    --\n    [*] --> C\n    C --> D\n  }",
+    );
+    expect(graph.nodes.map((n) => [n.id, n.parent])).toEqual([
+      ["Active", "Active__group"],
+      ["A", "Active__group"],
+      ["B", "Active__group"],
+      ["C", "Active__group"],
+      ["D", "Active__group"],
+    ]);
+    expect(graph.subgraphs).toEqual([{ id: "Active__group", label: "", parent: null }]);
+    expect(graph.pseudo?.nodes.map((n) => n.parent)).toEqual(["Active__group", "Active__group"]);
+  });
 });
 
 describe("classDiagram graph", () => {

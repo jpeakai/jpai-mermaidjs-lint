@@ -830,18 +830,50 @@ interface StateEdge {
 // ([*], one pair per composite state), and a note with the group mermaid wraps
 // it in. A marker only says where a path begins or ends, and a note is an
 // annotation, as notes are in every other type.
-const STATE_NOT_A_STATE = new Set(["stateStart", "stateEnd", "note", "noteGroup"]);
+//
+// A divider is one concurrency region of a composite state, the part between
+// two `--` lines. Mermaid draws it as an unlabelled area of the composite's
+// box, set off from the next region by a dashed line, with no box or title of
+// its own. The composite is the boundary the reader finds and tracks, and the
+// dashed line only divides it, as `and` divides a sequence `par` block that
+// counts once. So a region is neither a state nor a subgraph, and the states
+// in it belong to the composite. Its id is also random, so counting it would
+// change the node and subgraph names from one parse to the next.
+const STATE_DIVIDER = "divider";
+const STATE_NOT_A_STATE = new Set(["stateStart", "stateEnd", "note", "noteGroup", STATE_DIVIDER]);
 
-export const isCountedState = (n: { shape?: string }): boolean => !STATE_NOT_A_STATE.has(n.shape ?? "");
+const isCountedState = (n: { shape?: string }): boolean => !STATE_NOT_A_STATE.has(n.shape ?? "");
 
-// The states and transitions a stateDiagram draws, without markers or notes.
-// A transition into or out of a marker goes with it, as does a note's
+// Each state's parent with concurrency regions passed over, so a state in a
+// region has the composite around the region as its parent.
+export const stateParents = (db: AnyDb): ((n: StateNode) => string | undefined) => {
+  const all = (db.nodes as StateNode[] | undefined) ?? [];
+  const dividers = new Map(all.filter((n) => n.shape === STATE_DIVIDER).map((n) => [n.id ?? "", n.parentId]));
+  return (n) => {
+    let parent = n.parentId;
+    const seen = new Set<string>();
+    while (parent !== undefined && dividers.has(parent) && !seen.has(parent)) {
+      seen.add(parent);
+      parent = dividers.get(parent);
+    }
+    return parent;
+  };
+};
+
+// The states and transitions a stateDiagram draws, without markers, notes or
+// concurrency regions, each with its parent read past any region. A
+// transition into or out of a marker goes with it, as does a note's
 // connector. graph.ts draws the same set, so the two never disagree.
 export const countedStateElements = <N extends StateNode, E extends StateEdge>(
   db: AnyDb,
 ): { nodes: N[]; edges: E[] } => {
   const all = (db.nodes as N[] | undefined) ?? [];
-  const nodes = all.filter(isCountedState);
+  const parentOf = stateParents(db);
+  const nodes = all.filter(isCountedState).map((n) => {
+    const parentId = parentOf(n);
+    const { parentId: _, ...rest } = n;
+    return (parentId === undefined ? rest : { ...rest, parentId }) as N;
+  });
   const kept = new Set(nodes.map((n) => n.id ?? ""));
   const edges = ((db.edges as E[] | undefined) ?? []).filter((e) => kept.has(e.start ?? "") && kept.has(e.end ?? ""));
   return { nodes, edges };

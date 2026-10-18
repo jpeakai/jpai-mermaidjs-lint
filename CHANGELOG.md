@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.8.0] - 2026-10-18
+
 ### Changed
 
 - **Complexity scores change for sequence, state, entity and class diagrams.** A diagram near a threshold may cross it either way, per [MJL-0021](adrs/0021-the-score-counts-what-a-reader-must-read.md).
@@ -261,7 +265,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.7.4...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.7.4...v0.8.0
 [0.7.4]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.7.1...v0.7.2

@@ -78,7 +78,8 @@ export const finding = (
 });
 
 export const boundaryHint = (boundaries: string[]): string => {
-  if (boundaries.length === 0) return "introduce subgraphs to group related nodes before splitting";
+  // Reads on after "Split", as every complexity remediation places it.
+  if (boundaries.length === 0) return "after grouping related nodes into subgraphs";
   const shown = boundaries.slice(0, 4);
   const extra = boundaries.length > shown.length ? ` (+${boundaries.length - shown.length} more)` : "";
   return `along existing subgraph boundaries: ${shown.join(", ")}${extra}`;

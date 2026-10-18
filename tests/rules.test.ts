@@ -163,7 +163,7 @@ describe("complexity rules: split plan in the remediation", () => {
     const loose = Array.from({ length: 51 }, (_, i) => `  n${i}`).join("\n");
     const found = await checkMarkdown(fence(`flowchart LR\n${loose}`), "doc.md");
     expect(found.find((f) => f.rule === RULE.NODES_COGNITIVE)?.remediation).toBe(
-      "Split into sub-diagrams introduce subgraphs to group related nodes before splitting. " +
+      "Split into sub-diagrams after grouping related nodes into subgraphs. " +
         "Target at most 25 nodes and 40 VCS per sub-diagram.",
     );
   });

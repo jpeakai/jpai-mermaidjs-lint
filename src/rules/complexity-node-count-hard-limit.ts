@@ -11,7 +11,7 @@ export const complexityNodeCountHardLimit = complexityRule({
           message: `${stats.nodes} nodes > ${c.node_hard_limit} hard limit`,
           remediation:
             "Split immediately. This diagram is beyond any comprehensible size. " +
-            `${boundaryHint(stats.subgraph_names).replace(/^along /, "Split along ")}. ${splitTarget(c)}`,
+            `Split ${boundaryHint(stats.subgraph_names)}. ${splitTarget(c)}`,
         }
       : null,
 });

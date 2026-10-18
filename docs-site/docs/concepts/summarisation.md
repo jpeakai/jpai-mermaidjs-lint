@@ -87,7 +87,7 @@ Once a leaf sits inside its hub's group, the overview may show the group reachin
 When structure alone finds no more folds, the plan looks for communities: sets of nodes with more edges inside than out.
 Modularity scores a partition by how far its inside edges exceed what chance would give.
 Greedy agglomeration starts with every node alone, then repeatedly merges the pair that gains the most modularity.
-The plan only merges two nodes an edge joins,, so a suggested group is always connected.
+The plan only merges two nodes an edge joins, so a suggested group is always connected.
 That is the method of [Clauset, Newman and Moore (2004)](https://doi.org/10.1103/PhysRevE.70.066111).
 
 --8<-- "summarise-communities.md"
@@ -118,7 +118,7 @@ A chain folds in even stages and a set of twins in even runs, all in one step.
 It stops at the first overview that meets the preset's `nodeTarget` and `vcsTarget`.
 Once there, it folds the sibling regions of the ones folded, so the plan reads evenly.
 No fold may leave the overview with fewer than four nodes, unless the diagram has fewer than eight.
-So a plan keeps the overview closest to the target, rather than a few huge groups.
+The evening steps can leave the overview well below the target, since they favour even groups over a full target.
 In `T5` and `T6` it gathers what is left open into groups no larger than the largest.
 A detail diagram must meet the same targets, and one that does not is split once more.
 A plan names the last tier that changed it.
@@ -145,6 +145,7 @@ The contract is what this page means by "meaning is preserved".
 - **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds.
 - **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
+- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
 - **Declared loss.** The new reachable pairs the plan reports are recounted, and must be zero after `T2`.

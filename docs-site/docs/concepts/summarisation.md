@@ -80,7 +80,7 @@ Repeated, the folding peels the graph towards its 2-core, the part where every n
 --8<-- "summarise-leaves.md"
 
 This fold is lossier than the ones above.
-Once a leaf sits inside its hub's group, the overview may show the group reaching nodes the leaf never could.
+Once a leaf sits inside the group of the node it hangs from, the overview may show the group reaching nodes the leaf never could.
 
 ### Communities and modularity
 
@@ -116,12 +116,25 @@ When that plan fails, it climbs in the order below.
 Within a tier, it applies the fold that saves the most score per node hidden, then measures the overview again.
 A chain folds in even stages and a set of twins in even runs, all in one step.
 It stops at the first overview that meets the preset's `nodeTarget` and `vcsTarget`.
-Once there, it folds the sibling regions of the ones folded, so the plan reads evenly.
 No fold may leave the overview with fewer than four nodes, unless the diagram has fewer than eight.
-The evening steps can leave the overview well below the target, since they favour even groups over a full target.
-In `T5` and `T6` it gathers what is left open into groups no larger than the largest.
+
+Once the target is met, the plan evens out what it folded.
+It does so only while the overview keeps at least 60% of `nodeTarget`, rounded up, so an overview lands near its target.
+If a detail then fails its target, the evening goes on below that share, down to the fewest nodes a fold may leave.
+In `T3` it folds the sibling regions of the ones folded, so sibling regions read alike.
+In `T5` and `T6` it gathers what is left open into groups of three or more, no larger than the largest.
 A detail diagram must meet the same targets, and one that does not is split once more.
 A plan names the last tier that changed it.
+
+`T5` and `T6` follow three rules, so the overview still tells the diagram's story:
+
+- **Hubs stay in view.** A hub is a node of degree at least four and at least the 90th percentile degree. It keeps its own overview node, and the leaves hanging from it fold beside it as one group. An `erDiagram` never merges two relationship labels, so there its leaves stay open.
+- **A decision's branches stay apart.** A decision is a node whose outgoing edges carry two labels or more, in a flowchart or a `stateDiagram`. Two targets of its differently labelled branches never share a group, unless one reaches the other, or both reach a common member, inside the group.
+- **Every group hides two nodes or more.** Once the target is met, a group hiding one node is undone when the overview and every detail still meet the target without it. Otherwise it is merged into a neighbouring node or suggested group. One that can be neither stays.
+
+When the target cannot be met under the first two rules, the plan is walked again without them, and the third still holds.
+As a last resort, the plan is walked once more with groups that hide one node allowed.
+A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk.
 
 The declared loss is the number of pairs of overview nodes where one reaches the other in the overview but not in the original.
 The plan reports it after each tier.
@@ -132,7 +145,7 @@ The plan reports it after each tier.
 | `T2` | Twins, bundles of sibling leaves, and chain stages | Nothing. The declared loss after `T2` must be zero. |
 | `T3` | Author regions, innermost first: subgraphs, composite states and namespaces | New reachable pairs between nodes folded into one region |
 | `T4` | `erDiagram` aggregates: a root with the weak entities it identifies, and a junction table into the smaller entity it joins | New reachable pairs. Cardinalities are never merged. |
-| `T5` | Leaves into the node they hang from, repeated | New reachable pairs through the hub's group |
+| `T5` | Leaves into the node they hang from, repeated, or beside it as one group when it is a hub | New reachable pairs through the group |
 | `T6` | Suggested groups from greedy modularity, over pairs an edge joins, with alike labels breaking ties | New reachable pairs, and groups the author may not recognise |
 
 ## What "meaning is preserved" means
@@ -140,12 +153,13 @@ The plan reports it after each tier.
 A plan is offered only when a contract passes, and `src/split/contract.ts` checks it on every plan.
 The contract is what this page means by "meaning is preserved".
 
-- **Sound.** Every original node is in exactly one overview node. Each overview edge stands for original edges, in the same direction, and none is invented.
+- **Sound.** Every original node is in exactly one overview node. Each overview edge stands for original edges, in the same direction, and none is invented. The one exception is an undirected edge, below.
 - **Sound attributes.** An overview edge keeps a label or an arrow kind only when every edge it stands for agrees.
 - **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds.
 - **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
 - **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it.
+- **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
 - **Declared loss.** The new reachable pairs the plan reports are recounted, and must be zero after `T2`.
@@ -162,7 +176,11 @@ The contract does not promise everything a reader might assume.
 ## Label language
 
 Labels feed grouping in two places.
-A group without an author label is named after its best-connected member.
+A group without an author label is named after one of its members.
+A suggested group, from `T5` or `T6`, is named after the member on its main path.
+That is the member with the most edges crossing the group's boundary, a start or end transition counted as one.
+A tie goes to the member the flow reaches first from where it enters the diagram.
+Any other group is named after its best-connected member.
 In `T6`, when two merges gain the same modularity, the pair with alike labels goes first.
 Two nodes no edge joins never pair, however alike their labels.
 

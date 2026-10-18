@@ -12,6 +12,8 @@ import { type DiagramGraph, extractGraph, type GraphEdge, type GraphNode } from 
 import type { SplitPlan } from "../../src/split/types.ts";
 
 const MARKERS = new Set(["stateStart", "stateEnd"]);
+// A flowchart link with no arrowhead and a classDiagram link with no end marker.
+const UNDIRECTED = new Set(["---", "-.-", "===", "~~~", "--", ".."]);
 
 const nodeKey = (n: GraphNode): string =>
   JSON.stringify([n.id, n.label, n.markdown ?? false, n.shape ?? null, n.descriptions ?? []]);
@@ -173,7 +175,7 @@ const stubReadings = (r: Reading): { of: Map<string, Map<string, string>>; probl
 // Each original edge once: from the overview between two kept nodes, else
 // from a detail. A stub read as a whole group gives the half edge from that
 // group into the member. The overview joins the overview nodes of every edge.
-const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>): string[] => {
+const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan: SplitPlan): string[] => {
   const end = endsOf(r.original);
   const over = (x: string): string => r.groupOf.get(x) ?? x;
   const oEnd = endsOf(r.overview);
@@ -192,10 +194,27 @@ const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>): stri
     }
   }
   const pairs = new Set(r.overview.edges.map((e) => `${oEnd(e.source)}\u0000${oEnd(e.target)}`));
+  // An undirected link, with no arrowhead or end marker and no cardinality,
+  // drawn the other way between the same two nodes, one of them a group.
+  const backs = new Set(
+    r.overview.edges
+      .filter(
+        (e) => UNDIRECTED.has(e.kind ?? "") && !e.cardinality && (r.groups.has(e.source) || r.groups.has(e.target)),
+      )
+      .map((e) => `${oEnd(e.target)}\u0000${oEnd(e.source)}\u0000${e.kind}`),
+  );
+  let reversed = 0;
   const unjoined = r.original.edges
-    .map((e) => [over(end(e.source)), over(end(e.target))])
-    .filter(([a, b]) => !((a === b && r.groups.has(a ?? "")) || pairs.has(`${a}\u0000${b}`)))
+    .map((e) => [over(end(e.source)), over(end(e.target)), e.kind ?? ""])
+    .filter(([a, b, kind]) => {
+      if ((a === b && r.groups.has(a ?? "")) || pairs.has(`${a}\u0000${b}`)) return false;
+      if (!backs.has(`${a}\u0000${b}\u0000${kind}`)) return true;
+      reversed++;
+      return false;
+    })
     .map(([a, b]) => `the overview does not join ${a} to ${b}`);
+  if (reversed !== plan.loss.reversedEdges)
+    problems.push(`the overview draws ${reversed} edges the other way, not the ${plan.loss.reversedEdges} declared`);
   const wantHalves = r.original.edges.flatMap((e) => {
     const [s, t] = [end(e.source), end(e.target)];
     return over(s) !== s && over(t) !== t && over(s) !== over(t) ? [edgeKey(e, over(s), t)] : [];
@@ -264,5 +283,5 @@ export const faithful = async (source: string, plan: SplitPlan): Promise<string[
   const r = await read(source, plan);
   if (Array.isArray(r)) return r;
   const { of, problems } = stubReadings(r);
-  return [...labelProblems(r), ...problems, ...elementProblems(r), ...edgeProblems(r, of), ...markerProblems(r)];
+  return [...labelProblems(r), ...problems, ...elementProblems(r), ...edgeProblems(r, of, plan), ...markerProblems(r)];
 };

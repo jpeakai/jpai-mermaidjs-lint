@@ -9,6 +9,7 @@ import { buildWorkGraph, type WorkGraph } from "../../src/split/graph.ts";
 import { directionOf } from "../../src/split/index.ts";
 import { planWork } from "../../src/split/plan.ts";
 import { EMPTY_PARTITION, type Partition, quotientEdges } from "../../src/split/quotient.ts";
+import { type FoldRules, STRICT } from "../../src/split/rules.ts";
 import type { TierContext } from "../../src/split/tier.ts";
 
 // The high-density weights with a target of the given node count and score.
@@ -28,11 +29,17 @@ export const workOf = async (source: string): Promise<WorkGraph> => {
   return buildWorkGraph(graph, { direction, rows: stats.rows });
 };
 
-export const ctxOf = (work: WorkGraph, config: ThresholdConfig, part: Partition = EMPTY_PARTITION): TierContext => ({
+export const ctxOf = (
+  work: WorkGraph,
+  config: ThresholdConfig,
+  part: Partition = EMPTY_PARTITION,
+  rules: FoldRules = STRICT,
+): TierContext => ({
   work,
   part,
   config,
   qedges: quotientEdges(work, part),
+  rules,
 });
 
 export const buildOf = async (source: string, config: ThresholdConfig): Promise<Build> => {

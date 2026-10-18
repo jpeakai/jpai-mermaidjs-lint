@@ -282,6 +282,11 @@ Its Unreleased section holds what is on main but not yet released.
 
 The optional `mermaidjs-lint.config.json` or `.mjs` that switches Rules off and sets their options.
 
+## Decision
+
+A node in a flowchart or `stateDiagram` whose outgoing edges carry two labels or more.
+A Split Plan's `T5` and `T6` never fold two targets of its differently labelled branches into one Group Node, unless the branches rejoin inside it.
+
 ## Design Token
 
 One named brand colour in `docs-site/theme/osakanights/design-tokens.json`.
@@ -368,7 +373,9 @@ In `adrs/` that is everything rendered from the Records, as [AGENTS.md](AGENTS.m
 ## Group Node
 
 One node of an Overview that stands for a set of the original nodes, folded together.
-Its label is an author label or its best-connected member's, with the count of the rest, such as `ingest (+5)`.
+Its label is an author label or a member's, with the count of the rest, such as `ingest (+5)`.
+A group from `T5` or `T6` takes the label of the member with the most edges crossing its boundary.
+Any other group takes its best-connected member's label.
 A long label is shown cut in the middle with an ellipsis, and no Group Node shows a label another node shows.
 It is drawn apart from an original node.
 A flowchart draws it as a subroutine, a `stateDiagram` or `erDiagram` with a thick dashed border, and a `classDiagram` with a `<<group>>` annotation.
@@ -377,6 +384,11 @@ A flowchart draws it as a subroutine, a `stateDiagram` or `erDiagram` with a thi
 
 Where a Diagram is drawn for a reader, such as GitHub or a MkDocs Material site.
 The Host may choose the label colour.
+
+## Hub
+
+A node of degree at least four and at least the 90th percentile degree of its Diagram.
+A Split Plan's `T5` and `T6` keep it as its own node in the Overview, unless the target cannot be met otherwise.
 
 ## Keyword
 

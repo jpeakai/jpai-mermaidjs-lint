@@ -546,10 +546,11 @@ columns 3
 
 The diagram has 52 nodes in four subgraphs named Ingress, Web, App and Data.
 The linter reports `complexity-node-count-cognitive-limit`, and `complexity-visual-score-acceptable-exceeded` for a score of 98.5.
-Both remediations name the subgraphs to split along, then the split plan the linter found, which folds each subgraph into one group:
+Both remediations name the subgraphs to split along, then the split plan the linter found.
+It folds three subgraphs into one group each and keeps Web open, since folding Web too would leave the overview far below its target:
 
 ```text
-Split into sub-diagrams along existing subgraph boundaries: Ingress, Web, App, Data. Target at most 25 nodes and 40 VCS per sub-diagram. Split plan: an overview folding 4 groups (Data (13 nodes), Ingress (13 nodes), App (13 nodes), Web (13 nodes)), and one detail diagram per group.
+Split into sub-diagrams along existing subgraph boundaries: Ingress, Web, App, Data. Target at most 25 nodes and 40 VCS per sub-diagram. Split plan: an overview folding 3 groups (Data (13 nodes), Ingress (13 nodes), App (13 nodes)), and one detail diagram per group.
 ```
 
 A human or an LLM reading the finding can split on those names rather than guess.

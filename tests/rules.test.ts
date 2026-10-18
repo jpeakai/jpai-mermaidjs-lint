@@ -155,7 +155,7 @@ describe("complexity rules: split plan in the remediation", () => {
     expect(quoted).toStartWith("Split into sub-diagrams along existing subgraph boundaries");
     expect(ten?.remediation).toBe(quoted as string);
     expect(ten?.remediation).toContain(
-      " Split plan: an overview folding 4 groups (Data (13 nodes), Ingress (13 nodes)",
+      " Split plan: an overview folding 3 groups (Data (13 nodes), Ingress (13 nodes)",
     );
   });
 

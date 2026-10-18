@@ -26,6 +26,7 @@ import {
   type QEdge,
   quotientEdges,
   remainingRegions,
+  reversedEdges,
   scoreOf,
   usedIds,
 } from "./quotient.ts";
@@ -254,6 +255,7 @@ const lossOf = (work: WorkGraph, folded: Folded, drawn: number): SplitPlan["loss
     byTier,
     droppedRows: work.rows - drawn,
     mergedMarkers: work.family === "state" ? overviewMarkers(work, folded.part).merged : 0,
+    reversedEdges: reversedEdges(work, folded.part),
   };
 };
 

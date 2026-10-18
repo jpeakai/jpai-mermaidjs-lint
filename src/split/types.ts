@@ -72,6 +72,10 @@ export interface SplitLoss {
   // Start and end transitions the overview draws merged onto a group, beyond
   // the one drawn for them: each is drawn as written in the group's detail.
   mergedMarkers: number;
+  // Undirected edges the overview draws on the edge between the same two nodes
+  // written the other way, at least one a group: each is drawn as written in
+  // a detail.
+  reversedEdges: number;
 }
 
 export interface SplitPlan {

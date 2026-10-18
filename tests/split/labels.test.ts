@@ -103,6 +103,7 @@ describe("stubs", () => {
     "  p2 --> q1",
     "  p3 --> q1",
     "  p3 --> q2",
+    "  x --> y",
   );
 
   test("an edge from another group comes in from one stub for that whole group", async () => {

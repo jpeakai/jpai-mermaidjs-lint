@@ -14,7 +14,7 @@ import { type Build, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
 import { groupLabels, readerOf, readingsOf } from "./label.ts";
 import { floorOf } from "./plan.ts";
-import { idMaker, isGroupKey, over, type Partition, usedIds } from "./quotient.ts";
+import { idMaker, isGroupKey, over, type Partition, reversible, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
 import type { SplitGroup, SplitPlan } from "./types.ts";
 
@@ -72,21 +72,28 @@ const edgeOf = (work: WorkGraph): Map<string, GraphEdge> => new Map(work.edges.m
 
 // 2. Each overview edge stands for original edges between its two ends, and
 // each original edge between two overview nodes is stood for exactly once.
-// Between two kept nodes an overview edge stands for exactly one.
+// Between two kept nodes an overview edge stands for exactly one. Only an
+// undirected edge with a group at an end may stand for edges of its own kind
+// written the other way, and the plan declares how many it stands for.
 const checkEdges = (build: Build): Violations => {
   const { plan, work, covers } = build;
   const overId = overOf(build);
   const edges = edgeOf(work);
   const groups = groupIds(plan);
   const covered = new Map<string, number>();
+  let reversed = 0;
   const strays = plan.overview.edges.flatMap((o) => {
     const ids = covers[o.id] ?? [];
     for (const id of ids) covered.set(id, (covered.get(id) ?? 0) + 1);
+    const kept = !(groups.has(o.source) || groups.has(o.target));
+    // An undirected edge written the other way, of the overview edge's own kind.
+    const back = (e: GraphEdge): boolean =>
+      reversible(o, !kept) && e.kind === o.kind && overId(e.source) === o.target && overId(e.target) === o.source;
     const away = ids.filter((id) => {
       const e = edges.get(id);
-      return !e || overId(e.source) !== o.source || overId(e.target) !== o.target;
+      if (e && back(e)) reversed++;
+      return !e || ((overId(e.source) !== o.source || overId(e.target) !== o.target) && !back(e));
     });
-    const kept = !(groups.has(o.source) || groups.has(o.target));
     return [
       ...(ids.length === 0 ? [`2: overview edge ${o.source} -> ${o.target} stands for no original edge`] : []),
       ...(kept && ids.length > 1 ? [`2: overview edge ${o.id} between kept nodes merges ${ids.length} edges`] : []),
@@ -97,6 +104,7 @@ const checkEdges = (build: Build): Violations => {
     overId(e.source) === overId(e.target) && groups.has(overId(e.source)) ? 0 : 1;
   return [
     ...strays,
+    ...(reversed === plan.loss.reversedEdges ? [] : ["2: the declared edges drawn the other way are wrong"]),
     ...work.edges
       .filter((e) => (covered.get(e.id) ?? 0) !== want(e))
       .map((e) => `2: original edge ${e.source} -> ${e.target} is covered ${covered.get(e.id) ?? 0} times`),

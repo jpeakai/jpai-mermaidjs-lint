@@ -125,6 +125,32 @@ const bucketKey = (work: WorkGraph, e: GraphEdge, a: string, b: string): string 
   return `${a}${GROUP_MARK}${b}`;
 };
 
+// The edge kinds with no direction: a flowchart link with no arrowhead, and a
+// classDiagram link with no end marker.
+export const UNDIRECTED_KINDS: ReadonlySet<string> = new Set(["---", "-.-", "===", "~~~", "--", ".."]);
+
+// Whether an overview edge may stand for edges written the other way: it has
+// a group at one end or both, an undirected kind and no cardinality.
+export const reversible = (e: Pick<QEdge, "kind" | "cardinality">, grouped: boolean): boolean =>
+  grouped && e.kind !== undefined && UNDIRECTED_KINDS.has(e.kind) && e.cardinality === undefined;
+
+// One overview edge for an undirected edge written both ways between the
+// same two overview nodes, at least one a group: the pair, kind and label all
+// agree, so the edge the other way draws nothing new. Each detail still draws
+// each original edge as written.
+const mergeReversed = (edges: QEdge[]): QEdge[] => {
+  const byKey = new Map(edges.map((e) => [edgeKey(e), e]));
+  const dropped = new Set<QEdge>();
+  for (const e of edges) {
+    if (dropped.has(e) || !reversible(e, isGroupKey(e.source) || isGroupKey(e.target))) continue;
+    const back = byKey.get(edgeKey({ ...e, source: e.target, target: e.source }));
+    if (!back || back === e || dropped.has(back)) continue;
+    dropped.add(back);
+    e.covers = [...e.covers, ...back.covers];
+  }
+  return edges.filter((e) => !dropped.has(e));
+};
+
 export const quotientEdges = (work: WorkGraph, part: Partition): QEdge[] => {
   const buckets = new Map<string, { source: string; target: string; edges: GraphEdge[] }>();
   for (const e of work.edges) {
@@ -135,7 +161,7 @@ export const quotientEdges = (work: WorkGraph, part: Partition): QEdge[] => {
     bucket.edges.push(e);
     buckets.set(key, bucket);
   }
-  return [...buckets.values()]
+  const merged = [...buckets.values()]
     .map(({ source, target, edges }) => {
       const [label, kind, cardinality] = [
         agreed(edges, (e) => (e.label === undefined ? undefined : `${e.markdown ? "m" : "s"}${e.label}`)),
@@ -154,6 +180,7 @@ export const quotientEdges = (work: WorkGraph, part: Partition): QEdge[] => {
       };
     })
     .sort((x, y) => byText(edgeKey(x), edgeKey(y)));
+  return mergeReversed(merged);
 };
 
 export interface Shape {
@@ -213,10 +240,53 @@ export const scoreOf = (shape: Shape, rows: number, config: ThresholdConfig): nu
 export const meets = (nodes: number, score: number, config: ThresholdConfig): boolean =>
   nodes <= config.node_target && score <= config.vcs_target;
 
-// The members a group may be named after, best first: highest degree, then
-// smallest id as a reader counts.
-export const rankedMembers = (work: WorkGraph, members: readonly string[]): string[] =>
-  [...members].sort((a, b) => (work.degree.get(b) ?? 0) - (work.degree.get(a) ?? 0) || byNatural(a, b));
+const flowCache = new WeakMap<WorkGraph, Map<string, number>>();
+
+// How many edges from where the flow enters each node sits: a breadth-first
+// walk along edge directions from every node no edge enters, or a start
+// marker leaves, or failing both the first node as a reader counts.
+export const flowOrder = (work: WorkGraph): Map<string, number> => {
+  const known = flowCache.get(work);
+  if (known) return known;
+  const entered = new Set(work.edges.filter((e) => e.source !== e.target).map((e) => e.target));
+  const started = work.markerEdges.filter((e) => work.nodes.has(e.target)).map((e) => e.target);
+  const roots = [...new Set([...work.ids.filter((id) => !entered.has(id)), ...started])].sort(byNatural);
+  const depth = new Map<string, number>((roots.length > 0 ? roots : work.ids.slice(0, 1)).map((id) => [id, 0]));
+  for (let layer = [...depth.keys()]; layer.length > 0; ) {
+    const next = new Set<string>();
+    for (const e of work.edges)
+      if (layer.includes(e.source) && !depth.has(e.target) && work.nodes.has(e.target)) next.add(e.target);
+    for (const id of next) depth.set(id, (depth.get(layer[0] ?? "") ?? 0) + 1);
+    layer = [...next];
+  }
+  flowCache.set(work, depth);
+  return depth;
+};
+
+// The members a group may be named after, best first. A suggested group (T5
+// or T6) is named after the member on its main path: the one with the most
+// edges crossing the group's boundary, either way, a start or end transition
+// counted as one, then the one the flow reaches first. Any other group is
+// named after its best-connected member, the one of highest degree. Ties go
+// to the smallest id as a reader counts.
+export const rankedMembers = (work: WorkGraph, g: Pick<Group, "members" | "tier">): string[] => {
+  if (g.tier !== "T5" && g.tier !== "T6")
+    return [...g.members].sort((a, b) => (work.degree.get(b) ?? 0) - (work.degree.get(a) ?? 0) || byNatural(a, b));
+  const inside = new Set(g.members);
+  const crossing = new Map<string, number>();
+  const add = (id: string): void => {
+    crossing.set(id, (crossing.get(id) ?? 0) + 1);
+  };
+  for (const e of work.edges) {
+    if (inside.has(e.source) !== inside.has(e.target)) add(inside.has(e.source) ? e.source : e.target);
+  }
+  for (const e of work.markerEdges) for (const end of [e.source, e.target]) if (inside.has(end)) add(end);
+  const flow = flowOrder(work);
+  const at = (id: string): number => flow.get(id) ?? Number.POSITIVE_INFINITY;
+  return [...g.members].sort(
+    (a, b) => (crossing.get(b) ?? 0) - (crossing.get(a) ?? 0) || at(a) - at(b) || byNatural(a, b),
+  );
+};
 
 export const regionRoots = (work: WorkGraph, regions: readonly string[]): string[] => {
   const inSet = new Set(regions);
@@ -243,7 +313,7 @@ export const labelChoices = (work: WorkGraph, g: Group): LabelParts[] => {
     whole && region
       ? [{ base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) }]
       : [];
-  const fromMembers = rankedMembers(work, g.members).map((m) => {
+  const fromMembers = rankedMembers(work, g).map((m) => {
     const node = work.nodes.get(m);
     return { base: node?.label ?? m, n: g.members.length - 1, ...markdownOf(node) };
   });
@@ -386,4 +456,13 @@ export const detailShape = (work: WorkGraph, view: DetailView): Shape => {
       return p !== null && drawn.has(p) ? p : null;
     }),
   };
+};
+
+// How many original edges the overview draws on an edge written the other way.
+export const reversedEdges = (work: WorkGraph, part: Partition): number => {
+  const sourceOf = new Map(work.edges.map((e) => [e.id, e.source]));
+  return quotientEdges(work, part).reduce(
+    (n, q) => n + q.covers.filter((id) => over(work, part, sourceOf.get(id) ?? "") !== q.source).length,
+    0,
+  );
 };

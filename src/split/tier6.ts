@@ -3,12 +3,13 @@
 // the same region that an original edge joins, ranked by modularity gain;
 // label similarity from stem.ts only breaks a tie between equal gains. Two
 // nodes no edge joins never pair, so a suggested group is always connected.
-// Never crosses an author region.
+// Never crosses an author region, and under the strict rules never folds a
+// hub or joins a decision's branches that do not rejoin (rules.ts).
 
 import { byText } from "./graph.ts";
 import { membersOfKey, overviewKeys, parentOfKey } from "./quotient.ts";
 import { labelBag, similarity } from "./stem.ts";
-import { type Candidate, groupable, type TierContext } from "./tier.ts";
+import { type Candidate, foldable, keepsBranches, type TierContext } from "./tier.ts";
 
 const pairKey = (a: string, b: string): string => `${a}\u0002${b}`;
 
@@ -37,13 +38,13 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
   const w = weights(ctx);
   const m = work.edges.length;
   const degree = (k: string): number => membersOfKey(part, k).reduce((s, x) => s + (work.degree.get(x) ?? 0), 0);
-  const groupableKeys = new Set(overviewKeys(work, part).filter((k) => groupable(ctx, k)));
+  const groupableKeys = new Set(overviewKeys(work, part).filter((k) => foldable(ctx, k)));
   const out: Candidate[] = [];
   for (const [pair, wab] of [...w].sort((x, y) => byText(x[0], y[0]))) {
     const [a, b] = pair.split("\u0002") as [string, string];
     if (!(groupableKeys.has(a) && groupableKeys.has(b))) continue;
     const parent = parentOfKey(work, part, a);
-    if (parent !== parentOfKey(work, part, b)) continue;
+    if (parent !== parentOfKey(work, part, b) || !keepsBranches(ctx, [a, b])) continue;
     const priority = wab / m - (degree(a) * degree(b)) / (2 * m * m);
     const tie = labelSimilarity(ctx, bags, a, b);
     out.push({ keys: [a, b], parent, tier: "T6", reason: "suggested grouping", priority, tie });

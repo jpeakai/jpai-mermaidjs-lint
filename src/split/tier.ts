@@ -16,6 +16,7 @@ import {
   type QEdge,
   scoreOf,
 } from "./quotient.ts";
+import { type FoldRules, hubsOf, splitsBranches } from "./rules.ts";
 
 export interface Candidate extends Merge {
   // T6 orders by modularity gain, not by score per node.
@@ -33,6 +34,7 @@ export interface TierContext {
   part: Partition;
   config: ThresholdConfig;
   qedges: QEdge[];
+  rules: FoldRules;
 }
 
 export interface Adjacency {
@@ -63,6 +65,23 @@ export const neighboursOf = (adj: Adjacency, key: string): Set<string> => {
 // end, or a lollipop, is never folded on its own.
 export const groupable = (ctx: TierContext, key: string): boolean =>
   isGroupKey(key) || (ctx.work.nodes.has(key) && !ctx.work.protectedIds.has(key));
+
+// A hub kept in view by the rules.
+export const keptHub = (ctx: TierContext, key: string): boolean =>
+  ctx.rules.keepHubs && !isGroupKey(key) && hubsOf(ctx.work).has(key);
+
+// What T5 and T6 may fold: a groupable key that is no hub kept in view.
+export const foldable = (ctx: TierContext, key: string): boolean => groupable(ctx, key) && !keptHub(ctx, key);
+
+// Whether merging these keys keeps a decision's branches apart, as the rules ask.
+export const keepsBranches = (ctx: TierContext, keys: readonly string[]): boolean =>
+  !(
+    ctx.rules.keepBranches &&
+    splitsBranches(
+      ctx.work,
+      keys.flatMap((k) => groupOfKey(ctx.part, k)?.members ?? [k]),
+    )
+  );
 
 const MIXED = "\u0001mixed";
 

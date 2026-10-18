@@ -75,7 +75,7 @@ describe("flowchart split twice", () => {
     const plan = await must(big, 6, 10);
     expect(plan.groups.map((g) => g.label)).toEqual(["One (+3)", "Two (+3)"]);
     expect(plan.details[0]?.source).toContain('subgraph R1["One"]');
-    expect(plan.details.map((d) => d.split?.groups.map((g) => g.label))).toEqual([["a1 (+1)"], ["b1 (+1)"]]);
+    expect(plan.details.map((d) => d.split?.groups.map((g) => g.label))).toEqual([["a1 (+2)"], ["b1 (+2)"]]);
   });
 });
 

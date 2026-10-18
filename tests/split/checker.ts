@@ -276,8 +276,12 @@ const checkParents = (c: Ctx): void => {
   ];
   for (const [name, D] of views) {
     const drawn = new Set(D.subgraphs.map((s) => s.id));
-    for (const n of [...D.nodes, ...D.subgraphs]) {
-      const o = c.nodeById.get(n.id) ?? c.subById.get(n.id);
+    // A namespace and a class may share an id, so each is looked up as what it was drawn as.
+    const drawnAs = [
+      ...D.nodes.map((n) => [n, c.nodeById.get(n.id)] as const),
+      ...D.subgraphs.map((s) => [s, c.subById.get(s.id)] as const),
+    ];
+    for (const [n, o] of drawnAs) {
       if (!o) continue;
       const want = nearest(o.parent, drawn);
       if (n.parent !== want)

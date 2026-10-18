@@ -1,4 +1,4 @@
-// The strict text-only checker (checker.ts) over three evaluation case sets,
+// The strict text-only checker (checker.ts) over four evaluation case sets,
 // every preset: no plan may carry a BUG or AMBIG finding. Then mutations of
 // real plans, each a change a faithful plan never shows, which the checker
 // must catch: the declared merged marker transitions and the erDiagram
@@ -15,7 +15,7 @@ import { lines, target } from "./helpers.ts";
 
 const SLOW = 30_000;
 const CASES = join(import.meta.dir, "cases");
-const SETS = ["round3", "adversarial", "semantic"];
+const SETS = ["round3", "adversarial", "semantic", "blind"];
 
 const serious = async (source: string, plan: SplitPlan, cfg: ThresholdConfig): Promise<string[]> =>
   (await checkPlan(source, plan, cfg, "")).filter((f) => f.sev === "BUG" || f.sev === "AMBIG").map((f) => f.msg);

@@ -373,12 +373,110 @@
     },
     {
       "data": {
+        "id": "MJL-0022",
+        "label": "0022",
+        "parent": "group-parsing",
+        "colour": "#6366f1",
+        "file": "0022-start-from-the-official-parsers-output.md",
+        "title": "Every feature starts from the official parsers' output, and no parsing logic is reinvented",
+        "description": "Diagrams are read through mermaid's parsers and markdown through mdast, never a custom parser",
+        "status": "accepted",
+        "tags": "parsing, architecture"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0023",
+        "label": "0023",
+        "parent": "group-parsing",
+        "colour": "#6366f1",
+        "file": "0023-markdown-is-read-only-through-mdast.md",
+        "title": "Markdown is read only through mdast, and reimplementing a dependency is non-compliance",
+        "description": "No custom markdown parser, and code that duplicates an installed dependency is refactored onto it",
+        "status": "accepted",
+        "tags": "parsing, architecture, dependencies"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0024",
+        "label": "0024",
+        "parent": "group-contrast",
+        "colour": "#d97706",
+        "file": "0024-colour-and-contrast-come-from-colorjs.md",
+        "title": "Colour parsing and WCAG contrast come only from colorjs.io",
+        "description": "No hand-written colour parser, luminance formula or contrast ratio",
+        "status": "accepted",
+        "tags": "contrast, dependencies"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025",
+        "label": "0025",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0025-a-fold-is-offered-as-a-split.md",
+        "title": "A fold is offered only as the overview half of a split",
+        "description": "A split plan is checked by a contract and applied by a human",
+        "status": "accepted",
+        "tags": "complexity, fixing, safety"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0026",
+        "label": "0026",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0026-a-split-plan-follows-the-authors-structure.md",
+        "title": "A split plan follows the author's structure, and refuses what it cannot draw faithfully",
+        "description": "Regions fold first, marker states stay in their composite, and concurrency is refused",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0027",
+        "label": "0027",
+        "parent": "group-parsing",
+        "colour": "#6366f1",
+        "file": "0027-gaps-in-the-official-parsers-are-recorded.md",
+        "title": "Gaps in the official parsers are recorded, each with the one narrow workaround allowed",
+        "description": "Where mermaid exposes no source map, export or detector, the gap and its pinned workaround are listed here",
+        "status": "accepted",
+        "tags": "parsing, dependencies, architecture"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
         "label": "depended on by",
         "relation": "depended_on_by",
         "note": "every complexity rule reads these stats"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0001-extended_by-MJL-0022",
+        "source": "MJL-0001",
+        "target": "MJL-0022",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "every feature starts from the official parsers' output, not only counting"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0001-see_also-MJL-0021",
+        "source": "MJL-0001",
+        "target": "MJL-0021",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "which of the parser's records the score counts"
       }
     },
     {
@@ -403,12 +501,32 @@
     },
     {
       "data": {
+        "id": "MJL-0004-extended_by-MJL-0025",
+        "source": "MJL-0004",
+        "target": "MJL-0025",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "the split recommendation carries a concrete plan, checked by a contract and still never applied"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0005-depended_on_by-MJL-0006",
         "source": "MJL-0005",
         "target": "MJL-0006",
         "label": "depended on by",
         "relation": "depended_on_by",
         "note": "the verifier backs a refusal with proof"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0005-see_also-MJL-0025",
+        "source": "MJL-0005",
+        "target": "MJL-0025",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "a split plan that breaks its contract is not offered, as an unsure fixer refuses"
       }
     },
     {
@@ -423,12 +541,42 @@
     },
     {
       "data": {
+        "id": "MJL-0009-extended_by-MJL-0023",
+        "source": "MJL-0009",
+        "target": "MJL-0023",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "the markdown tree comes only from mdast"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0015-see_also-MJL-0025",
+        "source": "MJL-0015",
+        "target": "MJL-0025",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "split plans serve the visual complexity tenet"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0017-see_also-MJL-0018",
         "source": "MJL-0017",
         "target": "MJL-0018",
         "label": "see also",
         "relation": "see_also",
         "note": "the sequence pairs on the page are scored on the canvas"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0017-see_also-MJL-0024",
+        "source": "MJL-0017",
+        "target": "MJL-0024",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "their contrast is scored by colorjs.io"
       }
     },
     {
@@ -479,6 +627,206 @@
         "label": "see also",
         "relation": "see_also",
         "note": "every count is still read from the parser's result, never the text"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0021-see_also-MJL-0025",
+        "source": "MJL-0021",
+        "target": "MJL-0025",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "a split plan's overview and details are scored by this score"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0022-extends-MJL-0001",
+        "source": "MJL-0022",
+        "target": "MJL-0001",
+        "label": "extends",
+        "relation": "extends",
+        "note": "MJL-0001 covers counting, and this record covers every feature, emitted text and every other dependency"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0022-see_also-MJL-0023",
+        "source": "MJL-0022",
+        "target": "MJL-0023",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the same rule for markdown and every other dependency"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0022-see_also-MJL-0025",
+        "source": "MJL-0022",
+        "target": "MJL-0025",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "a split plan reads the parser's graph and parses its emitted text again"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0022-see_also-MJL-0027",
+        "source": "MJL-0022",
+        "target": "MJL-0027",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the places the official parsers' output falls short, each with its pinned workaround"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0023-extends-MJL-0009",
+        "source": "MJL-0023",
+        "target": "MJL-0009",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a diagram is read from the markdown tree, and that tree comes only from mdast"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0023-see_also-MJL-0022",
+        "source": "MJL-0023",
+        "target": "MJL-0022",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the same rule for diagram text and mermaid's parsers"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0023-see_also-MJL-0024",
+        "source": "MJL-0023",
+        "target": "MJL-0024",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the same rule for colour parsing and contrast"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0023-extended_by-MJL-0027",
+        "source": "MJL-0023",
+        "target": "MJL-0027",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "the recorded gaps in mermaid, each with the one narrow workaround allowed"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0024-see_also-MJL-0023",
+        "source": "MJL-0024",
+        "target": "MJL-0023",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the same rule for markdown and every other dependency"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0024-see_also-MJL-0017",
+        "source": "MJL-0024",
+        "target": "MJL-0017",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "sequence colours come from mermaid's theme engine, and their contrast from colorjs.io"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-extended_by-MJL-0026",
+        "source": "MJL-0025",
+        "target": "MJL-0026",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "how a plan is chosen and drawn faithfully"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-extends-MJL-0004",
+        "source": "MJL-0025",
+        "target": "MJL-0004",
+        "label": "extends",
+        "relation": "extends",
+        "note": "the split recommendation now carries a concrete plan, and is still never applied"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-see_also-MJL-0005",
+        "source": "MJL-0025",
+        "target": "MJL-0005",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "like a fixer that is unsure, a plan that breaks the contract is not offered"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-see_also-MJL-0015",
+        "source": "MJL-0025",
+        "target": "MJL-0015",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the plan serves the visual complexity tenet"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-see_also-MJL-0021",
+        "source": "MJL-0025",
+        "target": "MJL-0021",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the overview and every detail are scored by the same visual complexity score"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0025-see_also-MJL-0022",
+        "source": "MJL-0025",
+        "target": "MJL-0022",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "the plan reads the parser's graph, and its emitted text is checked by parsing it again"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0026-extends-MJL-0025",
+        "source": "MJL-0026",
+        "target": "MJL-0025",
+        "label": "extends",
+        "relation": "extends",
+        "note": "how a fold offered as a split is chosen and drawn"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0027-extends-MJL-0023",
+        "source": "MJL-0027",
+        "target": "MJL-0023",
+        "label": "extends",
+        "relation": "extends",
+        "note": "MJL-0023 says a dependency gap is recorded rather than hand-written, and this record is that list"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0027-see_also-MJL-0022",
+        "source": "MJL-0027",
+        "target": "MJL-0022",
+        "label": "see also",
+        "relation": "see_also",
+        "note": "every feature starts from the official parsers' output, and these are the places that output falls short"
       }
     }
   ],

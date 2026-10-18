@@ -1,0 +1,40 @@
+id: MJL-0023
+slug: markdown-is-read-only-through-mdast
+plan_id: null
+title: Markdown is read only through mdast, and reimplementing a dependency is non-compliance
+description: No custom markdown parser, and code that duplicates an installed dependency is refactored onto it
+status: accepted
+accepted_on: 2026-10-18
+last_changed_on: 2026-10-18
+tags: [parsing, architecture, dependencies]
+
+provenance: The maintainer ruled that the package must rely on the libraries it already depends on, and that duplicating one is a defect to refactor
+enforced_in:
+  - src/model.ts, which builds the document from mdast-util-from-markdown with its gfm and frontmatter extensions
+  - review of every change, which refuses a regex or scan over markdown text that finds fences, headings or other structure
+
+relates_to:
+  - relation: extends
+    target: MJL-0009
+    note: a diagram is read from the markdown tree, and that tree comes only from mdast
+  - relation: see_also
+    target: MJL-0022
+    note: the same rule for diagram text and mermaid's parsers
+  - relation: see_also
+    target: MJL-0024
+    note: the same rule for colour parsing and contrast
+  - relation: extended_by
+    target: MJL-0027
+    note: the recorded gaps in mermaid, each with the one narrow workaround allowed
+
+decision:
+  given: a feature needs a markdown structure, such as a fence, its language, its position, a heading or frontmatter. Or it needs something an installed dependency already provides
+  we_prefer: reading markdown only from the mdast tree, and calling the dependency that already does the job. That is preferred over a custom markdown parser, and over reimplementing any part of a library this package depends on
+  because: the dependency is already tested, maintained and shipped, so a second version only adds code that can drift from it. Duplicated logic is treated as non-compliance and refactored onto the dependency
+  unless: never. When a dependency lacks a feature, the gap is recorded and solved with another maintained library, not a hand-written parser
+consequences:
+  pros:
+    - Every fence and position the linter reports is the one CommonMark and GFM define.
+    - Less code to test, and fixes upstream arrive with an upgrade.
+  cons:
+    - A behaviour the dependency gets wrong must be fixed upstream or worked around in its output, never by parsing the text again.

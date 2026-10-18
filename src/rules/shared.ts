@@ -19,6 +19,7 @@ import {
 } from "../parse/contrast.ts";
 import { type ComplexityMetrics, calculateComplexity, parseFailed, type ThresholdConfig } from "../parse/metrics.ts";
 import type { DiagramStats } from "../parse/stats.ts";
+import { type SplitOutcome, type SplitPlan, splitOutcome } from "../split/index.ts";
 import type { Finding, OptionSpec, RuleContext, RuleId } from "./types.ts";
 
 // Every complexity rule takes the same options: a preset, then any threshold.
@@ -52,7 +53,7 @@ export interface Measured {
 // evaluated against it.
 export const measure = async (diagram: Diagram, config: ThresholdConfig): Promise<Measured | null> => {
   const stats = await diagram.stats();
-  if (parseFailed(diagram.source, stats)) return null;
+  if (parseFailed(stats)) return null;
   return { stats, metrics: calculateComplexity(stats, config) };
 };
 
@@ -77,7 +78,8 @@ export const finding = (
 });
 
 export const boundaryHint = (boundaries: string[]): string => {
-  if (boundaries.length === 0) return "introduce subgraphs to group related nodes before splitting";
+  // Reads on after "Split", as every complexity remediation places it.
+  if (boundaries.length === 0) return "after grouping related nodes into subgraphs";
   const shown = boundaries.slice(0, 4);
   const extra = boundaries.length > shown.length ? ` (+${boundaries.length - shown.length} more)` : "";
   return `along existing subgraph boundaries: ${shown.join(", ")}${extra}`;
@@ -85,6 +87,36 @@ export const boundaryHint = (boundaries: string[]): string => {
 
 export const splitTarget = (c: ThresholdConfig): string =>
   `Target at most ${c.node_target} nodes and ${c.vcs_target} VCS per sub-diagram.`;
+
+const planned = new WeakMap<Diagram, Map<string, Promise<SplitOutcome>>>();
+
+// A split plan, or why there is none, worked out once per diagram and
+// thresholds, so every complexity rule and --split-plan read the same plan.
+export const splitOutcomeOf = (diagram: Diagram, config: ThresholdConfig): Promise<SplitOutcome> => {
+  const key = JSON.stringify(config);
+  let byConfig = planned.get(diagram);
+  if (!byConfig) {
+    byConfig = new Map();
+    planned.set(diagram, byConfig);
+  }
+  let outcome = byConfig.get(key);
+  if (!outcome) {
+    outcome = splitOutcome(diagram.source, config);
+    byConfig.set(key, outcome);
+  }
+  return outcome;
+};
+
+const SHOWN_GROUPS = 4;
+
+// The sentence a complexity finding's remediation ends with when a plan meets
+// the contract: how many groups the overview folds, and the first few of them.
+export const splitSentence = (plan: SplitPlan): string => {
+  const shown = plan.groups.slice(0, SHOWN_GROUPS).map((g) => `${g.labelBase} (${g.members.length} nodes)`);
+  const extra = plan.groups.length > SHOWN_GROUPS ? `, +${plan.groups.length - SHOWN_GROUPS} more` : "";
+  const groups = plan.groups.length === 1 ? "1 group" : `${plan.groups.length} groups`;
+  return ` Split plan: an overview folding ${groups} (${shown.join(", ")}${extra}), and one detail diagram per group.`;
+};
 
 // The profile a contrast rule scores under: the option, or auto, which reads
 // the render context from the file's ancestors.

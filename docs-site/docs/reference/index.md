@@ -33,9 +33,11 @@ Each diagram type is read by one of two parsers, and the `parser_used` field of 
 
 | Parser | Diagram types |
 |---|---|
-| Langium, from `@mermaid-js/parser` | `architecture-beta`, `architecture`, `info`, `pie`, `gitGraph`, `packet-beta`, `packet`, `radar-beta`, `radar`, `treemap-beta`, `treemap`, `treeView-beta`, `treeView`, `wardley-beta`, `wardley` |
+| Langium, from `@mermaid-js/parser` | `architecture`, `info`, `pie`, `gitGraph`, `packet`, `radar`, `treemap`, `treeView` and `wardley` |
 | Mermaid core, under a DOM shim | Every other type mermaid registers, such as `flowchart`, `sequenceDiagram`, `classDiagram`, `stateDiagram` and `erDiagram` |
 
+The types are named as mermaid's own detection names them.
+Mermaid detects some only by their `-beta` keyword, such as `radar-beta`, `treeView-beta` and `wardley-beta`.
 A Langium type that its grammar rejects is tried again under mermaid core before it is reported.
 
 ## Versioning

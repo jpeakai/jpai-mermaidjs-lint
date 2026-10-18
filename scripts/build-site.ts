@@ -2,6 +2,7 @@
 // Generates the parts of the docs site that the code already knows: the rules
 // page, the fixture and example galleries, and snippets (the CLI help, the
 // rule table, the preset thresholds, the worked complexity examples, the
+// split plans worked under each preset, the
 // agent eval outputs) that authored pages include. Each comes
 // from the source the test suite runs, and every example is checked again as
 // its page is written, so a drifted example fails the build. The one exception
@@ -29,6 +30,7 @@ import { type Fixture, loadFixtures } from "../tests/fixture-loader.ts";
 import { PROJECT_ROOT } from "../tests/helpers.ts";
 import { complexitySnippets } from "./complexity-steps.ts";
 import type { EvalCell, EvalResults } from "./eval-outputs.ts";
+import { splitSnippets } from "./split-steps.ts";
 
 const SITE = join(PROJECT_ROOT, "docs-site");
 const SITE_DOCS = join(SITE, "docs");
@@ -692,6 +694,7 @@ const main = async (): Promise<void> => {
     "agent-eval-results.md": agentEvalResults(),
     "agent-eval-outputs.md": await agentEvalOutputs(),
     ...(await complexitySnippets(DOC_FILE)),
+    ...(await splitSnippets()),
   };
   if (failures.length) {
     console.error(`build-site: ${failures.length} problem(s) found:`);

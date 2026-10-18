@@ -44,8 +44,6 @@ Start the package in a new folder, with this `package.json`:
 The package's default export, in `index.js`, is the plugin: its metadata and its rules.
 
 ```js
-const FLOWCHART = new Set(["flowchart", "graph"]);
-
 export default {
   meta: { name: "acme", namespace: "acme", apiVersion: 1, categories: { acme: "Acme house style" } },
   rules: {
@@ -57,7 +55,7 @@ export default {
         const direction = options.direction ?? "LR";
         const wanted = new RegExp(`^(flowchart|graph)\\s+${direction}\\b`, "m");
         return doc.diagrams
-          .filter((d) => FLOWCHART.has(d.keyword) && !wanted.test(d.source))
+          .filter((d) => d.keyword === "flowchart" && !wanted.test(d.source))
           .map((d) => ({ line: d.startLine, endLine: d.endLine, message: `flowcharts in Acme docs read ${direction}` }));
       },
     },
@@ -72,7 +70,7 @@ export default {
   This guide uses `acme` because [Write a local rule](local-rule.md) already declares `house`.
 - **`options`** declares each option the rule accepts, as a name mapped to one of the types in [PluginRule](../reference/plugin-api.md#pluginrule), such as `number` or `canvas`. The rule reads them from `options`.
 
-A flowchart opens with either `flowchart` or `graph`, so the rule checks both keywords.
+A flowchart opens with either `flowchart` or `graph`, and its keyword is `flowchart` either way, so the regular expression checks both spellings.
 
 ## Test it
 

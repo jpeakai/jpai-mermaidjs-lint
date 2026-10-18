@@ -1,5 +1,6 @@
-// WCAG contrast math and style-directive extraction. Colour parsing is
-// delegated to colorjs.io, which reads every CSS Color Level 4 syntax.
+// WCAG contrast math and the style directive shape. Colour parsing,
+// conversion and contrast are delegated to colorjs.io, which reads every CSS
+// Color Level 4 syntax.
 
 import Color from "colorjs.io";
 
@@ -19,25 +20,24 @@ export const apcaLc = (fg: string, bg: string): number => new Color(fg).contrast
 
 export const alphaOf = (color: string): number => new Color(color).to("srgb").alpha ?? 1;
 
+// A colour in sRGB with any out-of-gamut channel clipped, as a browser paints
+// it on an sRGB page.
+const inSrgb = (color: string): Color => new Color(color).to("srgb").toGamut({ method: "clip" });
+
 // Simple alpha-over in gamma-encoded sRGB, the model browsers use for opacity.
 // A translucent fill has no contrast of its own until the backdrop behind it is
-// known, so this resolves it to the box a reader sees.
+// known, so this resolves it to the box a reader sees. colorjs.io blends it, per
+// MJL-0024: a premultiplied mix in sRGB from the backdrop to the opaque
+// foreground, by the foreground's alpha, is alpha-over exactly, its alpha
+// fa + ba(1 - fa). Each colour is clipped to sRGB before the blend.
 export const compositeOver = (fg: string, bg: string): string => {
-  const f = new Color(fg).to("srgb");
-  const b = new Color(bg).to("srgb");
+  const f = inSrgb(fg);
   const fa = f.alpha ?? 1;
-  const ba = b.alpha ?? 1;
-  const outA = fa + ba * (1 - fa);
-  const ch = (i: number): number => {
-    if (outA === 0) return 0;
-    return (fa * (f.coords[i] ?? 0) + ba * (1 - fa) * (b.coords[i] ?? 0)) / outA;
-  };
-  const hx = (v: number): string =>
-    Math.round(Math.max(0, Math.min(1, v)) * 255)
-      .toString(16)
-      .padStart(2, "0");
-  const base = `#${hx(ch(0))}${hx(ch(1))}${hx(ch(2))}`;
-  return outA < 1 ? `${base}${hx(outA)}` : base;
+  f.alpha = 1;
+  const mixed = Color.mix(inSrgb(bg), f, fa, { space: "srgb", premultiplied: true });
+  // Nothing over nothing leaves no colour to divide the alpha back out of.
+  const out = mixed.alpha === 0 ? new Color("srgb", [0, 0, 0], 0) : mixed;
+  return out.toGamut({ method: "clip" }).toString({ format: "hex", collapse: false });
 };
 
 export const wcagRating = (ratio: number): WcagRating => {
@@ -60,11 +60,8 @@ export const wcagAssess = (fg: string, bg: string): ContrastAssessment => {
 
 // ─── Mermaid style directives ────────────────────────────────────────────────
 //
-//   classDef NAME  fill:#X,stroke:#Y,color:#Z,stroke-width:2px
-//   style NODEID   fill:#X,stroke:#Y,color:#Z
-//   linkStyle 0,1  stroke:#X,stroke-width:2px
-//   A:::className
-//   A[label]:::className --> B
+// What a diagram declares about its colours, read from mermaid's parser result
+// by src/parse/styles.ts, never from the diagram text.
 
 // Where a property's value sits in the diagram text, as a 1-based line and the
 // 0-based columns of the value in that line.
@@ -74,82 +71,18 @@ export interface ValueSpan {
   end: number;
 }
 
+// One styled thing in the parser's result: a classDef, a node, entity, state
+// or class that a style statement styles, or an edge that a linkStyle styles.
+// properties are the declarations mermaid applies to it, the later winning,
+// and a style or linkStyle directive's include those it inherits from its
+// classes or the default linkStyle. spans holds only the values this
+// directive's own statements wrote, and only where the parser places them
+// exactly, so a fixer never rewrites a value it cannot place or one that
+// another directive shares.
 export interface StyleDirective {
-  kind: "classDef" | "style" | "linkStyle" | "inlineClass";
+  kind: "classDef" | "style" | "linkStyle";
   selector: string;
-  class_name?: string;
   properties: Record<string, string>;
   spans: Record<string, ValueSpan>;
   line: number; // 1-based, within the diagram text
 }
-
-const CLASSDEF_RE = /^[ \t]*classDef\s+(\S+)\s+(.+?)\s*;?\s*$/di;
-const STYLE_RE = /^[ \t]*style\s+(\S+)\s+(.+?)\s*;?\s*$/di;
-const LINKSTYLE_RE = /^[ \t]*linkStyle\s+(\S+)\s+(.+?)\s*;?\s*$/di;
-const INLINE_CLASS_RE = /([A-Za-z_][\w-]*)(?:\[[^\]]*\]|\([^)]*\)|\{[^}]*\}|>[^<]*)?:::([A-Za-z_][\w-]*)/g;
-
-// Mermaid allows `,` and `;` between properties. A plain split assumes no
-// value holds an escaped `\,`, which holds for well-formed source.
-const parseProperties = (
-  raw: string,
-  rawStart: number,
-  line: number,
-): { properties: Record<string, string>; spans: Record<string, ValueSpan> } => {
-  const properties: Record<string, string> = {};
-  const spans: Record<string, ValueSpan> = {};
-  let at = 0;
-  for (const pair of raw.split(/[,;]/)) {
-    const pairStart = at;
-    at += pair.length + 1;
-    const colon = pair.indexOf(":");
-    if (colon === -1) continue;
-    const key = pair.slice(0, colon).trim().toLowerCase();
-    const valueRaw = pair.slice(colon + 1);
-    const value = valueRaw.trim();
-    if (!(key && value)) continue;
-    properties[key] = value;
-    const lead = valueRaw.length - valueRaw.trimStart().length;
-    const start = rawStart + pairStart + colon + 1 + lead;
-    spans[key] = { line, start, end: start + value.length };
-  }
-  return { properties, spans };
-};
-
-export const extractStyleDirectives = (source: string): StyleDirective[] => {
-  const out: StyleDirective[] = [];
-  const lines = source.split("\n");
-  for (const [i, line] of lines.entries()) {
-    const lineNo = i + 1;
-    let matched = false;
-    for (const [kind, re] of [
-      ["classDef", CLASSDEF_RE],
-      ["style", STYLE_RE],
-      ["linkStyle", LINKSTYLE_RE],
-    ] as const) {
-      const m = re.exec(line);
-      const rawStart = m?.indices?.[2]?.[0];
-      if (m && rawStart !== undefined) {
-        out.push({
-          kind,
-          selector: m[1] ?? "",
-          ...parseProperties(m[2] ?? "", rawStart, lineNo),
-          line: lineNo,
-        });
-        matched = true;
-        break;
-      }
-    }
-    if (matched) continue;
-    for (const inline of line.matchAll(INLINE_CLASS_RE)) {
-      out.push({
-        kind: "inlineClass",
-        selector: inline[1] ?? "",
-        class_name: inline[2] ?? "",
-        properties: {},
-        spans: {},
-        line: lineNo,
-      });
-    }
-  }
-  return out;
-};

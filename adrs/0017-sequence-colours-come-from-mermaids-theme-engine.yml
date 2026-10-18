@@ -17,6 +17,9 @@ relates_to:
   - relation: see_also
     target: MJL-0018
     note: the sequence pairs on the page are scored on the canvas
+  - relation: see_also
+    target: MJL-0024
+    note: their contrast is scored by colorjs.io
 
 decision:
   given: a sequence diagram has no style directives, and its colours are theme variables that Mermaid derives from each other

@@ -47,32 +47,42 @@ One mermaid source.
 |---|---|---|
 | `index` | `number` | Position in `doc.diagrams`, from 0 |
 | `source` | `string` | The diagram text. Inside a list or a quote, the indentation is already removed. |
-| `keyword` | `string` or `null` | The first word of the diagram, such as `flowchart`, past any frontmatter and comments |
+| `keyword` | `string` or `null` | The keyword of the diagram type mermaid detects, such as `flowchart` or `erDiagram`, or `null` when it detects none. A type declared two ways has one keyword, so `graph` is `flowchart`. |
 | `startLine`, `endLine` | `number` | The file lines a finding points at: the fences, or the whole raw diagram file |
 | `firstLine` | `number` | The file line of the first line of `source` |
-| `terminated` | `boolean` | `false` when the fence runs to the end of the file without closing |
+| `terminated` | `boolean` | `false` when the fence has no closing fence, so it runs to the end of the file or of its quote or list item |
+| `closingFence` | `string` or `null` | The line that closes the fence: its opening fence, after the quote markers and indentation before it. `null` for a raw diagram file, and when the opening line holds anything else before the fence, such as a list item's marker. |
 | `endOffset` | `number` | The offset in `doc.src` where the fence ends |
-| `directives` | `StyleDirective[]` | Every style line in the diagram |
+| `styles()` | `Promise<StyleReading>` | The style directives mermaid's parser reads, read once on first call and shared by every rule |
 | `offsetOf(span)` | `number` or `null` | The offset in `doc.src` of a directive value, or `null` when it cannot be mapped back |
 | `stats()` | `Promise<DiagramStats>` | Structure as mermaid's parser reads it, parsed once on first call and shared by every rule |
+| `graph()` | `Promise<DiagramGraph>` | Each node, edge and subgraph mermaid's parser reads, read once on first call |
 
 !!! tip "A fixer must use `offsetOf`"
 
     `source` is not a slice of `doc.src` when the fence is indented, so a value's position in `source` is not its position in the file.
     `offsetOf` maps it back, and returns `null` when it cannot, in which case the fixer should propose nothing.
 
-## StyleDirective
+## StyleReading
 
-One `classDef`, `style` or `linkStyle` line, or an inline `:::class` application.
+What `styles()` returns, read from mermaid's parsed DB.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `kind` | `"classDef"`, `"style"`, `"linkStyle"` or `"inlineClass"` | Which form the line takes |
+| `directives` | `StyleDirective[]` | Every styled class, node and edge, in source order |
+| `unmodelled` | `{ selector, line, reason }[]` | Each style statement in a diagram type the audit does not model |
+
+## StyleDirective
+
+One styled thing in the parser's result: a class, a node, entity, state or class a `style` statement styles, or an edge a `linkStyle` styles.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `kind` | `"classDef"`, `"style"` or `"linkStyle"` | Which statement styles it |
 | `selector` | `string` | The class name, node id or link index the directive applies to |
-| `class_name` | `string`, optional | The class applied, for an inline class |
-| `properties` | `Record<string, string>` | Each property, such as `fill` and `color`, to its value |
-| `spans` | `Record<string, ValueSpan>` | Each property to where its value sits in `source` |
-| `line` | `number` | The line within the diagram, from 1 |
+| `properties` | `Record<string, string>` | Each property mermaid applies, such as `fill` and `color`, to its value, including those a node inherits from its classes |
+| `spans` | `Record<string, ValueSpan>` | Each property its own statements wrote to where the value sits in `source`, only where the parser places it exactly |
+| `line` | `number` | The line of its first statement within the diagram, from 1 |
 
 ## ValueSpan
 
@@ -95,8 +105,9 @@ What mermaid's parser reads from a diagram.
 | `rows` | `number` | The rows drawn inside a node: an `erDiagram` entity's attributes and a `classDiagram` class's attributes and methods. It is 0 for every other type. |
 | `node_ids`, `subgraph_names` | `string[]` | Identifiers, used to suggest where to split |
 | `parser_used` | `"langium"` or `"mermaid-core"` | Which parser produced the result, or on a failure, the parser whose reason `error` carries |
-| `diagram_type` | `string` | The type the parser recognised |
+| `diagram_type` | `string` | The type the parser recognised, as mermaid's detection names it. On a failure it is the type's keyword, or `unknown` when mermaid detects no type. |
 | `error` | `string` or `null` | The parser's reason on one line, when no parser produced structure. Its line numbers count from the diagram's first line. |
+| `error_line` | `number` or `null`, optional | The diagram line the parser's error points at, from the diagram's first line, or `null` when it points at none |
 
 ## ContrastAssessment
 

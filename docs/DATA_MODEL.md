@@ -64,7 +64,7 @@ erDiagram
     Rule ||--o{ RuleContext : "receives per file"
     RuleContext }o--|| DocModel : "doc"
     DocModel ||--o{ Diagram : "diagrams"
-    Diagram ||--o{ StyleDirective : "directives"
+    Diagram ||--o{ StyleDirective : "styles()"
     Diagram ||--|| DiagramStats : "stats()"
     Rule ||--o{ Finding : "check returns"
     Rule ||--o{ Edit : "fix proposes"
@@ -93,7 +93,7 @@ erDiagram
     Root ||--o{ Code : "mermaid fences"
     Code |o--|| Diagram : "becomes"
     DocModel ||--|{ Diagram : "diagrams"
-    Diagram ||--o{ StyleDirective : "directives"
+    Diagram ||--o{ StyleDirective : "styles()"
     Diagram ||--|| DiagramStats : "stats()"
 
     classDef docTint fill:#1d4ed836,stroke:#3b82f6,stroke-width:2px
@@ -111,6 +111,7 @@ Sources:
 
 - `src/model.ts` for `DocModel` and `Diagram`.
 - `src/parse/color.ts` for `StyleDirective` and `ValueSpan`.
+- `src/parse/styles.ts` for `StyleReading`, which reads the directives from mermaid's parsed DB.
 - `src/parse/stats.ts` for `DiagramStats`.
 
 `Root` and `Code` are mdast node types, built by `mdast-util-from-markdown` with the frontmatter and GFM extensions.
@@ -124,7 +125,7 @@ erDiagram
     Root ||--o{ Code : "fences with lang mermaid"
     Code |o--|| Diagram : "flattened to"
     DocModel ||--o{ Diagram : "diagrams, in document order"
-    Diagram ||--o{ StyleDirective : "directives"
+    Diagram ||--o{ StyleDirective : "styles()"
     StyleDirective ||--o{ ValueSpan : "spans, one per property"
     Diagram ||--|| DiagramStats : "stats(), parsed once on first use"
 
@@ -146,20 +147,20 @@ erDiagram
     Diagram {
         number index "position in diagrams, from 0"
         string source "the diagram text"
-        string keyword "nullable, past frontmatter and comments"
+        string keyword "nullable, the type mermaid detects"
         number startLine "file line a finding points at"
         number endLine
         number firstLine "file line of the first source line"
         boolean terminated "false when the fence never closes"
+        string closingFence "nullable, the line that closes it"
         number endOffset "where the fence or file ends"
-        StyleDirective[] directives
+        function styles "Promise of StyleReading"
         function offsetOf "ValueSpan to offset, or null"
         function stats "Promise of DiagramStats"
     }
     StyleDirective {
-        enum kind "classDef style linkStyle inlineClass"
+        enum kind "classDef style linkStyle"
         string selector
-        string class_name "optional"
         record properties "name to value"
         record spans "name to ValueSpan"
         number line "1-based, within the diagram"
@@ -181,6 +182,7 @@ erDiagram
         enum parser_used "langium or mermaid-core"
         string diagram_type
         string error "nullable, the parser's reason"
+        number error_line "optional, where the error points"
     }
 
     classDef docTint fill:#1d4ed836,stroke:#3b82f6,stroke-width:2px
@@ -312,7 +314,7 @@ erDiagram
         number apca_lc
     }
     StyleDirective {
-        enum kind "classDef style linkStyle inlineClass"
+        enum kind "classDef style linkStyle"
         string selector
     }
 

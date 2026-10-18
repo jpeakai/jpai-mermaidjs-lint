@@ -124,6 +124,7 @@ flowchart LR
 Each arrow is an import.
 The parse engine reads structure from mermaid's own parsers, per [MJL-0001](../adrs/0001-parse-with-mermaids-own-parsers.md).
 `stats.ts` uses `@mermaid-js/parser` for the Langium grammars and mermaid core, under `happy-dom`, for the rest.
+`styles.ts` reads style directives from the same parsed DB, and places each statement by its lexer token.
 
 ```mermaid
 flowchart LR
@@ -149,7 +150,7 @@ flowchart LR
     subgraph Parse["parse/"]
         STA["stats.ts<br/>extractStats"]
         MET["metrics.ts<br/>calculateComplexity"]
-        COL["color.ts<br/>directives, WCAG"]
+        COL["color.ts, styles.ts<br/>directives from the DB, WCAG"]
         CTR["contrast.ts<br/>scoreDiagram"]
     end
 

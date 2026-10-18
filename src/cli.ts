@@ -17,10 +17,11 @@ import { setUp } from "./project.ts";
 import { RULES } from "./rules/index.ts";
 import type { LoadedSource, Registry } from "./rules/registry.ts";
 import { CATEGORIES, type Finding, type Rule } from "./rules/types.ts";
+import { type CheckedFile, splitPlanReport } from "./split-report.ts";
 
 // The invocation forms, printed alone after a usage error so the error is not
 // buried, and first in --help.
-const SYNOPSIS = `usage: mermaidjs-lint <path...> [--fix] [--json] [--preset NAME] [--profile NAME] [--config FILE]
+const SYNOPSIS = `usage: mermaidjs-lint <path...> [--fix | --split-plan] [--json] [--preset NAME] [--profile NAME] [--config FILE]
                      [--canvas-light COLOUR] [--canvas-dark COLOUR] [--no-plugins | --lenient-plugins]
                      [--category NAME]... [--disable-category NAME]...
        mermaidjs-lint --list-rules [--config FILE] [--no-plugins | --lenient-plugins] [category flags]
@@ -65,6 +66,10 @@ Examples of every rule, with fixes: https://jpeakai.github.io/jpai-mermaidjs-lin
 --json prints one JSON object instead of text lines.
 --fix applies every fix it can prove safe, then reports what remains.
 A fixer that is unsure leaves the text alone and the finding stays.
+--split-plan prints, after the findings, each diagram a node count or score rule flags, split into an
+  overview and one detail diagram per group, as mermaid fences under a heading naming file:line and the
+  tier, or why no plan met the contract. It writes no file, and takes no --fix, --json, --list-rules
+  or --validate-plugins.
 --config FILE reads that config instead of mermaidjs-lint.config.json or .mjs at the project root.
 Plugins load on their own from .mermaidjs-lint/rules, from dependencies named mermaidjs-lint-plugin,
   mermaidjs-lint-plugin-* or @scope/mermaidjs-lint-plugin(-*), and from the config's plugins list.
@@ -81,6 +86,7 @@ skips a broken plugin, so it alone does not exit 1), and 2 on a usage error.`;
 interface Parsed {
   values: {
     fix?: boolean;
+    "split-plan"?: boolean;
     json?: boolean;
     help?: boolean;
     preset?: string;
@@ -104,6 +110,7 @@ const parse = (argv: string[]): Parsed =>
     args: argv,
     options: {
       fix: { type: "boolean", default: false },
+      "split-plan": { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
       preset: { type: "string", short: "p" },
@@ -292,6 +299,21 @@ const checkPositionals = (values: Values, positionals: string[]): void => {
   }
 };
 
+// --split-plan prints plans beside a check's text report. It never edits, so
+// it refuses --fix, and the plan is not in the JSON object, so it refuses
+// --json rather than drop what it would print. Listing and validation run no
+// check, so there would be no plan to print.
+const checkSplitPlanFlags = (values: Values): void => {
+  if (!values["split-plan"]) return;
+  const refused = (["fix", "json", "list-rules", "validate-plugins"] as const).filter((name) => values[name]);
+  if (refused.length > 0) {
+    throw new FlagError(
+      "--split-plan",
+      `--split-plan prints plans after a check's text report, so it takes no ${refused.map((n) => `--${n}`).join(", ")}`,
+    );
+  }
+};
+
 interface CategoryWords {
   enable: string[];
   disable: string[];
@@ -300,6 +322,7 @@ interface CategoryWords {
 // The category flags as word lists, after every flag they combine with is checked.
 const checkCombinations = (values: Values, positionals: string[]): CategoryWords => {
   checkPluginFlags(values);
+  checkSplitPlanFlags(values);
   const enable = categoryWords("--category", values.category);
   const disable = categoryWords("--disable-category", values["disable-category"]);
   const validating = values["validate-plugins"];
@@ -357,7 +380,7 @@ interface FileRun {
 // rule that reads the path sees one form, and the auto profile is found
 // from the file's own folder whatever the process's working directory. The
 // report shows the path relative to cwd.
-const checkFile = async (file: string, { flags, registry, fix, cwd }: FileRun): Promise<Finding[]> => {
+const checkFile = async (file: string, { flags, registry, fix, cwd }: FileRun): Promise<CheckedFile> => {
   let src = await readFile(file, "utf8");
   if (fix) {
     const fixed = (await fixSourceReport(src, file, flags, registry)).output;
@@ -367,8 +390,9 @@ const checkFile = async (file: string, { flags, registry, fix, cwd }: FileRun): 
     }
   }
   const shown = display(file, cwd);
-  const found = await checkModel(buildDocModel(src, documentKind(file)), file, flags, registry);
-  return found.map((f) => ({ ...f, file: shown }));
+  const doc = buildDocModel(src, documentKind(file));
+  const found = await checkModel(doc, file, flags, registry);
+  return { file, doc, found: found.map((f) => ({ ...f, file: shown })) };
 };
 
 interface Report {
@@ -437,9 +461,12 @@ const run = async (argv: string[], cwd: string): Promise<number> => {
   const fix = Boolean(values.fix);
   if (fix) await refuseOutsideLinks(files, root, cwd);
   const setAside = reportSetAside(files, flags, registry, cwd);
-  const perFile = await Promise.all(files.map((file) => checkFile(file, { flags, registry, fix, cwd })));
-  const all = perFile.flat();
+  const checked = await Promise.all(files.map((file) => checkFile(file, { flags, registry, fix, cwd })));
+  const all = checked.flatMap((c) => c.found);
   printReport(Boolean(values.json), { all, files: files.length, registry, failures, setAside });
+  if (values["split-plan"]) {
+    for (const line of await splitPlanReport(checked, flags, registry, (f) => display(f, cwd))) console.log(line);
+  }
   return all.length > 0 ? 1 : 0;
 };
 

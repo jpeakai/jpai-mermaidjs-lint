@@ -16,6 +16,7 @@ The text below is generated from `mermaidjs-lint --help` when this site is built
 | Flag | Short | Value | Default | Effect |
 |---|---|---|---|---|
 | `--fix` | | | off | Apply every fix proven safe, write the file, then report what remains |
+| `--split-plan` | | | off | After the report, print the split plan for each diagram a node count or score rule flags, and write no file |
 | `--json` | | | off | Print one JSON object instead of text lines |
 | `--preset` | `-p` | a preset name or alias | `high-density` | Set the density for every complexity rule |
 | `--profile` | | `auto`, `github`, `mkdocs-material` | `auto` | Set how contrast is read |
@@ -35,6 +36,7 @@ Some flags cannot be combined, and the run exits 2 when they are:
 
 - `--no-plugins` with `--lenient-plugins`.
 - `--validate-plugins` with `--no-plugins`, `--fix`, `--list-rules`, a category flag or any path.
+- `--split-plan` with `--fix`, `--json`, `--list-rules` or `--validate-plugins`.
 - `--category` and `--disable-category` naming the same category.
 - `--list-rules` with any path, `--fix`, `--json`, `--preset`, `--profile`, `--canvas-light` or `--canvas-dark`, which it would ignore.
 - `--canvas-light` or `--canvas-dark` with `--profile mkdocs-material`.
@@ -177,6 +179,39 @@ docs/architecture.md:6 contrast-text-below-aa classDef warn: text 1.43:1 < 4.5 (
 
 A line reads `file:line rule message`.
 A finding that spans a diagram prints its first and last line, as `file:3-7`.
+
+## Split plans
+
+`--split-plan` prints a section after the summary for each diagram that a node count or score rule flags.
+The heading names the diagram's `file:line` and the tier of the plan.
+An overview follows, where each group of nodes is folded into one group node.
+Then one detail diagram per group shows its members, with a stub for each node outside the group that an edge reaches.
+An edge in from another group starts at one stub for that whole group, since that group's own detail draws it to the exact node.
+For an `erDiagram` or `classDiagram`, a `### Rows` diagram follows for the attributes or members of nodes the overview keeps.
+Each diagram is a mermaid fence, so the output can be pasted into a markdown file and checked:
+
+````text
+## docs/pipeline.md:12: split plan (T2)
+
+### Overview
+
+```mermaid
+flowchart LR
+  ...
+```
+
+### Detail g1: ingest (+5)
+
+```mermaid
+flowchart LR
+  ...
+```
+````
+
+When no plan meets the contract, the section says why, and the finding keeps its subgraph hint.
+A detail that is still over the target is split once more, under a heading one level down.
+The plan is a recommendation, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md): nothing is written, and the exit code is the check's.
+The plan is not in the `--json` object, so `--split-plan` refuses `--json` rather than drop it.
 
 Standard error carries these lines, each when it applies:
 

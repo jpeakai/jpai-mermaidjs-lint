@@ -66,6 +66,14 @@ describe("what counts as a node", () => {
     return stats as NonNullable<typeof stats>;
   };
 
+  test("a flowchart edge to a subgraph's id runs to the subgraph, which is not also a node", async () => {
+    const stats = await statsOf("flowchart LR\n  A --> S\n  subgraph S [Billing]\n    x --> y\n  end\n  S --> B");
+    expect(stats.node_ids).toEqual(["A", "B", "x", "y"]);
+    expect(stats.nodes).toBe(4);
+    expect(stats.edges).toBe(3);
+    expect(stats.subgraphs).toBe(1);
+  });
+
   test("quadrantChart counts every point and every labelled quadrant", async () => {
     const points = Array.from({ length: 30 }, (_, i) => `  P${i}: [0.${(i % 9) + 1}, 0.5]`).join("\n");
     expect((await statsOf(`quadrantChart\n  quadrant-1 Keep\n${points}`)).nodes).toBe(31);
@@ -162,6 +170,16 @@ describe("what a stateDiagram counts", () => {
       "stateDiagram-v2\n  state f <<fork>>\n  state c <<choice>>\n  A --> f\n  f --> c\n  c --> B",
     );
     expect(stats.nodes).toBe(4);
+  });
+
+  test("stateDiagram counts a composite's concurrency regions as neither states nor subgraphs", async () => {
+    const stats = await statsOf(
+      "stateDiagram-v2\n  state Active {\n    [*] --> A\n    A --> B\n    --\n    [*] --> C\n    C --> D\n  }",
+    );
+    expect(stats.node_ids).toEqual(["A", "Active", "B", "C", "D"]);
+    expect(stats.edges).toBe(2);
+    expect(stats.subgraph_names).toEqual(["Active"]);
+    expect(stats.max_subgraph_depth).toBe(1);
   });
 });
 

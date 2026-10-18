@@ -17,6 +17,9 @@ relates_to:
   - relation: see_also
     target: MJL-0001
     note: every count is still read from the parser's result, never the text
+  - relation: see_also
+    target: MJL-0025
+    note: a split plan's overview and details are scored by this score
 
 decision:
   given: a parser's result holds records with nothing to read, such as a block's closing line or a start marker. It also files some things a reader does read, such as attributes, outside its nodes

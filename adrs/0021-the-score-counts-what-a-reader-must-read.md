@@ -17,6 +17,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 ## Relates to
 
 - See also [MJL-0001](0001-parse-with-mermaids-own-parsers.md) (every count is still read from the parser's result, never the text)
+- See also [MJL-0025](0025-a-fold-is-offered-as-a-split.md) (a split plan's overview and details are scored by this score)
 
 ## Decision
 

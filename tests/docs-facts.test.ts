@@ -22,8 +22,8 @@ describe("requirements and compatibility", () => {
 
   test("the reference names every type the Langium parser reads", () => {
     const source = read("src/parse/stats.ts");
-    const table = source.slice(source.indexOf("const LANGIUM_TYPES"), source.indexOf("export function detectKeyword"));
-    const keywords = [...table.matchAll(/^\s+"?([\w-]+)"?: "\w+",$/gm)].map((m) => m[1] as string);
+    const table = source.slice(source.indexOf("const LANGIUM_TYPES"), source.indexOf("const isLangiumType"));
+    const keywords = [...table.matchAll(/^\s+"(\w+)",$/gm)].map((m) => m[1] as string);
     expect(keywords.length).toBeGreaterThan(0);
     const page = read("docs-site/docs/reference/index.md");
     for (const keyword of keywords) expect(page).toContain(`\`${keyword}\``);

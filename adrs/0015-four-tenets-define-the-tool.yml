@@ -12,7 +12,10 @@ provenance: The maintainer named the four goals the linter exists for, after the
 enforced_in:
   - README.md, CONTRIBUTING.md, CLAUDE.md and the docs site home and concepts pages, which state the tenets and map each to its rules
   - Review of every change against the tenets, per CONTRIBUTING.md
-relates_to: []
+relates_to:
+  - relation: see_also
+    target: MJL-0025
+    note: split plans serve the visual complexity tenet
 
 decision:
   given: a rule, a flag or a feature is proposed for the core package

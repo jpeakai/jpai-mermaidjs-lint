@@ -12,7 +12,10 @@ provenance: The scripts only recommended a split count, and a split needs a boun
 enforced_in:
   - src/rules/complexity.ts, whose factory never takes a fix
 
-relates_to: []
+relates_to:
+  - relation: extended_by
+    target: MJL-0025
+    note: the split recommendation carries a concrete plan, checked by a contract and still never applied
 
 decision:
   given: a diagram exceeds a node or score threshold

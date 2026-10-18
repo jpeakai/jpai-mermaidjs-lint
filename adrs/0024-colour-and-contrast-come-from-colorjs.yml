@@ -1,0 +1,33 @@
+id: MJL-0024
+slug: colour-and-contrast-come-from-colorjs
+plan_id: null
+title: Colour parsing and WCAG contrast come only from colorjs.io
+description: No hand-written colour parser, luminance formula or contrast ratio
+status: accepted
+accepted_on: 2026-10-18
+last_changed_on: 2026-10-18
+tags: [contrast, dependencies]
+
+provenance: The contrast rules already compute WCAG 2.1 ratios and APCA through colorjs.io. The maintainer made that binding, so no feature may reimplement colour maths
+enforced_in:
+  - src/parse/color.ts, whose wcagRatio, apcaLc and alphaOf call colorjs.io
+  - review of every change, which refuses a hand-written colour parser, relative luminance formula or contrast ratio
+
+relates_to:
+  - relation: see_also
+    target: MJL-0023
+    note: the same rule for markdown and every other dependency
+  - relation: see_also
+    target: MJL-0017
+    note: sequence colours come from mermaid's theme engine, and their contrast from colorjs.io
+
+decision:
+  given: a rule needs to read a colour, blend a translucent fill, or score contrast against WCAG or APCA
+  we_prefer: calling colorjs.io for the parse, the colour space conversion and the contrast ratio. That is preferred over writing our own colour parser, luminance formula or ratio
+  because: colorjs.io reads every CSS Color Level 4 syntax and implements the published WCAG 2.1 and APCA algorithms. A copy of that maths can only drift from it
+  unless: never
+consequences:
+  pros:
+    - A ratio the linter reports matches the WCAG 2.1 definition, for every colour syntax a browser reads.
+  cons:
+    - The contrast rules depend on colorjs.io's release cadence for any change to a contrast algorithm.

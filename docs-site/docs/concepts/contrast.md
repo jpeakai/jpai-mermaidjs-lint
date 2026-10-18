@@ -187,7 +187,7 @@ None of these is scored, and none of them produces a finding:
 - **A border pair under `mkdocs-material` or in an `erDiagram`.** It is scored but advisory, as [The three profiles](#the-three-profiles) explains.
 - **Theme settings outside a `sequenceDiagram`.** An `%%{init}%%` directive or frontmatter that sets `theme` or `themeVariables` is read only for a sequence diagram.
 - **A sequence `box` and the other participant shapes.** The colour of a `box` around a group of participants is not scored, and nor are shapes such as `database`.
-- **A style joined by a semicolon.** Style directives are read line by line, so `graph TD; A-->B; style A fill:#fff` hides its style.
+- **Style statements outside a flowchart, `erDiagram`, `stateDiagram` or `classDiagram`.** A `classDef` or `style` in another diagram type, such as `block-beta`, is reported as `contrast-directive-unauditable`.
 
 ## Why a fill with no label colour is reported
 

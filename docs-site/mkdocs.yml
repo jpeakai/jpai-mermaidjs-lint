@@ -86,6 +86,7 @@ nav:
       - The plugin model: concepts/plugin-model.md
       - Contrast profiles: concepts/contrast.md
       - Measuring complexity: concepts/complexity.md
+      - Summarising a diagram: concepts/summarisation.md
   - Reference:
       - reference/index.md
       - Rules: reference/rules.md

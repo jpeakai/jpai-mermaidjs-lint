@@ -10,7 +10,89 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Split plans for an oversized diagram.** A diagram over a node count or score threshold gets a split plan when one is found.
+  The plan is an overview where groups of nodes fold into group nodes, plus one detail diagram per group.
+  A plan is offered only when a contract parses the emitted text and finds every node and edge kept, per [MJL-0025](adrs/0025-a-fold-is-offered-as-a-split.md).
+- Each node count and score rule ends its remediation with the plan when one is offered.
+  The added sentence reads like `Split plan: an overview folding 7 groups (...), and one detail diagram per group`.
+  The text before it is unchanged, and no complexity rule gains a fixer.
+- `--split-plan` prints, after the report, the overview and every detail diagram of each plan as mermaid fences, under a heading naming `file:line` and the tier.
+  It writes no file, exits as a check does, and refuses `--fix`, `--json`, `--list-rules` and `--validate-plugins`.
+- The library exports `splitPlan`, `splitOutcome` and the `SplitPlan`, `SplitGroup`, `SplitDetail`, `SplitLoss`, `SplitOutcome` and `Tier` types.
+  `Diagram` gains `graph()`, the parser's nodes, edges and subgraphs, read once.
+- A docs site page, [Summarising a diagram](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/summarisation/), explains the graph theory behind split plans, the tier ladder and the contract.
+  It plans one large diagram under every preset, drawn by the site build from what `splitPlan` returns.
+- A split plan folds the author's regions first and folds repeated patterns evenly, per [MJL-0026](adrs/0026-a-split-plan-follows-the-authors-structure.md).
+  Group nodes are marked in every diagram type, and a long group label is cut in the middle.
+- A detail draws an edge from another group from one stub for that group, and a stub label names what it stands for.
+- `DiagramGraph` nodes carry `markdown`, `rows` and `regions`.
+  Split plans draw entity attributes and class members in details and in row diagrams, and `--split-plan` prints them.
+- A diagram whose composite state has concurrent regions gets no split plan, with the reason `concurrent state regions are not split`.
+- A stub's text in a split plan has exactly one reading.
+  A text that could name another node, region or group adds the id it stands for, and the contract refuses any stub that reads otherwise.
+- A lollipop interface on a folded class hangs from its group in the overview.
+- A state's description lines are carried into split plans, and `DiagramGraph` nodes carry `descriptions`.
+- The overview merges a start or end marker's transitions into one group into one transition, and `SplitLoss` counts them as `mergedMarkers`.
+- `--split-plan` prints a detail that is split again only as its split, so every printed diagram meets the target.
+- Suggested grouping pairs only nodes an edge joins, with alike labels breaking ties.
+  No plan leaves an overview with fewer than four nodes unless the diagram has fewer than eight.
+- A split plan's overview lands near its target.
+  Once the target is met, folding stops while the overview would keep fewer than 60% of `nodeTarget`, unless a detail needs more folded.
+- `T5` and `T6` keep hubs and decisions as their own nodes, and never group two targets of a decision's differently labelled branches.
+- No suggested group hides a single node, and a suggested group is named after the member with the most edges crossing its boundary.
+- An undirected link written both ways between two overview nodes is drawn once, and `SplitLoss` counts these as `reversedEdges`.
+
+### Changed
+
+- **A diagram's keyword now comes from mermaid's own type detection, so some values change.** For example, `graph` now reads as `flowchart` and `C4Context` as `c4`.
+  A `-beta` or `-v2` keyword drops its suffix.
+  A plugin that compares a diagram's keyword with an old value must update it, per [MJL-0022](adrs/0022-start-from-the-official-parsers-output.md).
+- The `diagram_type` of an architecture, packet, radar, treemap, treeView or wardley diagram is mermaid's id, such as `architecture`.
+- `radar`, `treeView` and `wardley` without their `-beta` suffix are unparseable, because mermaid does not draw them.
+- A parse failure is the parser's own error.
+  A diagram under frontmatter or a directive that parses with no nodes now passes.
+- A parser reason is built from the parser's structured error.
+  A line number at the end of a diagram is now the real line.
+- Fences are read from micromark's tokens rather than scanned.
+  `Diagram` gains `closingFence`, and `DiagramStats` gains `error_line`.
+- Contrast style directives are read from mermaid's parsed diagram, not a scan of its text, per [MJL-0022](adrs/0022-start-from-the-official-parsers-output.md).
+  Text inside a label is no longer taken for a `classDef`, `style` or `linkStyle`.
+  A style joined to another statement by `;` is read.
+- `class A,B name` and `:::` give a node its classes, so a node's `style` is scored on what it inherits.
+- Each style statement and sequence `rect` is placed by its lexer token, and a value the parser cannot place exactly is never rewritten.
+- `classDef a,b` and `linkStyle 0,1` give one directive per id, and their shared `color:` is fixed once.
+- A `classDef` or `style` in a type the audit does not model, such as `block-beta`, reports `contrast-directive-unauditable`.
+- An unparseable diagram gets no contrast findings, only `parse-diagram-unparseable`.
+- A sequence theme variable's line is read from the frontmatter.
+  One set in `%%{init}%%` points at the keyword line.
+- **Breaking for the library:** `Diagram.directives` is now `Diagram.styles()`, which returns a promise of a `StyleReading`.
+  `StyleDirective` loses the `inlineClass` kind and `class_name`.
+- `micromark`, `stemmer` and `yaml` are new runtime dependencies.
+- A contrast value is placed from the tokens the lexer read for it, and `--fix` refuses more often rather than guess, per [MJL-0027](adrs/0027-gaps-in-the-official-parsers-are-recorded.md).
+  A classDiagram's colours are reported but never rewritten, because its lexer reads a statement's declarations as one run of text.
+  A value after text mermaid edits out of the line, such as a `;` before a comma, is not rewritten.
+  Nor is a value colorjs.io does not read as a colour, such as `rgb(255` where mermaid cuts `rgb(255,255,255)` at its commas.
+- A style declaration is read as mermaid's renderer reads it: its value is the text between its first colon and its second.
+- A translucent out-of-gamut colour is clipped to sRGB before it is blended over its backdrop, as colorjs.io mixes it.
+
+### Fixed
+
+- A style statement is never placed inside the frontmatter, even when a block scalar there repeats its text.
+  The finding pointed at the frontmatter line, and `--fix` rewrote the frontmatter title instead of the diagram.
+  A parsed line that more than one source line could be is no longer placed, so its value is not rewritten.
+- A stateDiagram `style` inside a composite state, which mermaid does not apply, no longer takes the span of a root state's value.
+
+- A flowchart edge to a subgraph's id, such as `A --> S` where `S` is a subgraph, no longer counts `S` as a node as well.
+  Mermaid draws that edge to the subgraph's box, so the diagram's node count drops by one for each such subgraph.
+- A stateDiagram's concurrency regions, split by `--` inside a composite state, no longer count as nodes or subgraphs.
+  Mermaid draws each region as a dashed-off area of the composite's box, so the states in it count inside the composite.
+  A composite with regions now nests one deep, not two.
+- A label holding an HTML tag, a `<br>` or a bare `<` is read whole.
+  The DOM shim made mermaid's sanitiser drop the text before a tag, and all but the last line of a `<br>` label.
+  It also dropped any label holding `<`.
+- A label holding an HTML entity, such as `&lt;tag&gt;`, reads back as itself in a split plan's diagrams.
 
 ## [0.8.1] - 2026-10-18
 

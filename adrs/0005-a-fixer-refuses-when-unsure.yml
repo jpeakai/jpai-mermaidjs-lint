@@ -15,6 +15,9 @@ relates_to:
   - relation: depended_on_by
     target: MJL-0006
     note: the verifier backs a refusal with proof
+  - relation: see_also
+    target: MJL-0025
+    note: a split plan that breaks its contract is not offered, as an unsure fixer refuses
 
 decision:
   given: a failing label colour has many passing replacements

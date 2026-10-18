@@ -179,22 +179,10 @@ export const calculateComplexity = (stats: DiagramStats, config: ThresholdConfig
   };
 };
 
-// Whether a diagram failed to parse, so its metrics cannot be trusted. A
-// parser's own error always counts: that is what catches `graph TD; A-->; B[[[`.
-// A Langium grammar that read the diagram without an error parsed it, even with
-// no nodes, as `pie` then `title Pets`, or `info` then `showInfo`, legitimately
-// have none. Mermaid core can read a multi-line diagram into an empty
-// structure without complaint, so there a multi-line diagram with no nodes is
-// taken as a silent failure. A one-line diagram may have none, as `info` does.
-export const parseFailed = (content: string, stats: DiagramStats): boolean => {
-  if (stats.error !== null) return true;
-  if (stats.parser_used === "langium" || stats.nodes > 0) return false;
-  return sourceLines(content) > 1;
-};
-
-// The lines that carry diagram source: not blank, a comment or a frontmatter fence.
-export const sourceLines = (content: string): number =>
-  content.split("\n").filter((l) => {
-    const t = l.trim();
-    return t && !t.startsWith("%%") && t !== "---";
-  }).length;
+// Whether a diagram failed to parse, so its metrics cannot be trusted. That is
+// the parser's own say: an error, as `graph TD; A-->; B[[[` gives, or no
+// diagram type mermaid detects, which mermaid reports as an error too. A
+// diagram the parser read without an error parsed, even into no nodes: `pie`
+// then `title Pets`, or a `sequenceDiagram` under a frontmatter title,
+// legitimately have none.
+export const parseFailed = (stats: DiagramStats): boolean => stats.error !== null;

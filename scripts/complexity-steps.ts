@@ -242,7 +242,7 @@ export const workedScore = (stats: DiagramStats, c: ThresholdConfig): string => 
   ].join("\n");
 };
 
-const escapeAttr = (s: string): string =>
+export const escapeAttr = (s: string): string =>
   s.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
 // The parsed structure as cytoscape elements: a subgraph is a compound node
@@ -257,15 +257,15 @@ export const cytoscapeElements = (graph: DiagramGraph): unknown[] => [
   ...graph.edges.map((e, i) => ({ data: { id: `e${i}`, source: e.source, target: e.target } })),
 ];
 
-const fence = (text: string, lang: string): string => `\`\`\`${lang}\n${text.replace(/\n+$/, "")}\n\`\`\``;
+export const fence = (text: string, lang: string): string => `\`\`\`${lang}\n${text.replace(/\n+$/, "")}\n\`\`\``;
 
-const caption = (text: string): string => `<p class="ml-caption">${text}</p>`;
+export const caption = (text: string): string => `<p class="ml-caption">${text}</p>`;
 
 // A graph larger than this, or one with subgraphs, is drawn across the page
 // below its source, since half a page leaves its labels too small to read.
-const WIDE_NODES = 10;
+export const WIDE_NODES = 10;
 
-const card = (lines: string[]): string[] => ["<div markdown>", "", ...lines, "", "</div>"];
+export const card = (lines: string[]): string[] => ["<div markdown>", "", ...lines, "", "</div>"];
 
 export const stepSnippet = (m: MeasuredStep): string => {
   // The direction the graph is laid out in, as mermaid would draw it. A mindmap grows sideways.

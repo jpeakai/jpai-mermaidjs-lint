@@ -2,7 +2,7 @@
 erDiagram
     DocModel ||--|| Root : "tree"
     DocModel ||--o{ Diagram : "diagrams"
-    Diagram ||--o{ StyleDirective : "directives"
+    Diagram ||--o{ StyleDirective : "styles()"
     StyleDirective ||--|{ ValueSpan : "spans"
     Diagram ||--|| DiagramStats : "stats()"
 

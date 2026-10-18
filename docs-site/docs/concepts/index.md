@@ -27,5 +27,6 @@ A rule that serves none of the four does not belong in the tool.
 | [The plugin model](plugin-model.md) | Where rules come from, how they are checked, and what stops two plugins colliding |
 | [Contrast profiles](contrast.md) | Why the same diagram can pass on GitHub and fail on a MkDocs site |
 | [Measuring complexity](complexity.md) | What a node count and a visual complexity score measure, and why neither is fixed automatically |
+| [Summarising a diagram](summarisation.md) | How a split plan folds an oversized diagram into an overview and its details, and what it promises to keep |
 
 The decisions behind each choice are recorded as [decision records](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/index.md) in the repository.

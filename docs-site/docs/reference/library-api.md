@@ -109,7 +109,7 @@ The `auto` profile is then found from each file's own folder, so `main` scores f
 | `documentKind` | `(file: string)` | `"markdown" \| "diagram"`, how the command reads a file of that name |
 | `DIAGRAM_EXTS` | `readonly string[]` | The extensions read as one raw diagram: `.mmd` and `.mermaid` |
 | `extractStats` | `(content: string)` | `Promise<DiagramStats>` for one diagram's text |
-| `detectKeyword` | `(content: string)` | `string \| null`, the diagram's first word past frontmatter and comments |
+| `detectKeyword` | `(content: string)` | `string \| null`, the keyword of the diagram type mermaid detects, such as `flowchart` or `erDiagram`, or `null` when it detects none |
 | `PRESETS` | `Record<string, Preset>` | Each density preset's thresholds |
 | `thresholdsFrom` | `(options: Record<string, unknown>)` | `ThresholdConfig`, the thresholds a complexity rule runs with, from its options |
 
@@ -123,6 +123,34 @@ PRESETS["high-density"]?.node_hard_limit; // the hard limit nodeHardLimit overri
 ```
 
 `ThresholdConfig` adds `edge_weight`, `row_weight`, `subgraph_weight`, `depth_weight` and `preset_name` to the `Preset` fields.
+
+## Split plans
+
+A split plan is what `--split-plan` prints: an overview where groups of nodes fold into one group node each, and one detail diagram per group.
+It is offered only when a contract on the emitted text proves the overview and details keep every node and edge.
+Nothing is applied, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
+
+| Export | Signature | Returns |
+|---|---|---|
+| `splitPlan` | `(source: string, config: ThresholdConfig)` | `Promise<SplitPlan \| null>`, a plan for one diagram's text, or `null` when none is offered |
+| `splitOutcome` | `(source: string, config: ThresholdConfig)` | `Promise<SplitOutcome>`, which is `{ plan, reason, violations }`: the plan, or why there is none |
+| `SplitPlan` | `{ diagram_type, tier, groups, overview, overviewSource, overviewNodes, overviewScore, details, rowDetails, loss }` | `overviewSource` is the overview's mermaid text, and `tier` the last tier that changed the plan |
+| `SplitGroup` | `{ id, label, labelBase, hidden, markdown?, members, regions, parent, tier, reason, shape? }` | One group node: its id `g1`, `g2` and on, the label it shows, the whole label it is taken from, and the original nodes it folds |
+| `SplitDetail` | `{ group, graph, stubs, rows, source, nodes, score, split }` | One detail diagram, its stubs mapped to the node or group each stands for, whether it draws its members' rows, and a further plan when the detail is still over the target |
+| `RowDetail` | `{ members, graph, source, nodes, score }` | One diagram drawing the rows of nodes the overview keeps |
+| `SplitLoss` | `{ newReachablePairs, byTier, droppedRows }` | What the overview draws that the original does not, and the rows no diagram draws |
+| `Tier` | `"T1"` to `"T6"` | The tiers, least lossy first |
+
+`splitPlan` returns `null` for a diagram already within the target, and for one where no plan meets the contract.
+It also returns `null` for a type it does not split, such as a sequence diagram.
+`splitOutcome` names which:
+
+```ts
+import { splitOutcome, thresholdsFrom } from "@jpeakai/mermaidjs-lint";
+
+const { plan, reason } = await splitOutcome(source, thresholdsFrom({ preset: "medium-density" }));
+console.log(plan ? plan.overviewSource : reason);
+```
 
 ## Rules and categories
 

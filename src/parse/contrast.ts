@@ -19,6 +19,7 @@ import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { alphaOf, type ContrastAssessment, compositeOver, type StyleDirective, wcagAssess } from "./color.ts";
 import { getMermaidCore, type MermaidCore } from "./stats.ts";
+import { frontmatterLine, parseTraced, type StyleReading } from "./styles.ts";
 
 export type Profile = "github" | "mkdocs-material";
 export type Theme = "light" | "dark";
@@ -474,33 +475,47 @@ const themeVariable = (selector: string, line: number): ContrastSource => ({
   line,
 });
 
-// Where a sequence variable is set in the source. lineOf gives the line that
-// sets a variable, or the keyword line when it is inherited, and rectLines the
-// line of each rect in order.
-const sequenceLines = (source: string): { lineOf: (key: string) => number; rectLines: number[] } => {
-  const lines = source.split("\n");
-  const keywordLine = lines.findIndex((l) => /^\s*sequenceDiagram\b/.test(l)) + 1;
-  const lineOf = (key: string): number => {
-    const found = lines.findLastIndex((l) => new RegExp(`\\b${key}["']?\\s*:`).test(l));
-    return found < 0 ? keywordLine : found + 1;
-  };
-  return { lineOf, rectLines: lines.flatMap((l, i) => (/^\s*rect\s/.test(l) ? [i + 1] : [])) };
-};
+// A parsed sequence diagram: its merged config and DB, and where its colours
+// are set. lineOf gives the frontmatter line that sets a variable, found by
+// mdast and read by yaml, or the keyword line when the frontmatter does not
+// set it, since no parser places an %%{init}%% directive's keys. rectLines
+// gives the line of each rect keyword token in the order the lexer read them,
+// which is the order of the DB's RECT_START messages.
+interface ParsedSequence {
+  config: Variables;
+  db: SequenceDb;
+  lineOf: (key: string) => number;
+  rectLines: number[];
+}
 
-// The merged config and sequence DB, or null when the parser cannot read the
-// diagram. parse-diagram-unparseable reports it. As for complexity, a diagram
-// the parser cannot read has no colours to trust.
-const parseSequence = async (
-  mermaid: MermaidCore,
-  source: string,
-): Promise<{ config: Variables; db: SequenceDb } | null> => {
+// The parsed sequence diagram, or null when the parser cannot read it.
+// parse-diagram-unparseable reports it. As for complexity, a diagram the
+// parser cannot read has no colours to trust.
+const parseSequence = async (mermaid: MermaidCore, source: string): Promise<ParsedSequence | null> => {
+  let config: Variables;
   try {
-    const { config } = await mermaid.parse(source);
-    const { db } = await mermaid.mermaidAPI.getDiagramFromText(source);
-    return { config, db: db as SequenceDb };
+    ({ config } = await mermaid.parse(source));
   } catch {
     return null;
   }
+  const parsed = await parseTraced(source);
+  if (!parsed) return null;
+  const { tokens, sourceLine, db } = parsed;
+  const keywordLine = (tokens[0] && sourceLine(tokens[0].line)) ?? 1;
+  const lines = new Map<string, number>();
+  const lineOf = (key: string): number => {
+    let line = lines.get(key);
+    if (line === undefined) {
+      line =
+        frontmatterLine(source, ["config", "themeVariables", key]) ??
+        frontmatterLine(source, ["config", key]) ??
+        keywordLine;
+      lines.set(key, line);
+    }
+    return line;
+  };
+  const rectLines = tokens.filter((t) => t.name === "rect").map((t) => sourceLine(t.line, t.endColumn) ?? keywordLine);
+  return { config, db: db as unknown as SequenceDb, lineOf, rectLines };
 };
 
 // Why a sequence config cannot be modelled, as the key to blame and the
@@ -619,11 +634,10 @@ export const scoreSequence = async (
   canvas: Canvas = GITHUB_CANVAS,
 ): Promise<ContrastResult> => {
   const out: ContrastResult = { pairs: [], skipped: [] };
-  const { lineOf, rectLines } = sequenceLines(source);
   const mermaid = await getMermaidCore();
   const parsed = await parseSequence(mermaid, source);
   if (!parsed) return out;
-  const { config, db } = parsed;
+  const { config, db, lineOf, rectLines } = parsed;
 
   const block = (selector: string, reason: string): ContrastResult => {
     out.skipped.push({ selector, line: lineOf(selector), reason, blocking: true });
@@ -654,20 +668,24 @@ export const scoreSequence = async (
 // What scoreDiagram reads off a diagram.
 export interface ScoredDiagram {
   source: string;
-  directives: StyleDirective[];
+  styles: () => Promise<StyleReading>;
   keyword: string | null;
 }
 
 // Scores a diagram by its keyword: a sequence diagram by its theme variables,
-// any other by its style directives.
-export const scoreDiagram = (
-  { source, directives, keyword }: ScoredDiagram,
+// any other by its style directives. A style statement in a diagram type the
+// audit does not model is a failure to audit, never a silent pass.
+export const scoreDiagram = async (
+  { source, styles, keyword }: ScoredDiagram,
   profile: Profile,
   canvas: Canvas = GITHUB_CANVAS,
-): Promise<ContrastResult> =>
-  keyword === "sequenceDiagram"
-    ? scoreSequence(source, profile, canvas)
-    : Promise.resolve(scoreForProfile(directives, profile, keyword, canvas));
+): Promise<ContrastResult> => {
+  if (keyword === "sequenceDiagram") return scoreSequence(source, profile, canvas);
+  const { directives, unmodelled } = await styles();
+  const out = scoreForProfile(directives, profile, keyword, canvas);
+  out.skipped.push(...unmodelled.map((u) => ({ ...u, blocking: true })));
+  return out;
+};
 
 // An ancestor mkdocs.yml or mkdocs.yaml, searched up to 20 levels, means the
 // diagram is read through Material.

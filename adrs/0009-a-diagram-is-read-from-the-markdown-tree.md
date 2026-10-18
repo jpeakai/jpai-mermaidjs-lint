@@ -13,6 +13,10 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-15T00:00:00Z }
 
 <!-- GENERATED from MJL-0009 by okf_render.py. Do not edit; edit the .yml and regenerate. -->
 
+## Relates to
+
+- Extended by [MJL-0023](0023-markdown-is-read-only-through-mdast.md) (the markdown tree comes only from mdast)
+
 ## Decision
 
 ### The lens

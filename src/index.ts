@@ -43,3 +43,14 @@ export type {
   RuleOptions,
 } from "./rules/types.ts";
 export { CATEGORIES, RULE } from "./rules/types.ts";
+export {
+  type RowDetail,
+  type SplitDetail,
+  type SplitGroup,
+  type SplitLoss,
+  type SplitOutcome,
+  type SplitPlan,
+  splitOutcome,
+  splitPlan,
+  type Tier,
+} from "./split/index.ts";

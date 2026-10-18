@@ -7,6 +7,7 @@
 import { parse as langiumParse } from "@mermaid-js/parser";
 import Color from "colorjs.io";
 import { Window } from "happy-dom";
+import { repairNodeGetters } from "./dom.ts";
 
 // mermaid core registers DOMPurify hooks while its grammars run, and DOMPurify
 // needs a DOM. This runs before the first mermaid import, so mermaid is
@@ -15,6 +16,7 @@ const installDomShim = (): void => {
   const g = globalThis as Record<string, unknown>;
   if (g.window) return;
   const win = new Window();
+  repairNodeGetters(win);
   g.window = win;
   g.document = win.document;
   g.Element = win.Element;
@@ -41,22 +43,33 @@ const installDomShim = (): void => {
   }
 };
 
-const isCssColour = (value: string): boolean => {
-  try {
-    new Color(value);
-    return true;
-  } catch {
-    return false;
-  }
+const isCssColour = (value: string): boolean => Color.try(value) !== null;
+
+// ZenUML is drawn by an external add-on (@mermaid-js/mermaid-zenuml) that this
+// package does not ship. Mermaid's API for an external diagram registers its
+// detector alone, so mermaid's own detection names a zenuml diagram, as the
+// add-on's detector does, and loading it fails with the reason. Mermaid core
+// has no zenuml detector of its own, a gap MJL-0027 records.
+const ZENUML = {
+  id: "zenuml",
+  detector: (text: string): boolean => /^\s*zenuml/.test(text),
+  loader: (): Promise<never> =>
+    Promise.reject(new Error("zenuml is drawn by an external mermaid add-on that is not installed")),
 };
 
-let mermaidCore: typeof import("mermaid").default | null = null;
-const getMermaid = async (): Promise<typeof import("mermaid").default> => {
-  if (mermaidCore) return mermaidCore;
+// Mermaid core is loaded once, when this module loads, so its diagram detection
+// is there for the synchronous detectKeyword. The shim goes in first, and
+// initialize registers every diagram's detector.
+const loadMermaid = async (): Promise<typeof import("mermaid").default> => {
   installDomShim();
-  mermaidCore = (await import("mermaid")).default;
-  return mermaidCore;
+  const mermaid = (await import("mermaid")).default;
+  mermaid.initialize({});
+  await mermaid.registerExternalDiagrams([ZENUML]);
+  return mermaid;
 };
+
+const mermaidCore = await loadMermaid();
+const getMermaid = async (): Promise<typeof import("mermaid").default> => mermaidCore;
 
 // The slice of mermaid core the contrast scorer reads: the config a diagram
 // declares, its parsed DB, and the theme engine. Typed here without mermaid's
@@ -98,10 +111,16 @@ export interface DiagramStats {
   // The parser's reason, on one line, when no parser produced structure. Line
   // numbers in it count from the diagram's own first line.
   error: string | null;
+  // The diagram line the parser's error points at, counted from the diagram's
+  // own first line, or null when it points at none or there is no error. It
+  // is optional, so a DiagramStats built without it stays valid.
+  error_line?: number | null;
 }
 
 type MermaidStats = DiagramStats;
 
+// The diagram types whose grammar is a Langium one in @mermaid-js/parser, by the
+// id mermaid's detection gives them, which is also the grammar's name.
 type LangiumType =
   | "architecture"
   | "info"
@@ -113,69 +132,73 @@ type LangiumType =
   | "treeView"
   | "wardley";
 
-const LANGIUM_TYPES: Record<string, LangiumType> = {
-  "architecture-beta": "architecture",
-  architecture: "architecture",
-  info: "info",
-  pie: "pie",
-  gitGraph: "gitGraph",
-  "packet-beta": "packet",
-  packet: "packet",
-  "radar-beta": "radar",
-  radar: "radar",
-  "treemap-beta": "treemap",
-  treemap: "treemap",
-  "treeView-beta": "treeView",
-  treeView: "treeView",
-  "wardley-beta": "wardley",
-  wardley: "wardley",
+const LANGIUM_TYPES: ReadonlySet<string> = new Set<LangiumType>([
+  "architecture",
+  "info",
+  "pie",
+  "gitGraph",
+  "packet",
+  "radar",
+  "treemap",
+  "treeView",
+  "wardley",
+]);
+
+const isLangiumType = (type: string): type is LangiumType => LANGIUM_TYPES.has(type);
+
+// The keyword a diagram type is declared with, where mermaid's id for the type
+// differs from it. Every other id, such as pie or gantt, is its own keyword. A
+// type declared two ways has one keyword: `graph` and `flowchart` are both
+// flowchart, and the v2 class and state diagrams are classDiagram and
+// stateDiagram.
+const KEYWORD_OF_TYPE: Readonly<Record<string, string>> = {
+  flowchart: "flowchart",
+  "flowchart-v2": "flowchart",
+  er: "erDiagram",
+  sequence: "sequenceDiagram",
+  class: "classDiagram",
+  classDiagram: "classDiagram",
+  state: "stateDiagram",
+  stateDiagram: "stateDiagram",
+  requirement: "requirementDiagram",
 };
 
-export function detectKeyword(content: string): string | null {
-  // A leading "---" opens a YAML frontmatter block that runs to the next "---".
-  // Everything between is config, not diagram source: returning its first key
-  // (typically "config:") would miss the Langium dispatch table and mis-report a
-  // valid frontmatter-prefixed diagram (e.g. architecture-beta) as unparseable
-  // (parseFailed in metrics.ts, reported as parse-diagram-unparseable).
-  let seenContent = false;
-  let inFrontmatter = false;
-
-  for (const raw of content.split("\n")) {
-    const line = raw.trim();
-    if (!line || line.startsWith("%%")) continue;
-
-    if (line === "---") {
-      if (inFrontmatter) {
-        inFrontmatter = false; // closing delimiter — diagram source follows
-      } else if (!seenContent) {
-        inFrontmatter = true; // opening delimiter — only valid before any source
-      }
-      seenContent = true;
-      continue;
-    }
-
-    seenContent = true;
-    if (inFrontmatter) continue;
-
-    const first = line.split(/\s+/)[0];
-    return first ?? null;
+// The diagram type mermaid's own detection gives a diagram, past its
+// frontmatter, directives and comments, or null when mermaid detects none.
+export const detectType = (content: string): string | null => {
+  try {
+    return mermaidCore.detectType(content);
+  } catch (err) {
+    if (err instanceof Error && err.name === "UnknownDiagramError") return null;
+    throw err;
   }
-  return null;
+};
+
+const keywordOf = (type: string | null): string | null => (type === null ? null : (KEYWORD_OF_TYPE[type] ?? type));
+
+// The keyword of the diagram type mermaid detects, such as flowchart or
+// erDiagram, or null when mermaid detects none.
+export function detectKeyword(content: string): string | null {
+  return keywordOf(detectType(content));
 }
 
+// The diagram_type of a diagram whose type mermaid does not detect.
+export const UNKNOWN_TYPE = "unknown";
+
 export async function extractStats(content: string): Promise<MermaidStats> {
-  const keyword = detectKeyword(content) ?? "unknown";
+  const type = detectType(content);
+  const keyword = keywordOf(type) ?? UNKNOWN_TYPE;
 
   // 1. Langium grammar (@mermaid-js/parser) — typed AST, no DOM needed.
   // Its error is kept, because for these types it is the parser that owns the
   // grammar, and mermaid core's attempt below is only a second chance.
-  const langium = keyword in LANGIUM_TYPES;
-  let langiumError: string | null = null;
+  const langium = type !== null && isLangiumType(type);
+  let langiumError: ParserError | null = null;
   if (langium) {
     try {
-      return await extractLangiumStats(content, keyword);
+      return await extractLangiumStats(content, type);
     } catch (err) {
-      langiumError = parserReason(err);
+      langiumError = parserError(err);
     }
   }
 
@@ -183,12 +206,13 @@ export async function extractStats(content: string): Promise<MermaidStats> {
   // DOMPurify; the parsers populate each type's DB (vertices, edges,
   // blocks, sections, etc.). A per-type adapter in extractCoreStats reads
   // the canonical DB shape.
-  let coreError: string;
+  let coreError: ParserError;
   try {
-    return await extractCoreStats(content, keyword);
+    return await extractCoreStats(content);
   } catch (err) {
-    coreError = parserReason(err);
+    coreError = parserError(err);
   }
+  const failure = langiumError ?? coreError;
 
   // 3. Neither canonical parser produced stats. Return a tagged failure so
   // parseFailed (metrics.ts) flags it, reported as parse-diagram-unparseable.
@@ -203,32 +227,93 @@ export async function extractStats(content: string): Promise<MermaidStats> {
     subgraph_names: [],
     parser_used: langium ? "langium" : "mermaid-core",
     diagram_type: keyword,
-    error: langiumError ?? coreError,
+    error: failure.reason,
+    error_line: failure.line,
   };
 }
 
-// A pointer line under an echoed source line, as the JISON parsers print it.
-const POINTER = /^-*\^$/;
+// What a JISON parser in mermaid core attaches to its error. A parse error
+// carries the location and the tokens it expected; a lexical error carries only
+// its 0-based line.
+interface JisonHash {
+  line?: number;
+  token?: string | null;
+  loc?: { first_line?: number };
+  expected?: string[];
+}
 
-// A parser's whole reason on one line, so a finding stays one line. The JISON
-// parsers echo the source line and point at the column; both are dropped, and
-// the line number and what the parser expected are kept. "No diagram type
-// detected" echoes the whole diagram after its first line, so only that line
-// is kept.
-export const parserReason = (err: unknown): string => {
+// What a Langium grammar in @mermaid-js/parser attaches to its error.
+interface LangiumResult {
+  lexerErrors: Array<{ line?: number; column?: number; message: string }>;
+  parserErrors: Array<{ message: string; token?: { startLine?: number; startColumn?: number } }>;
+}
+
+const jisonHash = (err: unknown): JisonHash | null => {
+  const hash = (err as { hash?: unknown } | null)?.hash;
+  return typeof hash === "object" && hash !== null ? (hash as JisonHash) : null;
+};
+
+const langiumResult = (err: unknown): LangiumResult | null => {
+  const result = (err as { result?: Partial<LangiumResult> } | null)?.result;
+  return Array.isArray(result?.lexerErrors) && Array.isArray(result?.parserErrors) ? (result as LangiumResult) : null;
+};
+
+// A reason on one line, and the diagram line it points at, when it points at one.
+export interface ParserError {
+  reason: string;
+  line: number | null;
+}
+
+const fromJison = (hash: JisonHash): ParserError => {
+  const parseLine = hash.loc?.first_line;
+  if (parseLine !== undefined) {
+    const got = `'${hash.token ?? ""}'`;
+    const what = hash.expected?.length ? `Expecting ${hash.expected.join(", ")}, got ${got}` : `Unexpected ${got}`;
+    return { reason: `Parse error on line ${parseLine}: ${what}`, line: parseLine };
+  }
+  if (hash.line === undefined) return { reason: "Parse error", line: null };
+  const line = hash.line + 1;
+  return { reason: `Lexical error on line ${line}: Unrecognized text`, line };
+};
+
+// Where a Langium error points. A token past the end of the input, as an
+// unexpected end is, has NaN for its line and column.
+const at = (line: number | null | undefined, column: number | null | undefined): string =>
+  Number.isFinite(line)
+    ? `on line ${line}, column ${Number.isFinite(column) ? column : "?"}`
+    : "at the end of the diagram";
+
+const fromLangium = (result: LangiumResult): ParserError => {
+  const lexer = result.lexerErrors.map((e) => ({
+    line: e.line,
+    text: `Lexer error ${at(e.line, e.column)}: ${e.message}`,
+  }));
+  const parser = result.parserErrors.map((e) => ({
+    line: e.token?.startLine,
+    text: `Parse error ${at(e.token?.startLine, e.token?.startColumn)}: ${e.message}`,
+  }));
+  const all = [...lexer, ...parser];
+  const first = all.find((e) => Number.isFinite(e.line))?.line;
+  return { reason: `Parsing failed: ${all.map((e) => e.text).join(" ")}`, line: first ?? null };
+};
+
+// A parser's whole reason on one line, so a finding stays one line, built from
+// the fields the parser attaches to its error: a JISON parser's hash, or a
+// Langium grammar's lexer and parser errors. Any other error is mermaid's own,
+// such as no diagram type detected, whose message runs on with the diagram's
+// text, so its first line is the reason.
+export const parserError = (err: unknown): ParserError => {
+  const hash = jisonHash(err);
+  if (hash) return fromJison(hash);
+  const result = langiumResult(err);
+  if (result) return fromLangium(result);
   const message = err instanceof Error ? err.message : String(err);
-  const lines = message.split("\n");
-  if (message.startsWith("No diagram type detected")) return (lines[0] ?? "").trim();
-  return lines
-    .filter((line, i) => !(POINTER.test(line.trim()) || POINTER.test((lines[i + 1] ?? "").trim())))
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return { reason: (message.split("\n")[0] ?? "").trim(), line: null };
 };
 
 // ── Langium extraction (@mermaid-js/parser) ─────────────────────────────────
 
-async function langiumParseAny(type: string, content: string): Promise<unknown> {
+async function langiumParseAny(type: LangiumType, content: string): Promise<unknown> {
   switch (type) {
     case "architecture":
       return langiumParse("architecture", content);
@@ -248,16 +333,12 @@ async function langiumParseAny(type: string, content: string): Promise<unknown> 
       return langiumParse("treeView", content);
     case "wardley":
       return langiumParse("wardley", content);
-    default:
-      throw new Error(`no langium parser for ${type}`);
   }
 }
 
-async function extractLangiumStats(content: string, keyword: string): Promise<MermaidStats> {
-  const mapped = LANGIUM_TYPES[keyword];
-  if (!mapped) throw new Error(`not a langium keyword: ${keyword}`);
-  const ast = (await langiumParseAny(mapped, content)) as Record<string, unknown>;
-  const { nodeIds, edges, subgraphNames, maxDepth, treeDepth = 0 } = LANGIUM_ADAPTERS[mapped](ast);
+async function extractLangiumStats(content: string, type: LangiumType): Promise<MermaidStats> {
+  const ast = (await langiumParseAny(type, content)) as Record<string, unknown>;
+  const { nodeIds, edges, subgraphNames, maxDepth, treeDepth = 0 } = LANGIUM_ADAPTERS[type](ast);
 
   return {
     nodes: new Set(nodeIds.filter(Boolean)).size,
@@ -269,8 +350,9 @@ async function extractLangiumStats(content: string, keyword: string): Promise<Me
     node_ids: [...new Set(nodeIds.filter(Boolean))].sort(),
     subgraph_names: subgraphNames,
     parser_used: "langium",
-    diagram_type: keyword,
+    diagram_type: type,
     error: null,
+    error_line: null,
   };
 }
 
@@ -433,7 +515,7 @@ interface Structure {
 }
 type CoreAdapter = (db: AnyDb) => Structure;
 
-async function extractCoreStats(content: string, keyword: string): Promise<MermaidStats> {
+async function extractCoreStats(content: string): Promise<MermaidStats> {
   const mermaid = await getMermaid();
 
   // mermaid.parse() lazily registers the matching diagram and populates its DB.
@@ -446,12 +528,10 @@ async function extractCoreStats(content: string, keyword: string): Promise<Merma
   ).mermaidAPI;
   if (!api?.getDiagramFromText) throw new Error("mermaidAPI.getDiagramFromText not available");
   const diagram = await api.getDiagramFromText(content);
-  const diagramType = diagram.type ?? keyword;
+  const diagramType = diagram.type ?? UNKNOWN_TYPE;
 
   const adapter = CORE_ADAPTERS[diagramType];
-  if (!adapter) {
-    throw new Error(`no core adapter for diagram.type="${diagramType}" (keyword="${keyword}")`);
-  }
+  if (!adapter) throw new Error(`no core adapter for diagram.type="${diagramType}"`);
   const { nodeIds, edges, subgraphNames, maxDepth, treeDepth = 0, rows = 0 } = adapter(diagram.db);
 
   return {
@@ -466,6 +546,7 @@ async function extractCoreStats(content: string, keyword: string): Promise<Merma
     parser_used: "mermaid-core",
     diagram_type: diagramType,
     error: null,
+    error_line: null,
   };
 }
 
@@ -520,12 +601,20 @@ function adaptFlowchart(db: AnyDb): Structure {
     nodes?: string[];
   }>;
   return {
-    nodeIds: [...vertices.keys()],
+    nodeIds: flowchartNodeIds(vertices.keys(), subGraphs),
     edges: edgesArr.length,
     subgraphNames: subGraphs.map((s) => s.title ?? s.id ?? ""),
     maxDepth: subgraphNestingDepth(subGraphs),
   };
 }
+
+// An edge to a subgraph's id (`A --> S`) leaves a vertex named S in the db, but
+// mermaid draws that edge to the subgraph's box and draws no node S. So a
+// vertex that shares a subgraph's id is the subgraph, not a node.
+export const flowchartNodeIds = (ids: Iterable<string>, subGraphs: Array<{ id?: string }>): string[] => {
+  const boxes = new Set(subGraphs.map((s) => s.id));
+  return [...ids].filter((id) => !boxes.has(id));
+};
 
 const lengthOf = (x: unknown): number => (Array.isArray(x) ? x.length : 0);
 
@@ -566,24 +655,53 @@ interface SequenceState {
     boxes?: Array<{ name?: string }>;
   };
 }
-// Mermaid's sequence LINETYPE codes. Its messages list holds every statement in
-// order: a message, but also a note, an activation and each line that opens,
-// divides or closes a block. A block opens with one code, may be divided
-// (else, and, option), and closes with another. A par_over block closes with
-// PAR_END, like par.
-const SEQ_NOTE = 2;
-// loop, alt, opt, par, critical, break, par_over. A `rect` (22, 23) is left
-// out: it tints the background behind its messages, with no title or border,
-// so it is a highlight rather than a boundary to track.
-export const SEQUENCE_BLOCK_OPEN: ReadonlySet<number> = new Set([10, 12, 15, 19, 27, 30, 32]);
-export const SEQUENCE_BLOCK_CLOSE: ReadonlySet<number> = new Set([11, 14, 16, 21, 29, 31]);
+// The sequence db's messages list holds every statement in order: a message,
+// but also a note, an activation and each line that opens, divides or closes a
+// block. Each carries a code from the db's own LINETYPE table. A block opens
+// with one code, may be divided (else, and, option), and closes with another.
+// A par_over block closes with PAR_END, like par. A `rect` is left out: it
+// tints the background behind its messages, with no title or border, so it is
+// a highlight rather than a boundary to track.
+const SEQUENCE_BLOCK_OPENERS = [
+  "LOOP_START",
+  "ALT_START",
+  "OPT_START",
+  "PAR_START",
+  "CRITICAL_START",
+  "BREAK_START",
+  "PAR_OVER_START",
+] as const;
+const SEQUENCE_BLOCK_CLOSERS = ["LOOP_END", "ALT_END", "OPT_END", "PAR_END", "CRITICAL_END", "BREAK_END"] as const;
+
+export interface SequenceCodes {
+  note: number;
+  open: ReadonlySet<number>;
+  close: ReadonlySet<number>;
+}
+
+// The codes read from a sequence db's LINETYPE table. A name the table lacks
+// throws, because a statement could not then be told apart.
+export const sequenceCodes = (db: AnyDb): SequenceCodes => {
+  const table = db.LINETYPE as Readonly<Record<string, unknown>> | undefined;
+  const code = (name: string): number => {
+    const value = table?.[name];
+    if (typeof value !== "number") throw new Error(`the sequence db's LINETYPE has no ${name}`);
+    return value;
+  };
+  return {
+    note: code("NOTE"),
+    open: new Set(SEQUENCE_BLOCK_OPENERS.map(code)),
+    close: new Set(SEQUENCE_BLOCK_CLOSERS.map(code)),
+  };
+};
 
 // A message runs from one participant to another (or itself). A note also
 // names both, so it is told apart by its code, and an activation names only one.
-export const isSequenceMessage = (m: SequenceRecord): boolean =>
-  m.type !== SEQ_NOTE && typeof m.from === "string" && typeof m.to === "string";
+export const isSequenceMessage = (codes: SequenceCodes, m: SequenceRecord): boolean =>
+  m.type !== codes.note && typeof m.from === "string" && typeof m.to === "string";
 
 function adaptSequence(db: AnyDb): Structure {
+  const codes = sequenceCodes(db);
   // sequenceDb stores state under db.state.records.{actors,messages,boxes}.
   const state = (db.state as SequenceState | undefined)?.records;
   const actors = state?.actors instanceof Map ? state.actors : new Map<string, unknown>();
@@ -596,17 +714,17 @@ function adaptSequence(db: AnyDb): Structure {
   let depth = 0;
   let maxBlockDepth = 0;
   for (const r of records) {
-    if (r.type !== undefined && SEQUENCE_BLOCK_OPEN.has(r.type)) {
+    if (r.type !== undefined && codes.open.has(r.type)) {
       depth++;
       maxBlockDepth = Math.max(maxBlockDepth, depth);
       subgraphNames.push(typeof r.message === "string" && r.message ? r.message : `block_${subgraphNames.length}`);
-    } else if (r.type !== undefined && SEQUENCE_BLOCK_CLOSE.has(r.type)) {
+    } else if (r.type !== undefined && codes.close.has(r.type)) {
       depth = Math.max(0, depth - 1);
     }
   }
   return {
     nodeIds: [...actors.keys()],
-    edges: records.filter(isSequenceMessage).length,
+    edges: records.filter((r) => isSequenceMessage(codes, r)).length,
     subgraphNames,
     maxDepth: Math.max(boxes.length > 0 ? 1 : 0, maxBlockDepth),
   };
@@ -822,18 +940,50 @@ interface StateEdge {
 // ([*], one pair per composite state), and a note with the group mermaid wraps
 // it in. A marker only says where a path begins or ends, and a note is an
 // annotation, as notes are in every other type.
-const STATE_NOT_A_STATE = new Set(["stateStart", "stateEnd", "note", "noteGroup"]);
+//
+// A divider is one concurrency region of a composite state, the part between
+// two `--` lines. Mermaid draws it as an unlabelled area of the composite's
+// box, set off from the next region by a dashed line, with no box or title of
+// its own. The composite is the boundary the reader finds and tracks, and the
+// dashed line only divides it, as `and` divides a sequence `par` block that
+// counts once. So a region is neither a state nor a subgraph, and the states
+// in it belong to the composite. Its id is also random, so counting it would
+// change the node and subgraph names from one parse to the next.
+const STATE_DIVIDER = "divider";
+const STATE_NOT_A_STATE = new Set(["stateStart", "stateEnd", "note", "noteGroup", STATE_DIVIDER]);
 
-export const isCountedState = (n: { shape?: string }): boolean => !STATE_NOT_A_STATE.has(n.shape ?? "");
+const isCountedState = (n: { shape?: string }): boolean => !STATE_NOT_A_STATE.has(n.shape ?? "");
 
-// The states and transitions a stateDiagram draws, without markers or notes.
-// A transition into or out of a marker goes with it, as does a note's
+// Each state's parent with concurrency regions passed over, so a state in a
+// region has the composite around the region as its parent.
+export const stateParents = (db: AnyDb): ((n: StateNode) => string | undefined) => {
+  const all = (db.nodes as StateNode[] | undefined) ?? [];
+  const dividers = new Map(all.filter((n) => n.shape === STATE_DIVIDER).map((n) => [n.id ?? "", n.parentId]));
+  return (n) => {
+    let parent = n.parentId;
+    const seen = new Set<string>();
+    while (parent !== undefined && dividers.has(parent) && !seen.has(parent)) {
+      seen.add(parent);
+      parent = dividers.get(parent);
+    }
+    return parent;
+  };
+};
+
+// The states and transitions a stateDiagram draws, without markers, notes or
+// concurrency regions, each with its parent read past any region. A
+// transition into or out of a marker goes with it, as does a note's
 // connector. graph.ts draws the same set, so the two never disagree.
 export const countedStateElements = <N extends StateNode, E extends StateEdge>(
   db: AnyDb,
 ): { nodes: N[]; edges: E[] } => {
   const all = (db.nodes as N[] | undefined) ?? [];
-  const nodes = all.filter(isCountedState);
+  const parentOf = stateParents(db);
+  const nodes = all.filter(isCountedState).map((n) => {
+    const parentId = parentOf(n);
+    const { parentId: _, ...rest } = n;
+    return (parentId === undefined ? rest : { ...rest, parentId }) as N;
+  });
   const kept = new Set(nodes.map((n) => n.id ?? ""));
   const edges = ((db.edges as E[] | undefined) ?? []).filter((e) => kept.has(e.start ?? "") && kept.has(e.end ?? ""));
   return { nodes, edges };

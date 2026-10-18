@@ -16,6 +16,8 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-15T00:00:00Z }
 ## Relates to
 
 - Depended on by [MJL-0002](0002-one-rule-per-finding-code.md) (every complexity rule reads these stats)
+- Extended by [MJL-0022](0022-start-from-the-official-parsers-output.md) (every feature starts from the official parsers' output, not only counting)
+- See also [MJL-0021](0021-the-score-counts-what-a-reader-must-read.md) (which of the parser's records the score counts)
 
 ## Decision
 

@@ -1,0 +1,54 @@
+id: MJL-0025
+slug: a-fold-is-offered-as-a-split
+plan_id: null
+title: A fold is offered only as the overview half of a split
+description: A split plan is checked by a contract and applied by a human
+status: accepted
+accepted_on: 2026-10-18
+last_changed_on: 2026-10-18
+tags: [complexity, fixing, safety]
+
+provenance: >-
+  A complexity finding named the subgraphs to split along but not where to cut a diagram that has none.
+  Folding node sets into group nodes gives an overview that meets the target, but an overview alone drops what it folds.
+  Compromise, a maintained natural-language library, was evaluated to group nodes by label stems.
+  It gave the same groupings as the small stemmer the split code already holds, for a 4.4 MB install, so it was rejected
+enforced_in:
+  - src/split/contract.ts, which parses the emitted overview and details again and refuses a plan that loses a node or an edge
+  - src/rules/complexity.ts, which appends the plan to the remediation of the node count and score rules and still takes no fixer
+  - src/split-report.ts and the --split-plan flag, which print the plan and write no file, and refuse --fix
+
+relates_to:
+  - relation: extended_by
+    target: MJL-0026
+    note: how a plan is chosen and drawn faithfully
+  - relation: extends
+    target: MJL-0004
+    note: the split recommendation now carries a concrete plan, and is still never applied
+  - relation: see_also
+    target: MJL-0005
+    note: like a fixer that is unsure, a plan that breaks the contract is not offered
+  - relation: see_also
+    target: MJL-0015
+    note: the plan serves the visual complexity tenet
+  - relation: see_also
+    target: MJL-0021
+    note: the overview and every detail are scored by the same visual complexity score
+  - relation: see_also
+    target: MJL-0022
+    note: the plan reads the parser's graph, and its emitted text is checked by parsing it again
+
+decision:
+  given: a diagram over a node count or score threshold
+  we_prefer: offering a fold only as the overview half of a split, with one detail diagram per group, checked by a contract on the emitted text. That is preferred over a replacement diagram, and over a fixer
+  because: the boundary of a split is a design decision, so the plan is a recommendation a human applies (MJL-0004). A split also stays recoverable, since the overview and the details together keep every node and edge
+  unless: no plan meets the contract. Then no plan is offered, and the finding keeps its subgraph hint
+consequences:
+  pros:
+    - A complexity finding names where to cut, not only how small to cut.
+    - A plan never loses a node or an edge, because the contract parses what it emits.
+    - The tool still never edits a diagram for a complexity finding.
+  cons:
+    - Working out a plan adds time to a check of every oversized diagram.
+    - A plan groups by structure and label stems, so its groups may not match the author's intent.
+    - Compromise was rejected, so the label stemming stays in this package and is tested here.

@@ -13,6 +13,10 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-15T00:00:00Z }
 
 <!-- GENERATED from MJL-0004 by okf_render.py. Do not edit; edit the .yml and regenerate. -->
 
+## Relates to
+
+- Extended by [MJL-0025](0025-a-fold-is-offered-as-a-split.md) (the split recommendation carries a concrete plan, checked by a contract and still never applied)
+
 ## Decision
 
 ### The lens

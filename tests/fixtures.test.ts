@@ -27,12 +27,18 @@ describe("fixture corpus", () => {
     expect(await distinctRules(f.source, f.path)).toEqual(f.expected as string[]);
   });
 
-  test.each(fixtures.map((f) => [f.rel, f] as const))("%s fixes idempotently without adding a rule", async (_, f) => {
-    const once = await fixSource(f.source, f.path);
-    expect(await fixSource(once, f.path)).toBe(once);
-    const before = new Set(await distinctRules(f.source, f.path));
-    for (const rule of await distinctRules(once, f.path)) expect(before).toContain(rule);
-  });
+  // Four full checks, each planning a split for every oversized diagram, run
+  // close to the default 5 s under coverage, so this test allows more.
+  test.each(fixtures.map((f) => [f.rel, f] as const))(
+    "%s fixes idempotently without adding a rule",
+    async (_, f) => {
+      const once = await fixSource(f.source, f.path);
+      expect(await fixSource(once, f.path)).toBe(once);
+      const before = new Set(await distinctRules(f.source, f.path));
+      for (const rule of await distinctRules(once, f.path)) expect(before).toContain(rule);
+    },
+    20_000,
+  );
 
   test.each(pinned.map((f) => [f.rel, f] as const))("%s fixes to its pinned .fixed file", async (_, f) => {
     expect(await fixSource(f.source, f.path)).toBe(f.fixed as string);

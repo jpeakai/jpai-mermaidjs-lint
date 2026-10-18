@@ -21,7 +21,8 @@ Two edges from different members of one group can draw the same edge twice.
 When the detail still meets its target, each gets a stub, so a reader sees two sources.
 Each such stub names the member its edges leave, as `Checkout domain (+5) from paymentservice`.
 When that text would not name the group alone, the detail draws one stub instead.
-A stub for a whole group beside a stub for the member the group is named after is named the same way, so `10007 QA (+2) from 10008 Ready for Release` sits beside `10007 QA (in group)`.
+A stub for a whole group beside a stub for its namesake member is named the same way.
+So `10007 QA (+2) from 10008 Ready for Release` sits beside `10007 QA (in group)`.
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
@@ -186,7 +187,8 @@ A diagram with author regions climbs `T3` first, since a reader finds the author
 When that plan fails, it climbs in the order below.
 Within a tier, it applies the fold that saves the most score per node hidden, then measures the overview again.
 In `T4`, of two aggregates that save as much, the one leaving fewer edges between overview nodes goes first.
-In `T4`, `T5` and `T6`, of the folds within 5% of the best one's saving (in `T6`, its gain), the one leaving the fewest parallel edges goes first.
+In `T4`, `T5` and `T6`, some folds come within 5% of the best one's saving, or in `T6` its gain.
+Of those, the one leaving the fewest parallel edges goes first.
 A parallel edge is an overview edge beside another between the same two nodes, at least one of them a group.
 A chain folds in even stages and a set of twins in even runs, all in one step.
 It stops at the first overview that meets the preset's `nodeTarget` and `vcsTarget`.
@@ -209,7 +211,7 @@ A plan names the last tier that changed it.
 - **Hubs stay in view.** A hub is a node of degree at least four and at least the 90th percentile degree. It keeps its own overview node, and the leaves hanging from it fold beside it as one group. An `erDiagram` never merges two relationship labels, so there its leaves stay open.
 - **Shared terminals stay in view.** A shared terminal is a flowchart or `stateDiagram` node that at least three other nodes lead into and that ends the flow, by directed edges. It leads nowhere, or everything it leads to leads nowhere. A `Notify on-call` step every failure ends at is one, and so is a final `Refunded` state. So is a `Cancelled` state that leads only to `Refunded` and `Voided`. Folded into one branch's group, it would read as that branch's own end.
 - **A decision's branches stay apart.** A decision is a node whose outgoing edges carry two labels or more, in a flowchart or a `stateDiagram`. Two targets of its differently labelled branches never share a group, unless one reaches the other, or both reach a common member, inside the group.
-- **A group keeps to one prefix family.** A prefix family is the dotted prefix leading a label, such as `bronze.`, the letters leading an id-led label, such as `PLAT-`, or the letters and underscore leading an id, such as `br_`. No suggested group holds members of two families. In `T6`, a pair within one family goes before any other pair.
+- **A group keeps to one prefix family.** A prefix family is the dotted prefix leading a label, such as `bronze.`. Failing that, it is the letters leading an id-led label, such as `PLAT-`. Failing that, it is the letters and underscore leading an id, such as `br_`. No suggested group holds members of two families. In `T6`, a pair within one family goes before any other pair.
 - **Every group hides two nodes or more.** Once the target is met, a group hiding one node is undone when the overview and every detail still meet the target without it. Otherwise it is merged into a neighbouring node or suggested group. One that can be neither stays. A decision region from `T2` hiding one node is undone the same way. It is never merged, since a merged region would no longer be a region.
 
 When the target cannot be met under these rules, the plan is walked again with prefix families mixed.
@@ -284,7 +286,8 @@ A reader would look for that member here.
 An author region's label and a decision region's question still come first.
 An id-led group with no honest range is named by its first label in natural order, so `10002 Backlog (+2)` rather than a side state.
 
-In `T6`, a pair within one prefix family goes before any other, and under the strict rules a pair across two families is never proposed.
+In `T6`, a pair within one prefix family goes before any other.
+Under the strict rules, a pair across two families is never proposed.
 A family is a dotted prefix leading a label, such as `bronze.`, or the letters leading an id-led label, such as `PLAT-`.
 Failing that, it is letters and an underscore leading an id, such as `br_`.
 When families are mixed, a pair across two still loses a tie between equal gains.

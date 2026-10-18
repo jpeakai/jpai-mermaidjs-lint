@@ -928,7 +928,7 @@
         "target": "MJL-0031",
         "label": "excepted by",
         "relation": "excepted_by",
-        "note": "held to no target, any owner's aggregate may fold, not only a root's, and never one swallowing a group already over the target"
+        "note": "any owner's aggregate may fold uncapped, never one swallowing a group over the target"
       }
     },
     {
@@ -988,7 +988,7 @@
         "target": "MJL-0031",
         "label": "excepted by",
         "relation": "excepted_by",
-        "note": "a pair across two prefix families is never proposed under the strict rules, and a pair within one goes first, not only on a tie"
+        "note": "under the strict rules a pair never crosses two prefix families"
       }
     },
     {
@@ -1008,7 +1008,7 @@
         "target": "MJL-0030",
         "label": "excepts",
         "relation": "excepts",
-        "note": "a pair across two prefix families is never proposed under the strict rules, and a pair within one goes first, not only on a tie"
+        "note": "under the strict rules a pair never crosses two prefix families"
       }
     },
     {
@@ -1018,7 +1018,7 @@
         "target": "MJL-0028",
         "label": "excepts",
         "relation": "excepts",
-        "note": "held to no target, any owner's aggregate may fold, not only a root's, and never one swallowing a group already over the target"
+        "note": "any owner's aggregate may fold uncapped, never one swallowing a group over the target"
       }
     }
   ],

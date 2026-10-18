@@ -489,7 +489,8 @@ The code that reads a Diagram's structure from mermaid's own parsers.
 
 ## Pipeline Stage
 
-The stage of a data pipeline a node names: a Prefix Family read from a dotted prefix such as `bronze.` or an id prefix such as `br_`.
+The stage of a data pipeline a node names.
+It is a Prefix Family read from a dotted prefix such as `bronze.` or an id prefix such as `br_`.
 
 ## Prefix Family
 

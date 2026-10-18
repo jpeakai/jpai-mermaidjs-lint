@@ -31,25 +31,31 @@ relates_to:
     note: stubs drawn apart for one group are told apart by the member each one's edges leave
   - relation: excepts
     target: MJL-0030
-    note: a pair across two prefix families is never proposed under the strict rules, and a pair within one goes first, not only on a tie
+    note: under the strict rules a pair never crosses two prefix families
   - relation: excepts
     target: MJL-0028
-    note: held to no target, any owner's aggregate may fold, not only a root's, and never one swallowing a group already over the target
+    note: any owner's aggregate may fold uncapped, never one swallowing a group over the target
 
 decision:
-  given: a reader of an overview counts its nodes against the target, compares its groups' sizes, reads a group's name as a promise about its members and follows parallel lines as separate relationships. A detail's stubs are read by their text alone
+  given: a reader of an overview counts its nodes against the target and compares its groups' sizes. A group's name reads as a promise about its members, and parallel lines read as separate relationships. A detail's stubs are read by their text alone
   we_prefer: >-
-    undoing, when a walk leaves the overview below 60% of node_target rounded up, the group whose undoing gives back the most nodes while the overview and every detail that fitted still meet their targets.
+    undoing a group when a walk leaves the overview below 60% of node_target, rounded up.
+    The group undone gives back the most nodes while the overview and every fitting detail still meet their targets.
     A T2 group stays, since it is one run of a pattern folded evenly.
     An erDiagram aggregate folded over the target is never folded again into its owner's aggregate.
     Held to no target, any owner's aggregate may fold, not only a root's.
     A T5 or T6 group never holds members of two prefix families under the strict rules.
-    A prefix family is the dotted prefix leading a label, such as bronze., else the letters leading an id-led label, such as PLAT- in PLAT-1201, else letters and an underscore leading an id, such as br_.
+    A prefix family is the dotted prefix leading a label, such as bronze.
+    Failing that, it is the letters leading an id-led label, such as PLAT- in PLAT-1201.
+    Failing that, it is letters and an underscore leading an id, such as br_.
     In T6, a pair within one family ranks before any other pair, then by modularity gain.
     When the target cannot be met so, the plan is walked again with families mixed, before hubs and branches are folded.
-    In T4, T5 and T6, of the candidates within 5% of the best saving per node hidden, or in T6 of the best gain and of the same kin, the one leaving the fewest parallel overview edges is taken.
+    In T4, T5 and T6, some candidates come within 5% of the best saving per node hidden.
+    In T6 they come within 5% of the best gain, at the same kin.
+    Of those, the one leaving the fewest parallel overview edges is taken.
     A parallel edge is an overview edge beside another between the same two nodes, at least one a group.
-    Stubs for one whole group drawn apart in one detail, which would show one text, each take " from " and the label of the one member their edges leave, as "Checkout domain (+5) from paymentservice".
+    Stubs for one whole group drawn apart in one detail would show one text.
+    Each takes " from " and the label of the one member its edges leave, as "Checkout domain (+5) from paymentservice".
     So does a whole-group stub beside a stub for the member its group is named after, as "10007 QA (+2)" beside "10007 QA (in group)".
     The text must have exactly one reading, the group, and the member must draw every edge the stub draws.
     When any stub cannot be named so, the detail draws one stub for the group

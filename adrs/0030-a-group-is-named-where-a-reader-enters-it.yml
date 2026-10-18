@@ -39,7 +39,7 @@ relates_to:
     note: stubs drawn apart for one group are told apart by the member each one's edges leave
   - relation: excepted_by
     target: MJL-0031
-    note: a pair across two prefix families is never proposed under the strict rules, and a pair within one goes first, not only on a tie
+    note: under the strict rules a pair never crosses two prefix families
 
 decision:
   given: a group's name is the first thing a reader reads of it, and the overview's edges are read between those names. Some diagrams cannot be summarised by folding at all, and some states end every failure path without being sinks themselves

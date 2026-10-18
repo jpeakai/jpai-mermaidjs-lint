@@ -18,6 +18,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 ## Relates to
 
 - Extends [MJL-0001](0001-parse-with-mermaids-own-parsers.md) (MJL-0001 covers counting, and this record covers every feature, emitted text and every other dependency)
+- See also [MJL-0023](0023-markdown-is-read-only-through-mdast.md) (the same rule for markdown and every other dependency)
 
 ## Decision
 

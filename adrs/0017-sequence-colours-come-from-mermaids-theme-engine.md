@@ -17,6 +17,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-16T00:00:00Z }
 ## Relates to
 
 - See also [MJL-0018](0018-a-host-sets-the-page-canvas-under-github-only.md) (the sequence pairs on the page are scored on the canvas)
+- See also [MJL-0024](0024-colour-and-contrast-come-from-colorjs.md) (their contrast is scored by colorjs.io)
 
 ## Decision
 

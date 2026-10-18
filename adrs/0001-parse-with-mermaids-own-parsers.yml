@@ -18,6 +18,9 @@ relates_to:
   - relation: extended_by
     target: MJL-0022
     note: every feature starts from the official parsers' output, not only counting
+  - relation: see_also
+    target: MJL-0021
+    note: which of the parser's records the score counts
 
 decision:
   given: a rule needs the nodes, edges and subgraphs of a diagram

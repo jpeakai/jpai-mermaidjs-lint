@@ -12,7 +12,10 @@ provenance: The scripts matched an opening line with a regular expression and mi
 enforced_in:
   - src/model.ts, which collects mermaid code nodes and builds each diagram's offset map
 
-relates_to: []
+relates_to:
+  - relation: extended_by
+    target: MJL-0023
+    note: the markdown tree comes only from mdast
 
 decision:
   given: a rule or a fixer needs the diagrams of a document and their positions

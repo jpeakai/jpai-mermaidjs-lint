@@ -17,6 +17,8 @@ It has two halves:
 - **One detail diagram per group** shows that group's members and every edge between them.
 
 A dashed stub in a detail stands for each outside node an edge reaches, or for a whole group an edge comes in from.
+Two edges from different members of one group can draw the same edge twice.
+When the detail still meets its target, each gets a stub, so a reader sees two sources.
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
@@ -158,6 +160,13 @@ At most 256 cliques are listed, so the same graph always gives the same cliques.
 Each clique is cut into runs whose detail meets the target.
 A run ranks by the modularity gained by merging it whole, the sum of its pairs' gains, so a larger clique goes first.
 
+A diagram that is a dense mesh from the start gets no plan.
+It counts as one when it joins at least half of all node pairs and more pairs than twice its nodes.
+Its nodes then average more than four links.
+Folding such a mesh leaves a mesh, since its groups are joined to each other too, and no fold makes it readable.
+So the plan is refused with the reason "dense mesh: a matrix or table reads better than a diagram".
+The same check runs on each plan's overview, so a plan never offers one, per [MJL-0030](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0030-a-group-is-named-where-a-reader-enters-it.md).
+
 ### Measures that did not help
 
 Bridges and betweenness are the usual tools for finding where a network divides.
@@ -172,6 +181,7 @@ The plan applies its folds in tiers, least lossy first.
 A diagram with author regions climbs `T3` first, since a reader finds the author's own boundaries first.
 When that plan fails, it climbs in the order below.
 Within a tier, it applies the fold that saves the most score per node hidden, then measures the overview again.
+Of two folds that save as much, the one leaving fewer edges between overview nodes goes first.
 A chain folds in even stages and a set of twins in even runs, all in one step.
 It stops at the first overview that meets the preset's `nodeTarget` and `vcsTarget`.
 No fold may leave the overview with fewer than four nodes, unless the diagram has fewer than eight.
@@ -188,9 +198,9 @@ A plan names the last tier that changed it.
 `T5` and `T6` follow four rules, so the overview still tells the diagram's story:
 
 - **Hubs stay in view.** A hub is a node of degree at least four and at least the 90th percentile degree. It keeps its own overview node, and the leaves hanging from it fold beside it as one group. An `erDiagram` never merges two relationship labels, so there its leaves stay open.
-- **Shared terminals stay in view.** A shared terminal is a flowchart or `stateDiagram` node that at least three other nodes lead into and that leads nowhere, by directed edges. A `Notify on-call` step every failure ends at is one, and so is a final `Refunded` state. Folded into one branch's group, it would read as that branch's own end.
+- **Shared terminals stay in view.** A shared terminal is a flowchart or `stateDiagram` node that at least three other nodes lead into and that ends the flow, by directed edges. It leads nowhere, or everything it leads to leads nowhere. A `Notify on-call` step every failure ends at is one, and so is a final `Refunded` state. So is a `Cancelled` state that leads only to `Refunded` and `Voided`. Folded into one branch's group, it would read as that branch's own end.
 - **A decision's branches stay apart.** A decision is a node whose outgoing edges carry two labels or more, in a flowchart or a `stateDiagram`. Two targets of its differently labelled branches never share a group, unless one reaches the other, or both reach a common member, inside the group.
-- **Every group hides two nodes or more.** Once the target is met, a group hiding one node is undone when the overview and every detail still meet the target without it. Otherwise it is merged into a neighbouring node or suggested group. One that can be neither stays.
+- **Every group hides two nodes or more.** Once the target is met, a group hiding one node is undone when the overview and every detail still meet the target without it. Otherwise it is merged into a neighbouring node or suggested group. One that can be neither stays. A decision region from `T2` hiding one node is undone the same way. It is never merged, since a merged region would no longer be a region.
 
 When the target cannot be met under these rules, the plan is walked again with hubs and branches folded, while shared terminals stay in view.
 When that fails too, it is walked without the first three rules, and the last still holds.
@@ -207,9 +217,9 @@ The plan reports it after each tier.
 | `T1` | No nodes. It leaves attribute rows out of the overview. | Nothing. A detail draws its members' rows when they fit, and row diagrams draw the rest. No reachable pair. |
 | `T2` | Twins, bundles of sibling leaves, chain stages, and decision regions, innermost first | Nothing. The declared loss after `T2` must be zero. |
 | `T3` | Author regions, innermost first: subgraphs, composite states and namespaces | New reachable pairs between nodes folded into one region |
-| `T4` | `erDiagram` aggregates: the largest aggregate that fits, named after its root. A junction stays out of both sides. | New reachable pairs. Cardinalities are never merged. |
+| `T4` | `erDiagram` aggregates: the largest aggregate that fits, named after its root, or after its most crossed member when the root is a lookup. A junction stays out of both sides. | New reachable pairs. Cardinalities are never merged. |
 | `T5` | Leaves into the node they hang from, repeated, or beside it as one group when it is a hub | New reachable pairs through the group |
-| `T6` | Suggested groups from greedy modularity, over pairs an edge joins, with alike labels breaking ties, and tight cliques in a dense mesh | New reachable pairs, and groups the author may not recognise |
+| `T6` | Suggested groups from greedy modularity, over pairs an edge joins, with alike labels and shared pipeline stages breaking ties, and tight cliques once the overview is dense | New reachable pairs, and groups the author may not recognise |
 
 ## What "meaning is preserved" means
 
@@ -241,10 +251,16 @@ The contract does not promise everything a reader might assume.
 
 Labels feed grouping in two places.
 A group without an author label is named after one of its members.
-A suggested group, from `T5` or `T6`, is named after the member on its main path.
+In a flowchart or `stateDiagram`, a chain-like group is named after its entry, the member no other member leads into.
+A group is chain-like when its members form one directed path, so a pipeline's first group reads `git push to main (+5)`, not its exit.
+Twin chains, several disjoint paths, are named after the entry the flow reaches first, then the first by label.
+They are never named by a range across two stages.
+Any other suggested group, from `T5` or `T6`, is named after the member on its main path.
 That is the member with the most edges crossing the group's boundary, a start or end transition counted as one.
 A tie goes to the member the flow reaches first from where it enters the diagram.
 Any other group is named after its best-connected member.
+An aggregate is named after its root, unless the root is a lookup, every edge of which joins one other member.
+Then it is named after the member with the most edges crossing its boundary, so Sakila's `LANGUAGE` and `FILM` read `FILM (+1)`.
 
 Some groups hold members no single label names.
 These are twins, sibling leaves, and members whose labels all lead with an id, such as `S10004` or `10011 Wont Do`.
@@ -257,7 +273,10 @@ A reader would look for that member here.
 An author region's label and a decision region's question still come first.
 An id-led group with no honest range is named by its first label in natural order, so `10002 Backlog (+2)` rather than a side state.
 
-In `T6`, when two merges gain the same modularity, the pair with alike labels goes first.
+In `T6`, when two merges gain the same modularity, a pair that would mix two pipeline stages goes last.
+A stage is a dotted prefix leading a label, such as `bronze.`.
+Failing that, it is letters and an underscore leading an id, such as `br_`.
+Among the rest, the pair with alike labels goes first.
 Two nodes no edge joins never pair, however alike their labels.
 
 Labels are compared by stems.
@@ -307,21 +326,22 @@ A smaller target needs more folding, so it climbs further up the ladder.
 ### Low density
 
 Under `low-density`, the plan selects `T5`.
-Folding author regions did not reach this target, so leaves fold into the nodes they hang from.
+Folding author regions in `T3`, then a chain stage and twins in `T2`, did not reach this target.
+So in `T5` leaves fold into the nodes they hang from.
 
 --8<-- "summarisation/low-density.md"
 
 ### Medium density
 
 Under `medium-density`, the plan selects `T5`.
-The larger target leaves more of the diagram as the author drew it.
+It climbs the same steps, `T3`, `T2` and `T5`, but the larger target leaves more of the diagram as the author drew it.
 
 --8<-- "summarisation/medium-density.md"
 
 ### High density
 
 Under `high-density`, the plan selects `T3`.
-Folding author regions is enough to reach this target.
+Folding author regions in `T3` is enough to reach this target.
 
 --8<-- "summarisation/high-density.md"
 
@@ -342,20 +362,21 @@ Each group named after a question is a decision region: the decision with its br
 ### Low density, decisions
 
 Under `low-density`, the plan selects `T5`.
-Decision regions and chain stages through them leave the overview just over its target, so a leaf folds into the node it hangs from.
+Decision regions and chain stages through them, in `T2`, leave the overview just over its target.
+So in `T5` a leaf folds into the node it hangs from.
 
 --8<-- "summarisation/decisions-low-density.md"
 
 ### Medium density, decisions
 
 Under `medium-density`, the plan selects `T2`.
-Decision regions alone reach the target, and the remaining ones fold evenly.
+Decision regions in `T2` alone reach the target, and the remaining ones fold evenly.
 
 --8<-- "summarisation/decisions-medium-density.md"
 
 ### High density, decisions
 
 Under `high-density`, the plan selects `T2`.
-Fewer regions fold, so more of the decisions stay in view.
+Fewer regions fold in `T2`, so more of the decisions stay in view.
 
 --8<-- "summarisation/decisions-high-density.md"

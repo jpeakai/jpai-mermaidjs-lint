@@ -7,9 +7,10 @@
 import type { DiagramGraph, GraphEdge, GraphNode } from "../parse/graph.ts";
 import type { ThresholdConfig } from "../parse/metrics.ts";
 import { emitSource } from "./emit.ts";
-import { buildWorkGraph, byNatural, byText, edgeKey, type WNode, type WorkGraph } from "./graph.ts";
+import { buildWorkGraph, byNatural, byOverviewEdge, byText, edgeKey, type WNode, type WorkGraph } from "./graph.ts";
 import { groupLabels, ID_LEAD, type LabelContext, rangeLabel, type StubText, stubTexts } from "./label.ts";
 import {
+  chainEntries,
   type DetailView,
   detailShape,
   detailView,
@@ -173,7 +174,10 @@ const overviewGraph = (
   const idOf = idOfKey(part, groups);
   const kept = work.ids.filter((id) => !part.groupOf.has(id)).map((id) => work.nodes.get(id) as WNode);
   const pseudo = overviewPseudo(work, part, idOf);
-  const edges = sortEdges(quotientEdges(work, part).map((e) => qEdge(e, idOf))).map((e, i) => ({ ...e, id: `o${i}` }));
+  const edges = quotientEdges(work, part)
+    .map((e) => qEdge(e, idOf))
+    .sort(byOverviewEdge)
+    .map((e, i) => ({ ...e, id: `o${i}` }));
   const graph: DiagramGraph = {
     diagram_type: work.type,
     nodes: [
@@ -284,11 +288,14 @@ interface Assembly {
   labels: LabelContext;
 }
 
-// A detail draws its members' rows when it still meets the target with them.
+// A detail draws edges a whole-group stub would repeat apart, and its
+// members' rows, each when it still meets the target with them.
 const buildDetail = (a: Assembly, g: SplitGroup): DetailBuilt | string => {
   const { work, part } = a.folded;
   const group = part.groups[part.groupOf.get(g.members[0] ?? "") ?? -1] as Group;
-  const view = detailView(work, part, group);
+  const apart = detailView(work, part, group, true);
+  const fitsApart = meets(detailShape(work, apart).nodes, scoreOf(detailShape(work, apart), 0, a.config), a.config);
+  const view = fitsApart ? apart : detailView(work, part, group);
   const shape = detailShape(work, view);
   const rowsHere = rowCount(work, view.members);
   const rows = rowsHere > 0 && meets(shape.nodes, scoreOf(shape, rowsHere, a.config), a.config);
@@ -314,7 +321,8 @@ const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.lab
 const namingOf = (work: WorkGraph, part: Partition, g: Group): { range: string | null; byLabel: boolean } => {
   const labels = g.members.map((m) => labelOf(work, m));
   const idLed = labels.every((l) => ID_LEAD.test(l));
-  const runs = g.reason === "twins" || g.reason === "sibling leaves";
+  // Twin chains are named by an entry, so a range never spans two stages of them.
+  const runs = (g.reason === "twins" || g.reason === "sibling leaves") && chainEntries(work, g.members) === null;
   if (g.members.some((m) => work.nodes.get(m)?.markdown) || !(runs || idLed)) return { range: null, byLabel: false };
   const hidden = part.groups.filter((x) => x !== g).flatMap((x) => x.members.map((m) => labelOf(work, m)));
   return { range: rangeLabel(labels, hidden), byLabel: idLed };

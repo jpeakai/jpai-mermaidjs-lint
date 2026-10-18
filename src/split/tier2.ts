@@ -6,7 +6,7 @@
 
 import { type FlowRegion, flowRegionsOf } from "./flow.ts";
 import { byNatural, byText } from "./graph.ts";
-import { membersOfKey, over, overviewKeys, parentOfKey, type QEdge } from "./quotient.ts";
+import { groupOfKey, membersOfKey, over, overviewKeys, parentOfKey, type QEdge, rankedMembers } from "./quotient.ts";
 import {
   type Adjacency,
   adjacencyOf,
@@ -42,7 +42,12 @@ const twinClasses = (ctx: TierContext, adj: Adjacency): string[][] => {
     const k = [parentOfKey(ctx.work, ctx.part, key) ?? "", shapeOfKey(ctx, key), sig].join("\u0002");
     classes.set(k, [...(classes.get(k) ?? []), key]);
   }
-  const labelOf = (key: string): string => ctx.work.nodes.get(key)?.label ?? key;
+  // A group by the label it is named after, so twin chains sort by their entries.
+  const labelOf = (key: string): string => {
+    const g = groupOfKey(ctx.part, key);
+    const named = g ? rankedMembers(ctx.work, g)[0] : key;
+    return ctx.work.nodes.get(named ?? key)?.label ?? key;
+  };
   return [...classes.values()]
     .filter((c) => c.length > 1)
     .map((c) => c.sort((a, b) => byNatural(labelOf(a), labelOf(b)) || byNatural(a, b)));

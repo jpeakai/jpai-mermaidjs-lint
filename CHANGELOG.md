@@ -38,6 +38,22 @@ Anything under `Unreleased` is on `main` but not yet released.
   This holds under the strict rules and under a new second rule set that folds hubs and branches.
 - **Dense meshes fold by tight cliques.** When the overview joins at least half of all node pairs, `T6` also proposes maximal cliques, found by Bron and Kerbosch's algorithm with Tomita's pivot.
 - The contract accepts a range label only in its one exact form, with a count two fewer than the members.
+- **A group is named where a reader enters it.** A chain-like group in a flowchart or `stateDiagram` is named after its entry, not its exit, per [MJL-0030](adrs/0030-a-group-is-named-where-a-reader-enters-it.md).
+  So a pipeline's first group reads `git push to main (+5)`.
+  Twin chains are named after their first entry, never by a range across two stages.
+- An aggregate whose root is a lookup is named after the member with the most edges crossing its boundary.
+  A lookup root has every edge joining one other member, so Sakila now reads `FILM (+1)`, not `LANGUAGE (+1)`.
+- In `T6`, a pair that would mix two pipeline stages, such as `bronze.` and `gold.`, loses a tie between equal gains.
+- **A dense mesh is refused.** A dense mesh joins at least half of its node pairs, and more pairs than twice its nodes.
+  A diagram, or a plan's overview, that is one gets no plan.
+  The reason given is "dense mesh: a matrix or table reads better than a diagram".
+- A shared terminal also covers a node whose every successor leads nowhere, so it stays in view.
+  An example is a `Cancelled` state leading only to `Refunded` and `Voided`.
+- Two edges from different members of one outside group can repeat one edge in a detail.
+  The detail now draws them from a stub each, when it still meets its target.
+- An overview lists the parallel edges between two nodes side by side, whichever way each is written.
+- Of two folds that save as much score per node hidden, the one leaving fewer overview edges goes first.
+- A decision region hiding one node, such as `Signed off? (+1)`, is undone when the overview and every detail still meet the target without it.
 
 ## [0.9.0] - 2026-10-19
 

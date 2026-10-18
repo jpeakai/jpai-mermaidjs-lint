@@ -242,6 +242,7 @@ It asserts a Refusal or an exact safe output.
 An `erDiagram` entity with every entity it owns, directly or through a chain of owners, named after that root entity.
 An entity is owned by its single identifying parent or, as a leaf, by the one entity it depends on.
 A Split Plan's `T4` folds the largest Aggregate whose Detail Diagram fits into one Group Node.
+An Aggregate whose root is a Lookup Root is named after the member with the most edges crossing its boundary instead.
 A Junction is owned by no entity.
 
 ## Advisory Pair
@@ -284,6 +285,12 @@ The group a Rule belongs to: parse, complexity or contrast, or a one-word Catego
 `--category` or `--disable-category`, which switches every Rule in a Category on or off for one run, over the Config File.
 In the library it is a `selection`.
 
+## Chain Entry
+
+The member of a chain-like Group Node that no other member leads into, where a reader enters it.
+A group is chain-like when, in a flowchart or `stateDiagram`, its members form one directed path, or several disjoint ones for twin chains.
+It is named after its Chain Entry, or for twin chains after the entry the flow reaches first, per [MJL-0030](adrs/0030-a-group-is-named-where-a-reader-enters-it.md).
+
 ## Changelog
 
 `CHANGELOG.md`, the curated list of user-visible changes per Release.
@@ -306,6 +313,14 @@ The branching node is a Decision, a decision shape, a choice, a fork, or any nod
 Every edge into it enters the branching node, and every edge out of it reaches the rejoin node.
 A branch that ends the flow is folded inside it.
 A Split Plan's `T2` folds it whole, innermost first, into a Group Node named after the branching node.
+One hiding a single node is undone when the Overview and every Detail Diagram still meet the target without it.
+
+## Dense Mesh
+
+A graph that joins at least half of all its node pairs, and more pairs than twice its nodes.
+Folding it leaves a Dense Mesh, so a Split Plan is refused for one, per [MJL-0030](adrs/0030-a-group-is-named-where-a-reader-enters-it.md).
+The reason given is "dense mesh: a matrix or table reads better than a diagram".
+The check runs on the Diagram and on each plan's Overview.
 
 ## Design Token
 
@@ -394,7 +409,8 @@ In `adrs/` that is everything rendered from the Records, as [AGENTS.md](AGENTS.m
 
 One node of an Overview that stands for a set of the original nodes, folded together.
 Its label is an author label or a member's, with the count of the rest, such as `ingest (+5)`.
-A group from `T5` or `T6` takes the label of the member with the most edges crossing its boundary.
+A chain-like group takes its Chain Entry's label.
+Another group from `T5` or `T6` takes the label of the member with the most edges crossing its boundary.
 Any other group takes its best-connected member's label.
 A long label is shown cut in the middle with an ellipsis, and no Group Node shows a label another node shows.
 It is drawn apart from an original node.
@@ -435,6 +451,11 @@ It states its reason in an `llm:` comment and must lint clean.
 
 A Plugin Rule that is one file in `.mermaidjs-lint/rules`, under the reserved Namespace local.
 
+## Lookup Root
+
+An Aggregate's root every edge of which joins one other member, as a `LANGUAGE` table hangs from `FILM`.
+Its name says nothing of the Aggregate, so the Aggregate is named after the member with the most edges crossing its boundary.
+
 ## Maintainer
 
 The owner of this repo, and the audience of the runbooks in `docs/`.
@@ -465,6 +486,13 @@ A sequence Pair is a Theme Variable and the box or page it is drawn on.
 ## Parse Engine
 
 The code that reads a Diagram's structure from mermaid's own parsers.
+
+## Pipeline Stage
+
+The stage of a data pipeline a node names.
+It is a dotted prefix leading the node's label, such as `bronze.`.
+Failing that, it is letters and an underscore leading its id, such as `br_`.
+In `T6`, a pair that would mix two Pipeline Stages loses a tie between equal modularity gains, and only a tie.
 
 ## Pinned Fix
 
@@ -563,8 +591,9 @@ A canvas flag on such a file is refused instead, per [MJL-0019](adrs/0019-a-mate
 
 ## Shared Terminal
 
-A flowchart or `stateDiagram` node that at least three other nodes lead into and that leads nowhere.
-A `Notify on-call` step every failure ends at is one.
+A flowchart or `stateDiagram` node that at least three other nodes lead into and that ends the flow.
+It leads nowhere, or everything it leads to leads nowhere.
+A `Notify on-call` step every failure ends at is one, and so is a `Cancelled` state that leads only to the final `Refunded` and `Voided`.
 A Split Plan's `T5` and `T6` keep it as its own node in the Overview, unless only the loose rules meet the target.
 
 ## Source Kind
@@ -587,6 +616,8 @@ The nodes, edges, Rows, subgraphs, subgraph nesting depth and Tree Depth the Par
 
 A node in a Detail Diagram that stands for a node, subgraph or interface outside its group.
 An edge in from another group starts at one Stub for that whole group.
+Two edges from different members of that group can draw one edge twice.
+They start at a Stub each, when the Detail Diagram still meets its target.
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
 It adds the node's group label when that differs.
@@ -620,7 +651,8 @@ The Tiers run least lossy first, and a plan names the last Tier that changed it.
 ## Tight Clique
 
 A set of nodes that all share an edge with each other, found as a maximal clique.
-In a dense mesh, where the Overview joins at least half of all node pairs, a Split Plan's `T6` folds Tight Cliques into Group Nodes.
+When the Overview joins at least half of all node pairs during a walk, a Split Plan's `T6` folds Tight Cliques into Group Nodes.
+A Diagram that is a Dense Mesh from the start is refused instead.
 
 ## Tree Depth
 

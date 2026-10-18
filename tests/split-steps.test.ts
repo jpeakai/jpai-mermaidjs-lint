@@ -29,6 +29,13 @@ const fences = (snippet: string, lang: string): string[] =>
 const decode = (attr: string): unknown =>
   JSON.parse(attr.replaceAll("&quot;", '"').replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&amp;", "&"));
 
+// A preset's section of the page: from its heading to its snippet, less the
+// sentence naming the tier selected.
+const prose = (snippet: string): string => {
+  const end = PAGE.indexOf(`--8<-- "${snippet}"`);
+  return PAGE.slice(PAGE.lastIndexOf("\n### ", end), end).replace(/Under `[\w-]+`, the plan selects `T\d`\./, "");
+};
+
 describe("the summarisation page", () => {
   test("includes every snippet, in the order the generator writes them", async () => {
     const included = [...PAGE.matchAll(/--8<-- "(summarisation\/[\w-]+\.md)"/g)].map((m) => m[1]);
@@ -76,12 +83,18 @@ describe("the summarisation page", () => {
     }
   });
 
-  test("names no tier in each example's prose that its table does not hold", async () => {
-    const [first, second] = ["## A worked example", "## A decision-heavy example"].map((h) => PAGE.indexOf(h));
-    const sections = [PAGE.slice(first, second), PAGE.slice(second)];
-    for (const [i, { step }] of EXAMPLES.entries()) {
-      const table = tableSnippet(await planPresets(step.source));
-      for (const m of (sections[i] ?? "").matchAll(/`(T\d)`/g)) expect(table).toContain(`| ${m[1]} |`);
+  test("each preset's prose names every tier its ladder climbs, in order, and no other", async () => {
+    for (const { step, prefix } of EXAMPLES) {
+      for (const p of await planPresets(step.source)) {
+        const plan = p.outcome.plan;
+        if (!plan) throw new Error(`${step.slug} ${p.name}: ${p.outcome.reason}`);
+        const climbed = ladderText(plan)
+          .split("; then ")
+          .slice(1)
+          .map((s) => s.split(" ")[0]);
+        const named = [...prose(`summarisation/${prefix}${p.name}.md`).matchAll(/`(T\d)`/g)].map((m) => m[1]);
+        expect(named).toEqual(climbed);
+      }
     }
   });
 });

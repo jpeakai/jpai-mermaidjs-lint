@@ -267,20 +267,33 @@ export const flowOrder = (work: WorkGraph): Map<string, number> => {
   return depth;
 };
 
-// The members a group may be named after, best first. A suggested group (T5
-// or T6) is named after the member on its main path: the one with the most
-// edges crossing the group's boundary, either way, a start or end transition
-// counted as one, then the one the flow reaches first. A chain stage is named
-// after the member the flow reaches first, where the stage starts. Any other
-// group is named after its best-connected member, the one of highest degree.
-// Ties go to the smallest id as a reader counts.
-export const rankedMembers = (work: WorkGraph, g: Pick<Group, "members" | "tier"> & { reason?: string }): string[] => {
-  const flow = flowOrder(work);
-  const at = (id: string): number => flow.get(id) ?? Number.POSITIVE_INFINITY;
-  if (g.reason === "chain stage") return [...g.members].sort((a, b) => at(a) - at(b) || byNatural(a, b));
-  if (g.tier !== "T5" && g.tier !== "T6")
-    return [...g.members].sort((a, b) => (work.degree.get(b) ?? 0) - (work.degree.get(a) ?? 0) || byNatural(a, b));
-  const inside = new Set(g.members);
+// The entries of a chain-like group in a flowchart or stateDiagram: its
+// members, by the directed edges between them, form one path or several
+// disjoint paths (twin chains), with at least one edge between members. The
+// entries are the members no member leads into, where a reader enters each
+// path. Null for any other group.
+export const chainEntries = (work: WorkGraph, members: readonly string[]): string[] | null => {
+  if (work.family !== "flowchart" && work.family !== "state") return null;
+  const inside = new Set(members);
+  const next = new Map<string, string>();
+  const entered = new Set<string>();
+  for (const e of work.edges) {
+    if (e.source === e.target || !inside.has(e.source) || !inside.has(e.target)) continue;
+    if (UNDIRECTED_KINDS.has(e.kind ?? "") || next.has(e.source) || entered.has(e.target)) return null;
+    next.set(e.source, e.target);
+    entered.add(e.target);
+  }
+  if (next.size === 0) return null;
+  const entries = members.filter((m) => !entered.has(m));
+  let walked = 0;
+  for (const s of entries) for (let x: string | undefined = s; x !== undefined; x = next.get(x)) walked++;
+  return walked === members.length ? entries : null;
+};
+
+// Each member by the edges crossing the group's boundary at it, either way, a
+// start or end transition counted as one.
+const crossingOf = (work: WorkGraph, members: readonly string[]): Map<string, number> => {
+  const inside = new Set(members);
   const crossing = new Map<string, number>();
   const add = (id: string): void => {
     crossing.set(id, (crossing.get(id) ?? 0) + 1);
@@ -289,8 +302,57 @@ export const rankedMembers = (work: WorkGraph, g: Pick<Group, "members" | "tier"
     if (inside.has(e.source) !== inside.has(e.target)) add(inside.has(e.source) ? e.source : e.target);
   }
   for (const e of work.markerEdges) for (const end of [e.source, e.target]) if (inside.has(end)) add(end);
+  return crossing;
+};
+
+// The members a group may be named after, best first. A chain stage is named
+// after the member the flow reaches first, where the stage starts, and so is
+// any chain-like group (chainEntries): after its entry, or for twin chains
+// after the entry the flow reaches first, then the first by label, never a
+// later stage. A suggested group (T5 or T6) is named after the member on its
+// main path: the one with the most edges crossing the group's boundary, then
+// the one the flow reaches first. Any other group is named after its
+// best-connected member, the one of highest degree. Ties go to the smallest
+// id as a reader counts.
+export const rankedMembers = (work: WorkGraph, g: Pick<Group, "members" | "tier"> & { reason?: string }): string[] => {
+  const flow = flowOrder(work);
+  const at = (id: string): number => flow.get(id) ?? Number.POSITIVE_INFINITY;
+  const labelOf = (id: string): string => work.nodes.get(id)?.label ?? id;
+  if (g.reason === "chain stage") return [...g.members].sort((a, b) => at(a) - at(b) || byNatural(a, b));
+  const entries = new Set(chainEntries(work, g.members) ?? []);
+  if (entries.size > 0) {
+    const entry = (id: string): number => (entries.has(id) ? 0 : 1);
+    return [...g.members].sort(
+      (a, b) => entry(a) - entry(b) || at(a) - at(b) || byNatural(labelOf(a), labelOf(b)) || byNatural(a, b),
+    );
+  }
+  if (g.tier !== "T5" && g.tier !== "T6")
+    return [...g.members].sort((a, b) => (work.degree.get(b) ?? 0) - (work.degree.get(a) ?? 0) || byNatural(a, b));
+  const crossing = crossingOf(work, g.members);
   return [...g.members].sort(
     (a, b) => (crossing.get(b) ?? 0) - (crossing.get(a) ?? 0) || at(a) - at(b) || byNatural(a, b),
+  );
+};
+
+// Whether an aggregate's root is a lookup: every edge it has joins one other
+// member, as a LANGUAGE table hangs from FILM. Its name says little of the
+// aggregate, whose edges all leave from the other members.
+const isLookup = (work: WorkGraph, root: string, members: readonly string[]): boolean => {
+  const others = new Set(
+    work.edges
+      .filter((e) => e.source !== e.target && (e.source === root || e.target === root))
+      .map((e) => (e.source === root ? e.target : e.source)),
+  );
+  const [only] = [...others];
+  return others.size === 1 && only !== undefined && members.includes(only);
+};
+
+// An aggregate's members by the edges crossing its boundary, then degree.
+const byCrossing = (work: WorkGraph, members: readonly string[]): string[] => {
+  const crossing = crossingOf(work, members);
+  const degree = (id: string): number => work.degree.get(id) ?? 0;
+  return [...members].sort(
+    (a, b) => (crossing.get(b) ?? 0) - (crossing.get(a) ?? 0) || degree(b) - degree(a) || byNatural(a, b),
   );
 };
 
@@ -310,9 +372,11 @@ const markdownOf = (x: { markdown?: true } | undefined): { markdown?: true } => 
 // The labels a group may carry, best first. A group folded from one author
 // region carries that region's label; otherwise the label of a member: the
 // group's head (a decision region's decision, an aggregate's root) first, then
-// the named one. A range of the members' labels, when given, comes after the
-// region and the head, and the members may be taken in natural order of their
-// labels instead. N counts the members the label does not already name.
+// the named one. An aggregate whose root is a lookup is named after the
+// member with the most edges crossing its boundary instead. A range of the
+// members' labels, when given, comes after the region and the head, and the
+// members may be taken in natural order of their labels instead. N counts the
+// members the label does not already name.
 export const labelChoices = (
   work: WorkGraph,
   g: Group,
@@ -328,10 +392,13 @@ export const labelChoices = (
       ? [{ base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) }]
       : [];
   const labelOf = (m: string): string => work.nodes.get(m)?.label ?? m;
+  const lookup = g.tier === "T4" && g.head !== undefined && isLookup(work, g.head, g.members);
   const ranked = naming.byLabel
     ? [...g.members].sort((a, b) => byNatural(labelOf(a), labelOf(b)) || byNatural(a, b))
-    : rankedMembers(work, g);
-  const head = g.head !== undefined && ranked.includes(g.head) ? [g.head] : [];
+    : lookup
+      ? byCrossing(work, g.members)
+      : rankedMembers(work, g);
+  const head = g.head !== undefined && !lookup && ranked.includes(g.head) ? [g.head] : [];
   const label = (m: string): LabelParts => {
     const node = work.nodes.get(m);
     return { base: node?.label ?? m, n: g.members.length - 1, ...markdownOf(node) };
@@ -429,18 +496,55 @@ const outsideEnd = (work: WorkGraph, part: Partition, e: GraphEdge, inside: (id:
   return inside(e.source) && !inside(e.target) ? e.target : null;
 };
 
-export const detailView = (work: WorkGraph, part: Partition, g: Group): DetailView => {
+// The outside end each edge is drawn from or to, as a stub key: what the edge
+// stands for, and, drawn apart, for edges from one whole group that would
+// draw one edge twice (same member, label and kind) from different members
+// of that group, the rank of the member it leaves among them, so each is
+// drawn from a stub of its own and a reader sees two sources. Each stub still
+// stands for the whole group, and each edge reads back exactly once.
+const SLOT = "\u0003";
+
+const stubKeys = (
+  edges: GraphEdge[],
+  ends: Map<string, string | null>,
+  inside: (id: string) => boolean,
+  apart: boolean,
+): Map<string, string> => {
+  const drawn = (e: GraphEdge, end: string): string =>
+    [end, e.target, e.label ?? "", e.markdown ? "m" : "", e.kind ?? "", e.cardinality ?? ""].join(SLOT);
+  const sources = new Map<string, Set<string>>();
+  for (const e of edges) {
+    const end = ends.get(e.id);
+    if (end && isGroupKey(end) && inside(e.target)) {
+      const k = drawn(e, end);
+      sources.set(k, new Set([...(sources.get(k) ?? []), e.source]));
+    }
+  }
+  const keys = new Map<string, string>();
+  for (const e of edges) {
+    const end = ends.get(e.id);
+    if (!end) continue;
+    const rank = sorted(sources.get(drawn(e, end)) ?? new Set()).indexOf(e.source);
+    keys.set(e.id, apart && rank > 0 ? `${end}${SLOT}${rank}` : end);
+  }
+  return keys;
+};
+
+// A planner measures a detail with one stub per outside end; assemble.ts
+// draws it apart when it still meets the target that way.
+export const detailView = (work: WorkGraph, part: Partition, g: Group, apart = false): DetailView => {
   const key = keyOf(g);
   const inside = (id: string): boolean => over(work, part, id) === key;
   const touching = work.edges.filter((e) => inside(e.source) || inside(e.target));
   const ends = new Map(touching.map((e) => [e.id, outsideEnd(work, part, e, inside)]));
-  const outside = sorted(new Set([...ends.values()].filter((x): x is string => x !== null)));
+  const slots = stubKeys(touching, ends, inside, apart);
+  const outside = sorted(new Set(slots.values()));
   const next = idMaker(usedIds(work), "s");
-  const stubs = outside.map((endpoint) => ({ id: next(), endpoint }));
-  const stubOf = new Map(stubs.map((s) => [s.endpoint, s.id]));
+  const stubs = outside.map((slot) => ({ id: next(), endpoint: slot.split(SLOT)[0] ?? slot }));
+  const stubOf = new Map(outside.map((slot, i) => [slot, stubs[i]?.id]));
   const edges = touching.map((e) => {
-    const end = ends.get(e.id);
-    const stub = end === null || end === undefined ? undefined : stubOf.get(end);
+    const slot = slots.get(e.id);
+    const stub = slot === undefined ? undefined : stubOf.get(slot);
     if (stub === undefined) return e;
     return inside(e.source) ? { ...e, target: stub } : { ...e, source: stub };
   });

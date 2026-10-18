@@ -477,6 +477,19 @@
     },
     {
       "data": {
+        "id": "MJL-0030",
+        "label": "0030",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0030-a-group-is-named-where-a-reader-enters-it.md",
+        "title": "A group is named where a reader enters it, a dense mesh is refused, and a state that ends the flow stays in view",
+        "description": "How a split plan names, refuses and keeps nodes so its overview reads as the diagram does",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -887,12 +900,52 @@
     },
     {
       "data": {
+        "id": "MJL-0028-excepted_by-MJL-0030",
+        "source": "MJL-0028",
+        "target": "MJL-0030",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "an aggregate whose root is a lookup is named after its most crossed member"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0029-extends-MJL-0028",
         "source": "MJL-0029",
         "target": "MJL-0028",
         "label": "extends",
         "relation": "extends",
         "note": "how groups are named and chosen once regions and aggregates have folded"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0029-extended_by-MJL-0030",
+        "source": "MJL-0029",
+        "target": "MJL-0030",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "groups named where a reader enters them, dense meshes refused, terminals that lead only to ends kept in view"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0030-extends-MJL-0029",
+        "source": "MJL-0030",
+        "target": "MJL-0029",
+        "label": "extends",
+        "relation": "extends",
+        "note": "how groups are named and when a dense mesh is planned at all, beyond ranges, cliques and terminals"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0030-excepts-MJL-0028",
+        "source": "MJL-0030",
+        "target": "MJL-0028",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "an aggregate whose root is a lookup is named after another member, not its root"
       }
     }
   ],

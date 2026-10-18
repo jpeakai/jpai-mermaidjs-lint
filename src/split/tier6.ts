@@ -1,7 +1,8 @@
 // T6, suggested grouping: greedy modularity agglomeration in the style of
 // Clauset, Newman and Moore. Each step proposes merging two overview nodes in
 // the same region that an original edge joins, ranked by modularity gain;
-// label similarity from stem.ts only breaks a tie between equal gains. Two
+// label similarity from stem.ts only breaks a tie between equal gains, and a
+// pair that would mix two pipeline stages (stageOf) loses such a tie. Two
 // nodes no edge joins never pair, so a suggested group is always connected.
 // Never crosses an author region, and under the strict rules never folds a
 // hub or joins a decision's branches that do not rejoin (rules.ts).
@@ -9,7 +10,7 @@
 import { maximalCliques } from "./clique.ts";
 import { byText } from "./graph.ts";
 import { isGroupKey, membersOfKey, overviewKeys, parentOfKey } from "./quotient.ts";
-import { labelBag, similarity } from "./stem.ts";
+import { crossesStages, labelBag, similarity, stageOf } from "./stem.ts";
 import { type Candidate, chunksThatFit, foldable, keepsBranches, type TierContext } from "./tier.ts";
 
 const pairKey = (a: string, b: string): string => `${a}\u0002${b}`;
@@ -32,6 +33,10 @@ const labelSimilarity = (ctx: TierContext, bags: Map<string, Set<string>>, a: st
       best = Math.max(best, similarity(bags.get(x) ?? new Set(), bags.get(y) ?? new Set()));
   return best;
 };
+
+// What a pair mixing two pipeline stages loses in a tie: more than any label
+// similarity gains, so a tie goes to a pair within one stage first.
+const STAGE_PENALTY = 1;
 
 // A mesh is dense when its overview joins at least half of all node pairs.
 export const DENSE = 0.5;
@@ -81,6 +86,8 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
     const [x, y] = [a, b].sort(byText) as [string, string];
     return (w.get(pairKey(x, y)) ?? 0) / m - (degree(a) * degree(b)) / (2 * m * m);
   };
+  const stage = new Map(work.ids.map((id) => [id, stageOf(work.nodes.get(id)?.label ?? id, id)]));
+  const stagesOf = (k: string): Array<string | null> => membersOfKey(part, k).map((x) => stage.get(x) ?? null);
   const groupableKeys = new Set(overviewKeys(work, part).filter((k) => foldable(ctx, k)));
   const out: Candidate[] = cliques(ctx, w, gain);
   for (const [pair, wab] of [...w].sort((x, y) => byText(x[0], y[0]))) {
@@ -89,7 +96,7 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
     const parent = parentOfKey(work, part, a);
     if (parent !== parentOfKey(work, part, b) || !keepsBranches(ctx, [a, b])) continue;
     const priority = wab / m - (degree(a) * degree(b)) / (2 * m * m);
-    const tie = labelSimilarity(ctx, bags, a, b);
+    const tie = labelSimilarity(ctx, bags, a, b) - (crossesStages(stagesOf(a), stagesOf(b)) ? STAGE_PENALTY : 0);
     out.push({ keys: [a, b], parent, tier: "T6", reason: "suggested grouping", priority, tie });
   }
   return out;

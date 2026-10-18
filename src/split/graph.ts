@@ -104,6 +104,14 @@ export const edgeKey = (
 ): string =>
   [e.source, e.target, e.label ?? "", e.kind ?? "", e.cardinality ?? "", e.markdown ? "md" : ""].join("\u0000");
 
+const pairOf = (e: Pick<GraphEdge, "source" | "target">): string => [e.source, e.target].sort(byText).join("\u0000");
+
+// The canonical order of an overview's edges: by the two nodes an edge joins,
+// whichever way it is written, so the parallel edges between two nodes sit
+// side by side, then by its key.
+export const byOverviewEdge = (a: Parameters<typeof edgeKey>[0], b: Parameters<typeof edgeKey>[0]): number =>
+  byText(pairOf(a), pairOf(b)) || byText(edgeKey(a), edgeKey(b));
+
 // Decision nodes and state pseudo-states keep their own node in an overview,
 // unless the whole region around them folds. These are the shape names the
 // parsers give: a flowchart rhombus, and stateDiagram's choice, fork and join

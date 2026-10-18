@@ -1,6 +1,7 @@
 // The tier ladder. T1 always applies (rows dropped from the overview); then
 // each tier in turn proposes groups, and the best one applies, by score saved
-// per node hidden, ties by member ids in natural order. After each the
+// per node hidden, then by fewer overview edges, then by member ids in
+// natural order. After each the
 // overview is measured again, and the walk stops at the first state that
 // meets node_target and vcs_target. A detail diagram must meet them too. A
 // diagram with author regions is walked with T3 first, since a reader finds
@@ -65,6 +66,9 @@ interface Scored {
   priority: number;
   tie: number;
   members: string[];
+  // The overview edges left, so at an equal saving the fold with fewer edges
+  // between overview nodes goes first.
+  edges: number;
 }
 
 const EPSILON = 1e-9;
@@ -119,6 +123,7 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
     priority: cand.priority ?? 0,
     tie: cand.tie ?? 0,
     members: applied.groups[0]?.members ?? [],
+    edges: shape.edges,
   };
 };
 
@@ -128,6 +133,7 @@ const better =
     if (byPriority && Math.abs(a.priority - b.priority) > EPSILON) return b.priority - a.priority;
     if (byPriority && Math.abs(a.tie - b.tie) > EPSILON) return b.tie - a.tie;
     if (Math.abs(a.ratio - b.ratio) > EPSILON) return b.ratio - a.ratio;
+    if (a.edges !== b.edges) return a.edges - b.edges;
     return byNaturalTuple(a.members, b.members);
   };
 
@@ -220,10 +226,14 @@ const foldEvenly = (start: Measure, step: Step, deep: boolean): Measure => {
 
 const LEAF_TIERS: ReadonlySet<Tier> = new Set(["T5", "T6"]);
 
-// A T5 or T6 group hiding fewer nodes than the rules ask, not yet given up on.
+// A T5 or T6 group, or a decision region, hiding fewer nodes than the rules
+// ask, not yet given up on.
 const smallGroup = (m: Measure, stuck: Set<string>): Group | undefined =>
   m.ctx.part.groups.find(
-    (g) => LEAF_TIERS.has(g.tier) && g.members.length - 1 < m.ctx.rules.minHidden && !stuck.has(keyOf(g)),
+    (g) =>
+      (LEAF_TIERS.has(g.tier) || g.reason === "decision region") &&
+      g.members.length - 1 < m.ctx.rules.minHidden &&
+      !stuck.has(keyOf(g)),
   );
 
 // The overview without the group, when it still meets the target and every
@@ -259,12 +269,14 @@ const grow = (m: Measure, g: Group): Measure | null => {
 
 // Each T5 or T6 group hiding fewer nodes than the rules ask is undone when
 // the overview meets the target without it, else grown into a neighbour. One
-// that can be neither stays, since the target cannot be met otherwise.
+// that can be neither stays, since the target cannot be met otherwise. A
+// decision region hiding one node is only undone: grown, it would no longer
+// be a region.
 const tidy = (start: Measure): Measure => {
   let m = start;
   const stuck = new Set<string>();
   for (let g = smallGroup(m, stuck); g; g = smallGroup(m, stuck)) {
-    const next = undo(m, g) ?? grow(m, g);
+    const next = undo(m, g) ?? (LEAF_TIERS.has(g.tier) ? grow(m, g) : null);
     if (next) m = next;
     else stuck.add(keyOf(g));
   }

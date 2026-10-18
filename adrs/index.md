@@ -33,6 +33,7 @@
 | [MJL-0027](0027-gaps-in-the-official-parsers-are-recorded.md) | Gaps in the official parsers are recorded, each with the one narrow workaround allowed | accepted |
 | [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) | Decision regions and erDiagram aggregates fold whole, named after their decision or root | accepted |
 | [MJL-0029](0029-runs-meshes-and-terminals-read-as-they-are.md) | Runs of alike nodes are named by range, dense meshes fold by cliques, and shared terminals stay in view | accepted |
+| [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) | A group is named where a reader enters it, a dense mesh is refused, and a state that ends the flow stays in view | accepted |
 # By group
 
 ## cli
@@ -45,6 +46,7 @@
 * [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) - Regions fold first, marker states stay in their composite, and concurrency is refused
 * [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) - A decision folds with its single-entry single-exit region, and an entity with the aggregate its root owns
 * [MJL-0029](0029-runs-meshes-and-terminals-read-as-they-are.md) - Three choices that make a split plan's groups mean something a reader can check
+* [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) - How a split plan names, refuses and keeps nodes so its overview reads as the diagram does
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -138,4 +140,8 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0027 --see_also--> MJL-0022
 * MJL-0028 --extends--> MJL-0026
 * MJL-0028 --extended_by--> MJL-0029
+* MJL-0028 --excepted_by--> MJL-0030
 * MJL-0029 --extends--> MJL-0028
+* MJL-0029 --extended_by--> MJL-0030
+* MJL-0030 --extends--> MJL-0029
+* MJL-0030 --excepts--> MJL-0028

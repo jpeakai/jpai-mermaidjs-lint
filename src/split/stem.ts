@@ -71,3 +71,20 @@ export const similarity = (a: ReadonlySet<string>, b: ReadonlySet<string>): numb
   }
   return union === 0 ? 0 : shared / union;
 };
+
+// A pipeline stage a node names: a dotted namespace leading its label, as
+// bronze.orders, or else the letters before an underscore leading its id, as
+// br_orders. Null for a node that names none.
+const STAGE_LABEL = /^([A-Za-z][A-Za-z0-9-]*)\.[A-Za-z0-9_]/;
+const STAGE_ID = /^([A-Za-z]+)_[A-Za-z0-9]/;
+
+export const stageOf = (label: string, id: string): string | null =>
+  (STAGE_LABEL.exec(label.trim())?.[1] ?? STAGE_ID.exec(id)?.[1] ?? null)?.toLowerCase() ?? null;
+
+// Whether two sets of members name stages and share none: merging them would
+// mix two stages of a pipeline, such as an extract and a gold table.
+export const crossesStages = (a: Iterable<string | null>, b: Iterable<string | null>): boolean => {
+  const sa = new Set([...a].filter((s): s is string => s !== null));
+  const sb = new Set([...b].filter((s): s is string => s !== null));
+  return sa.size > 0 && sb.size > 0 && ![...sa].some((s) => sb.has(s));
+};

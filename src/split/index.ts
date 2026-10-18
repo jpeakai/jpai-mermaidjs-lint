@@ -3,13 +3,14 @@
 // only when contract.ts proves the pair recovers the original. Nothing is
 // applied; a plan is a recommendation (MJL-0004).
 
-import { extractGraph } from "../parse/graph.ts";
+import { type DiagramGraph, extractGraph } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats, getMermaidCore } from "../parse/stats.ts";
 import { checkContract } from "./contract.ts";
 import { buildWorkGraph, familyOf, type WorkGraph } from "./graph.ts";
 import { laddersOf, planWork } from "./plan.ts";
 import { meets } from "./quotient.ts";
+import { DENSE } from "./tier6.ts";
 import type { SplitOutcome, SplitPlan } from "./types.ts";
 
 export type {
@@ -24,6 +25,24 @@ export type {
 } from "./types.ts";
 
 const refuse = (reason: string, violations: string[] = []): SplitOutcome => ({ plan: null, reason, violations });
+
+export const DENSE_MESH = "dense mesh: a matrix or table reads better than a diagram";
+
+// The most links a node of a readable overview averages: a hub's degree.
+const MESH_DEGREE = 4;
+
+// A dense mesh: a graph joining at least half of all its node pairs, and more
+// pairs than its nodes times half of MESH_DEGREE, so its nodes average more
+// links than a hub has. Folding a mesh leaves a mesh, since its groups are
+// joined to each other too, so neither the diagram nor an overview of this
+// shape is offered: a matrix or a table reads better.
+export const isDenseMesh = (graph: Pick<DiagramGraph, "nodes" | "edges">): boolean => {
+  const n = graph.nodes.length;
+  const pairs = new Set(
+    graph.edges.filter((e) => e.source !== e.target).map((e) => [e.source, e.target].sort().join("\u0000")),
+  ).size;
+  return n >= 2 && pairs >= DENSE * ((n * (n - 1)) / 2) && pairs > (n * MESH_DEGREE) / 2;
+};
 
 // The direction, as mermaid's own parser read it. The graph does not carry
 // it, and an emitted diagram keeps it.
@@ -53,11 +72,13 @@ export const splitOutcome = async (source: string, config: ThresholdConfig): Pro
   // A detail or overview would draw a composite's regions as one, which the
   // emitted text cannot tell apart, so no plan is offered.
   if (graph.subgraphs.some((s) => (s.regions ?? 0) > 1)) return refuse("concurrent state regions are not split");
+  if (isDenseMesh(graph)) return refuse(DENSE_MESH);
   const work = buildWorkGraph(graph, { direction: await directionOf(source), rows: stats.rows });
   return firstPassing(work, config);
 };
 
-// The plan of the first ladder that passes the contract: author regions
+// The plan of the first ladder that passes the contract, and whose overview
+// is no dense mesh: author regions
 // first when the diagram has them, then the default ladder. With none, the
 // last ladder's reason.
 const firstPassing = async (work: WorkGraph, config: ThresholdConfig): Promise<SplitOutcome> => {
@@ -66,6 +87,10 @@ const firstPassing = async (work: WorkGraph, config: ThresholdConfig): Promise<S
     const built = planWork(work, config, 1, order);
     if (typeof built === "string") {
       outcome = refuse(built);
+      continue;
+    }
+    if (isDenseMesh(built.plan.overview)) {
+      outcome = refuse(DENSE_MESH);
       continue;
     }
     const violations = await checkContract(built, config);

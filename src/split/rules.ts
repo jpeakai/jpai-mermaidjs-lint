@@ -54,10 +54,12 @@ export const hubsOf = (work: WorkGraph): Set<string> => {
 };
 
 // A shared terminal: a flowchart or state node that at least three other
-// nodes lead into and that leads nowhere, by directed edges only, such as a
-// "Notify on-call" every failure ends at or a final state many paths reach.
-// It ends many paths, so like a hub it keeps its own overview node; folded
-// into one group it would read as that group's own end.
+// nodes lead into and that ends the flow, by directed edges only: it leads
+// nowhere, or everything it leads to leads nowhere. A "Notify on-call" every
+// failure ends at is one, a final state many paths reach is one, and so is a
+// Cancelled state every failed payment reaches that leads only to the final
+// Refunded and Voided. It ends many paths, so like a hub it keeps its own
+// overview node; folded into one group it would read as that group's own end.
 const TERMINAL_IN = 3;
 
 const terminalCache = new WeakMap<WorkGraph, Set<string>>();
@@ -66,17 +68,22 @@ export const terminalsOf = (work: WorkGraph): Set<string> => {
   const known = terminalCache.get(work);
   if (known) return known;
   const into = new Map<string, Set<string>>();
+  const next = new Map<string, Set<string>>();
   const out = new Set<string>();
+  const undirected = new Set<string>();
   for (const e of work.edges) {
     if (e.source === e.target) continue;
-    if (UNDIRECTED_KINDS.has(e.kind ?? "")) out.add(e.source).add(e.target);
-    else out.add(e.source);
+    if (UNDIRECTED_KINDS.has(e.kind ?? "")) {
+      out.add(e.source).add(e.target);
+      undirected.add(e.source).add(e.target);
+    } else out.add(e.source);
     into.set(e.target, new Set([...(into.get(e.target) ?? []), e.source]));
+    next.set(e.source, new Set([...(next.get(e.source) ?? []), e.target]));
   }
+  const ends = (id: string): boolean =>
+    !out.has(id) || (!undirected.has(id) && [...(next.get(id) ?? [])].every((x) => !out.has(x)));
   const flow = work.family === "flowchart" || work.family === "state";
-  const terminals = new Set(
-    flow ? work.ids.filter((id) => !out.has(id) && (into.get(id)?.size ?? 0) >= TERMINAL_IN) : [],
-  );
+  const terminals = new Set(flow ? work.ids.filter((id) => ends(id) && (into.get(id)?.size ?? 0) >= TERMINAL_IN) : []);
   terminalCache.set(work, terminals);
   return terminals;
 };

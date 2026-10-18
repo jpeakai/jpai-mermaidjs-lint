@@ -12,7 +12,7 @@ import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats } from "../parse/stats.ts";
 import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { flowRegionsOf } from "./flow.ts";
-import { byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
+import { byOverviewEdge, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
 import { groupLabels, rangeLabel, readerOf, readingsOf } from "./label.ts";
 import { floorOf } from "./plan.ts";
 import { idMaker, isGroupKey, over, type Partition, reversible, usedIds } from "./quotient.ts";
@@ -361,7 +361,8 @@ const isSorted = <T>(xs: readonly T[], compare: (a: T, b: T) => number): boolean
 
 // 8. The plan is in canonical order: members sorted, groups by member tuple
 // and numbered in that order, kept nodes by id, edges by their ends and
-// attributes, details in group order.
+// attributes, the edges between one pair of nodes side by side whichever
+// way each is written, details in group order.
 const checkCanonical = (build: Build): Violations => {
   const { plan, work } = build;
   const out: Violations = [];
@@ -379,8 +380,9 @@ const checkCanonical = (build: Build): Violations => {
   const kept = plan.overview.nodes.filter((n) => !groupIds(plan).has(n.id)).map((n) => n.id);
   if (!isSorted(kept, byText)) out.push("8: overview nodes are not sorted");
   // An edge written twice between kept nodes is drawn twice, so equal keys sit side by side.
-  const keys = plan.overview.edges.map((e) => edgeKey(e));
-  if (!keys.every((k, i) => i === 0 || byText(keys[i - 1] ?? "", k) <= 0)) out.push("8: overview edges are not sorted");
+  const edges = plan.overview.edges;
+  if (!edges.every((e, i) => i === 0 || byOverviewEdge(edges[i - 1] ?? e, e) <= 0))
+    out.push("8: overview edges are not sorted");
   if (plan.details.some((d, i) => d.group !== plan.groups[i]?.id)) out.push("8: details are not in group order");
   return out;
 };

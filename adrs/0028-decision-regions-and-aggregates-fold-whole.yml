@@ -27,6 +27,9 @@ relates_to:
   - relation: extended_by
     target: MJL-0029
     note: runs named by range, dense meshes folded by cliques, shared terminals kept in view
+  - relation: excepted_by
+    target: MJL-0030
+    note: an aggregate whose root is a lookup is named after its most crossed member
 
 decision:
   given: some diagrams are mostly decisions, a flowchart or stateDiagram. In others, an erDiagram overview groups entities by leaves and junctions, not by what owns what

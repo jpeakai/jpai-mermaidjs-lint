@@ -1,0 +1,33 @@
+flowchart LR
+  subgraph Cmp[Compare a < b & c]
+    c0["a < b & c 0"]
+    c1["a < b & c 1"]
+    c2["a < b & c 2"]
+    c3["a < b & c 3"]
+    c4["a < b & c 4"]
+    c5["a < b & c 5"]
+  end
+  subgraph Amp[R&D]
+    d0["R&D #0"]
+    d1["R&D #1"]
+    d2["R&D #2"]
+    d3["R&D #3"]
+    d4["R&D #4"]
+    d5["R&D #5"]
+  end
+  c0 -->|"x < y"| c1
+  c1 -->|"x < y"| c2
+  c2 -->|"x < y"| c3
+  c3 -->|"x < y"| c4
+  c4 -->|"x < y"| c5
+  d0 -->|"p & q"| d1
+  d1 -->|"p & q"| d2
+  d2 -->|"p & q"| d3
+  d3 -->|"p & q"| d4
+  d4 -->|"p & q"| d5
+  c5 -->|"i < 5 && j > 2"| d0
+  d5 --> c0
+  o0["&lt;tag&gt; 0"] --> c0
+  o1["&lt;tag&gt; 1"] --> c1
+  o2["&lt;tag&gt; 2"] --> c2
+  o3["&lt;tag&gt; 3"] --> c3

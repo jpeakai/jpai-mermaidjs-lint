@@ -1,0 +1,132 @@
+erDiagram
+  USER {
+    string user_f0 PK "comment 0"
+    string user_f1 FK "comment 1"
+    string user_f2  "comment 2"
+    string user_f3  "comment 3"
+    string user_f4  "comment 4"
+    string user_f5  "comment 5"
+    string user_f6  "comment 6"
+    string user_f7  "comment 7"
+  }
+  ACCOUNT {
+    string account_f0 PK "comment 0"
+    string account_f1 FK "comment 1"
+    string account_f2  "comment 2"
+    string account_f3  "comment 3"
+    string account_f4  "comment 4"
+    string account_f5  "comment 5"
+    string account_f6  "comment 6"
+    string account_f7  "comment 7"
+  }
+  PROFILE {
+    string profile_f0 PK "comment 0"
+    string profile_f1 FK "comment 1"
+    string profile_f2  "comment 2"
+    string profile_f3  "comment 3"
+    string profile_f4  "comment 4"
+    string profile_f5  "comment 5"
+    string profile_f6  "comment 6"
+    string profile_f7  "comment 7"
+  }
+  SESSION {
+    string session_f0 PK "comment 0"
+    string session_f1 FK "comment 1"
+    string session_f2  "comment 2"
+    string session_f3  "comment 3"
+    string session_f4  "comment 4"
+    string session_f5  "comment 5"
+    string session_f6  "comment 6"
+    string session_f7  "comment 7"
+  }
+  TOKEN {
+    string token_f0 PK "comment 0"
+    string token_f1 FK "comment 1"
+    string token_f2  "comment 2"
+    string token_f3  "comment 3"
+    string token_f4  "comment 4"
+    string token_f5  "comment 5"
+    string token_f6  "comment 6"
+    string token_f7  "comment 7"
+  }
+  ROLE {
+    string role_f0 PK "comment 0"
+    string role_f1 FK "comment 1"
+    string role_f2  "comment 2"
+    string role_f3  "comment 3"
+    string role_f4  "comment 4"
+    string role_f5  "comment 5"
+    string role_f6  "comment 6"
+    string role_f7  "comment 7"
+  }
+  PERMISSION {
+    string permission_f0 PK "comment 0"
+    string permission_f1 FK "comment 1"
+    string permission_f2  "comment 2"
+    string permission_f3  "comment 3"
+    string permission_f4  "comment 4"
+    string permission_f5  "comment 5"
+    string permission_f6  "comment 6"
+    string permission_f7  "comment 7"
+  }
+  AUDIT {
+    string audit_f0 PK "comment 0"
+    string audit_f1 FK "comment 1"
+    string audit_f2  "comment 2"
+    string audit_f3  "comment 3"
+    string audit_f4  "comment 4"
+    string audit_f5  "comment 5"
+    string audit_f6  "comment 6"
+    string audit_f7  "comment 7"
+  }
+  DEVICE {
+    string device_f0 PK "comment 0"
+    string device_f1 FK "comment 1"
+    string device_f2  "comment 2"
+    string device_f3  "comment 3"
+    string device_f4  "comment 4"
+    string device_f5  "comment 5"
+    string device_f6  "comment 6"
+    string device_f7  "comment 7"
+  }
+  SETTING {
+    string setting_f0 PK "comment 0"
+    string setting_f1 FK "comment 1"
+    string setting_f2  "comment 2"
+    string setting_f3  "comment 3"
+    string setting_f4  "comment 4"
+    string setting_f5  "comment 5"
+    string setting_f6  "comment 6"
+    string setting_f7  "comment 7"
+  }
+  PLAN {
+    string plan_f0 PK "comment 0"
+    string plan_f1 FK "comment 1"
+    string plan_f2  "comment 2"
+    string plan_f3  "comment 3"
+    string plan_f4  "comment 4"
+    string plan_f5  "comment 5"
+    string plan_f6  "comment 6"
+    string plan_f7  "comment 7"
+  }
+  INVOICE {
+    string invoice_f0 PK "comment 0"
+    string invoice_f1 FK "comment 1"
+    string invoice_f2  "comment 2"
+    string invoice_f3  "comment 3"
+    string invoice_f4  "comment 4"
+    string invoice_f5  "comment 5"
+    string invoice_f6  "comment 6"
+    string invoice_f7  "comment 7"
+  }
+  USER ||--|| ACCOUNT : owns
+  USER ||--|| PROFILE : has
+  USER ||--o{ SESSION : opens
+  SESSION ||--o{ TOKEN : issues
+  USER }o--o{ ROLE : holds
+  ROLE }o--o{ PERMISSION : grants
+  USER ||--o{ AUDIT : logs
+  USER ||--o{ DEVICE : uses
+  USER ||--o{ SETTING : sets
+  ACCOUNT }o--|| PLAN : on
+  ACCOUNT ||--o{ INVOICE : billed

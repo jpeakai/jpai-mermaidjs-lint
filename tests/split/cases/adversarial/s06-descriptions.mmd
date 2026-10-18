@@ -1,0 +1,20 @@
+stateDiagram-v2
+  state "Waiting for payment" as WP
+  state "Payment received" as PR
+  state "Shipped" as SH
+  WP : a description line
+  [*] --> WP
+  WP --> PR
+  PR --> SH
+  state "Delivered to customer" as DL
+  SH --> DL
+  DL --> Return
+  Return --> Refund
+  Refund --> Closed
+  DL --> Closed
+  WP --> Cancelled
+  Cancelled --> Closed
+  PR --> Cancelled
+  Closed --> [*]
+  state "Closed" as Closed2
+  Closed --> Closed2

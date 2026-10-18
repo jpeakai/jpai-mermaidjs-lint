@@ -1,0 +1,21 @@
+classDiagram
+  class List~T~
+  class Map~K,V~
+  class Box~T~
+  class Repo~T~ {
+    +find(id) Optional~T~
+    +all() List~T~
+  }
+  List~T~ <|-- ArrayList
+  List~T~ <|-- LinkedList
+  Map~K,V~ <|-- HashMap
+  Map~K,V~ <|-- TreeMap
+  Repo~T~ --> List~T~
+  Repo~T~ --> Map~K,V~
+  UserRepo --|> Repo~T~
+  OrderRepo --|> Repo~T~
+  Box~T~ --> List~T~
+  Cache --> Map~K,V~
+  Cache --> Clock
+  UserRepo --> Cache
+  OrderRepo --> Cache

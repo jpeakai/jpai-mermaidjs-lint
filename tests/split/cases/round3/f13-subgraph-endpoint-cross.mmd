@@ -1,0 +1,43 @@
+flowchart LR
+  subgraph X[Region X]
+    subgraph X1[Sub X1]
+      x10[X1 0]
+      x11[X1 1]
+      x12[X1 2]
+      x13[X1 3]
+    end
+    subgraph X2[Sub X2]
+      x20[X2 0]
+      x21[X2 1]
+      x22[X2 2]
+      x23[X2 3]
+    end
+  end
+  subgraph Y[Region Y]
+    subgraph Y1[Sub Y1]
+      y10[Y1 0]
+      y11[Y1 1]
+      y12[Y1 2]
+      y13[Y1 3]
+    end
+    y0[Y 0]
+    y1[Y 1]
+    y2[Y 2]
+  end
+  X1 --> Y1
+  X2 --> y0
+  y2 --> X
+  Y --> X2
+  x13 --> Y1
+  x10 --> x11
+  x11 --> x12
+  x12 --> x13
+  x20 --> x21
+  x21 --> x22
+  x22 --> x23
+  y10 --> y11
+  y11 --> y12
+  y12 --> y13
+  y0 --> y1 --> y2
+  ext[External] --> X1
+  Y1 --> ext

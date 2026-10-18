@@ -1,0 +1,30 @@
+classDiagram
+  namespace com.acme.core {
+    class Entity
+    class Repo
+    class Service
+  }
+  namespace com.acme.web {
+    class Controller
+    class View
+    class Router
+  }
+  namespace com.acme.core.util {
+    class Clock
+    class Ids
+  }
+  namespace io {
+    class Reader
+    class Writer
+  }
+  Controller --> Service
+  Service --> Repo
+  Repo --> Entity
+  Router --> Controller
+  Controller --> View
+  Service --> Clock
+  Repo --> Ids
+  Repo --> Reader
+  Repo --> Writer
+  Main --> Router
+  Main --> Clock

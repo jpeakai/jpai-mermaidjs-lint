@@ -1,0 +1,24 @@
+stateDiagram-v2
+  state c1 <<choice>>
+  state c2 <<choice>>
+  state f1 <<fork>>
+  state j1 <<join>>
+  Check --> c1
+  c1 --> Small : n < 10
+  c1 --> Large : n >= 10
+  Merge --> Done
+  f1 --> C
+  Small --> f1
+  c2 --> f1 : else
+  Huge --> Reject
+  j1 --> Merge
+  c2 --> Huge : n > 1000
+  f1 --> B
+  C --> j1
+  B --> j1
+  Done --> [*]
+  Large --> c2
+  Reject --> Done
+  A --> j1
+  [*] --> Check
+  f1 --> A

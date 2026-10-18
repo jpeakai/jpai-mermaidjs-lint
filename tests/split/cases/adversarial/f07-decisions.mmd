@@ -1,0 +1,22 @@
+flowchart TD
+  S([Start]) --> D1{Valid?}
+  D1 -->|yes| D2{Paid?}
+  D1 -->|no| R1[Reject]
+  D2 -->|yes| D3{In stock?}
+  D2 -->|no| R2[Ask payment]
+  D3 -->|yes| D4{Express?}
+  D3 -->|no| R3[Backorder]
+  D4 -->|yes| D5{Local?}
+  D4 -->|no| P1[Standard ship]
+  D5 -->|yes| P2[Courier]
+  D5 -->|no| P3[Air]
+  R2 --> D2
+  R3 --> D3
+  P1 --> Z([Done])
+  P2 --> Z
+  P3 --> Z
+  R1 --> Z
+  D1 -->|maybe| D6{Manual?}
+  D6 -->|yes| H[Human]
+  D6 -->|no| R1
+  H --> D2

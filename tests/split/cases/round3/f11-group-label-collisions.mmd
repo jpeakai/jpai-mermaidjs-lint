@@ -1,0 +1,37 @@
+flowchart TB
+  subgraph S1[Workers]
+    w0[Worker]
+    w1[Worker]
+    w2[Worker]
+    w3[Worker]
+    w4[Worker]
+    w5[Worker]
+  end
+  subgraph S2[Workers]
+    u0[Worker]
+    u1[Worker]
+    u2[Worker]
+    u3[Worker]
+    u4[Worker]
+    u5[Worker]
+  end
+  lone["Workers"]
+  lone2["Workers (+5)"]
+  lone3["Worker (+5)"]
+  w0 --> w1
+  w1 --> w2
+  w2 --> w3
+  w3 --> w4
+  w4 --> w5
+  u0 --> u1
+  u1 --> u2
+  u2 --> u3
+  u3 --> u4
+  u4 --> u5
+  lone --> w0
+  lone2 --> u0
+  w5 --> lone3
+  u5 --> lone3
+  lone3 --> lone
+  w2 --> u3
+  u2 --> w3

@@ -1,0 +1,16 @@
+classDiagram
+  E -- F
+  F ..> G
+  K <|--|> L
+  H .. I
+  J "0..1" --> "1..*" K : has
+  A --> C : x
+  B *-- C
+  L --> A : back
+  C o-- D
+  A --> C : y
+  D --> E
+  A <|-- B
+  I "1" --> "*" J : owns
+  A --> C
+  G ..|> H

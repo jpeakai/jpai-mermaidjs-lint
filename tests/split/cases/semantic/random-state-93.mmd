@@ -1,0 +1,57 @@
+stateDiagram-v2
+  state "Index api" as S_n0
+  state "Auth" as S_n1
+  state "Gateway db" as S_n9
+  state "Worker job" as S_n10
+  state "Gateway api" as S_n11
+  state "Mail (+2)" as S_n12
+  state "Auth" as S_n13
+  state "Index" as S_n14
+  state "Mail job" as S_n15
+  state "Worker (Report)" as S_n16
+  state "Billing service" as S_n17
+  state "Dup label" as S_n23
+  state CR0 {
+    state "Billing job" as S_n2
+    state "Queue" as S_n3
+    state "Search (+2)" as S_n4
+    state "Queue" as S_n5
+    state "Store job" as S_n6
+    state "Index service" as S_n7
+    state "Ledger job" as S_n8
+    [*] --> S_n2
+  }
+  state CR2 {
+    state "Gateway store" as S_n18
+    state "n19" as S_n19
+    state "Gateway db" as S_n20
+    state "Auth service" as S_n21
+    state "Order service" as S_n22
+    [*] --> S_n18
+  }
+  [*] --> S_n0
+  S_n0 --> S_n1
+  S_n1 --> S_n2
+  S_n2 --> S_n3
+  S_n0 --> S_n4
+  S_n0 --> S_n5
+  S_n1 --> S_n7
+  S_n3 --> S_n8
+  S_n0 --> S_n9
+  S_n6 --> S_n11
+  S_n8 --> S_n12 : calls
+  S_n10 --> S_n13
+  S_n9 --> S_n14
+  S_n14 --> S_n15
+  S_n8 --> S_n16
+  S_n8 --> S_n17
+  S_n17 --> S_n19
+  S_n8 --> S_n20
+  S_n5 --> S_n21
+  S_n22 --> S_n23 : has
+  S_n1 --> S_n7
+  S_n18 --> S_n14 : reads
+  S_n8 --> S_n10
+  S_n1 --> S_n13 : writes
+  S_n23 --> [*]
+  S_n5 --> CR0

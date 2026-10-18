@@ -1,0 +1,19 @@
+stateDiagram-v2
+  [*] --> A
+  A --> B
+  B --> C
+  C --> D
+  D --> E
+  E --> Par
+  state Par {
+    [*] --> P1
+    P1 --> P2
+    P2 --> P3
+    --
+    [*] --> Q1
+    Q1 --> Q2
+    Q2 --> Q3
+  }
+  Par --> F
+  F --> G
+  G --> [*]

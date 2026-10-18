@@ -1,0 +1,30 @@
+stateDiagram-v2
+  state ch <<choice>>
+  state fk <<fork>>
+  state jn <<join>>
+  [*] --> In
+  In --> ch
+  ch --> Left : x < 5
+  ch --> Right : x >= 5
+  Left --> fk
+  Right --> fk
+  fk --> W0
+  fk --> W1
+  fk --> W2
+  fk --> W3
+  fk --> W4
+  fk --> W5
+  W0 --> V0
+  W1 --> V1
+  W2 --> V2
+  W3 --> V3
+  W4 --> V4
+  W5 --> V5
+  V0 --> jn
+  V1 --> jn
+  V2 --> jn
+  V3 --> jn
+  V4 --> jn
+  V5 --> jn
+  jn --> Out
+  Out --> [*]

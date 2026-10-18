@@ -1,0 +1,29 @@
+stateDiagram-v2
+  [*] --> Idle : boot
+  Idle --> Running
+  state Running {
+    [*] --> Load : enter run
+    Load --> Exec
+    state Exec {
+      [*] --> Fetch : first
+      F0 --> F1
+      F1 --> F2
+      F2 --> F3
+      F3 --> F4
+      F4 --> F5
+      F5 --> F6
+      Fetch --> F0
+      F6 --> [*] : drained
+    }
+    Exec --> Store
+    Store --> [*] : stored
+  }
+  Running --> Done
+  Done --> [*] : halt
+  Idle --> Error : fail
+  Error --> [*]
+  Done --> P0
+  Done --> P1
+  Done --> P2
+  Done --> P3
+  Done --> P4

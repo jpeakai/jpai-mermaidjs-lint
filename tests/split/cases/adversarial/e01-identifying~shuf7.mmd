@@ -1,0 +1,14 @@
+erDiagram
+  ORDER ||--|{ LINE_ITEM : contains
+  CUSTOMER }|..|{ ADDRESS : uses
+  ORDER ||..|| INVOICE : billed
+  PRODUCT }o--|| CATEGORY : in
+  INVOICE ||--o{ PAYMENT : settles
+  PAYMENT }o..|| METHOD : via
+  PRODUCT ||--o{ STOCK : stocked
+  SUPPLIER ||..o{ PRODUCT : supplies
+  ORDER }o--|| SHIPMENT : ships
+  PRODUCT ||..o{ LINE_ITEM : appears
+  WAREHOUSE ||--o{ STOCK : holds
+  CUSTOMER ||--o{ ORDER : places
+  CATEGORY |o--o| CATEGORY : parent

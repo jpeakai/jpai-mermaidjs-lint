@@ -1,0 +1,65 @@
+flowchart TD
+  g3["Order (+2)"]
+  n1["n1"]
+  n2["n2"]
+  n3["Ledger api"]
+  n4["Mail store"]
+  n5["Worker api"]
+  n6["Mail service"]
+  n7["Store store"]
+  n8("Order")
+  n9("Report")
+  g2["Audit job"]
+  n11["Search"]
+  n12["Worker service"]
+  n13["Search job"]
+  n14["Worker"]
+  n15[("n15")]
+  n16["Dup label"]
+  n17["Billing job"]
+  n18("Queue service")
+  n19["Queue"]
+  n20["Index job"]
+  n21["Gateway job"]
+  n22("Dup label")
+  n23["Ledger store"]
+  n24{"Billing db"}
+  n25("Billing job")
+  n26[("Index (+2)")]
+  n27["Worker"]
+  n28["Report store"]
+  s1["Gateway"]
+  n30["Mail store"]
+  n31["Billing service"]
+  g3 --o n1
+  n1 --o n2
+  n2 -->|reads| n3
+  n1 --> n4
+  g3 -.-> n5
+  g3 --o n6
+  n6 -->|calls| n8
+  n3 <-->|reads| n9
+  n9 -.-> g2
+  n2 <--> n11
+  n8 --x|has| n12
+  n8 ==> n13
+  n13 -->|has| n14
+  n12 <-->|emits| n15
+  n5 --o n16
+  n6 --> n17
+  n4 -->|emits| n18
+  n18 --- n19
+  n7 -.->|has| n20
+  n11 ==> n22
+  n12 -.->|writes| n23
+  n12 -->|writes| n24
+  n21 ==> n25
+  n4 --x|reads| n26
+  n20 --x n27
+  n14 --x n28
+  n6 ---|has| s1
+  n27 -->|emits| n31
+  n23 -.->|emits| s1
+  n15 --- n25
+  n6 --o n31
+  g3 --o n1

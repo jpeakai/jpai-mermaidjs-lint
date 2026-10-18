@@ -1,0 +1,26 @@
+flowchart TD
+  subgraph L1[Level 1]
+    n1[n1]
+    subgraph L2[Level 2]
+      n2[n2]
+      subgraph L3[Level 3]
+        n3[n3]
+        subgraph L4[Level 4]
+          n4[n4]
+          subgraph L5[Level 5]
+            n5a[n5a] --> n5b[n5b]
+            n5b --> n5c[n5c]
+          end
+        end
+      end
+    end
+  end
+  subgraph R1[Right]
+    r1 --> r2 --> r3 --> r4
+  end
+  n1 --> n2 --> n3 --> n4 --> n5a
+  n5c --> r1
+  r4 --> n1
+  top --> n3
+  top --> r2
+  n5c --> out1 --> out2 --> out3

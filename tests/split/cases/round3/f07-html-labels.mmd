@@ -1,0 +1,33 @@
+flowchart TB
+  subgraph H[<b>Bold</b> zone]
+    h0["Use <b>bold</b> carefully 0"]
+    h1["Use <b>bold</b> carefully 1"]
+    h2["Use <b>bold</b> carefully 2"]
+    h3["Use <b>bold</b> carefully 3"]
+    h4["Use <b>bold</b> carefully 4"]
+    h5["Use <b>bold</b> carefully 5"]
+  end
+  subgraph I[Breaks]
+    i0["line one<br/>line two 0"]
+    i1["line one<br/>line two 1"]
+    i2["line one<br/>line two 2"]
+    i3["line one<br/>line two 3"]
+    i4["line one<br/>line two 4"]
+    i5["line one<br/>line two 5"]
+  end
+  h0 --> h1
+  h1 --> h2
+  h2 --> h3
+  h3 --> h4
+  h4 --> h5
+  i0 -->|"<i>soft</i>"| i1
+  i1 -->|"<i>soft</i>"| i2
+  i2 -->|"<i>soft</i>"| i3
+  i3 -->|"<i>soft</i>"| i4
+  i4 -->|"<i>soft</i>"| i5
+  h5 --> i0
+  i5 --> h0
+  w0["<u>outside</u> 0"] --> h0
+  w1["<u>outside</u> 1"] --> h1
+  w2["<u>outside</u> 2"] --> h2
+  w3["<u>outside</u> 3"] --> h3

@@ -1,0 +1,25 @@
+flowchart TD
+  subgraph API[Api layer]
+    a1[Auth] --> a2[Router]
+    a2 --> a3[Handler]
+  end
+  subgraph DB[Data layer]
+    d1[(Users)]
+    d2[(Orders)]
+    d3[(Cache)]
+  end
+  subgraph EXT[External]
+    e1[Stripe]
+    e2[Mailer]
+  end
+  client[Client] --> API
+  a3 --> DB
+  API --> EXT
+  a3 --> d1
+  a3 --> d2
+  e1 --> e2
+  DB --> d3
+  client --> e2
+  q1[Queue] --> q2[Worker]
+  q2 --> DB
+  q2 --> q3[Dead letter]

@@ -1,0 +1,8 @@
+flowchart TD
+  a1 --> a2 --> a3 --> a4 --> q1{Check 1}
+  q1 -->|ok| b1 --> b2 --> b3 --> b4 --> q2{Check 2}
+  q1 -->|fail| x[Fail]
+  q2 -->|ok| c1 --> c2 --> c3 --> c4 --> q3{Check 3}
+  q2 -->|fail| x
+  q3 -->|ok| d1 --> d2 --> d3 --> d4
+  q3 -->|fail| x

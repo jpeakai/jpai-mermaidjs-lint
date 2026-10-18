@@ -1,0 +1,90 @@
+flowchart LR
+  subgraph T0["Edge tier"]
+    edge0["Edge service"]
+    edge1["Edge worker"]
+    edge2["Edge queue"]
+    edge3["Edge cache"]
+    edge4["Edge gateway"]
+    edge5["Edge db"]
+    edge6["Edge log"]
+    edge7["Edge feed"]
+    edge8["Edge api"]
+  end
+  subgraph T1["Api tier"]
+    api0["Api service"]
+    api1["Api worker"]
+    api2["Api queue"]
+    api3["Api cache"]
+    api4["Api gateway"]
+    api5["Api db"]
+    api6["Api log"]
+    api7["Api feed"]
+    api8["Api api"]
+  end
+  subgraph T2["Core tier"]
+    core0["Core service"]
+    core1["Core worker"]
+    core2["Core queue"]
+    core3["Core cache"]
+    core4["Core gateway"]
+    core5["Core db"]
+    core6["Core log"]
+    core7["Core feed"]
+    core8["Core api"]
+  end
+  subgraph T3["Data tier"]
+    data0["Data service"]
+    data1["Data worker"]
+    data2["Data queue"]
+    data3["Data cache"]
+    data4["Data gateway"]
+    data5["Data db"]
+    data6["Data log"]
+    data7["Data feed"]
+    data8["Data api"]
+  end
+  edge0 --> edge1
+  edge0 -.->|calls| api2
+  edge1 --> edge2
+  edge2 --> edge3
+  edge3 --> edge4
+  edge3 -.->|calls| api5
+  edge4 --> edge5
+  edge5 --> edge6
+  edge6 --> edge7
+  edge6 -.->|calls| api8
+  edge7 --> edge8
+  api0 --> api1
+  api0 -.->|calls| core2
+  api1 --> api2
+  api2 --> api3
+  api3 --> api4
+  api3 -.->|calls| core5
+  api4 --> api5
+  api5 --> api6
+  api6 --> api7
+  api6 -.->|calls| core8
+  api7 --> api8
+  core0 --> core1
+  core0 -.->|calls| data2
+  core1 --> core2
+  core2 --> core3
+  core3 --> core4
+  core3 -.->|calls| data5
+  core4 --> core5
+  core5 --> core6
+  core6 --> core7
+  core6 -.->|calls| data8
+  core7 --> core8
+  data0 --> data1
+  data1 --> data2
+  data2 --> data3
+  data3 --> data4
+  data4 --> data5
+  data5 --> data6
+  data6 --> data7
+  data7 --> data8
+  dec{Healthy?} -->|yes| edge0
+  dec -->|no| alarm[Alarm]
+  alarm --> dec
+  data8 --> dec

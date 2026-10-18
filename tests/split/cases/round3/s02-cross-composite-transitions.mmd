@@ -1,0 +1,29 @@
+stateDiagram-v2
+  state A {
+    a0 --> a1
+    a1 --> a2
+    a2 --> a3
+    a3 --> a4
+    a4 --> a5
+    a5 --> a6
+    a6 --> a7
+  }
+  state B {
+    b0 --> b1
+    b1 --> b2
+    b2 --> b3
+    b3 --> b4
+    b4 --> b5
+    b5 --> b6
+    b6 --> b7
+  }
+  [*] --> A
+  a0 --> b0 : next
+  a1 --> b1 : next
+  a2 --> b2 : next
+  a3 --> b3 : next
+  a4 --> b4 : next
+  b7 --> A : restart
+  A --> B : jump
+  B --> [*]
+  a7 --> [*]

@@ -1,0 +1,20 @@
+flowchart LR
+  subgraph S1[Billing]
+    b1[Invoice] --> b2[Charge]
+    b2 --> b3[Receipt]
+    subgraph S1a[Refunds]
+      r1[Request] --> r2[Approve]
+    end
+  end
+  subgraph S2[Shipping]
+    s1[Pick] --> s2[Pack] --> s3[Ship]
+  end
+  subgraph S3[Support]
+    t1[Ticket] --> t2[Triage] --> t3[Resolve]
+  end
+  b3 --> s1
+  t3 --> r1
+  r2 --> b2
+  s3 --> t1
+  b1 --> t1
+  s2 --> r1

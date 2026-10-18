@@ -1,0 +1,17 @@
+classDiagram
+  C0 "1" --> "*" C1 : has (x)
+  C1 "1" --> "*" C2 : has (x)
+  C2 "1" --> "*" C3 : has (x)
+  C3 "1" --> "*" C4 : has (x)
+  C4 "1" --> "*" C5 : has (x)
+  C5 "1" --> "*" C6 : has (x)
+  C6 "1" --> "*" C7 : has (x)
+  C7 "1" --> "*" C8 : has (x)
+  C8 "1" --> "*" C9 : has (x)
+  C9 "1" --> "*" C10 : has (x)
+  C10 "1" --> "*" C11 : has (x)
+  C11 "1" --> "*" C12 : has (x)
+  C12 "1" --> "*" C13 : has (x)
+  C0 "0..1" o-- "many" C5 : owns [g1]
+  C3 --> C9 : (in group)
+  C7 ..|> C2 : impl

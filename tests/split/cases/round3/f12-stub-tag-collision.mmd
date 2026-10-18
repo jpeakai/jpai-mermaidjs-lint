@@ -1,0 +1,46 @@
+flowchart TB
+  subgraph G[Group one]
+    g0[Inside 0]
+    g1[Inside 1]
+    g2[Inside 2]
+    g3[Inside 3]
+    g4[Inside 4]
+    g5[Inside 5]
+    g6[Inside 6]
+  end
+  subgraph H[Group two]
+    h0[Inside 0]
+    h1[Inside 1]
+    h2[Inside 2]
+    h3[Inside 3]
+    h4[Inside 4]
+    h5[Inside 5]
+    h6[Inside 6]
+  end
+  b[Foo]
+  c[Foo]
+  d["Foo [b]"]
+  e["Foo [c]"]
+  f["Inside 1 (Group two)"]
+  k["Inside 1 (Group one) [h1]"]
+  g0 --> g1
+  g1 --> g2
+  g2 --> g3
+  g3 --> g4
+  g4 --> g5
+  g5 --> g6
+  h0 --> h1
+  h1 --> h2
+  h2 --> h3
+  h3 --> h4
+  h4 --> h5
+  h5 --> h6
+  b --> g0
+  c --> g1
+  d --> g2
+  e --> h0
+  g6 --> b
+  h6 --> d
+  f --> g3
+  k --> g4
+  g5 --> h1

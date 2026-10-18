@@ -1,0 +1,24 @@
+stateDiagram-v2
+  [*] --> Idle
+  Idle --> Work
+  state Work {
+    [*] --> w0
+    Retry --> w0
+    w0 --> w1
+    w1 --> w2
+    w2 --> w3
+    w3 --> w4
+    w4 --> w5
+    w5 --> w6
+    w6 --> w7
+    w7 --> w8
+    w8 --> w9
+    w9 --> w10
+    w10 --> w11
+    w11 --> w12
+    w12 --> w13
+    w13 --> w14
+    w14 --> [*]
+  }
+  Work --> Done
+  Done --> [*]

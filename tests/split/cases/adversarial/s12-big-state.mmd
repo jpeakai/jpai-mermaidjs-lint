@@ -1,0 +1,63 @@
+stateDiagram-v2
+  [*] --> New
+  state Billing {
+    [*] --> Billing0
+    Billing0 --> Billing1 : billing step 0
+    Billing1 --> Billing2 : billing step 1
+    Billing2 --> Billing3 : billing step 2
+    Billing3 --> Billing4 : billing step 3
+    Billing4 --> Billing5 : billing step 4
+    Billing5 --> Billing6 : billing step 5
+    Billing6 --> Billing7 : billing step 6
+    Billing7 --> [*]
+    state BillingC <<choice>>
+    Billing3 --> BillingC
+    BillingC --> Billing0 : retry
+    BillingC --> Billing7 : skip
+  }
+  New --> Billing : route 0
+  Billing --> Closed
+  state Fulfil {
+    [*] --> Fulfil0
+    Fulfil0 --> Fulfil1 : fulfil step 0
+    Fulfil1 --> Fulfil2 : fulfil step 1
+    Fulfil2 --> Fulfil3 : fulfil step 2
+    Fulfil3 --> Fulfil4 : fulfil step 3
+    Fulfil4 --> Fulfil5 : fulfil step 4
+    Fulfil5 --> Fulfil6 : fulfil step 5
+    Fulfil6 --> Fulfil7 : fulfil step 6
+    Fulfil7 --> [*]
+    state FulfilC <<choice>>
+    Fulfil3 --> FulfilC
+    FulfilC --> Fulfil0 : retry
+    FulfilC --> Fulfil7 : skip
+  }
+  New --> Fulfil : route 1
+  Fulfil --> Closed
+  state Support {
+    [*] --> Support0
+    Support0 --> Support1 : support step 0
+    Support1 --> Support2 : support step 1
+    Support2 --> Support3 : support step 2
+    Support3 --> Support4 : support step 3
+    Support4 --> Support5 : support step 4
+    Support5 --> Support6 : support step 5
+    Support6 --> Support7 : support step 6
+    Support7 --> [*]
+    state SupportC <<choice>>
+    Support3 --> SupportC
+    SupportC --> Support0 : retry
+    SupportC --> Support7 : skip
+  }
+  New --> Support : route 2
+  Support --> Closed
+  Billing2 --> Support4 : dispute
+  Fulfil5 --> Billing6 : refund
+  state f <<fork>>
+  state jn <<join>>
+  Closed --> f
+  f --> Archive
+  f --> Notify
+  Archive --> jn
+  Notify --> jn
+  jn --> [*]

@@ -1,0 +1,63 @@
+flowchart LR
+  subgraph A[Alpha services]
+    a0[Alpha 0]
+    a1[Alpha 1]
+    a2[Alpha 2]
+    a3[Alpha 3]
+    a4[Alpha 4]
+    a5[Alpha 5]
+    a6[Alpha 6]
+    a7[Alpha 7]
+  end
+  subgraph B[Beta services]
+    b0[Beta 0]
+    b1[Beta 1]
+    b2[Beta 2]
+    b3[Beta 3]
+    b4[Beta 4]
+    b5[Beta 5]
+    b6[Beta 6]
+    b7[Beta 7]
+  end
+  subgraph C[Gamma services]
+    c0[Gamma 0]
+    c1[Gamma 1]
+    c2[Gamma 2]
+    c3[Gamma 3]
+    c4[Gamma 4]
+    c5[Gamma 5]
+  end
+  a0 --> a1
+  a1 --> a2
+  a2 --> a3
+  a3 --> a4
+  a4 --> a5
+  a5 --> a6
+  a6 --> a7
+  b0 --> b1
+  b1 --> b2
+  b2 --> b3
+  b3 --> b4
+  b4 --> b5
+  b5 --> b6
+  b6 --> b7
+  a0 -->|calls| b0
+  a1 -->|calls| b3
+  a2 -->|calls| b6
+  a3 -->|calls| b1
+  a4 -->|calls| b4
+  a5 -->|calls| b7
+  a6 -->|calls| b2
+  a7 -->|calls| b5
+  a0 -->|calls| b1
+  a1 -->|calls| b6
+  a2 -->|calls| b3
+  a3 -->|calls| b0
+  b0 -.->|calls| c0
+  b1 -.->|calls| c1
+  b2 -.->|calls| c2
+  b3 -.->|calls| c3
+  b4 -.->|calls| c4
+  b5 -.->|calls| c5
+  a0 -->|calls| b0
+  c5 --> a0

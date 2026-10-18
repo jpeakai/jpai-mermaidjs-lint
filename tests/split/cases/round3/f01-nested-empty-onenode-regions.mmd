@@ -1,0 +1,54 @@
+flowchart TB
+  subgraph Outer[Outer zone]
+    subgraph Mid[Middle zone]
+      subgraph Inner[Inner zone]
+        in0[Inner step 0]
+        in1[Inner step 1]
+        in2[Inner step 2]
+        in3[Inner step 3]
+        in4[Inner step 4]
+      end
+      md0[Mid step 0]
+      md1[Mid step 1]
+      md2[Mid step 2]
+      md3[Mid step 3]
+    end
+    ou0[Outer step 0]
+    ou1[Outer step 1]
+    ou2[Outer step 2]
+  end
+  subgraph Empty[Nothing here]
+  end
+  subgraph Solo[Solo box]
+    solo1[Only one]
+  end
+  subgraph Side[Side zone]
+    sd0[Side 0]
+    sd1[Side 1]
+    sd2[Side 2]
+    sd3[Side 3]
+    sd4[Side 4]
+    sd5[Side 5]
+  end
+  in0 --> in1
+  in1 --> in2
+  in2 --> in3
+  in3 --> in4
+  md0 --> md1
+  md1 --> md2
+  md2 --> md3
+  in4 --> md0
+  md3 --> ou0
+  ou0 --> ou1 --> ou2
+  ou2 --> solo1
+  solo1 --> sd0
+  sd0 --> sd1
+  sd1 --> sd2
+  sd2 --> sd3
+  sd3 --> sd4
+  sd4 --> sd5
+  Inner --> Side
+  Solo --> Mid
+  start((Start)) --> Outer
+  sd5 --> Empty
+  Empty --> finish((Finish))

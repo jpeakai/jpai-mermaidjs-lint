@@ -1,0 +1,13 @@
+erDiagram
+  EMPLOYEE ||--o{ EMPLOYEE : manages
+  EMPLOYEE }o--o{ EMPLOYEE : mentors
+  EMPLOYEE }o--|| DEPARTMENT : works_in
+  DEPARTMENT ||--o{ DEPARTMENT : contains
+  DEPARTMENT ||--|| BUDGET : has
+  BUDGET ||--o{ LINE : lines
+  LINE }o--|| ACCOUNT : posts
+  ACCOUNT ||--o{ ACCOUNT : rolls_up
+  EMPLOYEE ||--o{ TIMESHEET : files
+  TIMESHEET ||--|{ ENTRY : has
+  ENTRY }o--|| PROJECT : for
+  PROJECT ||--o{ PROJECT : subproject

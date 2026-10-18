@@ -1,0 +1,17 @@
+flowchart TD
+  A["B"] --> B["A"]
+  B --> C["Worker"]
+  B --> D["Worker"]
+  B --> E["Worker"]
+  B --> F["Worker"]
+  C --> G["g1"]
+  D --> G
+  E --> G
+  F --> G
+  G --> H["g1 (+3)"]
+  H --> I["Worker (+3)"]
+  I --> J["C"]
+  J --> K["K"]
+  K --> M["Worker"]
+  M --> N["Worker"]
+  N --> A

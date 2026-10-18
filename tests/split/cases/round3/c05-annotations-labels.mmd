@@ -1,0 +1,34 @@
+classDiagram
+  class A0["Display name 0"]
+  class A1["Display name 1"]
+  class A2["Display name 2"]
+  class A3["Display name 3"]
+  class A4["Display name 0"]
+  class A5["Display name 1"]
+  class A6["Display name 2"]
+  class A7["Display name 3"]
+  class A8["Display name 0"]
+  class A9["Display name 1"]
+  class A10["Display name 2"]
+  class A11["Display name 3"]
+  class A12["Display name 0"]
+  class A0 {
+    <<interface>>
+    +run()
+  }
+  class A5 {
+    <<abstract>>
+  }
+  A0 --> A1
+  A1 --> A2
+  A2 --> A3
+  A3 --> A4
+  A4 --> A5
+  A5 --> A6
+  A6 --> A7
+  A7 --> A8
+  A8 --> A9
+  A9 --> A10
+  A10 --> A11
+  A11 --> A12
+  A12 ..> A0

@@ -13,8 +13,8 @@ import {
   type RunFlags,
   setUp,
 } from "../src/index.ts";
-import { extractStyleDirectives } from "../src/parse/color.ts";
 import { edgeLabelBackground, GITHUB_CANVAS, scoreGithub, scoreSequence } from "../src/parse/contrast.ts";
+import { readStyles } from "../src/parse/styles.ts";
 import { checkRule, localPlugin } from "../src/testing.ts";
 import { fence, runCli, tempProject } from "./helpers.ts";
 
@@ -57,7 +57,7 @@ describe("scoring on a canvas", () => {
   test("a translucent fill composites onto the canvas", async () => {
     expect(await rules(fence(TRANSLUCENT))).not.toContain(BORDER);
     expect(await rules(fence(TRANSLUCENT), { canvas: { dark: "#3a3a3a" } })).toContain(BORDER);
-    const { pairs } = scoreGithub(extractStyleDirectives(TRANSLUCENT), { light: "#ffffff", dark: "#3a3a3a" });
+    const { pairs } = scoreGithub((await readStyles(TRANSLUCENT)).directives, { light: "#ffffff", dark: "#3a3a3a" });
     expect(pairs.find((p) => p.kind === "border" && p.theme === "dark")?.background).toBe("#4e4e4e");
   });
 

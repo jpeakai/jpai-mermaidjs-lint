@@ -20,10 +20,10 @@ describe("document model", () => {
     expect(doc.diagrams[0]?.terminated).toBe(true);
   });
 
-  test("a directive span maps back to its absolute offset", () => {
+  test("a directive span maps back to its absolute offset", async () => {
     const src = `# T\n\n${fence("flowchart LR\n  classDef c fill:#ffff00,color:#fefefe")}`;
     const d = buildDocModel(src).diagrams[0];
-    const span = d?.directives[0]?.spans.color;
+    const span = (await d?.styles())?.directives[0]?.spans.color;
     expect(span).toBeDefined();
     const at = d?.offsetOf(span as NonNullable<typeof span>) ?? -1;
     expect(src.slice(at, at + 7)).toBe("#fefefe");

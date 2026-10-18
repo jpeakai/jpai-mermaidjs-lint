@@ -39,6 +39,28 @@ const textFinding = (ctx: RuleContext, diagram: Diagram, p: ContrastPair, profil
   };
 };
 
+// The rewrite of one failing directive's color: value, keyed by where the
+// value starts: black or white, whichever reads better on every background
+// the directive is scored on, or null when neither clears 4.5:1. Undefined
+// when the directive has no color: span the parser places, so nothing is
+// proposed.
+const colourEdit = (
+  diagram: Diagram,
+  directive: ContrastSource,
+  pairs: ContrastPair[],
+): { start: number; edit: Edit | null } | undefined => {
+  const span = directive.spans.color;
+  const start = span ? diagram.offsetOf(span) : null;
+  if (!span || start === null) return undefined;
+  const backgrounds = pairs.filter((p) => p.kind === "text" && p.directive === directive).map((p) => p.background);
+  const best = CANDIDATES.map((c) => ({ c, worst: Math.min(...backgrounds.map((bg) => ratioOn(c, bg))) })).sort(
+    (a, b) => b.worst - a.worst,
+  )[0];
+  if (!best || best.worst < AA_NORMAL) return { start, edit: null };
+  const end = start + (span.end - span.start);
+  return { start, edit: { rule: RULE.TEXT, start, end, text: best.c, expect: { kind: "same-diagrams" } } };
+};
+
 // Label text must reach 4.5:1 against its fill, in every theme the fill is
 // scored in. The fix swaps a declared color: for black or white, whichever
 // reads better, and only when that clears 4.5:1 on every background the
@@ -66,30 +88,21 @@ export const contrastTextBelowAa: Rule = {
     const settings = settingsOf(ctx);
     // Under a host profile color: is ignored, so there is nothing to rewrite.
     if (settings.profile === "mkdocs-material") return [];
-    const edits: Edit[] = [];
+    // Directives that share one statement, such as `classDef a,b` or
+    // `linkStyle 0,1`, share its color: span. The span is rewritten once, and
+    // only when every directive on it picks the same colour.
+    const bySpan = new Map<number, Edit | null>();
     for (const diagram of ctx.doc.diagrams) {
       const { pairs } = await contrastOf(diagram, settings);
       const failing = new Set(pairs.filter((p) => p.kind === "text" && !p.passes).map((p) => p.directive));
       for (const directive of failing) {
-        const span = directive.spans.color;
-        const start = span ? diagram.offsetOf(span) : null;
-        if (!span || start === null) continue;
-        const backgrounds = pairs
-          .filter((p) => p.kind === "text" && p.directive === directive)
-          .map((p) => p.background);
-        const best = CANDIDATES.map((c) => ({ c, worst: Math.min(...backgrounds.map((bg) => ratioOn(c, bg))) })).sort(
-          (a, b) => b.worst - a.worst,
-        )[0];
-        if (!best || best.worst < AA_NORMAL) continue;
-        edits.push({
-          rule: RULE.TEXT,
-          start,
-          end: start + (span.end - span.start),
-          text: best.c,
-          expect: { kind: "same-diagrams" },
-        });
+        const proposed = colourEdit(diagram, directive, pairs);
+        if (proposed === undefined) continue;
+        const prior = bySpan.get(proposed.start);
+        const agrees = prior === undefined || (prior && proposed.edit && prior.text === proposed.edit.text);
+        bySpan.set(proposed.start, agrees ? proposed.edit : null);
       }
     }
-    return edits;
+    return [...bySpan.values()].filter((e): e is Edit => e !== null);
   },
 };

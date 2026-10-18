@@ -53,7 +53,7 @@ One mermaid source.
 | `terminated` | `boolean` | `false` when the fence has no closing fence, so it runs to the end of the file or of its quote or list item |
 | `closingFence` | `string` or `null` | The line that closes the fence: its opening fence, after the quote markers and indentation before it. `null` for a raw diagram file, and when the opening line holds anything else before the fence, such as a list item's marker. |
 | `endOffset` | `number` | The offset in `doc.src` where the fence ends |
-| `directives` | `StyleDirective[]` | Every style line in the diagram |
+| `styles()` | `Promise<StyleReading>` | The style directives mermaid's parser reads, read once on first call and shared by every rule |
 | `offsetOf(span)` | `number` or `null` | The offset in `doc.src` of a directive value, or `null` when it cannot be mapped back |
 | `stats()` | `Promise<DiagramStats>` | Structure as mermaid's parser reads it, parsed once on first call and shared by every rule |
 
@@ -62,18 +62,26 @@ One mermaid source.
     `source` is not a slice of `doc.src` when the fence is indented, so a value's position in `source` is not its position in the file.
     `offsetOf` maps it back, and returns `null` when it cannot, in which case the fixer should propose nothing.
 
-## StyleDirective
+## StyleReading
 
-One `classDef`, `style` or `linkStyle` line, or an inline `:::class` application.
+What `styles()` returns, read from mermaid's parsed DB.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `kind` | `"classDef"`, `"style"`, `"linkStyle"` or `"inlineClass"` | Which form the line takes |
+| `directives` | `StyleDirective[]` | Every styled class, node and edge, in source order |
+| `unmodelled` | `{ selector, line, reason }[]` | Each style statement in a diagram type the audit does not model |
+
+## StyleDirective
+
+One styled thing in the parser's result: a class, a node, entity, state or class a `style` statement styles, or an edge a `linkStyle` styles.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `kind` | `"classDef"`, `"style"` or `"linkStyle"` | Which statement styles it |
 | `selector` | `string` | The class name, node id or link index the directive applies to |
-| `class_name` | `string`, optional | The class applied, for an inline class |
-| `properties` | `Record<string, string>` | Each property, such as `fill` and `color`, to its value |
-| `spans` | `Record<string, ValueSpan>` | Each property to where its value sits in `source` |
-| `line` | `number` | The line within the diagram, from 1 |
+| `properties` | `Record<string, string>` | Each property mermaid applies, such as `fill` and `color`, to its value, including those a node inherits from its classes |
+| `spans` | `Record<string, ValueSpan>` | Each property its own statements wrote to where the value sits in `source`, only where the parser places it exactly |
+| `line` | `number` | The line of its first statement within the diagram, from 1 |
 
 ## ValueSpan
 

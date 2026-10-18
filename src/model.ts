@@ -10,8 +10,9 @@ import { gfmFromMarkdown } from "mdast-util-gfm";
 import { parse as parseMicromark, postprocess, preprocess } from "micromark";
 import { frontmatter } from "micromark-extension-frontmatter";
 import { gfm } from "micromark-extension-gfm";
-import { extractStyleDirectives, type StyleDirective, type ValueSpan } from "./parse/color.ts";
+import type { ValueSpan } from "./parse/color.ts";
 import { type DiagramStats, detectKeyword, extractStats } from "./parse/stats.ts";
+import { readStyles, type StyleReading } from "./parse/styles.ts";
 
 export interface Diagram {
   index: number;
@@ -35,7 +36,9 @@ export interface Diagram {
   closingFence: string | null;
   // The source offset where the fence ends, or the end of a standalone file.
   endOffset: number;
-  directives: StyleDirective[];
+  // The style directives mermaid's parser reads from the diagram, read once on
+  // first use.
+  styles: () => Promise<StyleReading>;
   // The absolute source offset of a value in a directive, or null when the
   // line cannot be mapped back, which makes a fixer refuse.
   offsetOf: (span: ValueSpan) => number | null;
@@ -153,10 +156,14 @@ const makeDiagram = (
   const { source, firstLine } = fields;
   const contentLines = source.split("\n");
   let pending: Promise<DiagramStats> | undefined;
+  let styled: Promise<StyleReading> | undefined;
   return {
     ...fields,
     keyword: detectKeyword(source),
-    directives: extractStyleDirectives(source),
+    styles: () => {
+      styled ??= readStyles(source);
+      return styled;
+    },
     offsetOf: (span) => {
       const fileLine = firstLine + span.line - 1;
       const start = lineStarts[fileLine - 1];

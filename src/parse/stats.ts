@@ -41,14 +41,7 @@ const installDomShim = (): void => {
   }
 };
 
-const isCssColour = (value: string): boolean => {
-  try {
-    new Color(value);
-    return true;
-  } catch {
-    return false;
-  }
-};
+const isCssColour = (value: string): boolean => Color.try(value) !== null;
 
 // ZenUML is drawn by an external add-on (@mermaid-js/mermaid-zenuml) that this
 // package does not ship. Mermaid's API for an external diagram registers its

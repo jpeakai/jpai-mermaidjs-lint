@@ -2,7 +2,7 @@
 erDiagram
     DocModel ||--|| Root : "tree"
     DocModel ||--o{ Diagram : "diagrams"
-    Diagram ||--o{ StyleDirective : "directives"
+    Diagram ||--o{ StyleDirective : "styles()"
     StyleDirective ||--|{ ValueSpan : "spans"
     Diagram ||--|| DiagramStats : "stats()"
     StyleDirective ||--o{ ContrastPair : "scored by contrast rules"
@@ -27,14 +27,13 @@ erDiagram
         number firstLine
         boolean terminated
         number endOffset
-        StyleDirective[] directives
+        function styles "Promise of StyleReading"
         function offsetOf "ValueSpan to offset or null"
         function stats "Promise of DiagramStats"
     }
     StyleDirective {
-        enum kind "classDef style linkStyle inlineClass"
+        enum kind "classDef style linkStyle"
         string selector
-        string class_name "optional"
         record properties
         record spans "name to ValueSpan"
         number line "1-based in diagram"

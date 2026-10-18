@@ -470,7 +470,9 @@ The nodes, edges, Rows, subgraphs, subgraph nesting depth and Tree Depth the Par
 
 ## Style Directive
 
-A `classDef`, `style` or `linkStyle` line, or an inline class application.
+One styled class, node or edge, read from mermaid's parsed DB.
+It is a `classDef`, a node a `style` statement styles, or an edge a `linkStyle` styles.
+A node's directive includes what it inherits from its classes.
 
 ## Tenet
 

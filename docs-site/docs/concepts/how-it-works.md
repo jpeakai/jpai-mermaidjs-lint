@@ -55,9 +55,10 @@ The diagram type comes from mermaid's own detection, which looks past frontmatte
 A diagram whose type mermaid does not detect is reported as `parse-diagram-unparseable`.
 Whether a fence is closed, and the line that would close it, come from micromark's reading of the markdown.
 
-One thing is read from the text rather than a parser.
-Style directives are read line by line, with the position of each value, so a fixer can rewrite it in place.
-A style joined to other statements by a semicolon is therefore not seen.
+Style directives are read from the parser's result: the classes, node styles and link styles mermaid's DB holds, with the classes each node carries.
+Each statement is placed by the lexer token that opens it, so a fixer can rewrite a value in place.
+A value the parser cannot place is never rewritten.
+Text inside a label is never read as a directive, and a style joined to other statements by a semicolon is read like any other.
 
 The [document model reference](../reference/document-model.md) lists every field.
 

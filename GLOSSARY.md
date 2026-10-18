@@ -503,6 +503,13 @@ It is the working directory when none has one.
 An element the Parse Engine's graph keeps but the Stats never count: a `stateDiagram` start or end marker, or a `classDiagram` lollipop interface.
 It is drawn, so the graph keeps it, apart from the nodes, under `pseudo`.
 
+## Range Label
+
+A Group Node label made of its first and last member labels in natural order, joined by a spaced ellipsis.
+A count of the rest follows, such as `DATA-0381 … DATA-0383 (+1)`.
+A Split Plan offers it for twins, sibling leaves and members whose labels all lead with an id.
+It is refused when a member of another group has a label from the first to the last, per [MJL-0029](adrs/0029-runs-meshes-and-terminals-read-as-they-are.md).
+
 ## Raw Diagram File
 
 A `.mmd` or `.mermaid` file, read as one Diagram with no markdown around it.
@@ -554,6 +561,12 @@ What happens to a config Canvas on a file that `auto` scores under mkdocs-materi
 The file is scored without it, one stderr line names the file, and the `--json` object lists it under `canvasSetAside`.
 A canvas flag on such a file is refused instead, per [MJL-0019](adrs/0019-a-material-file-sets-a-config-canvas-aside.md).
 
+## Shared Terminal
+
+A flowchart or `stateDiagram` node that at least three other nodes lead into and that leads nowhere.
+A `Notify on-call` step every failure ends at is one.
+A Split Plan's `T5` and `T6` keep it as its own node in the Overview, unless only the loose rules meet the target.
+
 ## Source Kind
 
 Where a Plugin came from, shown in `--list-rules` and `--json`.
@@ -603,6 +616,11 @@ A `sequenceDiagram` is coloured by Theme Variables alone.
 
 One step of how a Split Plan groups nodes, from `T1`, which only drops Rows and duplicate edges, to `T6`.
 The Tiers run least lossy first, and a plan names the last Tier that changed it.
+
+## Tight Clique
+
+A set of nodes that all share an edge with each other, found as a maximal clique.
+In a dense mesh, where the Overview joins at least half of all node pairs, a Split Plan's `T6` folds Tight Cliques into Group Nodes.
 
 ## Tree Depth
 

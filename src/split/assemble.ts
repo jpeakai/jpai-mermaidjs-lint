@@ -8,7 +8,7 @@ import type { DiagramGraph, GraphEdge, GraphNode } from "../parse/graph.ts";
 import type { ThresholdConfig } from "../parse/metrics.ts";
 import { emitSource } from "./emit.ts";
 import { buildWorkGraph, byNatural, byText, edgeKey, type WNode, type WorkGraph } from "./graph.ts";
-import { groupLabels, type LabelContext, type StubText, stubTexts } from "./label.ts";
+import { groupLabels, ID_LEAD, type LabelContext, rangeLabel, type StubText, stubTexts } from "./label.ts";
 import {
   type DetailView,
   detailShape,
@@ -304,6 +304,22 @@ const buildDetail = (a: Assembly, g: SplitGroup): DetailBuilt | string => {
   return { detail: { ...detail, split: nested.plan }, nested };
 };
 
+const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.label ?? id;
+
+// How a group may be named beyond its region and head: the range of its
+// members' labels, for twins and sibling leaves or for members whose labels
+// all lead with an id, when no other group's member falls in it; and, for
+// id-led labels, its members in natural order of their labels, so a group
+// with no honest range is named by its first id.
+const namingOf = (work: WorkGraph, part: Partition, g: Group): { range: string | null; byLabel: boolean } => {
+  const labels = g.members.map((m) => labelOf(work, m));
+  const idLed = labels.every((l) => ID_LEAD.test(l));
+  const runs = g.reason === "twins" || g.reason === "sibling leaves";
+  if (g.members.some((m) => work.nodes.get(m)?.markdown) || !(runs || idLed)) return { range: null, byLabel: false };
+  const hidden = part.groups.filter((x) => x !== g).flatMap((x) => x.members.map((m) => labelOf(work, m)));
+  return { range: rangeLabel(labels, hidden), byLabel: idLed };
+};
+
 // Each group's label: the first of its choices no original node, region or
 // earlier group already shows, so a group never reads as another node.
 const groupsOf = (work: WorkGraph, part: Partition): SplitGroup[] => {
@@ -312,7 +328,7 @@ const groupsOf = (work: WorkGraph, part: Partition): SplitGroup[] => {
   for (const r of work.regions.values()) taken.add(r.label);
   return part.groups.map((g) => {
     const id = next();
-    const options = labelChoices(work, g).flatMap((c) =>
+    const options = labelChoices(work, g, namingOf(work, part, g)).flatMap((c) =>
       groupLabels(c.base, c.n, c.markdown, id).map((label) => ({ ...c, label })),
     );
     const pick = options.find((o) => !taken.has(o.label)) ?? options[0];

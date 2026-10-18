@@ -13,7 +13,7 @@ import { extractStats } from "../parse/stats.ts";
 import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { flowRegionsOf } from "./flow.ts";
 import { byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { groupLabels, readerOf, readingsOf } from "./label.ts";
+import { groupLabels, rangeLabel, readerOf, readingsOf } from "./label.ts";
 import { floorOf } from "./plan.ts";
 import { idMaker, isGroupKey, over, type Partition, reversible, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
@@ -139,7 +139,8 @@ const checkAttributes = (build: Build): Violations => {
 const regionLabels = (work: WorkGraph, g: SplitGroup): string[] =>
   g.regions.map((r) => work.regions.get(r)?.label ?? "").filter((l) => l !== "");
 
-// 4. A group label is an author label or a member's label, shown cut by the
+// 4. A group label is an author label, a member's label or the range of its
+// members' labels (label.ts), shown cut by the
 // one rule in label.ts, then " (+N)", N counting the members it does not
 // name, and the group's id when the label is taken. No two groups show one
 // label, and no group shows a node's label.
@@ -150,9 +151,12 @@ const checkLabels = (build: Build): Violations => {
   for (const g of plan.groups) {
     const [base, n] = [g.labelBase, g.hidden];
     if (!groupLabels(base, n, g.markdown, g.id).includes(g.label)) out.push(`4: group ${g.id} label is not its parts`);
-    if (!(regionLabels(work, g).includes(base) || memberLabels(g).includes(base)))
+    const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
+    const range = base === rangeLabel(memberLabels(g), hidden);
+    if (!(range || regionLabels(work, g).includes(base) || memberLabels(g).includes(base)))
       out.push(`4: group ${g.id} label "${base}" is not from the data`);
-    if (n !== g.members.length && n !== g.members.length - 1) out.push(`4: group ${g.id} counts ${n} hidden members`);
+    const counts = range ? [g.members.length - 2] : [g.members.length, g.members.length - 1];
+    if (!counts.includes(n)) out.push(`4: group ${g.id} counts ${n} hidden members`);
   }
   const labels = plan.groups.map((g) => g.label);
   const nodeLabels = new Set([...work.nodes.values()].map((n) => n.label));

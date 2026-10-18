@@ -31,6 +31,8 @@ const signature = (adj: Adjacency, key: string): string | null => {
   return `${[...ins].sort(byText).join(",")}>${[...outs].sort(byText).join(",")}`;
 };
 
+// Each class of twins in natural order of their labels, then ids, so runs cut
+// from it read as alphabetical ranges, as an index is cut into volumes.
 const twinClasses = (ctx: TierContext, adj: Adjacency): string[][] => {
   const classes = new Map<string, string[]>();
   for (const key of overviewKeys(ctx.work, ctx.part)) {
@@ -40,7 +42,10 @@ const twinClasses = (ctx: TierContext, adj: Adjacency): string[][] => {
     const k = [parentOfKey(ctx.work, ctx.part, key) ?? "", shapeOfKey(ctx, key), sig].join("\u0002");
     classes.set(k, [...(classes.get(k) ?? []), key]);
   }
-  return [...classes.values()].filter((c) => c.length > 1).map((c) => c.sort(byNatural));
+  const labelOf = (key: string): string => ctx.work.nodes.get(key)?.label ?? key;
+  return [...classes.values()]
+    .filter((c) => c.length > 1)
+    .map((c) => c.sort((a, b) => byNatural(labelOf(a), labelOf(b)) || byNatural(a, b)));
 };
 
 const isLeaf = (adj: Adjacency, key: string): boolean =>

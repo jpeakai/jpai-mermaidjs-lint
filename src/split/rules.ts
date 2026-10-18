@@ -5,10 +5,13 @@
 
 import { type Decision, decisionsOf, flowRegionsOf } from "./flow.ts";
 import { byNatural, type WorkGraph } from "./graph.ts";
+import { UNDIRECTED_KINDS } from "./quotient.ts";
 
 export interface FoldRules {
   // A hub keeps its own overview node.
   keepHubs: boolean;
+  // A shared terminal (terminalsOf) keeps its own overview node.
+  keepTerminals: boolean;
   // Two targets of one decision's differently labelled branches never share
   // a group, unless the branches rejoin inside it.
   keepBranches: boolean;
@@ -16,15 +19,21 @@ export interface FoldRules {
   minHidden: number;
 }
 
-export const STRICT: FoldRules = { keepHubs: true, keepBranches: true, minHidden: 2 };
+export const STRICT: FoldRules = { keepHubs: true, keepTerminals: true, keepBranches: true, minHidden: 2 };
 
 // Hubs and branches folded too. A group hiding one node is still undone or
 // merged after the walk wherever that keeps the target.
-export const LOOSE: FoldRules = { keepHubs: false, keepBranches: false, minHidden: 2 };
+export const LOOSE: FoldRules = { keepHubs: false, keepTerminals: false, keepBranches: false, minHidden: 2 };
 
-// The rules a plan is walked with: strict first, then loose, and last, for a
+// The rules a plan is walked with: strict first; then hubs and branches
+// folded while shared terminals stay in view; then loose; and last, for a
 // diagram no other walk plans, with groups hiding one node allowed too.
-export const RELAXED: readonly FoldRules[] = [STRICT, LOOSE, { ...LOOSE, minHidden: 1 }];
+export const RELAXED: readonly FoldRules[] = [
+  STRICT,
+  { ...LOOSE, keepTerminals: true },
+  LOOSE,
+  { ...LOOSE, minHidden: 1 },
+];
 
 // A hub has degree at least four and at least the 90th percentile degree,
 // by nearest rank over every node.
@@ -42,6 +51,34 @@ export const hubsOf = (work: WorkGraph): Set<string> => {
   const hubs = new Set(work.ids.filter((id) => (work.degree.get(id) ?? 0) >= least));
   hubCache.set(work, hubs);
   return hubs;
+};
+
+// A shared terminal: a flowchart or state node that at least three other
+// nodes lead into and that leads nowhere, by directed edges only, such as a
+// "Notify on-call" every failure ends at or a final state many paths reach.
+// It ends many paths, so like a hub it keeps its own overview node; folded
+// into one group it would read as that group's own end.
+const TERMINAL_IN = 3;
+
+const terminalCache = new WeakMap<WorkGraph, Set<string>>();
+
+export const terminalsOf = (work: WorkGraph): Set<string> => {
+  const known = terminalCache.get(work);
+  if (known) return known;
+  const into = new Map<string, Set<string>>();
+  const out = new Set<string>();
+  for (const e of work.edges) {
+    if (e.source === e.target) continue;
+    if (UNDIRECTED_KINDS.has(e.kind ?? "")) out.add(e.source).add(e.target);
+    else out.add(e.source);
+    into.set(e.target, new Set([...(into.get(e.target) ?? []), e.source]));
+  }
+  const flow = work.family === "flowchart" || work.family === "state";
+  const terminals = new Set(
+    flow ? work.ids.filter((id) => !out.has(id) && (into.get(id)?.size ?? 0) >= TERMINAL_IN) : [],
+  );
+  terminalCache.set(work, terminals);
+  return terminals;
 };
 
 // The members a member reaches along edges between members, itself included.

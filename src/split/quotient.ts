@@ -310,8 +310,15 @@ const markdownOf = (x: { markdown?: true } | undefined): { markdown?: true } => 
 // The labels a group may carry, best first. A group folded from one author
 // region carries that region's label; otherwise the label of a member: the
 // group's head (a decision region's decision, an aggregate's root) first, then
-// the named one. N counts the members the label does not already name.
-export const labelChoices = (work: WorkGraph, g: Group): LabelParts[] => {
+// the named one. A range of the members' labels, when given, comes after the
+// region and the head, and the members may be taken in natural order of their
+// labels instead. N counts the members the label does not already name.
+export const labelChoices = (
+  work: WorkGraph,
+  g: Group,
+  naming: { range: string | null; byLabel: boolean } = { range: null, byLabel: false },
+): LabelParts[] => {
+  const { range } = naming;
   const roots = regionRoots(work, g.regions);
   const root = roots.length === 1 ? roots[0] : undefined;
   const region = root === undefined ? undefined : work.regions.get(root);
@@ -320,13 +327,17 @@ export const labelChoices = (work: WorkGraph, g: Group): LabelParts[] => {
     whole && region
       ? [{ base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) }]
       : [];
-  const ranked = rankedMembers(work, g);
+  const labelOf = (m: string): string => work.nodes.get(m)?.label ?? m;
+  const ranked = naming.byLabel
+    ? [...g.members].sort((a, b) => byNatural(labelOf(a), labelOf(b)) || byNatural(a, b))
+    : rankedMembers(work, g);
   const head = g.head !== undefined && ranked.includes(g.head) ? [g.head] : [];
-  const fromMembers = [...head, ...ranked.filter((m) => !head.includes(m))].map((m) => {
+  const label = (m: string): LabelParts => {
     const node = work.nodes.get(m);
     return { base: node?.label ?? m, n: g.members.length - 1, ...markdownOf(node) };
-  });
-  return [...fromRegion, ...fromMembers];
+  };
+  const fromRange = range === null ? [] : [{ base: range, n: g.members.length - 2 }];
+  return [...fromRegion, ...head.map(label), ...fromRange, ...ranked.filter((m) => !head.includes(m)).map(label)];
 };
 
 // A stub stands for one outside overview node: a kept node, a region or an

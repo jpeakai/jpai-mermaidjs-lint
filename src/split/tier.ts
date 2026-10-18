@@ -17,7 +17,7 @@ import {
   type QEdge,
   scoreOf,
 } from "./quotient.ts";
-import { type FoldRules, hubsOf, splitsBranches } from "./rules.ts";
+import { type FoldRules, hubsOf, splitsBranches, terminalsOf } from "./rules.ts";
 
 export interface Candidate extends Merge {
   // T6 orders by modularity gain, not by score per node.
@@ -72,10 +72,12 @@ export const groupable = (ctx: TierContext, key: string): boolean =>
 
 // A node the rules keep in view: a hub, an erDiagram junction between two
 // aggregate roots, which folds into neither side, or a decision region
-// holding a hub, which T2 folded and which T5 and T6 fold no further.
+// holding a hub, which T2 folded and which T5 and T6 fold no further; and,
+// under its own rule, a shared terminal many paths end at.
 export const keptHub = (ctx: TierContext, key: string): boolean => {
-  if (!ctx.rules.keepHubs) return false;
   const g = groupOfKey(ctx.part, key);
+  if (!g && ctx.rules.keepTerminals && terminalsOf(ctx.work).has(key)) return true;
+  if (!ctx.rules.keepHubs) return false;
   if (!g) return hubsOf(ctx.work).has(key) || isJunction(ctx.work, key);
   return g.reason === "decision region" && g.members.some((m) => hubsOf(ctx.work).has(m));
 };

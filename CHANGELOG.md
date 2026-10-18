@@ -29,6 +29,15 @@ Anything under `Unreleased` is on `main` but not yet released.
 - A chain stage is named after the member where it starts, not its best-connected member.
 - A twin class too large for one group is cut into runs of even size.
 - After the target is met, `T2` folds the remaining decision regions evenly, while the overview keeps 60% of `nodeTarget`.
+- **Groups of alike nodes are named by range.** This covers twins, sibling leaves and members whose labels all lead with an id, per [MJL-0029](adrs/0029-runs-meshes-and-terminals-read-as-they-are.md).
+  The range is the first and last label in natural order, such as `accounts-service … feature-flag-service (+9)`.
+  A range is refused when a member of another group falls inside it.
+  An id-led group with no honest range is named by its first label.
+  A twin class is put in label order before it is cut into runs.
+- **A shared terminal stays in view.** A flowchart or `stateDiagram` node that three nodes or more lead into and that leads nowhere is no longer folded into one branch's group.
+  This holds under the strict rules and under a new second rule set that folds hubs and branches.
+- **Dense meshes fold by tight cliques.** When the overview joins at least half of all node pairs, `T6` also proposes maximal cliques, found by Bron and Kerbosch's algorithm with Tomita's pivot.
+- The contract accepts a range label only in its one exact form, with a count two fewer than the members.
 
 ## [0.9.0] - 2026-10-19
 

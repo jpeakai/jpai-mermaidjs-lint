@@ -1,0 +1,56 @@
+---
+type: Architecture Decision
+title: Runs of alike nodes are named by range, dense meshes fold by cliques, and shared terminals stay in view
+description: Three choices that make a split plan's groups mean something a reader can check
+tags: [complexity, split]
+status: accepted
+accepted_on: 2026-10-19
+provenance: A usefulness evaluation rated five realistic plans 3 out of 5. A gateway's twenty services folded into runs named after one arbitrary member, with runs cut by id, not by label. Groups of id-labelled states were named after a side member. A dense mesh was folded pair by pair. A "Notify on-call" node that every failure ends at, and a final "Refunded" state, were folded into one branch's group, which then read as that branch's own end
+enforced_in:
+  - src/split/label.ts, which writes a range label and refuses one another group's member falls in
+  - src/split/assemble.ts and src/split/quotient.ts, which offer the range after a region or head label, and name id-led groups by their first label
+  - src/split/tier2.ts, which orders a twin class by label before cutting it into runs
+  - src/split/clique.ts and src/split/tier6.ts, which find maximal cliques and propose them in a dense mesh
+  - src/split/rules.ts and src/split/tier.ts, which keep a shared terminal in view under the first two rule sets
+  - src/split/contract.ts check 4, tests/split/faithful.ts and tests/split/checker.ts, which accept a range label only exactly, each by its own reading
+generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
+---
+
+<!-- GENERATED from MJL-0029 by okf_render.py. Do not edit; edit the .yml and regenerate. -->
+
+## Relates to
+
+- Extends [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) (how groups are named and chosen once regions and aggregates have folded)
+
+## Decision
+
+### The lens
+
+#### Given
+
+some groups hold interchangeable members, twins, sibling leaves or id-labelled states, where no single member names the group. A dense mesh joins nearly every pair, so a pair says little, and a node many paths end at is no one branch's end
+
+#### We prefer
+
+naming such a group by range: its first and last member labels in natural order, joined by a spaced ellipsis. N counts the members neither end names. A range is offered for twins and sibling leaves, or when every member's label leads with an id. It needs three members or more, forty characters at most and no markup. It is refused when a member of another group has a label from the first to the last. A reader would look for that member there. An id-led group with no honest range is named by its first label in natural order. Twins are ordered by label before they are cut into runs, so runs read as alphabetical volumes. In a mesh whose overview joins at least half of all pairs, T6 also proposes maximal cliques of ungrouped nodes. These come from Bron and Kerbosch's algorithm with Tomita's pivot, taken in natural order and capped at 256. Each clique is cut into runs whose detail fits and ranked by the summed modularity gain of its pairs. A shared terminal is a flowchart or state node at least three nodes lead into and that leads nowhere. It keeps its own node under the strict rules, and under a second rule set that folds hubs and branches. Only the loose rules after those fold it
+
+#### Because
+
+a range names exactly what a group holds and where its neighbours begin. A clique is a group whose members all talk to each other. A terminal folded into one branch tells the reader the other branches end somewhere else
+
+#### Unless
+
+a group has an author region or a head, whose label still comes first. A terminal folds when no rule set short of the loose ones meets the target
+
+## Consequences
+
+### Pros
+
+- A run of services reads as an index, "accounts-service … feature-flag-service (+9)".
+- Groups in a dense mesh are cliques, and a final state or alert node stays where every path can be seen to reach it.
+- The contract, faithful.ts and the strict checker accept a range only in its one exact form.
+
+### Cons
+
+- A range label is longer than a member label, so fewer groups qualify than might.
+- A diagram whose strict walk fails is walked once more before the loose rules, which costs time.

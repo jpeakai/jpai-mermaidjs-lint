@@ -4,7 +4,7 @@
 // for; a stub for a node inside another group adds that group's label, and a
 // label several stubs could share adds the id it stands for.
 
-import type { WorkGraph } from "./graph.ts";
+import { byNatural, type WorkGraph } from "./graph.ts";
 import { endpointLabel, isGroupKey, over, type Partition, type Stub } from "./quotient.ts";
 
 // The longest label a group node shows, in user-perceived characters.
@@ -28,6 +28,33 @@ export const shorten = (label: string, markdown?: true): string => {
     .trimEnd();
   return `${head}…${chars.slice(-TAIL).join("").trimStart()}`;
 };
+
+// A range label: a group's first and last member labels in natural order,
+// joined by a spaced ellipsis, which a cut label never shows. It names a run
+// of interchangeable members as an index names a volume, so it is offered for
+// twins and sibling leaves, and for members whose labels all lead with an id
+// (DATA-0381, S10004, "10011 Wont Do"), where one member's label says little.
+// It counts the members it does not name, two fewer than the group holds, and
+// is offered only for three members or more, with no markup, within LABEL_CAP.
+// A range must not mislead: no member of another group (hidden, so a reader
+// would look for it here) has a label from the first to the last.
+export const RANGE_SEPARATOR = " … ";
+
+const MARKUP = /[<&*_`#]/;
+
+export const rangeLabel = (labels: readonly string[], hidden: readonly string[] = []): string | null => {
+  const order = [...labels].sort(byNatural);
+  const [first, last] = [order[0], order.at(-1)];
+  if (labels.length < 3 || first === undefined || last === undefined || first === last) return null;
+  if (order.some((l) => MARKUP.test(l) || l.includes(RANGE_SEPARATOR))) return null;
+  if (hidden.some((l) => byNatural(first, l) <= 0 && byNatural(l, last) <= 0)) return null;
+  const base = `${first}${RANGE_SEPARATOR}${last}`;
+  return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
+};
+
+// A label that leads with an id: up to five letters, an optional dash or
+// underscore, then two digits or more, ending there or at a separator.
+export const ID_LEAD = /^[A-Za-z]{0,5}[-_]?\d{2,}(?=$|[\s:._-])/;
 
 // The labels a group may show, preferred first: the label cut, the whole
 // label, then the label cut with the group's id, for when another node or

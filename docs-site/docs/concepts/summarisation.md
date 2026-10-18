@@ -61,6 +61,10 @@ A bundle of sibling leaves is the simplest module of all: pendants of one node, 
 
 --8<-- "summarise-twins.md"
 
+A large set of twins is cut into runs, each small enough for its detail to meet the target.
+The twins are first put in natural order of their labels, so each run reads as an alphabetical volume of an index.
+A gateway's twenty services become runs such as `accounts-service … feature-flag-service (+9)`.
+
 ### Chains and stages
 
 A run of nodes, each with one edge in and one edge out, is a chain.
@@ -142,6 +146,18 @@ Their Leiden method fixes that, but it still relies on randomness.
 Label propagation was rejected for the same reason: its result depends on update order, and it can oscillate.
 A merge never crosses an author region, so a suggested group never splits what the author grouped.
 
+### Cliques in a dense mesh
+
+In a dense mesh nearly every pair of nodes is joined, so merging one pair says little.
+A mesh counts as dense when its overview joins at least half of all node pairs.
+There `T6` also proposes cliques: sets of nodes that all talk to each other.
+It finds the maximal cliques of the nodes not yet grouped with the algorithm of [Bron and Kerbosch (1973)](https://doi.org/10.1145/362342.362367).
+It uses the pivot rule of [Tomita, Tanaka and Takahashi (2006)](https://doi.org/10.1016/j.tcs.2006.06.015), so each maximal clique is found once.
+Nodes are taken in natural order, and ties go to the first.
+At most 256 cliques are listed, so the same graph always gives the same cliques.
+Each clique is cut into runs whose detail meets the target.
+A run ranks by the modularity gained by merging it whole, the sum of its pairs' gains, so a larger clique goes first.
+
 ### Measures that did not help
 
 Bridges and betweenness are the usual tools for finding where a network divides.
@@ -169,13 +185,15 @@ In `T5` and `T6` it gathers what is left open into groups of three or more, no l
 A detail diagram must meet the same targets, and one that does not is split once more.
 A plan names the last tier that changed it.
 
-`T5` and `T6` follow three rules, so the overview still tells the diagram's story:
+`T5` and `T6` follow four rules, so the overview still tells the diagram's story:
 
 - **Hubs stay in view.** A hub is a node of degree at least four and at least the 90th percentile degree. It keeps its own overview node, and the leaves hanging from it fold beside it as one group. An `erDiagram` never merges two relationship labels, so there its leaves stay open.
+- **Shared terminals stay in view.** A shared terminal is a flowchart or `stateDiagram` node that at least three other nodes lead into and that leads nowhere, by directed edges. A `Notify on-call` step every failure ends at is one, and so is a final `Refunded` state. Folded into one branch's group, it would read as that branch's own end.
 - **A decision's branches stay apart.** A decision is a node whose outgoing edges carry two labels or more, in a flowchart or a `stateDiagram`. Two targets of its differently labelled branches never share a group, unless one reaches the other, or both reach a common member, inside the group.
 - **Every group hides two nodes or more.** Once the target is met, a group hiding one node is undone when the overview and every detail still meet the target without it. Otherwise it is merged into a neighbouring node or suggested group. One that can be neither stays.
 
-When the target cannot be met under the first two rules, the plan is walked again without them, and the third still holds.
+When the target cannot be met under these rules, the plan is walked again with hubs and branches folded, while shared terminals stay in view.
+When that fails too, it is walked without the first three rules, and the last still holds.
 As a last resort, the plan is walked once more with groups that hide one node allowed.
 A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk.
 Each folds only with a whole decision region or author region around it.
@@ -191,7 +209,7 @@ The plan reports it after each tier.
 | `T3` | Author regions, innermost first: subgraphs, composite states and namespaces | New reachable pairs between nodes folded into one region |
 | `T4` | `erDiagram` aggregates: the largest aggregate that fits, named after its root. A junction stays out of both sides. | New reachable pairs. Cardinalities are never merged. |
 | `T5` | Leaves into the node they hang from, repeated, or beside it as one group when it is a hub | New reachable pairs through the group |
-| `T6` | Suggested groups from greedy modularity, over pairs an edge joins, with alike labels breaking ties | New reachable pairs, and groups the author may not recognise |
+| `T6` | Suggested groups from greedy modularity, over pairs an edge joins, with alike labels breaking ties, and tight cliques in a dense mesh | New reachable pairs, and groups the author may not recognise |
 
 ## What "meaning is preserved" means
 
@@ -202,6 +220,7 @@ The contract is what this page means by "meaning is preserved".
 - **Sound attributes.** An overview edge keeps a label or an arrow kind only when every edge it stands for agrees.
 - **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds.
 - **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
+- **Honest ranges.** A range label, such as `DATA-0381 … DATA-0383 (+1)`, is the group's first and last member labels in natural order. Its count is of the members neither names. No member of another group has a label from the first to the last.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
 - **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it.
 - **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
@@ -226,6 +245,18 @@ A suggested group, from `T5` or `T6`, is named after the member on its main path
 That is the member with the most edges crossing the group's boundary, a start or end transition counted as one.
 A tie goes to the member the flow reaches first from where it enters the diagram.
 Any other group is named after its best-connected member.
+
+Some groups hold members no single label names.
+These are twins, sibling leaves, and members whose labels all lead with an id, such as `S10004` or `10011 Wont Do`.
+Such a group is named by a range: its first and last member labels in natural order, joined by a spaced ellipsis.
+An example is `10002 Backlog … 10011 Wont Do (+1)`, where the count is of the members neither end names.
+A range is offered for three members or more, with no markup, within 40 characters.
+It must not mislead a reader.
+So it is refused when a member of another group has a label from its first to its last.
+A reader would look for that member here.
+An author region's label and a decision region's question still come first.
+An id-led group with no honest range is named by its first label in natural order, so `10002 Backlog (+2)` rather than a side state.
+
 In `T6`, when two merges gain the same modularity, the pair with alike labels goes first.
 Two nodes no edge joins never pair, however alike their labels.
 

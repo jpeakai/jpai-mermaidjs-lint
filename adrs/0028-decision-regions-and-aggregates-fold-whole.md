@@ -21,6 +21,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 ## Relates to
 
 - Extends [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) (the author's structure now includes the regions a flow's decisions make and the aggregates an erDiagram's identifying relationships make)
+- Extended by [MJL-0029](0029-runs-meshes-and-terminals-read-as-they-are.md) (runs named by range, dense meshes folded by cliques, shared terminals kept in view)
 
 ## Decision
 

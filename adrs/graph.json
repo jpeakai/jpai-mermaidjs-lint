@@ -464,6 +464,19 @@
     },
     {
       "data": {
+        "id": "MJL-0029",
+        "label": "0029",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0029-runs-meshes-and-terminals-read-as-they-are.md",
+        "title": "Runs of alike nodes are named by range, dense meshes fold by cliques, and shared terminals stay in view",
+        "description": "Three choices that make a split plan's groups mean something a reader can check",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -860,6 +873,26 @@
         "label": "extends",
         "relation": "extends",
         "note": "the author's structure now includes the regions a flow's decisions make and the aggregates an erDiagram's identifying relationships make"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0028-extended_by-MJL-0029",
+        "source": "MJL-0028",
+        "target": "MJL-0029",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "runs named by range, dense meshes folded by cliques, shared terminals kept in view"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0029-extends-MJL-0028",
+        "source": "MJL-0029",
+        "target": "MJL-0028",
+        "label": "extends",
+        "relation": "extends",
+        "note": "how groups are named and chosen once regions and aggregates have folded"
       }
     }
   ],

@@ -58,6 +58,22 @@ export const cutOf = (shown: string, label: string): boolean => {
   return shown === `${c.slice(0, 27).join("").trimEnd()}…${c.slice(-12).join("").trimStart()}`;
 };
 
+// The range the docs promise, written out: three members or more, their
+// first and last labels in natural order (digit runs by value, then code
+// units) joined by " … ", at most forty characters, no markup, and no member
+// of another group labelled from the first to the last.
+const natural = new Intl.Collator("en", { numeric: true, sensitivity: "variant" });
+const byNatural = (a: string, b: string): number => natural.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0);
+
+export const rangeOf = (labels: string[], hidden: string[]): string | null => {
+  const order = [...labels].sort(byNatural);
+  const [first, last] = [order[0] ?? "", order.at(-1) ?? ""];
+  if (labels.length < 3 || first === last || order.some((l) => /[<&*_`#]/.test(l) || l.includes(" … "))) return null;
+  if (hidden.some((l) => byNatural(first, l) <= 0 && byNatural(l, last) <= 0)) return null;
+  const base = `${first} … ${last}`;
+  return chars(base).length <= 40 ? base : null;
+};
+
 interface Shown {
   label: string;
   base: string;
@@ -151,9 +167,18 @@ const labelProblems = (r: Reading): string[] =>
     const folded = d.graph.subgraphs.filter((s) => r.groupOf.get(s.id) === d.group);
     const byMember = members.some((m) => cutOf(g.base, m.label)) && g.n === members.length - 1;
     const byRegion = folded.some((s) => cutOf(g.base, s.label)) && g.n >= members.length - 1;
+    const others = r.details.filter((x) => x.group !== d.group);
+    const hidden = others.flatMap((x) => x.graph.nodes.filter((n) => r.isOriginal(n.id)).map((n) => n.label));
+    const byRange =
+      rangeOf(
+        members.map((m) => m.label),
+        hidden,
+      ) === g.base && g.n === members.length - 2;
     const named = r.original.nodes.some((n) => n.label === g.label);
     return [
-      ...(byMember || byRegion ? [] : [`group ${d.group} label "${g.label}" is not its members' or region's`]),
+      ...(byMember || byRegion || byRange
+        ? []
+        : [`group ${d.group} label "${g.label}" is not its members' or region's`]),
       ...(named ? [`group ${d.group} label "${g.label}" is a node's label`] : []),
     ];
   });
@@ -248,23 +273,33 @@ type Mark = [string, string | null, string, string, string];
 
 // Start and end transitions: each original once on a real state, and a
 // transition the overview draws onto a group only for transitions into its
-// members, labelled only when they all carry the label.
-const markerProblems = (r: Reading): string[] => {
+// members, labelled exactly with the label they all carry, drawn once, and
+// every transition it merges beyond the first declared.
+const markerProblems = (r: Reading, plan: SplitPlan): string[] => {
   const want = markerKeys(r.original, () => true);
   const real = (x: string): boolean => r.isOriginal(x) && !r.groups.has(x);
   const got = [...markerKeys(r.overview, real), ...r.details.flatMap((d) => markerKeys(d.graph, real))];
   const onStubs = r.details.flatMap((d) => markerKeys(d.graph, (x) => !real(x)));
   const wanted = want.map((k) => JSON.parse(k) as Mark);
-  const onGroups = markerKeys(r.overview, (x) => r.groups.has(x)).flatMap((k) => {
-    const [shape, parent, g, dir, label] = JSON.parse(k) as Mark;
+  const drawn = markerKeys(r.overview, (x) => r.groups.has(x)).map((k) => JSON.parse(k) as Mark);
+  let merged = 0;
+  const onGroups = drawn.flatMap(([shape, parent, g, dir, label]) => {
     const wit = wanted.filter((w) => w[0] === shape && w[1] === parent && w[3] === dir && r.groupOf.get(w[2]) === g);
     if (wit.length === 0) return [`the transition onto ${g} stands for none`];
-    return label !== "" && wit.some((w) => w[4] !== label) ? [`the transition onto ${g} claims "${label}"`] : [];
+    merged += wit.length - 1;
+    // labelled exactly when every transition it stands for agrees
+    const agreed = wit.every((w) => w[4] === wit[0]?.[4]) ? (wit[0]?.[4] ?? "") : "";
+    return label === agreed ? [] : [`the transition onto ${g} claims "${label}", not "${agreed}"`];
   });
+  const keys = drawn.map((m) => JSON.stringify(m.slice(0, 4)));
   return [
     ...diff(want, got, "marker transition"),
     ...onStubs.map((k) => `marker transition on a stub: ${k}`),
     ...onGroups,
+    ...(new Set(keys).size === keys.length ? [] : ["a transition onto a group is drawn twice"]),
+    ...(merged === plan.loss.mergedMarkers
+      ? []
+      : [`${merged} marker transitions merged, ${plan.loss.mergedMarkers} declared`]),
   ];
 };
 
@@ -364,7 +399,7 @@ export const faithful = async (source: string, plan: SplitPlan): Promise<string[
     ...problems,
     ...elementProblems(r),
     ...edgeProblems(r, of, plan),
-    ...markerProblems(r),
+    ...markerProblems(r, plan),
     ...protectionProblems(r),
   ];
 };

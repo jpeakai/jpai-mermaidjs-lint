@@ -24,6 +24,9 @@ relates_to:
   - relation: extends
     target: MJL-0026
     note: the author's structure now includes the regions a flow's decisions make and the aggregates an erDiagram's identifying relationships make
+  - relation: extended_by
+    target: MJL-0029
+    note: runs named by range, dense meshes folded by cliques, shared terminals kept in view
 
 decision:
   given: some diagrams are mostly decisions, a flowchart or stateDiagram. In others, an erDiagram overview groups entities by leaves and junctions, not by what owns what

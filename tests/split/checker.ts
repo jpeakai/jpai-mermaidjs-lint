@@ -51,6 +51,19 @@ const cutOf = (shown: string, label: string): boolean => {
   );
 };
 
+// A range label: three members or more, first and last label in natural
+// order joined by a spaced ellipsis, at most forty graphemes, no markup, and
+// no member of another group labelled from the first to the last.
+const collator = new Intl.Collator("en", { numeric: true, sensitivity: "variant" });
+const natural = (a: string, b: string): number => collator.compare(a, b) || (a < b ? -1 : a > b ? 1 : 0);
+const rangeOf = (labels: string[], hidden: string[]): string | null => {
+  const order = [...labels].sort(natural);
+  const [first, last] = [order[0] ?? "", order.at(-1) ?? ""];
+  if (labels.length < 3 || first === last || order.some((l) => /[<&*_`#]/.test(l) || l.includes(" … "))) return null;
+  if (hidden.some((l) => natural(first, l) <= 0 && natural(l, last) <= 0)) return null;
+  return glen(`${first} … ${last}`) <= 40 ? `${first} … ${last}` : null;
+};
+
 const measure = async (src: string, cfg: ThresholdConfig) => {
   const s = await extractStats(src);
   return {
@@ -214,8 +227,19 @@ const checkGroupLabel = (c: Ctx, d: Det): void => {
   const fromMember = d.members.some((m) => cutOf(gs.base, m.label));
   const folded = d.D.subgraphs.filter((s) => !c.ovSubs.has(s.id));
   const fromRegion = folded.some((s) => cutOf(gs.base, s.label));
-  if (!(fromMember || fromRegion)) c.add("BUG", "glabel", `group ${d.gid} base "${gs.base}" names no member or region`);
-  const okN = (fromMember && gs.n === d.members.length - 1) || (fromRegion && gs.n === d.members.length);
+  const hidden = c.dets.filter((x) => x !== d).flatMap((x) => x.members.map((m) => m.label));
+  const fromRange =
+    gs.base ===
+    rangeOf(
+      d.members.map((m) => m.label),
+      hidden,
+    );
+  if (!(fromMember || fromRegion || fromRange))
+    c.add("BUG", "glabel", `group ${d.gid} base "${gs.base}" names no member, region or honest range`);
+  const okN =
+    (fromMember && gs.n === d.members.length - 1) ||
+    (fromRegion && gs.n === d.members.length) ||
+    (fromRange && gs.n === d.members.length - 2);
   if (!okN) c.add("BUG", "glabel", `group ${d.gid} says +${gs.n} but its detail holds ${d.members.length} members`);
 };
 

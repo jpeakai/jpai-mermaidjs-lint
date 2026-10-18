@@ -536,9 +536,21 @@ function adaptClass(db: AnyDb): Structure {
     { members?: unknown; methods?: unknown }
   >;
   const relations = (Array.isArray(db.relations) ? db.relations : []) as Array<unknown>;
+  // Each namespace draws a box, and one may sit inside another through parent.
+  const namespaces = (db.namespaces instanceof Map ? db.namespaces : new Map()) as Map<
+    string,
+    { label?: string; parent?: string }
+  >;
+  const groups = [...namespaces].map(([id, ns]) => ({ id, in: ns.parent, label: ns.label || id }));
   let rows = 0;
   for (const c of classes.values()) rows += lengthOf(c.members) + lengthOf(c.methods);
-  return { nodeIds: [...classes.keys()], edges: relations.length, subgraphNames: [], maxDepth: 0, rows };
+  return {
+    nodeIds: [...classes.keys()],
+    edges: relations.length,
+    subgraphNames: groups.map((g) => g.label),
+    maxDepth: architectureDepth(groups),
+    rows,
+  };
 }
 
 interface SequenceRecord {

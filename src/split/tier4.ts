@@ -1,85 +1,45 @@
-// T4, erDiagram aggregates. An aggregate root folds with the weak entities it
-// alone identifies (an identifying relationship with exactly one at the root's
-// end and many at the other). A junction table, an entity with exactly two
-// relationships both many at its own end, folds into the smaller of the two
-// entities it joins. Cardinalities are never merged: quotient.ts keeps each
-// distinct cardinality and label as its own overview edge.
+// T4, erDiagram aggregates. Each entity has an owner when it depends on one
+// other entity alone: its single identifying parent (an identifying
+// relationship with exactly one at the parent's end), or, with no
+// identifying parent, the one entity a leaf entity relates to, exactly one at
+// that end. Owners chain to an aggregate root, and an aggregate is a root with
+// everything it owns, directly or through a chain. The largest aggregate whose
+// detail fits folds whole and is named after its root, so the overview's
+// edges run between roots. A junction, an entity identified by two entities
+// or more, is owned by none: it stays in view or folds with neither side.
+// Cardinalities are never merged: quotient.ts keeps each distinct
+// cardinality and label as its own overview edge.
 
-import type { GraphEdge } from "../parse/graph.ts";
-import { byText, sorted, type WorkGraph } from "./graph.ts";
-import { over } from "./quotient.ts";
-import { type Candidate, groupable, mergeFits, type TierContext } from "./tier.ts";
+import { aggregateOf, ownersOf } from "./aggregate.ts";
+import { byNatural, byText } from "./graph.ts";
+import { membersOfKey, over } from "./quotient.ts";
+import { type Candidate, mergeFits, type TierContext } from "./tier.ts";
 
-// An erDiagram relationship as graph.ts reads it from erDb: each end by its
-// Cardinality name (from beside the source, to beside the target), and
-// whether the relationship is identifying.
-type ErEdge = GraphEdge & { ends?: { from: string; to: string }; identifying?: boolean };
-
-const MANY = new Set(["ONE_OR_MORE", "ZERO_OR_MORE"]);
-const ONE = "ONLY_ONE";
-
-const endAt = (e: ErEdge, id: string): string | undefined => (e.source === id ? e.ends?.from : e.ends?.to);
-
-// The entity an edge makes the identifying parent of its other end, if any.
-const identifies = (e: ErEdge): { parent: string; child: string } | null => {
-  if (!(e.identifying && e.ends) || e.source === e.target) return null;
-  const { from, to } = e.ends;
-  if (from === ONE && MANY.has(to)) return { parent: e.source, child: e.target };
-  if (to === ONE && MANY.has(from)) return { parent: e.target, child: e.source };
-  return null;
+// The aggregate folded whole, or null when it holds a stub, an earlier group
+// straddles it, it
+// is already one group, or, held to fit, its detail does not fit.
+const candidateOf = (ctx: TierContext, head: string, fit = true): Candidate | null => {
+  const members = aggregateOf(ctx.work, head);
+  if (members.some((m) => ctx.work.protectedIds.has(m))) return null;
+  const inside = new Set(members);
+  const keys = [...new Set(members.map((m) => over(ctx.work, ctx.part, m)))].sort(byText);
+  if (keys.length < 2 || !keys.every((k) => membersOfKey(ctx.part, k).every((m) => inside.has(m)))) return null;
+  const c: Candidate = { keys, parent: null, tier: "T4", reason: "aggregate root", head };
+  return !fit || mergeFits(ctx, c) ? c : null;
 };
 
-const weakParents = (work: WorkGraph): Map<string, Set<string>> => {
-  const parents = new Map<string, Set<string>>();
-  for (const e of work.edges) {
-    const link = identifies(e);
-    if (link) parents.set(link.child, new Set([...(parents.get(link.child) ?? []), link.parent]));
-  }
-  return parents;
-};
-
-// The first id's node with as many of the rest as still fit one detail.
-const candidate = (ctx: TierContext, ids: string[], reason: string): Candidate | null => {
-  const [first = "", ...rest] = ids.map((id) => over(ctx.work, ctx.part, id));
-  if (!groupable(ctx, first)) return null;
-  let keys = [first];
-  for (const k of sorted(new Set(rest))) {
-    const next = [...keys, k];
-    if (!keys.includes(k) && groupable(ctx, k) && mergeFits(ctx, { keys: next, parent: null, tier: "T4", reason })) {
-      keys = next;
-    }
-  }
-  return keys.length < 2 ? null : { keys: sorted(keys), parent: null, tier: "T4", reason };
-};
-
-const aggregates = (ctx: TierContext): Candidate[] => {
-  const byRoot = new Map<string, string[]>();
-  for (const [child, parents] of weakParents(ctx.work)) {
-    const [root] = [...parents];
-    if (parents.size === 1 && root !== undefined) byRoot.set(root, [...(byRoot.get(root) ?? []), child]);
-  }
-  return sorted(byRoot.keys()).flatMap((root) => {
-    const c = candidate(ctx, [root, ...(byRoot.get(root) ?? [])], "aggregate root");
-    return c ? [c] : [];
+// The largest aggregates that fit: an entity's own aggregate, offered when it
+// heads one and the aggregate of its owner does not fit or is not open. When
+// none fits and the step may split a detail again, each root's aggregate.
+export const proposeT4 = (ctx: TierContext): Candidate[] => {
+  if (ctx.work.family !== "er") return [];
+  const owners = ownersOf(ctx.work);
+  const heads = [...new Set(owners.values())].sort(byNatural);
+  const fitting = heads.flatMap((head) => {
+    const c = candidateOf(ctx, head);
+    const up = owners.get(head);
+    return c && (up === undefined || candidateOf(ctx, up) === null) ? [c] : [];
   });
+  if (fitting.length > 0 || !ctx.uncapped) return fitting;
+  return heads.filter((h) => !owners.has(h)).flatMap((h) => candidateOf(ctx, h, false) ?? []);
 };
-
-const junctionInto = (work: WorkGraph, id: string): string | null => {
-  const touching = work.edges.filter((e) => e.source === id || e.target === id);
-  if (touching.length !== 2) return null;
-  const others = touching.map((e) => (e.source === id ? e.target : e.source));
-  const manyHere = touching.every((e) => MANY.has(endAt(e, id) ?? ""));
-  if (!manyHere || others[0] === others[1] || others.includes(id)) return null;
-  const degree = (x: string): number => work.degree.get(x) ?? 0;
-  return [...others].sort((a, b) => degree(a) - degree(b) || byText(a, b))[0] ?? null;
-};
-
-const junctions = (ctx: TierContext): Candidate[] =>
-  ctx.work.ids.flatMap((id) => {
-    const into = junctionInto(ctx.work, id);
-    const c = into === null ? null : candidate(ctx, [id, into], "junction table");
-    return c ? [c] : [];
-  });
-
-export const proposeT4 = (ctx: TierContext): Candidate[] =>
-  ctx.work.family === "er" ? [...aggregates(ctx), ...junctions(ctx)] : [];

@@ -186,10 +186,12 @@ const regionOf = (work: WorkGraph, t: Trees, head: string, exit: string | null):
   return members.length < 2 ? null : { head, exit, members };
 };
 
-// A decision: a decision shape, a choice or a fork, or a node whose outgoing
-// edges carry two labels or more, that leads to two nodes or more.
+// A decision: a decision shape, a choice or a fork, or a node with a labelled
+// outgoing edge, a condition, that leads to two nodes or more.
 const headsOf = (work: WorkGraph, flow: Flow): string[] => {
-  const labelled = new Set(decisionsOf(work).map((d) => d.source));
+  const labelled = new Set(
+    FLOWING.has(work.family) ? work.edges.filter((e) => e.label !== undefined).map((e) => e.source) : [],
+  );
   return work.ids.filter((id) => {
     const shape = work.nodes.get(id)?.shape;
     const decides = labelled.has(id) || (isProtectedShape(shape) && shape !== "join");

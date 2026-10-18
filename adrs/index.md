@@ -31,6 +31,7 @@
 | [MJL-0025](0025-a-fold-is-offered-as-a-split.md) | A fold is offered only as the overview half of a split | accepted |
 | [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) | A split plan follows the author's structure, and refuses what it cannot draw faithfully | accepted |
 | [MJL-0027](0027-gaps-in-the-official-parsers-are-recorded.md) | Gaps in the official parsers are recorded, each with the one narrow workaround allowed | accepted |
+| [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) | Decision regions and erDiagram aggregates fold whole, named after their decision or root | accepted |
 # By group
 
 ## cli
@@ -41,6 +42,7 @@
 * [MJL-0021](0021-the-score-counts-what-a-reader-must-read.md) - Control lines, markers and notes are left out, and boxes, blocks and attribute rows are counted
 * [MJL-0025](0025-a-fold-is-offered-as-a-split.md) - A split plan is checked by a contract and applied by a human
 * [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) - Regions fold first, marker states stay in their composite, and concurrency is refused
+* [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) - A decision folds with its single-entry single-exit region, and an entity with the aggregate its root owns
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -129,5 +131,7 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0025 --see_also--> MJL-0021
 * MJL-0025 --see_also--> MJL-0022
 * MJL-0026 --extends--> MJL-0025
+* MJL-0026 --extended_by--> MJL-0028
 * MJL-0027 --extends--> MJL-0023
 * MJL-0027 --see_also--> MJL-0022
+* MJL-0028 --extends--> MJL-0026

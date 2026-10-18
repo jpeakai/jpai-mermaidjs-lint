@@ -46,16 +46,32 @@ const twinClasses = (ctx: TierContext, adj: Adjacency): string[][] => {
 const isLeaf = (adj: Adjacency, key: string): boolean =>
   (adj.in.get(key)?.length ?? 0) + (adj.out.get(key)?.length ?? 0) === 1;
 
+// The runs cut again to sizes that differ by one at most, as many runs as
+// before, when every run still fits; else the runs as they were.
+const evenRuns = (ctx: TierContext, runs: Candidate[]): Candidate[] => {
+  const keys = runs.flatMap((r) => r.keys);
+  const [first] = runs;
+  if (!first || runs.length < 2 || keys.length !== runs.reduce((n, r) => n + r.keys.length, 0)) return runs;
+  const even = runs.map((r, i) => ({
+    ...r,
+    keys: keys.slice(Math.round((i * keys.length) / runs.length), Math.round(((i + 1) * keys.length) / runs.length)),
+  }));
+  return even.every((r) => r.keys.length >= 2 && mergeFits(ctx, r)) ? even : runs;
+};
+
 // Every run of one twin class folds in one step, so the class folds evenly.
 export const proposeTwins = (ctx: TierContext): Candidate[] => {
   const adj = adjacencyOf(ctx.qedges);
   return twinClasses(ctx, adj).flatMap((keys) =>
     together(
-      chunksThatFit(ctx, keys, {
-        parent: parentOfKey(ctx.work, ctx.part, keys[0] ?? ""),
-        tier: "T2",
-        reason: keys.every((k) => isLeaf(adj, k)) ? "sibling leaves" : "twins",
-      }),
+      evenRuns(
+        ctx,
+        chunksThatFit(ctx, keys, {
+          parent: parentOfKey(ctx.work, ctx.part, keys[0] ?? ""),
+          tier: "T2",
+          reason: keys.every((k) => isLeaf(adj, k)) ? "sibling leaves" : "twins",
+        }),
+      ),
     ),
   );
 };

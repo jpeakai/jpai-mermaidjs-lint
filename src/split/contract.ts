@@ -10,7 +10,7 @@
 import { type DiagramGraph, extractGraph, type GraphEdge } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats } from "../parse/stats.ts";
-import { type Build, overviewMarkers, partFromGroups } from "./assemble.ts";
+import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { flowRegionsOf } from "./flow.ts";
 import { byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
 import { groupLabels, readerOf, readingsOf } from "./label.ts";
@@ -498,6 +498,9 @@ export const checkContract = async (build: Build, config: ThresholdConfig): Prom
     ...checkRecoverable(build),
     ...checkProtected(build),
     ...checkLoss(build),
+    ...(JSON.stringify(ladderOf(build.work, build.snapshots, config)) === JSON.stringify(build.plan.ladder)
+      ? []
+      : ["7: the declared ladder is not the overview after each tier"]),
     ...checkCanonical(build),
     ...(await checkRoundTrip(build, config)),
   ];

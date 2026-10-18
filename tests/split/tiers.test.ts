@@ -2,8 +2,10 @@
 // proposes, and what it never proposes.
 
 import { describe, expect, test } from "bun:test";
+import { isJunction, rootOf } from "../../src/split/aggregate.ts";
 import { EMPTY_PARTITION, merge } from "../../src/split/quotient.ts";
 import { hubsOf, LOOSE, splitsBranches } from "../../src/split/rules.ts";
+import { keptHub } from "../../src/split/tier.ts";
 import { proposeChains, proposeT2, proposeTwins } from "../../src/split/tier2.ts";
 import { proposeT3 } from "../../src/split/tier3.ts";
 import { proposeT4 } from "../../src/split/tier4.ts";
@@ -134,7 +136,7 @@ describe("T4 erDiagram aggregates", () => {
     expect(cands.some((c) => c.keys.includes("LINE") && c.reason === "aggregate root")).toBe(false);
   });
 
-  test("a junction table folds into the smaller entity it joins", async () => {
+  test("a junction between two roots folds into neither, and T5 and T6 keep it in view", async () => {
     const src = lines(
       "erDiagram",
       "  FILM ||--o{ FILM_ACTOR : casts",
@@ -143,8 +145,28 @@ describe("T4 erDiagram aggregates", () => {
       "  FILM ||--o{ REVIEW : reviewed",
     );
     const work = await workOf(src);
-    const junction = proposeT4(ctxOf(work, roomy)).filter((c) => c.reason === "junction table");
-    expect(junction.map((c) => c.keys)).toEqual([["ACTOR", "FILM_ACTOR"]]);
+    const cands = proposeT4(ctxOf(work, roomy));
+    expect(cands.map((c) => [c.keys, c.head])).toEqual([[["FILM", "RENTAL", "REVIEW"], "FILM"]]);
+    expect(isJunction(work, "FILM_ACTOR")).toBe(true);
+    expect(keptHub(ctxOf(work, roomy), "FILM_ACTOR")).toBe(true);
+    expect(keptHub(ctxOf(work, roomy, EMPTY_PARTITION, LOOSE), "FILM_ACTOR")).toBe(false);
+  });
+
+  test("an owner chain folds into its root, and the largest aggregate that fits is offered", async () => {
+    const src = lines(
+      "erDiagram",
+      "  CUSTOMER ||--o{ ORDER : places",
+      "  ORDER ||--|{ LINE : contains",
+      "  LINE ||--o{ ADJUSTMENT : adjusted",
+      "  CUSTOMER }o..|| REGION : in",
+      "  ORDER }o..|| CARRIER : ships",
+      "  LINE }o..|| SKU : sells",
+    );
+    const work = await workOf(src);
+    expect(rootOf(work, "ADJUSTMENT")).toBe("CUSTOMER");
+    expect(proposeT4(ctxOf(work, roomy)).map((c) => c.head)).toEqual(["CUSTOMER"]);
+    expect(proposeT4(ctxOf(work, target(4, 40))).map((c) => c.head)).toEqual(["LINE"]);
+    expect(proposeT4({ ...ctxOf(work, target(3, 40)), uncapped: true }).map((c) => c.head)).toEqual(["CUSTOMER"]);
   });
 
   test("only an erDiagram has aggregates", async () => {

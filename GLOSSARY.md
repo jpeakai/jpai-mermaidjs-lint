@@ -96,6 +96,8 @@ flowchart LR
     DET["Detail Diagram"]:::info
     STB["Stub"]:::info
     VCS["Visual Complexity Score"]:::info
+    DRG["Decision Region"]:::info
+    AGG["Aggregate"]:::info
 
     REM -- may end with --> SPL
     SPL -- is reached at a --> TIR
@@ -105,6 +107,8 @@ flowchart LR
     DET -- details one --> GRP
     DET -- stands in for outside ends with --> STB
     VCS -- scores --> OVR
+    GRP -- may fold a whole --> DRG
+    GRP -- may fold a whole --> AGG
 
     classDef people    fill:#1e40af,stroke:#93c5fd,color:#fff,stroke-width:2px
     classDef info      fill:#92400e,stroke:#fcd34d,color:#fff,stroke-width:2px
@@ -233,6 +237,13 @@ flowchart LR
 A hostile input written to break a Fixer.
 It asserts a Refusal or an exact safe output.
 
+## Aggregate
+
+An `erDiagram` entity with every entity it owns, directly or through a chain of owners, named after that root entity.
+An entity is owned by its single identifying parent or, as a leaf, by the one entity it depends on.
+A Split Plan's `T4` folds the largest Aggregate whose Detail Diagram fits into one Group Node.
+A Junction is owned by no entity.
+
 ## Advisory Pair
 
 A border Pair that never produces a Finding, because a saturated border on a faint fill cannot pass in both themes.
@@ -286,6 +297,14 @@ The optional `mermaidjs-lint.config.json` or `.mjs` that switches Rules off and 
 
 A node in a flowchart or `stateDiagram` whose outgoing edges carry two labels or more.
 A Split Plan's `T5` and `T6` never fold two targets of its differently labelled branches into one Group Node, unless the branches rejoin inside it.
+A decision shape folds only with a whole Decision Region or author region around it.
+
+## Decision Region
+
+The single-entry single-exit region from a branching node to the node where its branches rejoin, its immediate post-dominator.
+The branching node is a Decision, a decision shape, a choice, a fork, or any node with a labelled branch.
+Every edge into it enters the branching node, every edge out of it reaches the rejoin node, and a branch that ends the flow is folded inside it.
+A Split Plan's `T2` folds it whole, innermost first, into a Group Node named after the branching node.
 
 ## Design Token
 
@@ -389,6 +408,11 @@ The Host may choose the label colour.
 
 A node of degree at least four and at least the 90th percentile degree of its Diagram.
 A Split Plan's `T5` and `T6` keep it as its own node in the Overview, unless the target cannot be met otherwise.
+
+## Junction
+
+An `erDiagram` entity identified by entities in two Aggregates or more, such as a table joining two others.
+A Split Plan folds it into neither side: it stays in the Overview or folds with neither.
 
 ## Keyword
 

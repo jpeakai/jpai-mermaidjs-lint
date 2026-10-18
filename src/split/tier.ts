@@ -2,6 +2,7 @@
 // proposes, and the overview's adjacency read from the merged edges.
 
 import type { ThresholdConfig } from "../parse/metrics.ts";
+import { isJunction } from "./aggregate.ts";
 import { byText, type WorkGraph } from "./graph.ts";
 import {
   detailShape,
@@ -35,6 +36,9 @@ export interface TierContext {
   config: ThresholdConfig;
   qedges: QEdge[];
   rules: FoldRules;
+  // Whether the step may fold a group whose detail is over the target, to be
+  // split again: author regions and aggregates on the first walk.
+  uncapped?: boolean;
 }
 
 export interface Adjacency {
@@ -66,12 +70,13 @@ export const neighboursOf = (adj: Adjacency, key: string): Set<string> => {
 export const groupable = (ctx: TierContext, key: string): boolean =>
   isGroupKey(key) || (ctx.work.nodes.has(key) && !ctx.work.protectedIds.has(key));
 
-// A hub kept in view by the rules, or a decision region holding one, which
-// T2 folded and which T5 and T6 fold no further.
+// A node the rules keep in view: a hub, an erDiagram junction between two
+// aggregate roots, which folds into neither side, or a decision region
+// holding a hub, which T2 folded and which T5 and T6 fold no further.
 export const keptHub = (ctx: TierContext, key: string): boolean => {
   if (!ctx.rules.keepHubs) return false;
   const g = groupOfKey(ctx.part, key);
-  if (!g) return hubsOf(ctx.work).has(key);
+  if (!g) return hubsOf(ctx.work).has(key) || isJunction(ctx.work, key);
   return g.reason === "decision region" && g.members.some((m) => hubsOf(ctx.work).has(m));
 };
 

@@ -451,6 +451,19 @@
     },
     {
       "data": {
+        "id": "MJL-0028",
+        "label": "0028",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0028-decision-regions-and-aggregates-fold-whole.md",
+        "title": "Decision regions and erDiagram aggregates fold whole, named after their decision or root",
+        "description": "A decision folds with its single-entry single-exit region, and an entity with the aggregate its root owns",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -811,6 +824,16 @@
     },
     {
       "data": {
+        "id": "MJL-0026-extended_by-MJL-0028",
+        "source": "MJL-0026",
+        "target": "MJL-0028",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "decision regions and erDiagram aggregates fold whole"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0027-extends-MJL-0023",
         "source": "MJL-0027",
         "target": "MJL-0023",
@@ -827,6 +850,16 @@
         "label": "see also",
         "relation": "see_also",
         "note": "every feature starts from the official parsers' output, and these are the places that output falls short"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0028-extends-MJL-0026",
+        "source": "MJL-0028",
+        "target": "MJL-0026",
+        "label": "extends",
+        "relation": "extends",
+        "note": "the author's structure now includes the regions a flow's decisions make and the aggregates an erDiagram's identifying relationships make"
       }
     }
   ],

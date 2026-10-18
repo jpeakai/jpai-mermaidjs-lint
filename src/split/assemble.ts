@@ -31,7 +31,7 @@ import {
   usedIds,
 } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
-import type { RowDetail, SplitDetail, SplitGroup, SplitPlan, Tier } from "./types.ts";
+import type { LadderStep, RowDetail, SplitDetail, SplitGroup, SplitPlan, Tier } from "./types.ts";
 
 export interface Snapshot {
   tier: Tier;
@@ -259,6 +259,14 @@ const lossOf = (work: WorkGraph, folded: Folded, drawn: number): SplitPlan["loss
   };
 };
 
+// The overview's size after each tier walked, measured as the plan is.
+export const ladderOf = (work: WorkGraph, snapshots: Snapshot[], config: ThresholdConfig): LadderStep[] =>
+  snapshots.map((s) => {
+    const part = partFromSnapshot(s);
+    const shape = overviewShape(work, part, quotientEdges(work, part));
+    return { tier: s.tier, nodes: shape.nodes, score: scoreOf(shape, 0, config) };
+  });
+
 export const partFromGroups = (groups: Array<{ members: string[]; regions: string[] }>): Partition =>
   partitionOf(groups.map((g) => ({ members: g.members, regions: g.regions, parent: null, tier: "T1", reason: "" })));
 
@@ -398,6 +406,7 @@ export const assemble = (folded: Folded, config: ThresholdConfig, split: SplitDe
     details,
     rowDetails,
     loss: lossOf(work, folded, drawnRows(work, details, rowDetails)),
+    ladder: ladderOf(work, folded.snapshots, config),
   };
   return { plan, work, covers, snapshots: folded.snapshots, nested };
 };

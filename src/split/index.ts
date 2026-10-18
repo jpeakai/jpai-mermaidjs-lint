@@ -12,7 +12,16 @@ import { laddersOf, planWork } from "./plan.ts";
 import { meets } from "./quotient.ts";
 import type { SplitOutcome, SplitPlan } from "./types.ts";
 
-export type { RowDetail, SplitDetail, SplitGroup, SplitLoss, SplitOutcome, SplitPlan, Tier } from "./types.ts";
+export type {
+  LadderStep,
+  RowDetail,
+  SplitDetail,
+  SplitGroup,
+  SplitLoss,
+  SplitOutcome,
+  SplitPlan,
+  Tier,
+} from "./types.ts";
 
 const refuse = (reason: string, violations: string[] = []): SplitOutcome => ({ plan: null, reason, violations });
 

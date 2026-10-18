@@ -143,7 +143,7 @@ interface Step {
 
 const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null => {
   const { tier, only = () => true } = step;
-  const scored = PROPOSE[tier](ctx)
+  const scored = PROPOSE[tier]({ ...ctx, uncapped: !step.capped })
     .filter(only)
     .map((c) => evaluate(ctx, c, current, step))
     .filter((s): s is Scored => s !== null);
@@ -278,7 +278,7 @@ export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Wal
   if (meets(m.nodes, m.score, config)) return { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
   let tier: Tier = "T1";
   for (const t of walk.order) {
-    const capped = t !== "T3" || walk.capT3;
+    const capped = (t !== "T3" && t !== "T4") || walk.capT3;
     const step: Step = { tier: t, capped };
     for (let best = bestStep(m.ctx, step, m.score); best; ) {
       m = measure(work, best.part, config, walk.rules);

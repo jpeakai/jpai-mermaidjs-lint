@@ -18,6 +18,9 @@ relates_to:
   - relation: extends
     target: MJL-0025
     note: how a fold offered as a split is chosen and drawn
+  - relation: extended_by
+    target: MJL-0028
+    note: decision regions and erDiagram aggregates fold whole
 
 decision:
   given: a diagram over a threshold can be folded many ways, and some folds change what it says

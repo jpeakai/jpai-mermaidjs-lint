@@ -78,6 +78,12 @@ export interface SplitLoss {
   reversedEdges: number;
 }
 
+export interface LadderStep {
+  tier: Tier;
+  nodes: number;
+  score: number;
+}
+
 export interface SplitPlan {
   diagram_type: string;
   // The last tier that changed the plan.
@@ -90,6 +96,9 @@ export interface SplitPlan {
   details: SplitDetail[];
   rowDetails: RowDetail[];
   loss: SplitLoss;
+  // The overview after each tier the plan walked, as the partition stood: how
+  // the ladder climbed to the tier that met the target.
+  ladder: LadderStep[];
 }
 
 // Why no plan was offered, beside the plan when there is one.

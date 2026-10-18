@@ -70,6 +70,44 @@ It is cut into stages, each small enough for its detail diagram to meet the targ
 
 --8<-- "summarise-chain.md"
 
+### Dominators and decision regions
+
+A decision is a step whose branches split the flow, such as a diamond or an edge labelled `Yes`.
+Its branches only make sense together, so a plan folds a decision with everything between it and the point where its branches rejoin.
+
+A node d dominates a node v when every path from where the flow enters to v passes through d.
+Run on the reversed graph, from where the flow leaves, the same idea gives post-dominators.
+The immediate post-dominator of a decision is the nearest node every one of its branches must reach, the rejoin point.
+The plan computes both with the iterative algorithm of [Cooper, Harvey and Kennedy (2001)](https://www.cs.tufts.edu/comp/150FP/archive/keith-cooper/dom14.pdf), from a virtual entry joined to every node nothing leads into, and towards a virtual exit.
+
+The region from a decision to its rejoin point is single-entry single-exit (SESE): every edge into it enters the decision, and every edge out of it reaches the rejoin point.
+[Johnson, Pearson and Pingali (1994)](https://doi.org/10.1145/178243.178258) build the program structure tree from these regions, nested one inside another.
+A branch that ends the flow, such as `Decline`, is an outcome of the decision, not a way out of its region, so post-dominators are computed without the nodes where the flow ends, and those nodes fold inside the region.
+
+Folding a SESE region whole invents no path.
+Everything that reached the decision reaches the group, and the group reaches only what the rejoin point reaches, so the fold belongs to `T2`, the lossless tier.
+Regions fold innermost first, and each group is named after its decision.
+The branch labels stay in the detail diagram, and a chain stage may pass through a folded region.
+
+--8<-- "summarise-regions.md"
+
+A region with a second entry, or a branch leaving through a second node, is not SESE, so its decision stays protected.
+
+### Aggregates
+
+An `erDiagram` says who owns what with identifying relationships, drawn as a solid line.
+An entity is owned by its single identifying parent.
+With none, an entity with one relationship is owned by the entity it depends on, the one with exactly one at its end.
+Owners chain to a root, and an aggregate is a root with everything it owns.
+This is the aggregate of domain-driven design, read from the author's own notation.
+
+`T4` folds the largest aggregate whose detail fits, named after its root, so the overview's edges run between roots.
+When none fits, it folds each root's aggregate and splits the detail again.
+A junction, an entity identified by entities in two aggregates, such as a review joining a product and a customer, is owned by neither.
+It stays in the overview, since folding it into one side would draw the other side's relationship onto the wrong root.
+
+--8<-- "summarise-aggregates.md"
+
 ### Leaves and the k-core
 
 A leaf is a node with one neighbour.
@@ -121,6 +159,7 @@ No fold may leave the overview with fewer than four nodes, unless the diagram ha
 Once the target is met, the plan evens out what it folded.
 It does so only while the overview keeps at least 60% of `nodeTarget`, rounded up, so an overview lands near its target.
 If a detail then fails its target, the evening goes on below that share, down to the fewest nodes a fold may leave.
+In `T2` it folds the remaining decision regions, so every decision reads alike.
 In `T3` it folds the sibling regions of the ones folded, so sibling regions read alike.
 In `T5` and `T6` it gathers what is left open into groups of three or more, no larger than the largest.
 A detail diagram must meet the same targets, and one that does not is split once more.
@@ -134,7 +173,8 @@ A plan names the last tier that changed it.
 
 When the target cannot be met under the first two rules, the plan is walked again without them, and the third still holds.
 As a last resort, the plan is walked once more with groups that hide one node allowed.
-A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk.
+A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk, unless a whole decision region or author region around them folds.
+An `erDiagram` junction between two aggregates is kept in view under the first two rules, like a hub.
 
 The declared loss is the number of pairs of overview nodes where one reaches the other in the overview but not in the original.
 The plan reports it after each tier.
@@ -142,9 +182,9 @@ The plan reports it after each tier.
 | Tier | What it folds | What it may lose |
 |---|---|---|
 | `T1` | No nodes. It leaves attribute rows out of the overview. | Nothing. A detail draws its members' rows when they fit, and row diagrams draw the rest. No reachable pair. |
-| `T2` | Twins, bundles of sibling leaves, and chain stages | Nothing. The declared loss after `T2` must be zero. |
+| `T2` | Twins, bundles of sibling leaves, chain stages, and decision regions, innermost first | Nothing. The declared loss after `T2` must be zero. |
 | `T3` | Author regions, innermost first: subgraphs, composite states and namespaces | New reachable pairs between nodes folded into one region |
-| `T4` | `erDiagram` aggregates: a root with the weak entities it identifies, and a junction table into the smaller entity it joins | New reachable pairs. Cardinalities are never merged. |
+| `T4` | `erDiagram` aggregates: the largest aggregate that fits, named after its root. A junction stays out of both sides. | New reachable pairs. Cardinalities are never merged. |
 | `T5` | Leaves into the node they hang from, repeated, or beside it as one group when it is a hub | New reachable pairs through the group |
 | `T6` | Suggested groups from greedy modularity, over pairs an edge joins, with alike labels breaking ties | New reachable pairs, and groups the author may not recognise |
 
@@ -161,7 +201,7 @@ The contract is what this page means by "meaning is preserved".
 - **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it.
 - **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
-- **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
+- **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. That region is an author region, or a decision region that is single-entry single-exit in the original graph, every node of which the group holds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
 - **Declared loss.** The new reachable pairs the plan reports are recounted, and must be zero after `T2`.
 - **Order independent.** Every tie is broken by sorted ids, so reordering the statements of a diagram gives the same plan.
 - **Round trip.** Every emitted diagram parses again with the shipped parsers, and its measured size meets the target.
@@ -200,9 +240,9 @@ On diagram labels it gave the same groupings as the stemmer, for an install of a
 
 | Diagram type | Planned | Its regions | Notes |
 |---|---|---|---|
-| `flowchart`, `flowchart-elk`, `graph` | Yes | Subgraphs | A decision node is protected. |
-| `stateDiagram` | Yes | Composite states | A fork, a join and a choice are protected. A state's description lines are carried with it. A diagram with concurrent regions is not split. |
-| `erDiagram` | Yes | None | `T4` folds aggregates. Attribute rows are drawn in details and row diagrams, and any that fit in none are counted. |
+| `flowchart`, `flowchart-elk`, `graph` | Yes | Subgraphs | A decision node folds only with its decision region. |
+| `stateDiagram` | Yes | Composite states | A fork, a join and a choice fold only with a whole region. A state's description lines are carried with it. A diagram with concurrent regions is not split. |
+| `erDiagram` | Yes | None | `T4` folds aggregates by root, and keeps junctions out of both sides. Attribute rows are drawn in details and row diagrams, and any that fit in none are counted. |
 | `classDiagram` | Yes | Namespaces | Members are drawn like attribute rows. A stub carries a `<<stub>>` annotation and a group a `<<group>>` one, since the grammar takes no dashed style. A lollipop interface is never folded: the overview hangs it from the group folding its class. |
 | `sequenceDiagram` | No | None | The graph drops message order, so a fold would lose the story. The finding keeps its subgraph hint. |
 
@@ -210,8 +250,9 @@ Every other type is not planned, and its finding keeps the subgraph hint.
 
 ## A worked example
 
-The site build plans one diagram under every preset, with the split code itself.
+The site build plans two diagrams under every preset, with the split code itself.
 Each overview, detail, tier and loss below is what `splitPlan` returns, never typed by hand.
+Each plan's `ladder` line lists the overview after each tier that changed it, so every preset shows the climb to the tier that met its target.
 
 ### The diagram
 
@@ -246,3 +287,38 @@ Under `high-density`, the plan selects `T3`.
 Folding author regions is enough to reach this target.
 
 --8<-- "summarisation/high-density.md"
+
+## A decision-heavy example
+
+The second diagram is a loan underwriting flow with no author subgraphs, where most steps are decisions.
+Every decision is protected, so before decision regions no tier could fold it under any preset.
+It scores 65.
+
+--8<-- "summarisation/decisions.md"
+
+### Each preset's plan
+
+Each group named after a question is a decision region: the decision with its branches and outcomes, up to where they rejoin.
+
+--8<-- "summarisation/decisions-presets.md"
+
+### Low density, decisions
+
+Under `low-density`, the plan selects `T5`.
+Decision regions and chain stages through them leave the overview just over its target, so a leaf folds into the node it hangs from.
+
+--8<-- "summarisation/decisions-low-density.md"
+
+### Medium density, decisions
+
+Under `medium-density`, the plan selects `T2`.
+Decision regions alone reach the target, and the remaining ones fold evenly.
+
+--8<-- "summarisation/decisions-medium-density.md"
+
+### High density, decisions
+
+Under `high-density`, the plan selects `T2`.
+Fewer regions fold, so more of the decisions stay in view.
+
+--8<-- "summarisation/decisions-high-density.md"

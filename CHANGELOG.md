@@ -10,7 +10,24 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Decision regions in split plans.** A flowchart or `stateDiagram` decision now folds with its branches, from the decision to where they rejoin, into one group named after the decision, per [MJL-0028](adrs/0028-decision-regions-and-aggregates-fold-whole.md).
+  The region is single-entry single-exit, found from dominators and post-dominators, so the fold adds no reachable pair and belongs to `T2`.
+  A branch that ends the flow folds inside the region, regions fold innermost first, and a chain stage may pass through a folded region.
+  A decision-heavy flowchart that got no plan before now gets one under every preset.
+- `SplitPlan` gains `ladder`, the overview's node count and score after each tier the plan walked, and the library exports its `LadderStep` type.
+  The contract recounts it.
+- The Summarising a diagram page explains dominators and decision regions, and plans a second, decision-heavy diagram under every preset.
+
+### Changed
+
+- **erDiagram plans group entities by aggregate root.** An entity belongs to the aggregate of its single identifying parent, or, as a leaf, of the one entity it depends on.
+  `T4` folds the largest aggregate that fits, named after its root, and splits a root's aggregate again when none fits.
+  A junction identified by two roots no longer folds into one side, and `T5` and `T6` keep it in view.
+- A chain stage is named after the member where it starts, not its best-connected member.
+- A twin class too large for one group is cut into runs of even size.
+- After the target is met, `T2` folds the remaining decision regions evenly, while the overview keeps 60% of `nodeTarget`.
 
 ## [0.9.0] - 2026-10-19
 

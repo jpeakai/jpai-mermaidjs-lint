@@ -168,6 +168,14 @@ const lossByTier = (plan: SplitPlan): string =>
     .map(([tier, n]) => `${tier} ${n}`)
     .join(", ");
 
+// The overview after each tier that changed it, ending at the tier that met
+// the target.
+export const ladderText = (plan: SplitPlan): string =>
+  plan.ladder
+    .filter((s, i) => i === 0 || s.nodes !== plan.ladder[i - 1]?.nodes || s.score !== plan.ladder[i - 1]?.score)
+    .map((s) => `${s.tier} ${s.nodes} nodes, score ${num(s.score)}`)
+    .join("; then ");
+
 // Every emitted source a plan draws, in page order: its overview, then each
 // detail, with a detail that is split again followed by its own plan.
 export const drawnSources = (plan: SplitPlan): string[] => [
@@ -226,6 +234,7 @@ const summary = (plan: SplitPlan, config: ThresholdConfig): string =>
       `groups:        ${plan.groups.map((g) => `${g.label} [${g.tier}, ${g.reason}]`).join("; ")}`,
       `declared loss: ${plan.loss.newReachablePairs} new reachable pairs (after each tier: ${lossByTier(plan)})`,
       `rows dropped:  ${plan.loss.droppedRows}`,
+      `ladder:        ${ladderText(plan)}`,
     ].join("\n"),
     "text",
   );
@@ -264,13 +273,21 @@ export const tableSnippet = (planned: PlannedPreset[]): string => {
   ].join("\n");
 };
 
+// The worked examples, in page order: the shop architecture, with its
+// snippets named as before, then the decision-heavy flow, its names prefixed.
+export const EXAMPLES: Array<{ step: Step; prefix: string }> = [
+  { step: DIAGRAM, prefix: "" },
+  { step: DECISIONS, prefix: "decisions-" },
+];
+
 // Every snippet, keyed by its path under docs-site/snippets/, in page order.
 export const splitSnippets = async (): Promise<Record<string, string>> => {
-  const planned = await planPresets();
-  const out: Record<string, string> = {
-    [`summarisation/${DIAGRAM.slug}.md`]: stepSnippet(await measureStep(DIAGRAM)),
-    "summarisation/presets.md": tableSnippet(planned),
-  };
-  for (const p of planned) out[`summarisation/${p.name}.md`] = await presetSnippet(p);
+  const out: Record<string, string> = {};
+  for (const { step, prefix } of EXAMPLES) {
+    const planned = await planPresets(step.source);
+    out[`summarisation/${step.slug}.md`] = stepSnippet(await measureStep(step));
+    out[`summarisation/${prefix}presets.md`] = tableSnippet(planned);
+    for (const p of planned) out[`summarisation/${prefix}${p.name}.md`] = await presetSnippet(p);
+  }
   return out;
 };

@@ -23,7 +23,19 @@ Anything under `Unreleased` is on `main` but not yet released.
   A line number at the end of a diagram is now the real line.
 - Fences are read from micromark's tokens rather than scanned.
   `Diagram` gains `closingFence`, and `DiagramStats` gains `error_line`.
-- `micromark` and `stemmer` are new runtime dependencies.
+- Contrast style directives are read from mermaid's parsed diagram, not a scan of its text, per [MJL-0022](adrs/0022-start-from-the-official-parsers-output.md).
+  Text inside a label is no longer taken for a `classDef`, `style` or `linkStyle`.
+  A style joined to another statement by `;` is read.
+- `class A,B name` and `:::` give a node its classes, so a node's `style` is scored on what it inherits.
+- Each style statement and sequence `rect` is placed by its lexer token, and a value the parser cannot place exactly is never rewritten.
+- `classDef a,b` and `linkStyle 0,1` give one directive per id, and their shared `color:` is fixed once.
+- A `classDef` or `style` in a type the audit does not model, such as `block-beta`, reports `contrast-directive-unauditable`.
+- An unparseable diagram gets no contrast findings, only `parse-diagram-unparseable`.
+- A sequence theme variable's line is read from the frontmatter.
+  One set in `%%{init}%%` points at the keyword line.
+- **Breaking for the library:** `Diagram.directives` is now `Diagram.styles()`, which returns a promise of a `StyleReading`.
+  `StyleDirective` loses the `inlineClass` kind and `class_name`.
+- `micromark`, `stemmer` and `yaml` are new runtime dependencies.
 
 ### Fixed
 

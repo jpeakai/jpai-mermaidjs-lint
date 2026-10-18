@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.10.0] - 2026-10-19
+
 ### Added
 
 - **Decision regions in split plans.** A flowchart or `stateDiagram` decision now folds with its branches, up to where they rejoin.
@@ -415,7 +419,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.7.4...v0.8.0

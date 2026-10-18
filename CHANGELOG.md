@@ -38,6 +38,11 @@ Anything under `Unreleased` is on `main` but not yet released.
 - `--split-plan` prints a detail that is split again only as its split, so every printed diagram meets the target.
 - Suggested grouping pairs only nodes an edge joins, with alike labels breaking ties.
   No plan leaves an overview with fewer than four nodes unless the diagram has fewer than eight.
+- A split plan's overview lands near its target.
+  Once the target is met, folding stops while the overview would keep fewer than 60% of `nodeTarget`, unless a detail needs more folded.
+- `T5` and `T6` keep hubs and decisions as their own nodes, and never group two targets of a decision's differently labelled branches.
+- No suggested group hides a single node, and a suggested group is named after the member with the most edges crossing its boundary.
+- An undirected link written both ways between two overview nodes is drawn once, and `SplitLoss` counts these as `reversedEdges`.
 
 ### Changed
 

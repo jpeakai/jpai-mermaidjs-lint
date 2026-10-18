@@ -1,0 +1,70 @@
+%% source: https://github.com/GoogleCloudPlatform/microservices-demo (architecture diagram, paraphrased)
+%% kind: flowchart microservice architecture with flat subgraphs
+flowchart LR
+  user["Shopper browser"] --> lb["Cloud load balancer"]
+  loadgen["Locust load generator"] --> lb
+  lb --> frontend["frontend (Go)"]
+  subgraph catalog["Catalog domain"]
+    productcatalog["productcatalogservice"]
+    recommendation["recommendationservice"]
+    ad["adservice"]
+  end
+  subgraph checkoutdom["Checkout domain"]
+    checkout["checkoutservice"]
+    payment["paymentservice"]
+    shipping["shippingservice"]
+    email["emailservice"]
+    currency["currencyservice"]
+  end
+  subgraph cartdom["Cart domain"]
+    cart["cartservice (C#)"]
+    redis[("redis-cart")]
+  end
+  subgraph obs["Observability"]
+    otel["OpenTelemetry collector"]
+    trace["Cloud Trace"]
+    prof["Cloud Profiler"]
+    logs["Cloud Logging"]
+  end
+  frontend --> ad
+  frontend --> recommendation
+  frontend --> productcatalog
+  frontend --> cart
+  frontend --> shipping
+  frontend --> currency
+  frontend --> checkout
+  recommendation --> productcatalog
+  checkout --> productcatalog
+  checkout --> cart
+  checkout --> payment
+  checkout --> shipping
+  checkout --> email
+  checkout --> currency
+  cart --> redis
+  frontend -.-> otel
+  checkout -.-> otel
+  cart -.-> otel
+  payment -.-> otel
+  shipping -.-> otel
+  otel --> trace
+  otel --> prof
+  otel --> logs
+  email --> smtp["SMTP relay"]
+  payment --> psp["Payment provider API"]
+  shipping --> carrier["Carrier quote API"]
+  currency --> ecb["ECB rates feed"]
+  subgraph platform["Platform"]
+    istio["Istio ingress gateway"]
+    certs["cert-manager"]
+    dnsx["external-dns"]
+    vault["Vault secrets"]
+  end
+  lb --> istio --> frontend
+  certs --> istio
+  dnsx --> lb
+  vault --> payment
+  vault --> email
+  shopassist["shoppingassistantservice"] --> productcatalog
+  frontend --> shopassist
+  shopassist --> llm["Gemini API"]
+  shopassist --> alloy[("AlloyDB vector store")]

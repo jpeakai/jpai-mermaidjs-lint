@@ -17,19 +17,35 @@ export interface FoldRules {
   keepBranches: boolean;
   // The fewest nodes a T5 or T6 group hides.
   minHidden: number;
+  // A T5 or T6 group never holds nodes of two prefix families (stageOf).
+  keepFamilies: boolean;
 }
 
-export const STRICT: FoldRules = { keepHubs: true, keepTerminals: true, keepBranches: true, minHidden: 2 };
+export const STRICT: FoldRules = {
+  keepHubs: true,
+  keepTerminals: true,
+  keepBranches: true,
+  minHidden: 2,
+  keepFamilies: true,
+};
 
 // Hubs and branches folded too. A group hiding one node is still undone or
 // merged after the walk wherever that keeps the target.
-export const LOOSE: FoldRules = { keepHubs: false, keepTerminals: false, keepBranches: false, minHidden: 2 };
+export const LOOSE: FoldRules = {
+  keepHubs: false,
+  keepTerminals: false,
+  keepBranches: false,
+  minHidden: 2,
+  keepFamilies: false,
+};
 
-// The rules a plan is walked with: strict first; then hubs and branches
-// folded while shared terminals stay in view; then loose; and last, for a
-// diagram no other walk plans, with groups hiding one node allowed too.
+// The rules a plan is walked with: strict first; then strict with prefix
+// families mixed; then hubs and branches folded while shared terminals stay
+// in view; then loose; and last, for a diagram no other walk plans, with
+// groups hiding one node allowed too.
 export const RELAXED: readonly FoldRules[] = [
   STRICT,
+  { ...STRICT, keepFamilies: false },
   { ...LOOSE, keepTerminals: true },
   LOOSE,
   { ...LOOSE, minHidden: 1 },

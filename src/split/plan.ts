@@ -34,6 +34,7 @@ import {
   type Candidate,
   foldable,
   keepsBranches,
+  keepsFamilies,
   mergedGroup,
   neighboursOf,
   type TierContext,
@@ -65,10 +66,14 @@ interface Scored {
   ratio: number;
   priority: number;
   tie: number;
+  kin: number;
   members: string[];
   // The overview edges left, so at an equal saving the aggregate with fewer
   // edges between overview nodes goes first.
   edges: number;
+  // The overview nodes left, and whether the overview then meets the target.
+  nodes: number;
+  finishes: boolean;
 }
 
 const EPSILON = 1e-9;
@@ -122,8 +127,11 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
     ratio: saved / hidden,
     priority: cand.priority ?? 0,
     tie: cand.tie ?? 0,
+    kin: cand.kin ?? 0,
     members: applied.groups[0]?.members ?? [],
     edges: shape.edges,
+    nodes: shape.nodes,
+    finishes: meets(shape.nodes, scoreOf(shape, 0, config), config),
   };
 };
 
@@ -132,6 +140,7 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
 const better =
   (byPriority: boolean, byEdges = false) =>
   (a: Scored, b: Scored): number => {
+    if (byPriority && a.kin !== b.kin) return b.kin - a.kin;
     if (byPriority && Math.abs(a.priority - b.priority) > EPSILON) return b.priority - a.priority;
     if (byPriority && Math.abs(a.tie - b.tie) > EPSILON) return b.tie - a.tie;
     if (Math.abs(a.ratio - b.ratio) > EPSILON) return b.ratio - a.ratio;
@@ -258,7 +267,8 @@ const grow = (m: Measure, g: Group): Measure | null => {
   const joinable = (k: string): boolean => {
     const other = groupOfKey(ctx.part, k);
     const kind = other ? LEAF_TIERS.has(other.tier) : foldable(ctx, k);
-    return kind && parentOfKey(ctx.work, ctx.part, k) === g.parent && keepsBranches(ctx, [key, k]);
+    const near = parentOfKey(ctx.work, ctx.part, k) === g.parent;
+    return kind && near && keepsBranches(ctx, [key, k]) && keepsFamilies(ctx, [key, k]);
   };
   const step: Step = { tier: g.tier, capped: true };
   const best = [...neighboursOf(adjacencyOf(ctx.qedges), key)]
@@ -285,6 +295,30 @@ const tidy = (start: Measure): Measure => {
   return m;
 };
 
+// A greedy walk can overshoot: an early fold that saved the most per node
+// leaves a later one needed, and the two together leave the overview below
+// evenFloorOf. While it is below, the group whose undoing gives back the most
+// nodes and still meets the target, every fitting detail still fitting, is
+// undone, so the overview lands nearest its target. A T2 group is one run of
+// a pattern folded evenly (twins, sibling leaves, chain stages), so it stays:
+// undone alone, it would leave its pattern half folded.
+const loosen = (start: Measure): Measure => {
+  const floor = evenFloorOf(start.ctx.work, start.ctx.config);
+  let m = start;
+  while (m.nodes < floor) {
+    const best = m.ctx.part.groups
+      .filter((g) => g.tier !== "T2")
+      .flatMap((g) => {
+        const next = undo(m, g);
+        return next ? [{ next, members: g.members }] : [];
+      })
+      .sort((a, b) => b.next.nodes - a.next.nodes || byNaturalTuple(a.members, b.members))[0];
+    if (!best) break;
+    m = best.next;
+  }
+  return m;
+};
+
 // Folds tier by tier until the overview meets the target, or returns why not.
 export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Walk): Folded | string => {
   let m = measure(work, EMPTY_PARTITION, config, walk.rules);
@@ -299,6 +333,7 @@ export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Wal
       tier = t;
       if (meets(m.nodes, m.score, config)) {
         m = tidy(foldEvenly(m, step, walk.deep === true));
+        if (walk.deep !== true) m = loosen(m);
         return { work, part: m.ctx.part, snapshots: [...snapshots, snapshotOf(t, m.ctx.part)], tier };
       }
       best = bestStep(m.ctx, step, m.score);

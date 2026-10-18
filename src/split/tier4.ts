@@ -12,8 +12,8 @@
 
 import { aggregateOf, ownersOf } from "./aggregate.ts";
 import { byNatural, byText } from "./graph.ts";
-import { membersOfKey, over } from "./quotient.ts";
-import { type Candidate, mergeFits, type TierContext } from "./tier.ts";
+import { isGroupKey, membersOfKey, over } from "./quotient.ts";
+import { type Candidate, groupFits, mergeFits, type TierContext } from "./tier.ts";
 
 // The aggregate folded whole, or null when it holds a stub, an earlier group
 // straddles it, it
@@ -25,7 +25,10 @@ const candidateOf = (ctx: TierContext, head: string, fit = true): Candidate | nu
   const keys = [...new Set(members.map((m) => over(ctx.work, ctx.part, m)))].sort(byText);
   if (keys.length < 2 || !keys.every((k) => membersOfKey(ctx.part, k).every((m) => inside.has(m)))) return null;
   const c: Candidate = { keys, parent: null, tier: "T4", reason: "aggregate root", head };
-  return !fit || mergeFits(ctx, c) ? c : null;
+  if (fit) return mergeFits(ctx, c) ? c : null;
+  // Held to no target, an aggregate still never swallows a group already
+  // over it, so no one group grows to most of the diagram.
+  return keys.some((k) => isGroupKey(k) && !groupFits(ctx, k)) ? null : c;
 };
 
 // The largest aggregates that fit: an entity's own aggregate, offered when it
@@ -41,5 +44,5 @@ export const proposeT4 = (ctx: TierContext): Candidate[] => {
     return c && (up === undefined || candidateOf(ctx, up) === null) ? [c] : [];
   });
   if (fitting.length > 0 || !ctx.uncapped) return fitting;
-  return heads.filter((h) => !owners.has(h)).flatMap((h) => candidateOf(ctx, h, false) ?? []);
+  return heads.flatMap((h) => candidateOf(ctx, h, false) ?? []);
 };

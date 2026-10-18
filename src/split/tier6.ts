@@ -10,8 +10,16 @@
 import { maximalCliques } from "./clique.ts";
 import { byText } from "./graph.ts";
 import { isGroupKey, membersOfKey, overviewKeys, parentOfKey } from "./quotient.ts";
-import { crossesStages, labelBag, similarity, stageOf } from "./stem.ts";
-import { type Candidate, chunksThatFit, foldable, keepsBranches, type TierContext } from "./tier.ts";
+import { crossesStages, labelBag, oneFamily, similarity } from "./stem.ts";
+import {
+  type Candidate,
+  chunksThatFit,
+  familiesOf,
+  foldable,
+  keepsBranches,
+  keepsFamilies,
+  type TierContext,
+} from "./tier.ts";
 
 const pairKey = (a: string, b: string): string => `${a}\u0002${b}`;
 
@@ -67,7 +75,7 @@ const cliques = (ctx: TierContext, w: Map<string, number>, gain: (a: string, b: 
           reason: "tight clique",
         }),
       )
-      .filter((c) => keepsBranches(ctx, c.keys))
+      .filter((c) => keepsBranches(ctx, c.keys) && keepsFamilies(ctx, c.keys))
       .map((c) => ({
         ...c,
         priority: c.keys.reduce((s, a, i) => s + c.keys.slice(i + 1).reduce((t, b) => t + gain(a, b), 0), 0),
@@ -86,18 +94,18 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
     const [x, y] = [a, b].sort(byText) as [string, string];
     return (w.get(pairKey(x, y)) ?? 0) / m - (degree(a) * degree(b)) / (2 * m * m);
   };
-  const stage = new Map(work.ids.map((id) => [id, stageOf(work.nodes.get(id)?.label ?? id, id)]));
-  const stagesOf = (k: string): Array<string | null> => membersOfKey(part, k).map((x) => stage.get(x) ?? null);
+  const stagesOf = (k: string): Array<string | null> => familiesOf(ctx, [k]);
   const groupableKeys = new Set(overviewKeys(work, part).filter((k) => foldable(ctx, k)));
   const out: Candidate[] = cliques(ctx, w, gain);
   for (const [pair, wab] of [...w].sort((x, y) => byText(x[0], y[0]))) {
     const [a, b] = pair.split("\u0002") as [string, string];
     if (!(groupableKeys.has(a) && groupableKeys.has(b))) continue;
     const parent = parentOfKey(work, part, a);
-    if (parent !== parentOfKey(work, part, b) || !keepsBranches(ctx, [a, b])) continue;
+    if (parent !== parentOfKey(work, part, b) || !keepsBranches(ctx, [a, b]) || !keepsFamilies(ctx, [a, b])) continue;
     const priority = wab / m - (degree(a) * degree(b)) / (2 * m * m);
     const tie = labelSimilarity(ctx, bags, a, b) - (crossesStages(stagesOf(a), stagesOf(b)) ? STAGE_PENALTY : 0);
-    out.push({ keys: [a, b], parent, tier: "T6", reason: "suggested grouping", priority, tie });
+    const kin = oneFamily(stagesOf(a), stagesOf(b)) ? 1 : 0;
+    out.push({ keys: [a, b], parent, tier: "T6", reason: "suggested grouping", priority, tie, kin });
   }
   return out;
 };

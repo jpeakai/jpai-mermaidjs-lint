@@ -1,0 +1,213 @@
+%% source: https://docs.stripe.com/billing/subscriptions/overview (Stripe Billing object model, paraphrased)
+%% kind: erDiagram SaaS billing
+erDiagram
+  ACCOUNT ||--o{ CUSTOMER : owns
+  CUSTOMER ||--o{ SUBSCRIPTION : holds
+  SUBSCRIPTION ||--|{ SUBSCRIPTION_ITEM : contains
+  SUBSCRIPTION_ITEM }o..|| PRICE : "billed at"
+  PRICE }o--|| PRODUCT : "prices"
+  PRICE ||--o{ PRICE_TIER : "tiered by"
+  SUBSCRIPTION_ITEM ||--o{ USAGE_RECORD : meters
+  SUBSCRIPTION ||--o{ INVOICE : generates
+  CUSTOMER ||--o{ INVOICE : "billed via"
+  INVOICE ||--|{ INVOICE_LINE : itemises
+  INVOICE_LINE }o..o| SUBSCRIPTION_ITEM : "from item"
+  INVOICE_LINE }o..o| PRICE : "at price"
+  INVOICE ||--o| PAYMENT_INTENT : "collected by"
+  PAYMENT_INTENT ||--o{ CHARGE : attempts
+  CHARGE ||--o{ REFUND : "reversed by"
+  CHARGE ||--o| DISPUTE : "disputed in"
+  CUSTOMER ||--o{ PAYMENT_METHOD : saves
+  PAYMENT_INTENT }o..|| PAYMENT_METHOD : uses
+  SUBSCRIPTION }o..o| COUPON : discounts
+  COUPON ||--o{ PROMOTION_CODE : "redeemed via"
+  CUSTOMER ||--o{ CREDIT_NOTE : receives
+  CREDIT_NOTE }o..|| INVOICE : adjusts
+  CUSTOMER ||--o{ TAX_ID : registers
+  INVOICE }o..o{ TAX_RATE : applies
+  SUBSCRIPTION ||--o| SUBSCRIPTION_SCHEDULE : "phased by"
+  ACCOUNT ||--o{ WEBHOOK_ENDPOINT : configures
+  WEBHOOK_ENDPOINT ||--o{ EVENT_DELIVERY : delivers
+  ACCOUNT {
+    string id PK
+    string business_name
+    string country
+    string default_currency
+  }
+  CUSTOMER {
+    string id PK
+    string account_id FK
+    string email
+    string name
+    string default_payment_method FK
+    int balance
+    string currency
+    string tax_exempt
+    json metadata
+  }
+  PRODUCT {
+    string id PK
+    string name
+    string description
+    boolean active
+    string tax_code
+    string unit_label
+  }
+  PRICE {
+    string id PK
+    string product_id FK
+    string currency
+    int unit_amount
+    string billing_scheme
+    string recurring_interval
+    int interval_count
+    string usage_type
+    string tiers_mode
+    boolean active
+  }
+  PRICE_TIER {
+    string price_id PK,FK
+    int up_to PK
+    int unit_amount
+    int flat_amount
+  }
+  SUBSCRIPTION {
+    string id PK
+    string customer_id FK
+    string status
+    timestamp current_period_start
+    timestamp current_period_end
+    boolean cancel_at_period_end
+    timestamp trial_end
+    string collection_method
+    string coupon_id FK
+  }
+  SUBSCRIPTION_ITEM {
+    string id PK
+    string subscription_id FK
+    string price_id FK
+    int quantity
+  }
+  USAGE_RECORD {
+    string id PK
+    string subscription_item_id FK
+    int quantity
+    timestamp timestamp
+    string action
+  }
+  INVOICE {
+    string id PK
+    string customer_id FK
+    string subscription_id FK
+    string number UK
+    string status
+    int subtotal
+    int tax
+    int total
+    int amount_due
+    int amount_paid
+    timestamp period_start
+    timestamp period_end
+    timestamp due_date
+  }
+  INVOICE_LINE {
+    string id PK
+    string invoice_id FK
+    string subscription_item_id FK
+    string price_id FK
+    int amount
+    int quantity
+    boolean proration
+    string description
+  }
+  PAYMENT_INTENT {
+    string id PK
+    string invoice_id FK
+    int amount
+    string currency
+    string status
+    string payment_method_id FK
+  }
+  CHARGE {
+    string id PK
+    string payment_intent_id FK
+    int amount
+    boolean captured
+    string failure_code
+    string outcome_risk_level
+  }
+  REFUND {
+    string id PK
+    string charge_id FK
+    int amount
+    string reason
+    string status
+  }
+  DISPUTE {
+    string id PK
+    string charge_id FK
+    int amount
+    string reason
+    string status
+    timestamp evidence_due_by
+  }
+  PAYMENT_METHOD {
+    string id PK
+    string customer_id FK
+    string type
+    string card_brand
+    string card_last4
+  }
+  COUPON {
+    string id PK
+    int percent_off
+    int amount_off
+    string duration
+    int duration_in_months
+  }
+  PROMOTION_CODE {
+    string id PK
+    string coupon_id FK
+    string code UK
+    int max_redemptions
+  }
+  CREDIT_NOTE {
+    string id PK
+    string invoice_id FK
+    string customer_id FK
+    int amount
+    string reason
+  }
+  TAX_ID {
+    string id PK
+    string customer_id FK
+    string type
+    string value
+    string verification_status
+  }
+  TAX_RATE {
+    string id PK
+    string display_name
+    decimal percentage
+    boolean inclusive
+    string jurisdiction
+  }
+  SUBSCRIPTION_SCHEDULE {
+    string id PK
+    string subscription_id FK
+    string end_behavior
+    json phases
+  }
+  WEBHOOK_ENDPOINT {
+    string id PK
+    string account_id FK
+    string url
+    json enabled_events
+  }
+  EVENT_DELIVERY {
+    string id PK
+    string endpoint_id FK
+    string event_type
+    int attempt
+    int response_status
+  }

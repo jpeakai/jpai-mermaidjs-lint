@@ -4,11 +4,14 @@
 // twice, and parallel edges between two nodes sit side by side.
 
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { DECISIONS } from "../../scripts/split-steps.ts";
 import { configFromPreset, type ThresholdConfig } from "../../src/parse/metrics.ts";
 import { splitOutcome } from "../../src/split/index.ts";
-import { labelChoices, rankedMembers } from "../../src/split/quotient.ts";
-import { terminalsOf } from "../../src/split/rules.ts";
+import { EMPTY_PARTITION, labelChoices, rankedMembers } from "../../src/split/quotient.ts";
+import { type FoldRules, RELAXED, terminalsOf } from "../../src/split/rules.ts";
+import { mixesFamilies, stageOf } from "../../src/split/stem.ts";
 import { proposeT6 } from "../../src/split/tier6.ts";
 import type { SplitPlan } from "../../src/split/types.ts";
 import { checkPlan } from "./checker.ts";
@@ -140,19 +143,50 @@ describe("naming a chain-like group", () => {
   });
 });
 
-describe("a pipeline stage boundary", () => {
-  test("breaks a tie between equal modularity gains against the pair that crosses it", async () => {
-    // Two pairs with equal gain: bronze.a with bronze.b, and bronze.c with gold.d.
-    const work = await workOf(
-      lines("flowchart LR", '  a["bronze.a"] --> b["bronze.b"]', '  c["bronze.c"] --> d["gold.d"]'),
-    );
+describe("a prefix family boundary", () => {
+  // Two pairs with equal gain: bronze.a with bronze.b, and bronze.c with gold.d.
+  const STAGES = lines("flowchart LR", '  a["bronze.a"] --> b["bronze.b"]', '  c["bronze.c"] --> d["gold.d"]');
+
+  test("is never crossed under the strict rules", async () => {
+    const work = await workOf(STAGES);
     const cands = proposeT6(ctxOf(work, configFromPreset("low-density")));
-    const tie = (x: string): number => cands.find((c) => c.keys.includes(x))?.tie ?? Number.NaN;
-    expect(cands.find((c) => c.keys.includes("a"))?.priority).toBeCloseTo(
-      cands.find((c) => c.keys.includes("c"))?.priority ?? Number.NaN,
-    );
-    expect(tie("a")).toBeGreaterThan(tie("c"));
+    expect(cands.map((c) => c.keys)).toEqual([["a", "b"]]);
+    expect(cands[0]?.kin).toBe(1);
   });
+
+  test("with families mixed, ranks the pair that crosses it after any pair within one", async () => {
+    const work = await workOf(STAGES);
+    const rules = RELAXED[1] as FoldRules;
+    expect(rules.keepFamilies).toBe(false);
+    const cands = proposeT6(ctxOf(work, configFromPreset("low-density"), EMPTY_PARTITION, rules));
+    const of = (x: string) => cands.find((c) => c.keys.includes(x));
+    expect(of("a")?.priority).toBeCloseTo(of("c")?.priority ?? Number.NaN);
+    expect(of("a")?.kin).toBe(1);
+    expect(of("c")?.kin).toBe(0);
+    expect(of("a")?.tie ?? Number.NaN).toBeGreaterThan(of("c")?.tie ?? Number.NaN);
+  });
+
+  test("is read from a dotted label, an id-led label or an id with an underscore", () => {
+    expect(stageOf("bronze.orders", "x")).toBe("bronze");
+    expect(stageOf("PLAT-1201", "PLAT-1201")).toBe("plat");
+    expect(stageOf("OPS_12 restart", "o")).toBe("ops");
+    expect(stageOf("Extract", "ex_pg")).toBe("ex");
+    expect(stageOf("10002 Backlog", "S10002")).toBeNull();
+    expect(stageOf("Orders", "orders")).toBeNull();
+  });
+});
+
+describe("an id family", () => {
+  test("keeps every suggested group to one family when the target can be met so", async () => {
+    const source = readFileSync(join(import.meta.dir, "cases", "round9", "flow12-id-like-labels.mmd"), "utf8");
+    const out = await splitOutcome(source, configFromPreset("medium-density"));
+    if (!out.plan) throw new Error(out.reason);
+    const work = await workOf(source);
+    const mixed = out.plan.groups.filter((g) =>
+      mixesFamilies(g.members.map((m) => stageOf(work.nodes.get(m)?.label ?? m, m))),
+    );
+    expect(mixed.map((g) => g.label)).toEqual([]);
+  }, 30_000);
 });
 
 // Fifteen services where nearly every pair talks.

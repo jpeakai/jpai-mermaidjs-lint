@@ -12,18 +12,22 @@ import {
   isGroupKey,
   type Merge,
   meets,
+  membersOfKey,
   merge,
   type Partition,
   type QEdge,
   scoreOf,
 } from "./quotient.ts";
 import { type FoldRules, hubsOf, splitsBranches, terminalsOf } from "./rules.ts";
+import { mixesFamilies, stageOf } from "./stem.ts";
 
 export interface Candidate extends Merge {
   // T6 orders by modularity gain, not by score per node.
   priority?: number;
   // T6 breaks a tie between equal gains by label similarity.
   tie?: number;
+  // T6 takes a pair naming one prefix family before any other: 1, else 0.
+  kin?: number;
   // Merges of the same pattern applied in the same step: every stage of one
   // chain, every run of one twin class. A plan then folds the pattern evenly,
   // not one stage of it.
@@ -95,6 +99,26 @@ export const keepsBranches = (ctx: TierContext, keys: readonly string[]): boolea
     )
   );
 
+const familyCache = new WeakMap<WorkGraph, Map<string, string | null>>();
+
+// The prefix family of each original node (stem.ts), read once per graph.
+export const familyOf = (work: WorkGraph, id: string): string | null => {
+  let known = familyCache.get(work);
+  if (!known) {
+    known = new Map(work.ids.map((x) => [x, stageOf(work.nodes.get(x)?.label ?? x, x)]));
+    familyCache.set(work, known);
+  }
+  return known.get(id) ?? null;
+};
+
+// The prefix families of the members behind each key.
+export const familiesOf = (ctx: TierContext, keys: readonly string[]): Array<string | null> =>
+  keys.flatMap((k) => membersOfKey(ctx.part, k)).map((m) => familyOf(ctx.work, m));
+
+// Whether merging these keys keeps to one prefix family, as the rules ask.
+export const keepsFamilies = (ctx: TierContext, keys: readonly string[]): boolean =>
+  !(ctx.rules.keepFamilies && mixesFamilies(familiesOf(ctx, keys)));
+
 const MIXED = "\u0001mixed";
 
 export const shapeOfKey = (ctx: TierContext, key: string): string => {
@@ -122,6 +146,14 @@ export const mergeFits = (ctx: TierContext, m: Merge): boolean => {
   const g = mergedGroup(ctx.part, next, m.keys);
   if (!g) return false;
   const shape = detailShape(ctx.work, detailView(ctx.work, next, g));
+  return meets(shape.nodes, scoreOf(shape, 0, ctx.config), ctx.config);
+};
+
+// Whether a group already in the partition has a detail within target.
+export const groupFits = (ctx: TierContext, key: string): boolean => {
+  const g = groupOfKey(ctx.part, key);
+  if (!g) return true;
+  const shape = detailShape(ctx.work, detailView(ctx.work, ctx.part, g));
   return meets(shape.nodes, scoreOf(shape, 0, ctx.config), ctx.config);
 };
 

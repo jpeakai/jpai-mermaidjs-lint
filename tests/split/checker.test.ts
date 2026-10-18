@@ -1,4 +1,4 @@
-// The strict text-only checker (checker.ts) over four evaluation case sets,
+// The strict text-only checker (checker.ts) over five evaluation case sets,
 // every preset: no plan may carry a BUG or AMBIG finding. Then mutations of
 // real plans, each a change a faithful plan never shows, which the checker
 // must catch: the declared merged marker transitions and the erDiagram
@@ -15,7 +15,7 @@ import { lines, target } from "./helpers.ts";
 
 const SLOW = 30_000;
 const CASES = join(import.meta.dir, "cases");
-const SETS = ["round3", "adversarial", "semantic", "blind"];
+const SETS = ["round3", "adversarial", "semantic", "blind", "round9"];
 
 const serious = async (source: string, plan: SplitPlan, cfg: ThresholdConfig): Promise<string[]> =>
   (await checkPlan(source, plan, cfg, "")).filter((f) => f.sev === "BUG" || f.sev === "AMBIG").map((f) => f.msg);
@@ -161,16 +161,29 @@ describe("merged start and end transitions keep their label, originals and scope
   );
 });
 
+// Two owners joined by two relationships, one owner a hub kept in view and
+// the other's aggregate folded, so one overview pair carries two labels.
+const TWO_LABELS = lines(
+  "erDiagram",
+  ...[1, 2, 3].map((i) => `  A ||--o{ A${i} : a${i}`),
+  ...[1, 2, 3].map((i) => `  B ||--o{ B${i} : b${i}`),
+  "  A ||--o{ B : has",
+  "  A ||--o{ B : link",
+  "  C }o--o{ A : tags",
+  "  D }o--o{ B : tags",
+  "  C }o--o{ D : pairs",
+);
+
 describe("erDiagram overview edges are exact per pair, label and cardinality", () => {
-  const ER = ["adversarial", "e09-big-er.mmd", "medium-density"] as const;
-  const HAS = '  g1 ||--o{ g5 : "has"';
+  const ER = (): Promise<Subject> => subject(TWO_LABELS, target(6, 30));
+  const HAS = '  A ||--o{ g1 : "has"';
 
   test(
-    "two labels between the same groups are each drawn once and accepted",
+    "two labels between the same pair are each drawn once and accepted",
     async () => {
-      const s = await fromCase(...ER);
+      const s = await ER();
       expect(s.plan.overviewSource).toContain(HAS);
-      expect(s.plan.overviewSource).toContain('  g1 ||--o{ g5 : "link"');
+      expect(s.plan.overviewSource).toContain('  A ||--o{ g1 : "link"');
     },
     SLOW,
   );
@@ -178,8 +191,8 @@ describe("erDiagram overview edges are exact per pair, label and cardinality", (
   test(
     "a dropped edge is caught",
     async () => {
-      const s = await fromCase(...ER);
-      await caught(s, rewrite(s.plan, `\n${HAS}`, ""), "has no overview edge g1->g5");
+      const s = await ER();
+      await caught(s, rewrite(s.plan, `\n${HAS}`, ""), "has no overview edge A->g1");
     },
     SLOW,
   );
@@ -187,7 +200,7 @@ describe("erDiagram overview edges are exact per pair, label and cardinality", (
   test(
     "a duplicated edge is caught",
     async () => {
-      const s = await fromCase(...ER);
+      const s = await ER();
       await caught(s, rewrite(s.plan, HAS, `${HAS}\n${HAS}`), "2 times");
     },
     SLOW,
@@ -196,8 +209,8 @@ describe("erDiagram overview edges are exact per pair, label and cardinality", (
   test(
     "a changed label is caught",
     async () => {
-      const s = await fromCase(...ER);
-      await caught(s, rewrite(s.plan, HAS, '  g1 ||--o{ g5 : "owns"'), "has no original witness");
+      const s = await ER();
+      await caught(s, rewrite(s.plan, HAS, '  A ||--o{ g1 : "owns"'), "has no original witness");
     },
     SLOW,
   );
@@ -205,8 +218,8 @@ describe("erDiagram overview edges are exact per pair, label and cardinality", (
   test(
     "a changed cardinality is caught",
     async () => {
-      const s = await fromCase(...ER);
-      await caught(s, rewrite(s.plan, HAS, '  g1 }|..|{ g5 : "has"'), "has no original witness");
+      const s = await ER();
+      await caught(s, rewrite(s.plan, HAS, '  A }|..|{ g1 : "has"'), "has no original witness");
     },
     SLOW,
   );

@@ -121,6 +121,17 @@ describe("T3 author regions", () => {
   });
 });
 
+// A customer owns orders, an order owns lines, a line owns adjustments.
+const OWNER_CHAIN = lines(
+  "erDiagram",
+  "  CUSTOMER ||--o{ ORDER : places",
+  "  ORDER ||--|{ LINE : contains",
+  "  LINE ||--o{ ADJUSTMENT : adjusted",
+  "  CUSTOMER }o..|| REGION : in",
+  "  ORDER }o..|| CARRIER : ships",
+  "  LINE }o..|| SKU : sells",
+);
+
 describe("T4 erDiagram aggregates", () => {
   test("a root folds with the weak entities it alone identifies", async () => {
     const src = lines(
@@ -153,25 +164,31 @@ describe("T4 erDiagram aggregates", () => {
   });
 
   test("an owner chain folds into its root, and the largest aggregate that fits is offered", async () => {
-    const src = lines(
-      "erDiagram",
-      "  CUSTOMER ||--o{ ORDER : places",
-      "  ORDER ||--|{ LINE : contains",
-      "  LINE ||--o{ ADJUSTMENT : adjusted",
-      "  CUSTOMER }o..|| REGION : in",
-      "  ORDER }o..|| CARRIER : ships",
-      "  LINE }o..|| SKU : sells",
-    );
-    const work = await workOf(src);
+    const work = await workOf(OWNER_CHAIN);
     expect(rootOf(work, "ADJUSTMENT")).toBe("CUSTOMER");
     expect(proposeT4(ctxOf(work, roomy)).map((c) => c.head)).toEqual(["CUSTOMER"]);
     expect(proposeT4(ctxOf(work, target(4, 40))).map((c) => c.head)).toEqual(["LINE"]);
-    expect(proposeT4({ ...ctxOf(work, target(3, 40)), uncapped: true }).map((c) => c.head)).toEqual(["CUSTOMER"]);
   });
 
   test("only an erDiagram has aggregates", async () => {
     const work = await workOf(lines("flowchart LR", "  a --> b"));
     expect(proposeT4(ctxOf(work, roomy))).toEqual([]);
+  });
+});
+
+describe("T4 aggregates held to no target", () => {
+  test("offer every owner's aggregate, but never one swallowing a group over the target", async () => {
+    const work = await workOf(OWNER_CHAIN);
+    // Held to no target, every owner's aggregate is offered, so the walk may
+    // take the smallest that reaches the target.
+    const uncapped = { ...ctxOf(work, target(3, 40)), uncapped: true };
+    expect(proposeT4(uncapped).map((c) => c.head)).toEqual(["CUSTOMER", "LINE", "ORDER"]);
+    // An aggregate already folded over the target is never folded again
+    // into its owner's.
+    const order = proposeT4(uncapped).find((c) => c.head === "ORDER");
+    if (!order) throw new Error("no ORDER aggregate");
+    const part = merge(EMPTY_PARTITION, order);
+    expect(proposeT4({ ...ctxOf(work, target(3, 40), part), uncapped: true }).map((c) => c.head)).toEqual([]);
   });
 });
 

@@ -134,10 +134,11 @@ Nothing is applied, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lin
 |---|---|---|
 | `splitPlan` | `(source: string, config: ThresholdConfig)` | `Promise<SplitPlan \| null>`, a plan for one diagram's text, or `null` when none is offered |
 | `splitOutcome` | `(source: string, config: ThresholdConfig)` | `Promise<SplitOutcome>`, which is `{ plan, reason, violations }`: the plan, or why there is none |
-| `SplitPlan` | `{ diagram_type, tier, groups, overview, overviewSource, overviewNodes, overviewScore, details, loss }` | `overviewSource` is the overview's mermaid text, and `tier` the last tier that changed the plan |
-| `SplitGroup` | `{ id, label, labelBase, hidden, members, regions, parent, tier, reason, shape? }` | One group node: its id `g1`, `g2` and on, its label, and the original nodes it folds |
-| `SplitDetail` | `{ group, graph, stubs, source, nodes, score, split }` | One detail diagram, its stubs mapped to what each stands for, and a further plan when the detail is still over the target |
-| `SplitLoss` | `{ newReachablePairs, byTier, droppedRows }` | What the overview draws that the original does not, and the rows left out |
+| `SplitPlan` | `{ diagram_type, tier, groups, overview, overviewSource, overviewNodes, overviewScore, details, rowDetails, loss }` | `overviewSource` is the overview's mermaid text, and `tier` the last tier that changed the plan |
+| `SplitGroup` | `{ id, label, labelBase, hidden, markdown?, members, regions, parent, tier, reason, shape? }` | One group node: its id `g1`, `g2` and on, the label it shows, the whole label it is taken from, and the original nodes it folds |
+| `SplitDetail` | `{ group, graph, stubs, rows, source, nodes, score, split }` | One detail diagram, its stubs mapped to the node or group each stands for, whether it draws its members' rows, and a further plan when the detail is still over the target |
+| `RowDetail` | `{ members, graph, source, nodes, score }` | One diagram drawing the rows of nodes the overview keeps |
+| `SplitLoss` | `{ newReachablePairs, byTier, droppedRows }` | What the overview draws that the original does not, and the rows no diagram draws |
 | `Tier` | `"T1"` to `"T6"` | The tiers, least lossy first |
 
 `splitPlan` returns `null` for a diagram already within the target, and for one where no plan meets the contract.

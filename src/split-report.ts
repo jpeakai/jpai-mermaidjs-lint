@@ -22,7 +22,8 @@ export interface CheckedFile {
 const mermaidFence = (source: string): string => `\`\`\`mermaid\n${source.trimEnd()}\n\`\`\``;
 
 // The lines of one plan: its overview, then each detail, and a detail split
-// once more nests its own overview and details one heading level down.
+// once more nests its own overview and details one heading level down, and
+// the diagrams drawing the rows of nodes the overview keeps come last.
 export const planLines = (plan: SplitPlan, level: number, parent: string | null = null): string[] => {
   const hashes = "#".repeat(level);
   const lines = ["", `${hashes} Overview${parent ? ` of ${parent}` : ""}`, "", mermaidFence(plan.overviewSource)];
@@ -34,6 +35,9 @@ export const planLines = (plan: SplitPlan, level: number, parent: string | null 
       lines.push("", `Detail ${name} is over the target, so it is split once more (${detail.split.tier}).`);
       lines.push(...planLines(detail.split, level + 1, name));
     }
+  }
+  for (const [i, rows] of plan.rowDetails.entries()) {
+    lines.push("", `${hashes} Rows ${i + 1}: ${rows.members.join(", ")}`, "", mermaidFence(rows.source));
   }
   return lines;
 };

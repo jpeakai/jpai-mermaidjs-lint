@@ -20,6 +20,10 @@ import {
 export interface Candidate extends Merge {
   // T6 orders by modularity gain plus a label bonus, not by score per node.
   priority?: number;
+  // Merges of the same pattern applied in the same step: every stage of one
+  // chain, every run of one twin class. A plan then folds the pattern evenly,
+  // not one stage of it.
+  also?: Merge[];
 }
 
 export interface TierContext {
@@ -67,6 +71,12 @@ export const shapeOfKey = (ctx: TierContext, key: string): string => {
   return shapes.size === 1 ? ([...shapes][0] ?? "") : MIXED;
 };
 
+// One candidate applying every merge given, the first carrying the rest.
+export const together = (merges: Candidate[]): Candidate[] => {
+  const [first, ...rest] = merges;
+  return first ? [rest.length > 0 ? { ...first, also: rest } : first] : [];
+};
+
 // The group a merge of these keys made in the next partition.
 export const mergedGroup = (before: Partition, after: Partition, keys: readonly string[]): Group | undefined => {
   const first = keys.map((k) => groupOfKey(before, k)?.members[0] ?? k).sort(byText)[0] ?? "";
@@ -82,8 +92,8 @@ export const mergeFits = (ctx: TierContext, m: Merge): boolean => {
   return meets(shape.nodes, scoreOf(shape, 0, ctx.config), ctx.config);
 };
 
-// Splits sorted keys into runs whose merged detail fits, keeping runs of two
-// or more.
+// Splits keys, in the order given, into runs whose merged detail fits,
+// keeping runs of two or more.
 export const chunksThatFit = (ctx: TierContext, keys: string[], base: Omit<Merge, "keys">): Candidate[] => {
   const out: Candidate[] = [];
   let chunk: string[] = [];

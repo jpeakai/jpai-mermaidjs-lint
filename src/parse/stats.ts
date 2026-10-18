@@ -7,6 +7,7 @@
 import { parse as langiumParse } from "@mermaid-js/parser";
 import Color from "colorjs.io";
 import { Window } from "happy-dom";
+import { repairNodeGetters } from "./dom.ts";
 
 // mermaid core registers DOMPurify hooks while its grammars run, and DOMPurify
 // needs a DOM. This runs before the first mermaid import, so mermaid is
@@ -15,6 +16,7 @@ const installDomShim = (): void => {
   const g = globalThis as Record<string, unknown>;
   if (g.window) return;
   const win = new Window();
+  repairNodeGetters(win);
   g.window = win;
   g.document = win.document;
   g.Element = win.Element;

@@ -4,7 +4,7 @@
 // A chain of single-in single-out nodes folds in stages sized to the target,
 // never a long chain into one node.
 
-import { byText } from "./graph.ts";
+import { byNatural, byText } from "./graph.ts";
 import { membersOfKey, overviewKeys, parentOfKey, type QEdge } from "./quotient.ts";
 import {
   type Adjacency,
@@ -15,6 +15,7 @@ import {
   mergeFits,
   shapeOfKey,
   type TierContext,
+  together,
 } from "./tier.ts";
 
 const end = (e: QEdge, other: string, self: string): string =>
@@ -38,20 +39,23 @@ const twinClasses = (ctx: TierContext, adj: Adjacency): string[][] => {
     const k = [parentOfKey(ctx.work, ctx.part, key) ?? "", shapeOfKey(ctx, key), sig].join("\u0002");
     classes.set(k, [...(classes.get(k) ?? []), key]);
   }
-  return [...classes.values()].filter((c) => c.length > 1).map((c) => c.sort(byText));
+  return [...classes.values()].filter((c) => c.length > 1).map((c) => c.sort(byNatural));
 };
 
 const isLeaf = (adj: Adjacency, key: string): boolean =>
   (adj.in.get(key)?.length ?? 0) + (adj.out.get(key)?.length ?? 0) === 1;
 
+// Every run of one twin class folds in one step, so the class folds evenly.
 export const proposeTwins = (ctx: TierContext): Candidate[] => {
   const adj = adjacencyOf(ctx.qedges);
   return twinClasses(ctx, adj).flatMap((keys) =>
-    chunksThatFit(ctx, keys, {
-      parent: parentOfKey(ctx.work, ctx.part, keys[0] ?? ""),
-      tier: "T2",
-      reason: keys.every((k) => isLeaf(adj, k)) ? "sibling leaves" : "twins",
-    }),
+    together(
+      chunksThatFit(ctx, keys, {
+        parent: parentOfKey(ctx.work, ctx.part, keys[0] ?? ""),
+        tier: "T2",
+        reason: keys.every((k) => isLeaf(adj, k)) ? "sibling leaves" : "twins",
+      }),
+    ),
   );
 };
 
@@ -116,15 +120,18 @@ const stages = (ctx: TierContext, run: string[]): string[][] => {
   return windows.filter((w) => w.length > 1);
 };
 
+// Every stage of one chain folds in one step, so the chain is cut evenly.
 export const proposeChains = (ctx: TierContext): Candidate[] => {
   const adj = adjacencyOf(ctx.qedges);
   return chainRuns(ctx, adj).flatMap((run) =>
-    stages(ctx, run)
-      .map((keys): Candidate => {
-        const parent = parentOfKey(ctx.work, ctx.part, keys[0] ?? "");
-        return { keys: [...keys].sort(byText), parent, tier: "T2", reason: "chain stage" };
-      })
-      .filter((c) => mergeFits(ctx, c)),
+    together(
+      stages(ctx, run)
+        .map((keys): Candidate => {
+          const parent = parentOfKey(ctx.work, ctx.part, keys[0] ?? "");
+          return { keys: [...keys].sort(byText), parent, tier: "T2", reason: "chain stage" };
+        })
+        .filter((c) => mergeFits(ctx, c)),
+    ),
   );
 };
 

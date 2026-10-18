@@ -21,6 +21,13 @@ export interface GraphNode {
   parent: string | null;
   // The shape as mermaid's parser names it, such as "diamond" or "choice".
   shape?: string;
+  // Whether the label is a markdown string, which the source writes in backticks.
+  markdown?: true;
+  // The rows drawn inside the node, each as the source writes it: an
+  // erDiagram entity's attributes, a classDiagram class's members then methods.
+  rows?: string[];
+  // A stateDiagram composite's concurrency regions, when it has two or more.
+  regions?: number;
 }
 
 export interface GraphEdge {
@@ -40,6 +47,8 @@ export interface GraphEdge {
   ends?: { from: string; to: string };
   // Whether an erDiagram relationship is identifying, drawn as a solid line.
   identifying?: boolean;
+  // Whether the label is a markdown string.
+  markdown?: true;
 }
 
 export interface DiagramGraph {
@@ -72,6 +81,7 @@ interface FlowVertex {
   id: string;
   text?: string;
   type?: string;
+  labelType?: string;
 }
 interface FlowEdge {
   id?: string;
@@ -80,12 +90,18 @@ interface FlowEdge {
   text?: string;
   type?: string;
   stroke?: string;
+  labelType?: string;
 }
 interface FlowSubgraph {
   id: string;
   title?: string;
   nodes?: string[];
+  labelType?: string;
 }
+
+// flowDb names a label written in backticks a markdown label.
+const markdownOf = (x: { labelType?: string }): { markdown?: true } =>
+  x.labelType === "markdown" ? { markdown: true } : {};
 
 // The parser splits a link into a stroke and an arrow type, and the kind puts
 // them back as the source spells them. A stretched link (`--->`) only spaces
@@ -128,15 +144,26 @@ const flowchartGraph = (type: string, db: AnyDb): DiagramGraph => {
     diagram_type: type,
     nodes: vertices
       .filter((v) => kept.has(v.id))
-      .map((v) => ({ id: v.id, label: v.text ?? v.id, parent: parentOf.get(v.id) ?? null, shape: v.type ?? "square" })),
+      .map((v) => ({
+        id: v.id,
+        label: v.text ?? v.id,
+        parent: parentOf.get(v.id) ?? null,
+        shape: v.type ?? "square",
+        ...markdownOf(v),
+      })),
     edges: edges.map((e) => ({
       id: e.id ?? id(e.start, e.end),
       source: e.start,
       target: e.end,
       kind: flowKind(e),
-      ...(e.text ? { label: e.text } : {}),
+      ...(e.text ? { label: e.text, ...markdownOf(e) } : {}),
     })),
-    subgraphs: subGraphs.map((sg) => ({ id: sg.id, label: sg.title ?? sg.id, parent: parentOf.get(sg.id) ?? null })),
+    subgraphs: subGraphs.map((sg) => ({
+      id: sg.id,
+      label: sg.title ?? sg.id,
+      parent: parentOf.get(sg.id) ?? null,
+      ...markdownOf(sg),
+    })),
   };
 };
 
@@ -220,10 +247,28 @@ const sequenceBlocks = (codes: SequenceCodes, records: SequenceRecord[], first: 
   return blocks;
 };
 
+interface ErAttribute {
+  type?: string;
+  name?: string;
+  keys?: string[];
+  comment?: string;
+}
 interface ErEntity {
   id?: string;
   alias?: string;
+  attributes?: ErAttribute[];
 }
+
+// An attribute as the source writes it: type, name, keys, then a comment.
+const erRow = (a: ErAttribute): string =>
+  [
+    a.type ?? "",
+    a.name ?? "",
+    ...(a.keys?.length ? [a.keys.join(", ")] : []),
+    ...(a.comment ? [`"${a.comment}"`] : []),
+  ].join(" ");
+
+const rowsOf = (rows: string[]): { rows?: string[] } => (rows.length > 0 ? { rows } : {});
 interface ErRelationship {
   entityA?: string;
   entityB?: string;
@@ -294,7 +339,12 @@ const erGraph = (type: string, db: AnyDb): DiagramGraph => {
   const id = edgeIds();
   return {
     diagram_type: type,
-    nodes: [...entities].map(([name, e]) => ({ id: name, label: e.alias || name, parent: null })),
+    nodes: [...entities].map(([name, e]) => ({
+      id: name,
+      label: e.alias || name,
+      parent: null,
+      ...rowsOf((e.attributes ?? []).map(erRow)),
+    })),
     edges: rels.map((r) => {
       const source = nameOf.get(r.entityA ?? "") ?? r.entityA ?? "";
       const target = nameOf.get(r.entityB ?? "") ?? r.entityB ?? "";
@@ -319,21 +369,48 @@ interface StateEdge {
 
 const STATE_MARKERS = new Set(["stateStart", "stateEnd"]);
 
+// Each concurrency region of a composite, by the parser's id for it, named
+// after the composite and its place among the composite's regions. The
+// parser's ids are random, so a marker named after one would change name from
+// one parse to the next.
+const stateRegions = (db: AnyDb): { names: Map<string, string>; counts: Map<string, number> } => {
+  const parentOf = stateParents(db);
+  const names = new Map<string, string>();
+  const counts = new Map<string, number>();
+  for (const n of (db.nodes as StateNode[] | undefined) ?? []) {
+    if (n.shape !== "divider") continue;
+    const composite = parentOf(n) ?? "root";
+    const i = (counts.get(composite) ?? 0) + 1;
+    counts.set(composite, i);
+    names.set(n.id ?? "", `${composite}_region${i}`);
+  }
+  return { names, counts };
+};
+
+// A marker's id with the region it is named after renamed, as in Active_region2_start.
+const markerRename = (names: Map<string, string>): ((id: string) => string) => {
+  const byLength = [...names].sort((a, b) => b[0].length - a[0].length);
+  return (id) => {
+    const hit = byLength.find(([region]) => id.startsWith(`${region}_`));
+    return hit ? `${hit[1]}${id.slice(hit[0].length)}` : id;
+  };
+};
+
 // The start and end markers, and each transition into or out of one. They are
 // kept apart from what stats.ts counts, so a reader of the graph still sees
 // where a path begins and ends. Notes, and their connectors, are dropped. A
 // marker in a concurrency region sits in the composite, as its states do.
 const stateMarkers = (db: AnyDb, counted: StateNode[]): { nodes: StateNode[]; edges: StateEdge[] } => {
   const parentOf = stateParents(db);
+  const rename = markerRename(stateRegions(db).names);
   const nodes = ((db.nodes as StateNode[] | undefined) ?? [])
     .filter((n) => STATE_MARKERS.has(n.shape ?? ""))
-    .map((n) => ({ ...n, parentId: parentOf(n) }));
+    .map((n) => ({ ...n, id: rename(n.id ?? ""), label: rename(n.label ?? ""), parentId: parentOf(n) }));
   const markers = new Set(nodes.map((n) => n.id ?? ""));
   const drawn = new Set([...markers, ...counted.map((n) => n.id ?? "")]);
-  const edges = ((db.edges as StateEdge[] | undefined) ?? []).filter(
-    (e) =>
-      (markers.has(e.start ?? "") || markers.has(e.end ?? "")) && drawn.has(e.start ?? "") && drawn.has(e.end ?? ""),
-  );
+  const edges = ((db.edges as StateEdge[] | undefined) ?? [])
+    .map((e) => ({ ...e, start: rename(e.start ?? ""), end: rename(e.end ?? "") }))
+    .filter((e) => (markers.has(e.start) || markers.has(e.end)) && drawn.has(e.start) && drawn.has(e.end));
   return { nodes, edges };
 };
 
@@ -346,6 +423,11 @@ const stateGraph = (type: string, db: AnyDb): DiagramGraph => {
   const markers = stateMarkers(db, nodes);
   const groupId = (id: string): string => `${id}__group`;
   const groups = new Set(nodes.filter((n) => n.isGroup).map((n) => n.id ?? ""));
+  const { counts } = stateRegions(db);
+  const regions = (n: StateNode): { regions?: number } => {
+    const count = counts.get(n.id ?? "") ?? 0;
+    return count > 1 ? { regions: count } : {};
+  };
   const parentOf = (n: StateNode): string | null => (n.parentId && groups.has(n.parentId) ? groupId(n.parentId) : null);
   const node = (n: StateNode): GraphNode => ({
     id: n.id ?? "",
@@ -362,16 +444,35 @@ const stateGraph = (type: string, db: AnyDb): DiagramGraph => {
     diagram_type: type,
     nodes: nodes.map(node),
     edges: edges.map(edge),
-    subgraphs: nodes.filter((n) => n.isGroup).map((n) => ({ id: groupId(n.id ?? ""), label: "", parent: parentOf(n) })),
+    subgraphs: nodes
+      .filter((n) => n.isGroup)
+      .map((n) => ({ id: groupId(n.id ?? ""), label: "", parent: parentOf(n), ...regions(n) })),
     pseudo: { nodes: markers.nodes.map(node), edges: markers.edges.map(edge) },
   };
 };
 
+interface ClassMember {
+  visibility?: string;
+  id?: string;
+  classifier?: string;
+  parameters?: string;
+  returnType?: string;
+}
 interface ClassNode {
   label?: string;
   shape?: string;
   parent?: string;
+  members?: ClassMember[];
+  methods?: ClassMember[];
 }
+
+// A member as the source writes it, from classDb's fields: visibility, name,
+// then for a method its parameters, classifier and return type.
+const classRow = (m: ClassMember, method: boolean): string => {
+  const head = `${m.visibility ?? ""}${m.id ?? ""}`;
+  if (!method) return `${head}${m.classifier ?? ""}`;
+  return `${head}(${m.parameters ?? ""})${m.classifier ?? ""}${m.returnType ? ` ${m.returnType}` : ""}`;
+};
 interface ClassRelation {
   id1?: string;
   id2?: string;
@@ -405,6 +506,12 @@ const classEnd = (db: AnyDb, markers: Readonly<Record<string, string>>, type: nu
   if (marker === undefined) throw new Error(`no marker for the class relation end ${type}`);
   return marker;
 };
+
+// Every row a class draws: its members, then its methods.
+const classRows = (c: ClassNode): string[] => [
+  ...(c.members ?? []).map((m) => classRow(m, false)),
+  ...(c.methods ?? []).map((m) => classRow(m, true)),
+];
 
 // A multiplicity is quoted beside its end, as the source writes it.
 const classEdge = (db: AnyDb, r: ClassRelation, id: (source: string, target: string) => string): GraphEdge => {
@@ -442,6 +549,7 @@ const classGraph = (type: string, db: AnyDb): DiagramGraph => {
       label: c.label || key,
       parent: c.parent ?? null,
       ...(c.shape ? { shape: c.shape } : {}),
+      ...rowsOf(classRows(c)),
     })),
     edges: relations.map((r) => classEdge(db, r, id)),
     subgraphs: [...namespaces].map(([key, ns]) => ({ id: key, label: ns.label || key, parent: ns.parent ?? null })),

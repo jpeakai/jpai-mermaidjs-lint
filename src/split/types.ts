@@ -14,12 +14,15 @@ export const FOLD_TIERS: readonly Tier[] = ["T2", "T3", "T4", "T5", "T6"];
 export interface SplitGroup {
   // g1, g2 and on, in the order of the sorted member tuples.
   id: string;
-  // An author label, or the member with the highest degree then smallest id,
-  // followed by " (+N)".
+  // The label shown: an author label, or a member's label (the member with
+  // the highest degree then smallest id, unless another group shows its
+  // label), cut to LABEL_CAP characters, followed by " (+N)".
   label: string;
-  // The label's two parts: the author or member label it starts with, and N.
+  // The label's two parts: the whole author or member label, and N.
   labelBase: string;
   hidden: number;
+  // Whether the label is a markdown string, as the label it is taken from.
+  markdown?: true;
   members: string[];
   // The author regions folded whole into the group: flowchart subgraphs,
   // composite state boxes and class namespaces, by their graph id.
@@ -37,8 +40,10 @@ export interface SplitDetail {
   group: string;
   graph: DiagramGraph;
   // Each stub's id in this diagram, mapped to the original node, subgraph or
-  // interface it stands for.
+  // interface it stands for, or to the id of the group it stands for whole.
   stubs: Record<string, string>;
+  // Whether the members' rows (erDiagram attributes, class members) are drawn.
+  rows: boolean;
   source: string;
   nodes: number;
   score: number;
@@ -46,12 +51,23 @@ export interface SplitDetail {
   split: SplitPlan | null;
 }
 
+// A diagram drawing the rows of nodes kept in the overview, which draws no
+// rows: an erDiagram's entities with their attributes, or a classDiagram's
+// classes with their members.
+export interface RowDetail {
+  members: string[];
+  graph: DiagramGraph;
+  source: string;
+  nodes: number;
+  score: number;
+}
+
 export interface SplitLoss {
   // Overview node pairs reachable in the overview but not in the original.
   newReachablePairs: number;
   // The same count after each tier the plan walked, as the partition stood.
   byTier: Partial<Record<Tier, number>>;
-  // ER attributes and class members left out of overview and details.
+  // ER attributes and class members drawn in no diagram of the plan.
   droppedRows: number;
 }
 
@@ -65,6 +81,7 @@ export interface SplitPlan {
   overviewNodes: number;
   overviewScore: number;
   details: SplitDetail[];
+  rowDetails: RowDetail[];
   loss: SplitLoss;
 }
 

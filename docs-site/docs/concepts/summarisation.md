@@ -16,7 +16,7 @@ It has two halves:
 - **An overview** keeps the diagram's shape, with some sets of nodes folded into one group node each.
 - **One detail diagram per group** shows that group's members and every edge between them.
 
-A dashed stub in a detail stands for each outside node an edge reaches.
+A dashed stub in a detail stands for each outside node an edge reaches, or for a whole group an edge comes in from.
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
@@ -110,8 +110,13 @@ Betweenness peaks at the hubs, which are the nodes an overview should keep in vi
 ## The tier ladder
 
 The plan applies its folds in tiers, least lossy first.
+A diagram with author regions climbs `T3` first, since a reader finds the author's own boundaries first.
+When that plan fails, it climbs in the order below.
 Within a tier, it applies the fold that saves the most score per node hidden, then measures the overview again.
+A chain folds in even stages and a set of twins in even runs, all in one step.
 It stops at the first overview that meets the preset's `nodeTarget` and `vcsTarget`.
+Once there, it folds the sibling regions of the ones folded, so the plan reads evenly.
+In `T5` and `T6` it gathers what is left open into groups no larger than the largest.
 A detail diagram must meet the same targets, and one that does not is split once more.
 A plan names the last tier that changed it.
 
@@ -120,7 +125,7 @@ The plan reports it after each tier.
 
 | Tier | What it folds | What it may lose |
 |---|---|---|
-| `T1` | No nodes. It leaves out attribute rows and merges exact duplicate edges. | The rows of an entity or a class, which are counted as dropped. No reachable pair. |
+| `T1` | No nodes. It leaves attribute rows out of the overview. | Nothing. A detail draws its members' rows when they fit, and row diagrams draw the rest. No reachable pair. |
 | `T2` | Twins, bundles of sibling leaves, and chain stages | Nothing. The declared loss after `T2` must be zero. |
 | `T3` | Author regions, innermost first: subgraphs, composite states and namespaces | New reachable pairs between nodes folded into one region |
 | `T4` | `erDiagram` aggregates: a root with the weak entities it identifies, and a junction table into the smaller entity it joins | New reachable pairs. Cardinalities are never merged. |
@@ -135,8 +140,8 @@ The contract is what this page means by "meaning is preserved".
 - **Sound.** Every original node is in exactly one overview node. Each overview edge stands for original edges, in the same direction, and none is invented.
 - **Sound attributes.** An overview edge keeps a label or an arrow kind only when every edge it stands for agrees.
 - **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds.
-- **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`.
-- **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds.
+- **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
+- **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
 - **Declared loss.** The new reachable pairs the plan reports are recounted, and must be zero after `T2`.
 - **Order independent.** Every tie is broken by sorted ids, so reordering the statements of a diagram gives the same plan.
 - **Round trip.** Every emitted diagram parses again with the shipped parsers, and its measured size meets the target.
@@ -172,8 +177,8 @@ On diagram labels it gave the same groupings as the stemmer, for an install of a
 |---|---|---|---|
 | `flowchart`, `flowchart-elk`, `graph` | Yes | Subgraphs | A decision node is protected. |
 | `stateDiagram` | Yes | Composite states | A fork, a join and a choice are protected. A diagram with concurrent regions is not split. |
-| `erDiagram` | Yes | None | `T4` folds aggregates, and attribute rows are dropped and counted. |
-| `classDiagram` | Yes | Namespaces | Members are dropped and counted. A stub carries a `<<stub>>` annotation, since the grammar takes no dashed style. |
+| `erDiagram` | Yes | None | `T4` folds aggregates. Attribute rows are drawn in details and row diagrams, and any that fit in none are counted. |
+| `classDiagram` | Yes | Namespaces | Members are drawn like attribute rows. A stub carries a `<<stub>>` annotation and a group a `<<group>>` one, since the grammar takes no dashed style. |
 | `sequenceDiagram` | No | None | The graph drops message order, so a fold would lose the story. The finding keeps its subgraph hint. |
 
 Every other type is not planned, and its finding keeps the subgraph hint.

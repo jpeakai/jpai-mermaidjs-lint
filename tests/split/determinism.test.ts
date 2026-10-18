@@ -81,7 +81,7 @@ const CASES: Array<{ name: string; head: string; statements: string[]; nodes: nu
       "  Idle --> Audit",
       "  Audit --> Off",
     ],
-    nodes: 5,
+    nodes: 4,
     vcs: 12,
   },
 ];

@@ -1,14 +1,19 @@
 // The contract a plan must pass before it is offered. Each check reads the
 // plan as offered (its groups, overview, details and declared loss) against
 // the graph it was planned from, and names every violation it finds. Check 9
-// measures the emitted sources by parsing them again with the shipped parsers.
+// parses every emitted source again with the shipped parsers and compares
+// what it reads back, element by element, with the planned graphs the other
+// checks read: nodes with labels, markdown flags, shapes and rows, regions,
+// edges with their attributes, and start and end transitions with theirs.
+// So the other checks hold of the emitted text, not only of the plan.
 
 import { type DiagramGraph, extractGraph, type GraphEdge } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats } from "../parse/stats.ts";
 import { type Build, partFromGroups } from "./assemble.ts";
 import { byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { idMaker, isGroupKey, namedMember, over, type Partition, usedIds } from "./quotient.ts";
+import { groupLabels } from "./label.ts";
+import { idMaker, isGroupKey, over, type Partition, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
 import type { SplitGroup, SplitPlan } from "./types.ts";
 
@@ -66,10 +71,12 @@ const edgeOf = (work: WorkGraph): Map<string, GraphEdge> => new Map(work.edges.m
 
 // 2. Each overview edge stands for original edges between its two ends, and
 // each original edge between two overview nodes is stood for exactly once.
+// Between two kept nodes an overview edge stands for exactly one.
 const checkEdges = (build: Build): Violations => {
   const { plan, work, covers } = build;
   const overId = overOf(build);
   const edges = edgeOf(work);
+  const groups = groupIds(plan);
   const covered = new Map<string, number>();
   const strays = plan.overview.edges.flatMap((o) => {
     const ids = covers[o.id] ?? [];
@@ -78,12 +85,13 @@ const checkEdges = (build: Build): Violations => {
       const e = edges.get(id);
       return !e || overId(e.source) !== o.source || overId(e.target) !== o.target;
     });
+    const kept = !(groups.has(o.source) || groups.has(o.target));
     return [
       ...(ids.length === 0 ? [`2: overview edge ${o.source} -> ${o.target} stands for no original edge`] : []),
+      ...(kept && ids.length > 1 ? [`2: overview edge ${o.id} between kept nodes merges ${ids.length} edges`] : []),
       ...away.map((id) => `2: overview edge ${o.id} covers ${id} from elsewhere`),
     ];
   });
-  const groups = groupIds(plan);
   const want = (e: GraphEdge): number =>
     overId(e.source) === overId(e.target) && groups.has(overId(e.source)) ? 0 : 1;
   return [
@@ -94,10 +102,10 @@ const checkEdges = (build: Build): Violations => {
   ];
 };
 
-const ATTRS = ["label", "kind", "cardinality"] as const;
+const ATTRS = ["label", "markdown", "kind", "cardinality"] as const;
 
 // 3. An overview edge carries an attribute only when every edge it covers
-// agrees; between two kept nodes it is an exact duplicate; an erDiagram never
+// agrees; between two kept nodes it is an exact copy; an erDiagram never
 // merges two cardinalities or labels. A group shape is one all members share.
 const checkAttributes = (build: Build): Violations => {
   const { plan, work, covers } = build;
@@ -106,7 +114,9 @@ const checkAttributes = (build: Build): Violations => {
   const edgeViolations = plan.overview.edges.flatMap((o) => {
     const covered = (covers[o.id] ?? []).flatMap((id) => edges.get(id) ?? []);
     const exact = work.family === "er" || !(groups.has(o.source) || groups.has(o.target));
-    return ATTRS.filter((a) => (exact || o[a] !== undefined) && covered.some((e) => e[a] !== o[a])).map(
+    const claims = (a: (typeof ATTRS)[number]): boolean =>
+      exact || o[a] !== undefined || (a === "markdown" && o.label !== undefined);
+    return ATTRS.filter((a) => claims(a) && covered.some((e) => e[a] !== o[a])).map(
       (a) => `3: overview edge ${o.source} -> ${o.target} ${a} disagrees with an edge it covers`,
     );
   });
@@ -119,87 +129,153 @@ const checkAttributes = (build: Build): Violations => {
 const regionLabels = (work: WorkGraph, g: SplitGroup): string[] =>
   g.regions.map((r) => work.regions.get(r)?.label ?? "").filter((l) => l !== "");
 
-// 4. A group label is an author label or the named member's label, then
-// " (+N)", N counting the members it does not name.
+// 4. A group label is an author label or a member's label, shown cut by the
+// one rule in label.ts, then " (+N)", N counting the members it does not
+// name, and the group's id when the label is taken. No two groups show one
+// label, and no group shows a node's label.
 const checkLabels = (build: Build): Violations => {
   const { plan, work } = build;
   const out: Violations = [];
+  const memberLabels = (g: SplitGroup): string[] => g.members.map((m) => work.nodes.get(m)?.label ?? m);
   for (const g of plan.groups) {
     const [base, n] = [g.labelBase, g.hidden];
-    const named = work.nodes.get(namedMember(work, g.members))?.label;
-    if (g.label !== `${base} (+${n})`) out.push(`4: group ${g.id} label is not its parts`);
-    if (!(regionLabels(work, g).includes(base) || base === named))
+    if (!groupLabels(base, n, g.markdown, g.id).includes(g.label)) out.push(`4: group ${g.id} label is not its parts`);
+    if (!(regionLabels(work, g).includes(base) || memberLabels(g).includes(base)))
       out.push(`4: group ${g.id} label "${base}" is not from the data`);
     if (n !== g.members.length && n !== g.members.length - 1) out.push(`4: group ${g.id} counts ${n} hidden members`);
   }
+  const labels = plan.groups.map((g) => g.label);
+  const nodeLabels = new Set([...work.nodes.values()].map((n) => n.label));
+  if (new Set(labels).size !== labels.length) out.push("4: two groups show one label");
+  for (const l of labels) if (nodeLabels.has(l)) out.push(`4: group label "${l}" is also a node's label`);
   return out;
 };
 
-const tuple = (e: Pick<GraphEdge, "source" | "target" | "label" | "kind" | "cardinality">): string => edgeKey(e);
+const tuple = (e: Pick<GraphEdge, "source" | "target" | "label" | "kind" | "cardinality" | "markdown">): string =>
+  edgeKey(e);
 
 const multiset = (keys: string[]): string => sorted(keys).join("\n");
 
-// The original edges a detail gives back: an edge with both ends inside, and
-// an edge with one end inside whose outside end is a kept node; between two
-// groups, the side named by `side`.
-const recovered = (build: Build, side: "source" | "target"): string[] => {
+// The edges overview and details give back. Exact: an edge between two kept
+// nodes from the overview, and from a detail every edge whose ends are
+// members or stubs for single nodes. Halves: an edge from a stub standing for
+// a whole group, read as that group and the member it enters.
+const recovered = (build: Build): { exact: string[]; halves: string[] } => {
+  const groups = groupIds(build.plan);
+  const exact: string[] = build.plan.overview.edges
+    .filter((o) => !(groups.has(o.source) || groups.has(o.target)))
+    .map((o) => tuple(o));
+  const halves: string[] = [];
+  for (const d of build.plan.details) {
+    for (const e of d.graph.edges) {
+      const [s, t] = [d.stubs[e.source] ?? e.source, d.stubs[e.target] ?? e.target];
+      (groups.has(s) || groups.has(t) ? halves : exact).push(tuple({ ...e, source: s, target: t }));
+    }
+  }
+  return { exact, halves };
+};
+
+// Each edge between two groups, read as its source's group and its target.
+const wantedHalves = (build: Build): string[] => {
   const overId = overOf(build);
   const groups = groupIds(build.plan);
-  const fromDetails = build.plan.details.flatMap((d) => {
-    const back = (x: string): string => d.stubs[x] ?? x;
-    const inside = (x: string): boolean => d.stubs[x] === undefined;
-    const kept = (x: string): boolean => !groups.has(overId(back(x)));
-    const [near, far] = side === "source" ? (["source", "target"] as const) : (["target", "source"] as const);
-    return d.graph.edges
-      .filter((e) => inside(e[near]) || (inside(e[far]) && kept(e[near])))
-      .map((e) => tuple({ ...e, source: back(e.source), target: back(e.target) }));
+  return build.work.edges.flatMap((e) => {
+    const [a, b] = [overId(e.source), overId(e.target)];
+    return a !== b && groups.has(a) && groups.has(b) ? [tuple({ ...e, source: a })] : [];
   });
-  const fromOverview = build.plan.overview.edges
-    .filter((o) => !(groups.has(o.source) || groups.has(o.target)))
-    .flatMap((o) => (build.covers[o.id] ?? []).map(() => tuple(o)));
-  return [...fromDetails, ...fromOverview];
 };
 
 const detailNodes = (build: Build): Violations => {
   const out: Violations = [];
   const byId = new Map(build.plan.groups.map((g) => [g.id, g]));
   const overId = overOf(build);
+  const groups = groupIds(build.plan);
   for (const d of build.plan.details) {
     const g = byId.get(d.group);
     const ids = d.graph.nodes.map((n) => n.id).filter((id) => d.stubs[id] === undefined);
     if (!g || multiset(ids) !== multiset(g.members)) out.push(`5: detail ${d.group} does not hold exactly its members`);
     for (const [stub, end] of Object.entries(d.stubs)) {
-      if (overId(end) === d.group) out.push(`5: stub ${stub} of ${d.group} stands for a node inside it`);
+      if ((groups.has(end) ? end : overId(end)) === d.group)
+        out.push(`5: stub ${stub} of ${d.group} stands for itself`);
     }
   }
   return out;
 };
 
-// 5. Overview and details give back exactly the original node ids and the
-// original edges, read from either end.
-const checkRecoverable = (build: Build): Violations => {
-  const { plan, work } = build;
-  const out = detailNodes(build);
-  const kept = plan.overview.nodes.map((n) => n.id).filter((id) => !groupIds(plan).has(id));
-  const members = plan.details.flatMap((d) => d.graph.nodes.map((n) => n.id).filter((id) => d.stubs[id] === undefined));
-  if (multiset([...kept, ...members]) !== multiset(work.ids)) out.push("5: the node ids do not come back exactly");
-  const original = multiset(work.edges.map(tuple));
-  if (multiset(recovered(build, "source")) !== original)
-    out.push("5: the edges do not come back exactly from their sources");
-  if (multiset(recovered(build, "target")) !== original)
-    out.push("5: the edges do not come back exactly from their targets");
+// A stub's label names one thing: across the plan, one label always stands
+// for one endpoint, one endpoint always reads one label, and no stub reads
+// as a member beside it.
+const stubNames = (build: Build): Violations => {
+  const byLabel = new Map<string, Set<string>>();
+  const byEnd = new Map<string, Set<string>>();
+  const out: Violations = [];
+  for (const d of build.plan.details) {
+    const labelOf = new Map(d.graph.nodes.map((n) => [n.id, n.label]));
+    const memberLabels = new Set(d.graph.nodes.filter((n) => d.stubs[n.id] === undefined).map((n) => n.label));
+    for (const [stub, end] of Object.entries(d.stubs)) {
+      const label = labelOf.get(stub) ?? "";
+      byLabel.set(label, new Set([...(byLabel.get(label) ?? []), end]));
+      byEnd.set(end, new Set([...(byEnd.get(end) ?? []), label]));
+      if (memberLabels.has(label)) out.push(`5: stub ${stub} of ${d.group} reads as a member, "${label}"`);
+    }
+  }
+  for (const [label, ends] of byLabel)
+    if (ends.size > 1) out.push(`5: the stub label "${label}" stands for ${sorted(ends).join(", ")}`);
+  for (const [end, labels] of byEnd) if (labels.size > 1) out.push(`5: the stubs for ${end} read differently`);
   return out;
 };
 
-// 6. A protected node folds only inside a whole region the group folds.
+// Each node drawn with rows, and how many diagrams draw them.
+const rowsDrawn = (plan: SplitPlan): Map<string, DiagramGraph["nodes"]> => {
+  const drawn = new Map<string, DiagramGraph["nodes"]>();
+  const graphs = [...plan.details.filter((d) => d.rows).map((d) => d.graph), ...plan.rowDetails.map((r) => r.graph)];
+  for (const n of graphs.flatMap((g) => g.nodes)) if (n.rows) drawn.set(n.id, [...(drawn.get(n.id) ?? []), n]);
+  return drawn;
+};
+
+// Each original node's rows come back exactly where they are drawn, and the
+// declared count is what no diagram draws.
+const checkRows = (build: Build): Violations => {
+  const { plan, work } = build;
+  const out: Violations = [];
+  const drawn = rowsDrawn(plan);
+  for (const [id, copies] of drawn) {
+    const want = JSON.stringify(work.nodes.get(id)?.rows ?? []);
+    if (copies.some((n) => JSON.stringify(n.rows) !== want)) out.push(`5: the rows of ${id} are not its own`);
+    if (copies.length > 1) out.push(`5: the rows of ${id} are drawn ${copies.length} times`);
+  }
+  const shown = [...drawn.keys()].reduce((s, id) => s + (work.nodes.get(id)?.rows?.length ?? 0), 0);
+  const total = [...work.nodes.values()].reduce((s, n) => s + (n.rows?.length ?? 0), 0);
+  if (total !== work.rows) out.push("5: the rows read are not the rows counted");
+  if (plan.loss.droppedRows !== work.rows - shown) out.push("7: the dropped rows are wrong");
+  return out;
+};
+
+// 5. Overview and details give back exactly the original node ids and the
+// original edges; every edge between groups is drawn from both ends.
+const checkRecoverable = (build: Build): Violations => {
+  const { plan, work } = build;
+  const out = [...detailNodes(build), ...stubNames(build), ...checkRows(build)];
+  const kept = plan.overview.nodes.map((n) => n.id).filter((id) => !groupIds(plan).has(id));
+  const members = plan.details.flatMap((d) => d.graph.nodes.map((n) => n.id).filter((id) => d.stubs[id] === undefined));
+  if (multiset([...kept, ...members]) !== multiset(work.ids)) out.push("5: the node ids do not come back exactly");
+  const { exact, halves } = recovered(build);
+  if (multiset(exact) !== multiset(work.edges.map(tuple))) out.push("5: the edges do not come back exactly");
+  if (multiset(halves) !== multiset(wantedHalves(build)))
+    out.push("5: the edges between groups do not come back from their targets");
+  return out;
+};
+
+// 6. A protected node folds only inside a whole region the group folds: its
+// own, or for a state a composite's marker touches, that composite.
 const checkProtected = (build: Build): Violations => {
   const { plan, work } = build;
   const out: Violations = [];
   for (const g of plan.groups) {
     for (const m of g.members) {
       if (!work.protectedIds.has(m)) continue;
-      if (!g.regions.some((r) => regionWithin(work, homeOf(work, m), r)))
-        out.push(`6: protected ${m} is folded in ${g.id}`);
+      const pin = work.pins.get(m) ?? homeOf(work, m);
+      if (!g.regions.some((r) => regionWithin(work, pin, r))) out.push(`6: protected ${m} is folded in ${g.id}`);
     }
   }
   return out;
@@ -217,7 +293,6 @@ const checkLoss = (build: Build): Violations => {
     if (plan.loss.byTier[s.tier] !== n) out.push(`7: the declared loss after ${s.tier} is wrong`);
     if (s.tier === "T2" && n !== 0) out.push("7: T2 made new reachable pairs");
   }
-  if (plan.loss.droppedRows !== work.rows) out.push("7: the dropped rows are wrong");
   return out;
 };
 
@@ -243,29 +318,61 @@ const checkCanonical = (build: Build): Violations => {
   if (!plan.groups.every((g) => g.id === next())) out.push("8: group ids are not numbered in order");
   const kept = plan.overview.nodes.filter((n) => !groupIds(plan).has(n.id)).map((n) => n.id);
   if (!isSorted(kept, byText)) out.push("8: overview nodes are not sorted");
-  const keys = (es: DiagramGraph["edges"]): string[] => es.map((e) => `${edgeKey(e)}\u0000${e.id}`);
-  if (!isSorted(keys(plan.overview.edges), byText)) out.push("8: overview edges are not sorted");
+  // An edge written twice between kept nodes is drawn twice, so equal keys sit side by side.
+  const keys = plan.overview.edges.map((e) => edgeKey(e));
+  if (!keys.every((k, i) => i === 0 || byText(keys[i - 1] ?? "", k) <= 0)) out.push("8: overview edges are not sorted");
   if (plan.details.some((d, i) => d.group !== plan.groups[i]?.id)) out.push("8: details are not in group order");
   return out;
 };
 
-// A graph's nodes, subgraphs and edges as sorted text, for comparing what an
-// emitted source parses to with what was planned. A shape or kind the plan
-// leaves to the type's default is not compared; a lollipop is named by its
-// label, since mermaid numbers interfaces afresh.
+// A start or end transition by its marker's shape and box, the state at its
+// other end and its label; mermaid names markers afresh, so not by id.
+const markerElements = (graph: DiagramGraph): string[] => {
+  const markers = new Map((graph.pseudo?.nodes ?? []).filter((m) => m.shape !== "lollipop").map((m) => [m.id, m]));
+  return (graph.pseudo?.edges ?? []).flatMap((e) => {
+    const m = markers.get(e.source) ?? markers.get(e.target);
+    if (!m) return [];
+    const end = markers.has(e.source) ? e.target : e.source;
+    return [JSON.stringify(["marker", m.shape, m.parent, end, e.label ?? null])];
+  });
+};
+
+// A graph's elements as sorted text, for comparing what an emitted source
+// parses to with what was planned. A shape or kind the plan leaves to the
+// type's default is not compared; a lollipop is named by its label, since
+// mermaid numbers interfaces afresh.
 const elements = (graph: DiagramGraph, plan: DiagramGraph): string[] => {
   const shaped = new Map(plan.nodes.map((n) => [n.id, n.shape !== undefined]));
   const kinded = new Set(plan.edges.filter((e) => e.kind !== undefined).map((e) => edgeKey({ ...e, kind: "" })));
   const named = new Map((graph.pseudo?.nodes ?? []).map((p) => [p.id, `()${p.label}`]));
   const end = (x: string): string => named.get(x) ?? x;
   return sorted([
-    ...graph.nodes.map((n) => JSON.stringify(["node", n.id, n.label, n.parent, shaped.get(n.id) ? n.shape : null])),
-    ...graph.subgraphs.map((s) => JSON.stringify(["subgraph", s.id, s.label, s.parent])),
+    ...graph.nodes.map((n) =>
+      JSON.stringify([
+        "node",
+        n.id,
+        n.label,
+        n.markdown ?? false,
+        n.parent,
+        shaped.get(n.id) ? n.shape : null,
+        n.rows ?? [],
+      ]),
+    ),
+    ...graph.subgraphs.map((s) => JSON.stringify(["subgraph", s.id, s.label, s.markdown ?? false, s.parent])),
     ...graph.edges.map((e) => {
       const ends = { ...e, source: end(e.source), target: end(e.target) };
       const kind = kinded.has(edgeKey({ ...ends, kind: "" })) ? (e.kind ?? null) : null;
-      return JSON.stringify(["edge", ends.source, ends.target, e.label ?? null, kind, e.cardinality ?? null]);
+      return JSON.stringify([
+        "edge",
+        ends.source,
+        ends.target,
+        e.label ?? null,
+        e.markdown ?? false,
+        kind,
+        e.cardinality ?? null,
+      ]);
     }),
+    ...markerElements(graph),
   ]);
 };
 
@@ -278,7 +385,7 @@ const reparse = async (label: string, source: string, expect: DiagramGraph): Pro
   const got = elements(await extractGraph(source), expect);
   const planned = elements(expect, expect);
   if (got.join("\n") === planned.join("\n")) return [];
-  const stray = got.filter((x) => !planned.includes(x));
+  const stray = [...got.filter((x) => !planned.includes(x)), ...planned.filter((x) => !got.includes(x))];
   return [`9: the ${label} parses to other elements than planned: ${stray.slice(0, 3).join(" ")}`];
 };
 
@@ -290,21 +397,34 @@ const measured = async (source: string, config: ThresholdConfig): Promise<{ node
 const within = (m: { nodes: number; score: number }, config: ThresholdConfig): boolean =>
   m.nodes <= config.node_target && m.score <= config.vcs_target;
 
-// 9. Every emitted source parses to the counts planned, and the overview and
-// each detail, measured from that parse, meet the target.
+// One emitted source: it parses to the planned graph, measures what was
+// planned, and meets the target unless it is split again.
+const roundTrip = async (
+  name: string,
+  d: { source: string; graph: DiagramGraph; nodes: number; score: number; split?: unknown },
+  config: ThresholdConfig,
+): Promise<Violations> => {
+  const out = await reparse(name, d.source, d.graph);
+  const m = await measured(d.source, config);
+  if (!(d.split || within(m, config)))
+    out.push(`9: the ${name} measures ${m.nodes} nodes and ${m.score}, over the target`);
+  if (m.score !== d.score || m.nodes !== d.nodes) out.push(`9: the ${name} score is not what was planned`);
+  return out;
+};
+
+// 9. Every emitted source parses to the elements planned, and the overview,
+// each detail and each row diagram, measured from that parse, meet the target.
 const checkRoundTrip = async (build: Build, config: ThresholdConfig): Promise<Violations> => {
   const { plan } = build;
-  const out = await reparse("overview", plan.overviewSource, plan.overview);
-  const o = await measured(plan.overviewSource, config);
-  if (!within(o, config)) out.push(`9: the overview measures ${o.nodes} nodes and ${o.score}, over the target`);
-  if (o.score !== plan.overviewScore || o.nodes !== plan.overviewNodes)
-    out.push("9: the overview score is not what was planned");
-  for (const d of plan.details) {
-    out.push(...(await reparse(`detail of ${d.group}`, d.source, d.graph)));
-    const m = await measured(d.source, config);
-    if (!(d.split || within(m, config)))
-      out.push(`9: the detail of ${d.group} measures ${m.nodes} nodes and ${m.score}, over the target`);
-  }
+  const overview = {
+    source: plan.overviewSource,
+    graph: plan.overview,
+    nodes: plan.overviewNodes,
+    score: plan.overviewScore,
+  };
+  const out = await roundTrip("overview", overview, config);
+  for (const d of plan.details) out.push(...(await roundTrip(`detail of ${d.group}`, d, config)));
+  for (const [i, r] of plan.rowDetails.entries()) out.push(...(await roundTrip(`row diagram ${i + 1}`, r, config)));
   return out;
 };
 

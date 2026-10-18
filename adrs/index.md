@@ -29,6 +29,7 @@
 | [MJL-0023](0023-markdown-is-read-only-through-mdast.md) | Markdown is read only through mdast, and reimplementing a dependency is non-compliance | accepted |
 | [MJL-0024](0024-colour-and-contrast-come-from-colorjs.md) | Colour parsing and WCAG contrast come only from colorjs.io | accepted |
 | [MJL-0025](0025-a-fold-is-offered-as-a-split.md) | A fold is offered only as the overview half of a split | accepted |
+| [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) | A split plan follows the author's structure, and refuses what it cannot draw faithfully | accepted |
 # By group
 
 ## cli
@@ -38,6 +39,7 @@
 
 * [MJL-0021](0021-the-score-counts-what-a-reader-must-read.md) - Control lines, markers and notes are left out, and boxes, blocks and attribute rows are counted
 * [MJL-0025](0025-a-fold-is-offered-as-a-split.md) - A split plan is checked by a contract and applied by a human
+* [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) - Regions fold first, marker states stay in their composite, and concurrency is refused
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -116,8 +118,10 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0023 --see_also--> MJL-0024
 * MJL-0024 --see_also--> MJL-0023
 * MJL-0024 --see_also--> MJL-0017
+* MJL-0025 --extended_by--> MJL-0026
 * MJL-0025 --extends--> MJL-0004
 * MJL-0025 --see_also--> MJL-0005
 * MJL-0025 --see_also--> MJL-0015
 * MJL-0025 --see_also--> MJL-0021
 * MJL-0025 --see_also--> MJL-0022
+* MJL-0026 --extends--> MJL-0025

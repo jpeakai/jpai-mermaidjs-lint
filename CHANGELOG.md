@@ -24,6 +24,12 @@ Anything under `Unreleased` is on `main` but not yet released.
   `Diagram` gains `graph()`, the parser's nodes, edges and subgraphs, read once.
 - A docs site page, [Summarising a diagram](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/summarisation/), explains the graph theory behind split plans, the tier ladder and the contract.
   It plans one large diagram under every preset, drawn by the site build from what `splitPlan` returns.
+- A split plan folds the author's regions first and folds repeated patterns evenly, per [MJL-0026](adrs/0026-a-split-plan-follows-the-authors-structure.md).
+  Group nodes are marked in every diagram type, and a long group label is cut in the middle.
+- A detail draws an edge from another group from one stub for that group, and a stub label names what it stands for.
+- `DiagramGraph` nodes carry `markdown`, `rows` and `regions`.
+  Split plans draw entity attributes and class members in details and in row diagrams, and `--split-plan` prints them.
+- A diagram whose composite state has concurrent regions gets no split plan, with the reason `concurrent state regions are not split`.
 
 ### Changed
 
@@ -59,6 +65,9 @@ Anything under `Unreleased` is on `main` but not yet released.
 - A stateDiagram's concurrency regions, split by `--` inside a composite state, no longer count as nodes or subgraphs.
   Mermaid draws each region as a dashed-off area of the composite's box, so the states in it count inside the composite.
   A composite with regions now nests one deep, not two.
+- A label holding an HTML tag, a `<br>` or a bare `<` is read whole.
+  The DOM shim made mermaid's sanitiser drop the text before a tag, and all but the last line of a `<br>` label.
+  It also dropped any label holding `<`.
 
 ## [0.8.1] - 2026-10-18
 

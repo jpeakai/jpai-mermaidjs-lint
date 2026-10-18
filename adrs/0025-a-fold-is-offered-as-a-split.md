@@ -17,6 +17,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 
 ## Relates to
 
+- Extended by [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) (how a plan is chosen and drawn faithfully)
 - Extends [MJL-0004](0004-complexity-is-never-autofixed.md) (the split recommendation now carries a concrete plan, and is still never applied)
 - See also [MJL-0005](0005-a-fixer-refuses-when-unsure.md) (like a fixer that is unsure, a plan that breaks the contract is not offered)
 - See also [MJL-0015](0015-four-tenets-define-the-tool.md) (the plan serves the visual complexity tenet)

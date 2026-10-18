@@ -425,6 +425,19 @@
     },
     {
       "data": {
+        "id": "MJL-0026",
+        "label": "0026",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0026-a-split-plan-follows-the-authors-structure.md",
+        "title": "A split plan follows the author's structure, and refuses what it cannot draw faithfully",
+        "description": "Regions fold first, marker states stay in their composite, and concurrency is refused",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -695,6 +708,16 @@
     },
     {
       "data": {
+        "id": "MJL-0025-extended_by-MJL-0026",
+        "source": "MJL-0025",
+        "target": "MJL-0026",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "how a plan is chosen and drawn faithfully"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0025-extends-MJL-0004",
         "source": "MJL-0025",
         "target": "MJL-0004",
@@ -741,6 +764,16 @@
         "label": "see also",
         "relation": "see_also",
         "note": "the plan reads the parser's graph, and its emitted text is checked by parsing it again"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0026-extends-MJL-0025",
+        "source": "MJL-0026",
+        "target": "MJL-0025",
+        "label": "extends",
+        "relation": "extends",
+        "note": "how a fold offered as a split is chosen and drawn"
       }
     }
   ],

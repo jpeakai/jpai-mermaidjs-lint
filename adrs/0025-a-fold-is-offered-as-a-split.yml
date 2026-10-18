@@ -19,6 +19,9 @@ enforced_in:
   - src/split-report.ts and the --split-plan flag, which print the plan and write no file, and refuse --fix
 
 relates_to:
+  - relation: extended_by
+    target: MJL-0026
+    note: how a plan is chosen and drawn faithfully
   - relation: extends
     target: MJL-0004
     note: the split recommendation now carries a concrete plan, and is still never applied

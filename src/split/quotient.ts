@@ -5,7 +5,7 @@
 
 import type { GraphEdge, GraphNode } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
-import { byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
+import { byNatural, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
 import type { Tier } from "./types.ts";
 
 export interface Group {
@@ -105,6 +105,7 @@ export interface QEdge {
   source: string;
   target: string;
   label?: string;
+  markdown?: true;
   kind?: string;
   cardinality?: string;
   covers: string[];
@@ -115,11 +116,13 @@ const agreed = (edges: GraphEdge[], pick: (e: GraphEdge) => string | undefined):
   return first !== undefined && edges.every((e) => pick(e) === first) ? first : undefined;
 };
 
-// Merges what may merge: between two kept nodes only exact duplicates; with a
-// group at either end, every edge of the pair, keeping only the attributes all
-// agree on. An erDiagram never merges two cardinalities or two labels.
+// Merges what may merge: between two kept nodes nothing, since the overview is
+// the only diagram that draws that edge and an edge written twice must read
+// back twice; with a group at either end, every edge of the pair, keeping only
+// the attributes all agree on. An erDiagram never merges two cardinalities or
+// two labels.
 const bucketKey = (work: WorkGraph, e: GraphEdge, a: string, b: string): string => {
-  if (!(isGroupKey(a) || isGroupKey(b))) return edgeKey({ ...e, source: a, target: b });
+  if (!(isGroupKey(a) || isGroupKey(b))) return `${GROUP_MARK}${e.id}`;
   if (work.family === "er") return [a, b, e.label ?? "", e.cardinality ?? ""].join(GROUP_MARK);
   return `${a}${GROUP_MARK}${b}`;
 };
@@ -137,14 +140,16 @@ export const quotientEdges = (work: WorkGraph, part: Partition): QEdge[] => {
   return [...buckets.values()]
     .map(({ source, target, edges }) => {
       const [label, kind, cardinality] = [
-        agreed(edges, (e) => e.label),
+        agreed(edges, (e) => (e.label === undefined ? undefined : `${e.markdown ? "m" : "s"}${e.label}`)),
         agreed(edges, (e) => e.kind),
         agreed(edges, (e) => e.cardinality),
       ];
       return {
         source,
         target,
-        ...(label !== undefined ? { label } : {}),
+        ...(label !== undefined
+          ? { label: label.slice(1), ...(label.startsWith("m") ? { markdown: true as const } : {}) }
+          : {}),
         ...(kind !== undefined ? { kind } : {}),
         ...(cardinality !== undefined ? { cardinality } : {}),
         covers: edges.map((e) => e.id),
@@ -210,33 +215,49 @@ export const scoreOf = (shape: Shape, rows: number, config: ThresholdConfig): nu
 export const meets = (nodes: number, score: number, config: ThresholdConfig): boolean =>
   nodes <= config.node_target && score <= config.vcs_target;
 
-// The member a group is named after: highest degree, then smallest id.
-export const namedMember = (work: WorkGraph, members: readonly string[]): string =>
-  [...members].sort((a, b) => (work.degree.get(b) ?? 0) - (work.degree.get(a) ?? 0) || byText(a, b))[0] ?? "";
+// The members a group may be named after, best first: highest degree, then
+// smallest id as a reader counts.
+export const rankedMembers = (work: WorkGraph, members: readonly string[]): string[] =>
+  [...members].sort((a, b) => (work.degree.get(b) ?? 0) - (work.degree.get(a) ?? 0) || byNatural(a, b));
 
 export const regionRoots = (work: WorkGraph, regions: readonly string[]): string[] => {
   const inSet = new Set(regions);
   return regions.filter((r) => !inSet.has(work.regions.get(r)?.parent ?? ""));
 };
 
-// A group folded from one author region carries that region's label;
-// otherwise the label of its named member. N counts the members the label
-// does not already name.
-export const labelParts = (work: WorkGraph, g: Group): { base: string; n: number } => {
+export interface LabelParts {
+  base: string;
+  n: number;
+  markdown?: true;
+}
+
+const markdownOf = (x: { markdown?: true } | undefined): { markdown?: true } => (x?.markdown ? { markdown: true } : {});
+
+// The labels a group may carry, best first. A group folded from one author
+// region carries that region's label; otherwise the label of a member, the
+// named one first. N counts the members the label does not already name.
+export const labelChoices = (work: WorkGraph, g: Group): LabelParts[] => {
   const roots = regionRoots(work, g.regions);
   const root = roots.length === 1 ? roots[0] : undefined;
   const region = root === undefined ? undefined : work.regions.get(root);
-  if (root !== undefined && region && g.members.every((m) => regionWithin(work, homeOf(work, m), root))) {
-    return { base: region.label, n: g.members.length - (region.owner ? 1 : 0) };
-  }
-  const named = namedMember(work, g.members);
-  return { base: work.nodes.get(named)?.label ?? named, n: g.members.length - 1 };
+  const whole = root !== undefined && region && g.members.every((m) => regionWithin(work, homeOf(work, m), root));
+  const fromRegion: LabelParts[] =
+    whole && region
+      ? [{ base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) }]
+      : [];
+  const fromMembers = rankedMembers(work, g.members).map((m) => {
+    const node = work.nodes.get(m);
+    return { base: node?.label ?? m, n: g.members.length - 1, ...markdownOf(node) };
+  });
+  return [...fromRegion, ...fromMembers];
 };
 
+// A stub stands for one outside overview node: a kept node, a region or an
+// interface by its own id, or a whole other group by its group key. A stub for
+// a node inside another group stands for that node, so the edge is exact.
 export interface Stub {
   id: string;
   endpoint: string;
-  label: string;
 }
 
 export interface DetailView {
@@ -263,26 +284,8 @@ export const idMaker = (used: Set<string>, prefix: string): (() => string) => {
 export const usedIds = (work: WorkGraph): Set<string> =>
   new Set([...work.ids, ...work.regionIds, ...work.lollipops.keys(), ...work.markers.map((m) => m.id)]);
 
-const endpointLabel = (work: WorkGraph, id: string): string =>
+export const endpointLabel = (work: WorkGraph, id: string): string =>
   work.nodes.get(id)?.label ?? work.regions.get(id)?.label ?? work.lollipops.get(id)?.label ?? id;
-
-// A stub is named after the outside node; when that node sits in another
-// group, the group's label follows in brackets.
-const stubLabel = (work: WorkGraph, part: Partition, endpoint: string): string => {
-  const g = groupOfKey(part, over(work, part, endpoint));
-  const label = endpointLabel(work, endpoint);
-  return g ? `${label} (${labelParts(work, g).base})` : label;
-};
-
-const drawnRegions = (work: WorkGraph, g: Group, edges: GraphEdge[]): string[] => {
-  if (work.family === "state") return g.regions;
-  const roots = regionRoots(work, g.regions);
-  const root = roots.length === 1 ? roots[0] : undefined;
-  if (root === undefined) return g.regions;
-  const whole = g.members.every((m) => regionWithin(work, homeOf(work, m), root));
-  const named = edges.some((e) => e.source === root || e.target === root);
-  return whole && !named ? g.regions.filter((r) => r !== root) : g.regions;
-};
 
 const ROOT_MARKER: Record<string, string> = { stateStart: "root_start", stateEnd: "root_end" };
 
@@ -297,6 +300,9 @@ const markerEdgeIn = (
   const marker = markers.all.get(e.source) ?? markers.all.get(e.target);
   if (!(marker && members.has(marker.id === e.source ? e.target : e.source))) return null;
   if (markers.inner.has(marker.id)) return { edge: e, marker };
+  // A composite's marker pins the states it touches, so a group holding one
+  // folds the composite whole and the marker is inner; this one stays out.
+  if (marker.parent !== null) return null;
   const id = ROOT_MARKER[marker.shape ?? ""] ?? marker.id;
   const moved = { id, label: id, parent: null, ...(marker.shape ? { shape: marker.shape } : {}) };
   const swap = (x: string): string => (x === marker.id ? id : x);
@@ -321,21 +327,52 @@ const detailMarkers = (work: WorkGraph, g: Group): { markers: GraphNode[]; marke
   return { markers: [...used.values()].sort((a, b) => byText(a.id, b.id)), markerEdges: [...edges.values()] };
 };
 
+// What a detail's outside end stands for. An edge into the group from inside
+// another group stands for that whole group: the source's own detail draws it
+// to this exact node, so it reads back exactly once. Every other outside end
+// stands for itself.
+const outsideEnd = (work: WorkGraph, part: Partition, e: GraphEdge, inside: (id: string) => boolean): string | null => {
+  if (inside(e.target) && !inside(e.source)) {
+    const from = over(work, part, e.source);
+    return isGroupKey(from) ? from : e.source;
+  }
+  return inside(e.source) && !inside(e.target) ? e.target : null;
+};
+
 export const detailView = (work: WorkGraph, part: Partition, g: Group): DetailView => {
   const key = keyOf(g);
   const inside = (id: string): boolean => over(work, part, id) === key;
   const touching = work.edges.filter((e) => inside(e.source) || inside(e.target));
-  const outside = sorted(new Set(touching.flatMap((e) => [e.source, e.target]).filter((x) => !inside(x))));
+  const ends = new Map(touching.map((e) => [e.id, outsideEnd(work, part, e, inside)]));
+  const outside = sorted(new Set([...ends.values()].filter((x): x is string => x !== null)));
   const next = idMaker(usedIds(work), "s");
-  const stubs = outside.map((endpoint) => ({ id: next(), endpoint, label: stubLabel(work, part, endpoint) }));
+  const stubs = outside.map((endpoint) => ({ id: next(), endpoint }));
   const stubOf = new Map(stubs.map((s) => [s.endpoint, s.id]));
-  const edges = touching.map((e) => ({
-    ...e,
-    source: stubOf.get(e.source) ?? e.source,
-    target: stubOf.get(e.target) ?? e.target,
-  }));
-  const regions = drawnRegions(work, g, edges);
-  return { members: g.members, regions, stubs, edges, ...detailMarkers(work, g) };
+  const edges = touching.map((e) => {
+    const end = ends.get(e.id);
+    const stub = end === null || end === undefined ? undefined : stubOf.get(end);
+    if (stub === undefined) return e;
+    return inside(e.source) ? { ...e, target: stub } : { ...e, source: stub };
+  });
+  return { members: g.members, regions: drawnRegions(work, g), stubs, edges, ...detailMarkers(work, g) };
+};
+
+// The regions a detail draws: the ones its group folds, and in a classDiagram
+// every namespace around them too, since mermaid makes each namespace a
+// dotted name names.
+const drawnRegions = (work: WorkGraph, g: Group): string[] => {
+  if (work.family !== "class") return g.regions;
+  const out = new Set(g.regions);
+  for (const r of g.regions) {
+    for (
+      let p = work.regions.get(r)?.parent ?? null;
+      p !== null && !out.has(p);
+      p = work.regions.get(p)?.parent ?? null
+    ) {
+      out.add(p);
+    }
+  }
+  return sorted(out);
 };
 
 export const detailShape = (work: WorkGraph, view: DetailView): Shape => {

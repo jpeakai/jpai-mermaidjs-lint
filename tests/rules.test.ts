@@ -154,7 +154,9 @@ describe("complexity rules: split plan in the remediation", () => {
     const ten = found.find((f) => f.line > sectionLine && f.rule === RULE.NODES_COGNITIVE);
     expect(quoted).toStartWith("Split into sub-diagrams along existing subgraph boundaries");
     expect(ten?.remediation).toBe(quoted as string);
-    expect(ten?.remediation).toContain(" Split plan: an overview folding 7 groups (");
+    expect(ten?.remediation).toContain(
+      " Split plan: an overview folding 4 groups (Data (13 nodes), Ingress (13 nodes)",
+    );
   });
 
   test("with no plan the remediation keeps today's text", async () => {

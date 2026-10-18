@@ -30,6 +30,9 @@ export interface WNode {
   parent: string | null;
   shape?: string;
   owns?: string;
+  markdown?: true;
+  // An erDiagram entity's attributes or a class's members, as the source writes them.
+  rows?: string[];
 }
 
 // A flowchart subgraph, a composite state's box or a class namespace.
@@ -39,6 +42,7 @@ export interface WRegion {
   parent: string | null;
   // The composite state drawn as this box, for a stateDiagram.
   owner?: string;
+  markdown?: true;
 }
 
 export interface WorkGraph {
@@ -59,6 +63,10 @@ export interface WorkGraph {
   rows: number;
   degree: Map<string, number>;
   protectedIds: Set<string>;
+  // The region a protected node may fold only with: a node's own home, or for
+  // a state a start or end marker of a composite touches, that composite's box,
+  // so the transition is drawn inside the box it belongs to.
+  pins: Map<string, string | null>;
   // The stubs of a detail diagram that is split again: never folded.
   stubs: Set<string>;
 }
@@ -66,6 +74,19 @@ export interface WorkGraph {
 export const byText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 export const sorted = (xs: Iterable<string>): string[] => [...xs].sort(byText);
+
+// Natural order, as a reader counts: n2 before n10. The collator compares
+// digit runs by value; ties fall back to code unit order, so the order is total.
+const collator = new Intl.Collator("en", { numeric: true, sensitivity: "variant" });
+export const byNatural = (a: string, b: string): number => collator.compare(a, b) || byText(a, b);
+
+export const byNaturalTuple = (a: readonly string[], b: readonly string[]): number => {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const c = byNatural(a[i] ?? "", b[i] ?? "");
+    if (c !== 0) return c;
+  }
+  return a.length - b.length;
+};
 
 // Compares two sorted id tuples element by element, then by length.
 export const byTuple = (a: readonly string[], b: readonly string[]): number => {
@@ -76,8 +97,10 @@ export const byTuple = (a: readonly string[], b: readonly string[]): number => {
   return a.length - b.length;
 };
 
-export const edgeKey = (e: Pick<GraphEdge, "source" | "target" | "label" | "kind" | "cardinality">): string =>
-  [e.source, e.target, e.label ?? "", e.kind ?? "", e.cardinality ?? ""].join("\u0000");
+export const edgeKey = (
+  e: Pick<GraphEdge, "source" | "target" | "label" | "kind" | "cardinality" | "markdown">,
+): string =>
+  [e.source, e.target, e.label ?? "", e.kind ?? "", e.cardinality ?? "", e.markdown ? "md" : ""].join("\u0000");
 
 // Decision nodes and state pseudo-states keep their own node in an overview,
 // unless the whole region around them folds. These are the shape names the
@@ -112,7 +135,13 @@ const regionsOf = (graph: DiagramGraph, owners: Map<string, string>): Map<string
   for (const s of graph.subgraphs) {
     const owner = owners.get(s.id);
     const label = owner ? (labelOf.get(owner) ?? owner) : s.label;
-    regions.set(s.id, { id: s.id, label, parent: s.parent, ...(owner ? { owner } : {}) });
+    regions.set(s.id, {
+      id: s.id,
+      label,
+      parent: s.parent,
+      ...(owner ? { owner } : {}),
+      ...(s.markdown ? { markdown: true as const } : {}),
+    });
   }
   return regions;
 };
@@ -128,6 +157,8 @@ const nodesOf = (graph: DiagramGraph, regions: Map<string, WRegion>): Map<string
       parent,
       ...(n.shape ? { shape: n.shape } : {}),
       ...(owned ? { owns: owned } : {}),
+      ...(n.markdown ? { markdown: true as const } : {}),
+      ...(n.rows?.length ? { rows: n.rows } : {}),
     });
   }
   return nodes;
@@ -166,10 +197,12 @@ export const buildWorkGraph = (graph: DiagramGraph, options: WorkOptions): WorkG
   const nodes = nodesOf(graph, regions);
   const edges = canonicalEdges(graph.edges);
   const stubs = new Set(options.stubs ?? []);
-  const protectedIds = new Set(
-    [...nodes.values()].filter((n) => isProtectedShape(n.shape) || n.owns || stubs.has(n.id)).map((n) => n.id),
-  );
   const markers = (graph.pseudo?.nodes ?? []).filter((n) => n.shape === "stateStart" || n.shape === "stateEnd");
+  const pins = pinsOf(nodes, markers, graph.pseudo?.edges ?? []);
+  for (const n of nodes.values()) {
+    if (isProtectedShape(n.shape) || n.owns || stubs.has(n.id)) pins.set(n.id, pins.get(n.id) ?? n.owns ?? n.parent);
+  }
+  const protectedIds = new Set(pins.keys());
   return {
     type: graph.diagram_type,
     family,
@@ -185,8 +218,23 @@ export const buildWorkGraph = (graph: DiagramGraph, options: WorkOptions): WorkG
     rows: options.rows,
     degree: degreesOf(edges),
     protectedIds,
+    pins,
     stubs,
   };
+};
+
+// Each state a start or end marker inside a composite touches, pinned to that
+// composite's box. A marker at the top level pins nothing: a detail draws it
+// at its own top level, where it was.
+const pinsOf = (nodes: Map<string, WNode>, markers: GraphNode[], edges: GraphEdge[]): Map<string, string | null> => {
+  const boxOf = new Map(markers.filter((m) => m.parent !== null).map((m) => [m.id, m.parent]));
+  const pins = new Map<string, string | null>();
+  for (const e of edges) {
+    const box = boxOf.get(e.source) ?? boxOf.get(e.target);
+    const state = boxOf.has(e.source) ? e.target : e.source;
+    if (box !== undefined && nodes.has(state)) pins.set(state, box);
+  }
+  return pins;
 };
 
 // Where a node lives for folding: a composite state lives in its own box.

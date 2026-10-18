@@ -81,6 +81,45 @@ describe("flowchart graph", () => {
   });
 });
 
+describe("labels as mermaid's sanitizer keeps them", () => {
+  test("keeps a label's text around and between HTML tags, and an edge label holding <", async () => {
+    const graph = await graphOf(
+      'flowchart TD\n  A["Use <b>bold</b> carefully"] --> B["Line one<br>Line two<br>Line three"]\n  B -->|"a < b"| C["x <i>y</i>"]',
+    );
+    expect(graph.nodes.map((n) => n.label)).toEqual([
+      "Use <b>bold</b> carefully",
+      "Line one<br>Line two<br>Line three",
+      "x <i>y</i>",
+    ]);
+    expect(graph.edges[1]?.label).toBe("a &lt; b");
+  });
+
+  test("marks a markdown string label, on a node, an edge and a subgraph", async () => {
+    const graph = await graphOf(
+      'flowchart LR\n  A["`**Bold** start`"] -->|"`*edge*`"| B["plain"]\n  subgraph S ["`_box_`"]\n    B\n  end',
+    );
+    expect(graph.nodes.map((n) => [n.label, n.markdown ?? false])).toEqual([
+      ["**Bold** start", true],
+      ["plain", false],
+    ]);
+    expect(graph.edges[0]).toMatchObject({ label: "*edge*", markdown: true });
+    expect(graph.subgraphs[0]).toMatchObject({ label: "_box_", markdown: true });
+  });
+
+  test("keeps a transition label holding < or a quote", async () => {
+    const graph = await graphOf('stateDiagram-v2\n  A --> B : n < 10\n  A --> C : say "hi"');
+    expect(graph.edges.map((e) => e.label)).toEqual(["n &lt; 10", 'say "hi"']);
+  });
+
+  test("counts a composite's concurrency regions and names their markers the same on every parse", async () => {
+    const source =
+      "stateDiagram-v2\n  state Active {\n    [*] --> A\n    A --> B\n    --\n    [*] --> C\n    C --> D\n  }";
+    const [one, two] = [await graphOf(source), await graphOf(source)];
+    expect(one.subgraphs).toEqual([{ id: "Active__group", label: "", parent: null, regions: 2 }]);
+    expect(one.pseudo?.nodes.map((n) => n.id)).toEqual(two.pseudo?.nodes.map((n) => n.id) ?? []);
+  });
+});
+
 describe("erDiagram graph", () => {
   test("keeps each relationship's label, line and cardinality as the source wrote it", async () => {
     const graph = await graphOf(
@@ -160,8 +199,32 @@ describe("stateDiagram graph", () => {
       ["C", "Active__group"],
       ["D", "Active__group"],
     ]);
-    expect(graph.subgraphs).toEqual([{ id: "Active__group", label: "", parent: null }]);
-    expect(graph.pseudo?.nodes.map((n) => n.parent)).toEqual(["Active__group", "Active__group"]);
+    expect(graph.subgraphs).toEqual([{ id: "Active__group", label: "", parent: null, regions: 2 }]);
+    expect(graph.pseudo?.nodes.map((n) => [n.id, n.parent])).toEqual([
+      ["Active_region1_start", "Active__group"],
+      ["Active_region2_start", "Active__group"],
+    ]);
+  });
+});
+
+describe("rows", () => {
+  test("keeps each entity's attributes as the source writes them", async () => {
+    const graph = await graphOf(
+      'erDiagram\n  C ||--o{ O : places\n  C {\n    string name PK "the name"\n    string email UK, FK\n  }',
+    );
+    expect(graph.nodes.map((n) => n.rows)).toEqual([['string name PK "the name"', "string email UK, FK"], undefined]);
+  });
+
+  test("keeps each class's members, then its methods, as the source writes them", async () => {
+    const graph = await graphOf(
+      "classDiagram\n  class Order {\n    -List~Line~ lines\n    +pay(amount float) bool$\n    #total()* int\n  }\n  Order : +String note",
+    );
+    expect(graph.nodes[0]?.rows).toEqual([
+      "-List~Line~ lines",
+      "+String note",
+      "+pay(amount float)$ bool",
+      "#total()* int",
+    ]);
   });
 });
 
@@ -172,7 +235,7 @@ describe("classDiagram graph", () => {
     );
     expect(graph.diagram_type).toBe("classDiagram");
     expect(graph.nodes).toEqual([
-      { id: "Order", label: "Order", parent: "Shop", shape: "classBox" },
+      { id: "Order", label: "Order", parent: "Shop", shape: "classBox", rows: ["+id", "+pay()"] },
       { id: "Line", label: "Line", parent: "Shop", shape: "classBox" },
       { id: "Pay", label: "Pay", parent: null, shape: "classBox" },
     ]);

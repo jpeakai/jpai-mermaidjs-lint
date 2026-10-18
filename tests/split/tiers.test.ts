@@ -35,18 +35,22 @@ describe("T2 lossless structure", () => {
     expect(proposeT2(ctxOf(work, roomy))).toEqual([]);
   });
 
-  test("twins too many for one detail are cut into runs that fit", async () => {
+  test("twins too many for one detail are cut into runs that fit, all folding in one step", async () => {
     const work = await workOf(lines("flowchart LR", "  H --> a & b & c & d & e & f"));
-    const runs = proposeTwins(ctxOf(work, target(4, 40))).map((c) => c.keys);
+    const candidates = proposeTwins(ctxOf(work, target(4, 40)));
+    expect(candidates).toHaveLength(1);
+    const runs = candidates.flatMap((c) => [c.keys, ...(c.also ?? []).map((m) => m.keys)]);
     expect(runs).toEqual([
       ["a", "b", "c"],
       ["d", "e", "f"],
     ]);
   });
 
-  test("a long chain folds in two stages or more, never whole", async () => {
+  test("a long chain folds in two stages or more, never whole, every stage in one step", async () => {
     const work = await workOf(lines("flowchart LR", "  s --> a --> b --> c --> d --> e --> f --> t"));
-    const stages = proposeChains(ctxOf(work, roomy)).map((c) => c.keys);
+    const candidates = proposeChains(ctxOf(work, roomy));
+    expect(candidates).toHaveLength(1);
+    const stages = candidates.flatMap((c) => [c.keys, ...(c.also ?? []).map((m) => m.keys)]);
     expect(stages).toEqual([
       ["a", "b", "c"],
       ["d", "e", "f"],

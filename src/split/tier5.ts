@@ -2,7 +2,7 @@
 // folds into that attachment node, with as many such leaves as fit one detail.
 // Run again on the result, it peels the graph toward its 2-core.
 
-import { byText } from "./graph.ts";
+import { byNatural } from "./graph.ts";
 import { overviewKeys, parentOfKey } from "./quotient.ts";
 import { adjacencyOf, type Candidate, chunksThatFit, groupable, neighboursOf, type TierContext } from "./tier.ts";
 
@@ -16,8 +16,8 @@ export const proposeT5 = (ctx: TierContext): Candidate[] => {
     if (parentOfKey(ctx.work, ctx.part, key) !== parentOfKey(ctx.work, ctx.part, anchor)) continue;
     leaves.set(anchor, [...(leaves.get(anchor) ?? []), key]);
   }
-  return [...leaves.keys()].sort(byText).flatMap((anchor) => {
-    const keys = [anchor, ...(leaves.get(anchor) ?? []).filter((k) => k !== anchor).sort(byText)];
+  return [...leaves.keys()].sort(byNatural).flatMap((anchor) => {
+    const keys = [anchor, ...(leaves.get(anchor) ?? []).filter((k) => k !== anchor).sort(byNatural)];
     const parent = parentOfKey(ctx.work, ctx.part, anchor);
     return chunksThatFit(ctx, keys, { parent, tier: "T5", reason: "leaf fold" })
       .slice(0, 1)

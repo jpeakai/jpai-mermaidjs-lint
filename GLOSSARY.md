@@ -369,6 +369,9 @@ In `adrs/` that is everything rendered from the Records, as [AGENTS.md](AGENTS.m
 
 One node of an Overview that stands for a set of the original nodes, folded together.
 Its label is an author label or its best-connected member's, with the count of the rest, such as `ingest (+5)`.
+A long label is shown cut in the middle with an ellipsis, and no Group Node shows a label another node shows.
+It is drawn apart from an original node.
+A flowchart draws it as a subroutine, a `stateDiagram` or `erDiagram` with a thick dashed border, and a `classDiagram` with a `<<group>>` annotation.
 
 ## Host
 
@@ -430,6 +433,11 @@ The code that reads a Diagram's structure from mermaid's own parsers.
 
 A `<name>.fixed.<ext>` sibling of a Fixture holding the exact output of `--fix`.
 
+## Pinned State
+
+A state that a start or end marker inside a composite state reaches.
+A Split Plan folds it only with that whole composite, so the transition is drawn inside the box it belongs to.
+
 ## Plugin
 
 A module that adds Rules to a run, with a name, a Namespace, a contract version and optional Categories.
@@ -490,6 +498,11 @@ The optional next step a Rule attaches to a Finding, shown in `--json` output.
 A line of text inside a node: an `erDiagram` entity's attribute, or a `classDiagram` class's attribute or method.
 It weighs on the Visual Complexity Score, but it is not a node.
 
+## Row Diagram
+
+A diagram of a Split Plan that draws the Rows of nodes its Overview keeps, since an Overview draws no Rows.
+A Detail Diagram draws its members' Rows itself, when it still meets the target with them.
+
 ## Rule
 
 One deterministic check with a Rule ID, and optionally a Fixer.
@@ -523,7 +536,10 @@ The nodes, edges, Rows, subgraphs, subgraph nesting depth and Tree Depth the Par
 ## Stub
 
 A node in a Detail Diagram that stands for a node, subgraph or interface outside its group.
+An edge in from another group starts at one Stub for that whole group.
 It is drawn dashed, so the reader sees where an edge leaves the group.
+Its label is the node's label.
+It adds the node's group label when that differs, and the node's id when another label reads the same.
 
 ## Style Directive
 

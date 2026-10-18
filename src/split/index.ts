@@ -7,12 +7,12 @@ import { extractGraph } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats, getMermaidCore } from "../parse/stats.ts";
 import { checkContract } from "./contract.ts";
-import { buildWorkGraph, familyOf } from "./graph.ts";
-import { planWork } from "./plan.ts";
+import { buildWorkGraph, familyOf, type WorkGraph } from "./graph.ts";
+import { laddersOf, planWork } from "./plan.ts";
 import { meets } from "./quotient.ts";
 import type { SplitOutcome, SplitPlan } from "./types.ts";
 
-export type { SplitDetail, SplitGroup, SplitLoss, SplitOutcome, SplitPlan, Tier } from "./types.ts";
+export type { RowDetail, SplitDetail, SplitGroup, SplitLoss, SplitOutcome, SplitPlan, Tier } from "./types.ts";
 
 const refuse = (reason: string, violations: string[] = []): SplitOutcome => ({ plan: null, reason, violations });
 
@@ -41,14 +41,29 @@ export const splitOutcome = async (source: string, config: ThresholdConfig): Pro
   const counts = [graph.nodes.length, graph.edges.length, graph.subgraphs.length].join("/");
   if (counts !== [stats.nodes, stats.edges, stats.subgraphs].join("/"))
     return refuse("the graph does not count what the stats count");
-  if (graph.nodes.some((n) => n.shape === "divider")) return refuse("concurrent state regions are not split");
-  const direction = await directionOf(source);
-  const built = planWork(buildWorkGraph(graph, { direction, rows: stats.rows }), config, 1);
-  if (typeof built === "string") return refuse(built);
-  const violations = await checkContract(built, config);
-  return violations.length > 0
-    ? refuse("the plan breaks the contract", violations)
-    : { plan: built.plan, reason: "", violations: [] };
+  // A detail or overview would draw a composite's regions as one, which the
+  // emitted text cannot tell apart, so no plan is offered.
+  if (graph.subgraphs.some((s) => (s.regions ?? 0) > 1)) return refuse("concurrent state regions are not split");
+  const work = buildWorkGraph(graph, { direction: await directionOf(source), rows: stats.rows });
+  return firstPassing(work, config);
+};
+
+// The plan of the first ladder that passes the contract: author regions
+// first when the diagram has them, then the default ladder. With none, the
+// last ladder's reason.
+const firstPassing = async (work: WorkGraph, config: ThresholdConfig): Promise<SplitOutcome> => {
+  let outcome = refuse("no ladder was walked");
+  for (const order of laddersOf(work)) {
+    const built = planWork(work, config, 1, order);
+    if (typeof built === "string") {
+      outcome = refuse(built);
+      continue;
+    }
+    const violations = await checkContract(built, config);
+    if (violations.length === 0) return { plan: built.plan, reason: "", violations: [] };
+    outcome = refuse("the plan breaks the contract", violations);
+  }
+  return outcome;
 };
 
 export const splitPlan = async (source: string, config: ThresholdConfig): Promise<SplitPlan | null> =>

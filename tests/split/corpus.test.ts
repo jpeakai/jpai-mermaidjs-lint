@@ -1,6 +1,7 @@
 // Every diagram in tests/fixtures and examples/ that exceeds high-density
 // acceptable, planned under each preset: a plan offered must pass the
-// contract, and a refusal must say why.
+// contract and read back whole from its emitted text, and a refusal must say
+// why.
 
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -10,6 +11,7 @@ import { calculateComplexity, configFromPreset, PRESET_NAMES } from "../../src/p
 import { extractStats } from "../../src/parse/stats.ts";
 import { splitOutcome } from "../../src/split/index.ts";
 import { PROJECT_ROOT } from "../helpers.ts";
+import { faithful } from "./faithful.ts";
 
 const walk = (path: string): string[] =>
   statSync(path).isFile() ? [path] : readdirSync(path).flatMap((f) => walk(join(path, f)));
@@ -45,6 +47,12 @@ describe("split plans over the repo's own oversized diagrams", () => {
         const out = await splitOutcome(source, configFromPreset(preset));
         expect({ where, preset, violations: out.violations }).toEqual({ where, preset, violations: [] });
         if (out.plan === null) expect(out.reason).not.toBe("");
+        else
+          expect({ where, preset, problems: await faithful(source, out.plan) }).toEqual({
+            where,
+            preset,
+            problems: [],
+          });
       }
     });
   }

@@ -186,6 +186,8 @@ A finding that spans a diagram prints its first and last line, as `file:3-7`.
 The heading names the diagram's `file:line` and the tier of the plan.
 An overview follows, where each group of nodes is folded into one group node.
 Then one detail diagram per group shows its members, with a stub for each node outside the group that an edge reaches.
+An edge in from another group starts at one stub for that whole group, since that group's own detail draws it to the exact node.
+For an `erDiagram` or `classDiagram`, a `### Rows` diagram follows for the attributes or members of nodes the overview keeps.
 Each diagram is a mermaid fence, so the output can be pasted into a markdown file and checked:
 
 ````text

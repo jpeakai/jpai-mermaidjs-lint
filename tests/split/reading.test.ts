@@ -283,15 +283,28 @@ const SAAS = lines(
   "  WEBHOOK_ENDPOINT ||--o{ EVENT_DELIVERY : delivers",
 );
 
+const pairsOf = (plan: SplitPlan): string[] =>
+  plan.overview.edges.map((e) => [e.source, e.target].sort().join("\u0000"));
+
 describe("an overview", () => {
   test(
     "draws the parallel edges between two nodes side by side, whichever way each is written",
     async () => {
-      const plan = await planOf(SAAS, configFromPreset("medium-density"));
-      const pairs = plan.overview.edges.map((e) => [e.source, e.target].sort().join("\u0000"));
+      const source = readFileSync(join(import.meta.dir, "cases", "round9", "er01-ecommerce.mmd"), "utf8");
+      const plan = await planOf(source, configFromPreset("low-density"));
+      const pairs = pairsOf(plan);
       const runs = pairs.filter((p, i) => i === 0 || pairs[i - 1] !== p);
       expect(runs.length).toBe(new Set(pairs).size);
       expect(pairs.length).toBeGreaterThan(runs.length);
+    },
+    SLOW,
+  );
+
+  test(
+    "takes a fold nearly as good that leaves no parallel edges over one that leaves five",
+    async () => {
+      const plan = await planOf(SAAS, configFromPreset("medium-density"));
+      expect(pairsOf(plan).length).toBe(new Set(pairsOf(plan)).size);
     },
     SLOW,
   );

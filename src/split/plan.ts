@@ -9,13 +9,14 @@
 
 import type { ThresholdConfig } from "../parse/metrics.ts";
 import { assemble, type Build, type Folded, type Snapshot, snapshotOf } from "./assemble.ts";
-import { byNaturalTuple, type WorkGraph } from "./graph.ts";
+import { byNaturalTuple, byText, type WorkGraph } from "./graph.ts";
 import {
   detailShape,
   detailView,
   EMPTY_PARTITION,
   type Group,
   groupOfKey,
+  isGroupKey,
   keyOf,
   type Merge,
   meets,
@@ -25,6 +26,7 @@ import {
   type Partition,
   parentOfKey,
   partitionOf,
+  type QEdge,
   quotientEdges,
   scoreOf,
 } from "./quotient.ts";
@@ -71,9 +73,9 @@ interface Scored {
   // The overview edges left, so at an equal saving the aggregate with fewer
   // edges between overview nodes goes first.
   edges: number;
-  // The overview nodes left, and whether the overview then meets the target.
-  nodes: number;
-  finishes: boolean;
+  // The overview edges left beside another between the same two nodes, at
+  // least one a group: what a reader sees as parallel lines.
+  parallel: number;
 }
 
 const EPSILON = 1e-9;
@@ -112,12 +114,22 @@ export const MIN_OVERVIEW = 4;
 const SMALL_DIAGRAM = 8;
 export const floorOf = (work: WorkGraph): number => (work.ids.length < SMALL_DIAGRAM ? 1 : MIN_OVERVIEW);
 
+// The edges beyond the first between each pair of overview nodes, whichever
+// way each is written, at least one end a group.
+const parallelOf = (qedges: readonly QEdge[]): number => {
+  const pairs = qedges
+    .filter((e) => isGroupKey(e.source) || isGroupKey(e.target))
+    .map((e) => [e.source, e.target].sort(byText).join("\u0000"));
+  return pairs.length - new Set(pairs).size;
+};
+
 const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step): Scored | null => {
   const { work, config } = ctx;
   const merges = [cand, ...(cand.also ?? [])];
   const applied = applyAll(ctx, merges, step.capped);
   if (!applied) return null;
-  const shape = overviewShape(work, applied.part, quotientEdges(work, applied.part));
+  const qedges = quotientEdges(work, applied.part);
+  const shape = overviewShape(work, applied.part, qedges);
   if (shape.nodes < (step.floor ?? floorOf(work))) return null;
   const saved = current - scoreOf(shape, 0, config);
   if (saved <= EPSILON) return null;
@@ -130,8 +142,7 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
     kin: cand.kin ?? 0,
     members: applied.groups[0]?.members ?? [],
     edges: shape.edges,
-    nodes: shape.nodes,
-    finishes: meets(shape.nodes, scoreOf(shape, 0, config), config),
+    parallel: parallelOf(qedges),
   };
 };
 
@@ -164,7 +175,25 @@ const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null 
     .filter(only)
     .map((c) => evaluate(ctx, c, current, step))
     .filter((s): s is Scored => s !== null);
-  return scored.sort(better(tier === "T6", tier === "T4"))[0] ?? null;
+  const ranked = scored.sort(better(tier === "T6", tier === "T4"));
+  return NEAR_TIERS.has(tier) ? nearest(ranked, tier === "T6") : (ranked[0] ?? null);
+};
+
+// How near a candidate's saving (or, in T6, its gain) must come to the best
+// one's, as a share of it, to count as nearly equal.
+export const NEAR = 0.05;
+const NEAR_TIERS: ReadonlySet<Tier> = new Set(["T4", "T5", "T6"]);
+
+// Of the candidates nearly as good as the best, in T6 of the same kin, the
+// first leaving the fewest parallel overview edges: a plan then draws fewer
+// relationships side by side between groups at a saving nearly as large.
+const nearest = (ranked: Scored[], byPriority: boolean): Scored | null => {
+  const top = ranked[0];
+  if (!top) return null;
+  const primary = (x: Scored): number => (byPriority ? x.priority : x.ratio);
+  const slack = Math.max(EPSILON, NEAR * Math.abs(primary(top)));
+  const near = ranked.filter((x) => (!byPriority || x.kin === top.kin) && primary(top) - primary(x) <= slack);
+  return near.reduce((best, x) => (x.parallel < best.parallel ? x : best), top);
 };
 
 interface Measure {

@@ -13,7 +13,7 @@ import { extractStats } from "../parse/stats.ts";
 import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { flowRegionsOf } from "./flow.ts";
 import { byOverviewEdge, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { groupLabels, rangeLabel, readerOf, readingsOf } from "./label.ts";
+import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf } from "./label.ts";
 import { floorOf } from "./plan.ts";
 import { idMaker, isGroupKey, over, type Partition, reversible, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
@@ -216,9 +216,24 @@ const detailNodes = (build: Build): Violations => {
   return out;
 };
 
+const fromSuffix = (work: WorkGraph, from: string[]): string =>
+  `${FROM}${work.nodes.get(from[0] ?? "")?.label ?? from[0] ?? ""}`;
+
+// A stub for a whole group that names a member its edges leave draws only
+// edges that member has: each, read from that member, is an original edge.
+const fromHolds = (build: Build, d: SplitPlan["details"][number], stub: string, from: string[]): Violations => {
+  if (from.length === 0) return [];
+  const original = new Set(build.work.edges.map(tuple));
+  const drawn = d.graph.edges.filter((e) => e.source === stub);
+  const held = drawn.every((e) => from.some((m) => original.has(tuple({ ...e, source: m }))));
+  return drawn.length > 0 && held ? [] : [`5: stub ${stub} of ${d.group} names a member that does not draw its edges`];
+};
+
 // A stub's text names one thing: read by every form a plan writes, against
 // every label the diagram and the plan's groups show, it has exactly one
-// reading, the endpoint it stands for. One endpoint always reads one text.
+// reading, the endpoint it stands for. One endpoint always reads one text,
+// but for the member FROM names on a whole group's stub drawn apart, and
+// that member draws every edge the stub draws.
 const stubNames = (build: Build): Violations => {
   const { plan, work } = build;
   const groupOf = new Map(plan.groups.flatMap((g) => [...g.members, ...g.regions].map((m) => [m, g.id] as const)));
@@ -238,10 +253,13 @@ const stubNames = (build: Build): Violations => {
     const labelOf = new Map(d.graph.nodes.map((n) => [n.id, n.label]));
     for (const [stub, end] of Object.entries(d.stubs)) {
       const label = labelOf.get(stub) ?? "";
-      byEnd.set(end, new Set([...(byEnd.get(end) ?? []), label]));
+      const from = fromMembers(reader, label, end);
+      const base = from.length > 0 ? label.slice(0, label.length - fromSuffix(work, from).length) : label;
+      byEnd.set(end, new Set([...(byEnd.get(end) ?? []), base]));
       const read = sorted(readingsOf(reader, label));
       if (read.join("\u0000") !== end)
         out.push(`5: stub ${stub} of ${d.group}, "${label}", reads as ${read.join(" or ") || "nothing"}, not ${end}`);
+      out.push(...fromHolds(build, d, stub, from));
     }
   }
   for (const [end, labels] of byEnd) if (labels.size > 1) out.push(`5: the stubs for ${end} read differently`);

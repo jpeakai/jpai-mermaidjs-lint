@@ -7,8 +7,17 @@
 import type { DiagramGraph, GraphEdge, GraphNode } from "../parse/graph.ts";
 import type { ThresholdConfig } from "../parse/metrics.ts";
 import { emitSource } from "./emit.ts";
-import { buildWorkGraph, byNatural, byOverviewEdge, byText, edgeKey, type WNode, type WorkGraph } from "./graph.ts";
-import { groupLabels, ID_LEAD, type LabelContext, rangeLabel, type StubText, stubTexts } from "./label.ts";
+import {
+  buildWorkGraph,
+  byNatural,
+  byOverviewEdge,
+  byText,
+  edgeKey,
+  sorted,
+  type WNode,
+  type WorkGraph,
+} from "./graph.ts";
+import { groupLabels, ID_LEAD, type LabelContext, namedApart, rangeLabel, type StubText, stubTexts } from "./label.ts";
 import {
   chainEntries,
   type DetailView,
@@ -288,19 +297,34 @@ interface Assembly {
   labels: LabelContext;
 }
 
+// A detail's view and its stubs' texts: drawn apart when it still meets the
+// target so and every stub drawn apart can be named by the member its edges
+// leave (namedApart), else with one stub per outside end.
+const viewOf = (a: Assembly, group: Group): { view: DetailView; texts: Map<string, StubText> } => {
+  const { work, part } = a.folded;
+  const apart = detailView(work, part, group, true);
+  const shape = detailShape(work, apart);
+  if (meets(shape.nodes, scoreOf(shape, 0, a.config), a.config)) {
+    const origin = new Map(work.edges.map((e) => [e.id, e.source]));
+    const sourcesOf = (stub: string): string[] =>
+      sorted(new Set(apart.edges.filter((e) => e.source === stub).map((e) => origin.get(e.id) ?? e.source)));
+    const texts = namedApart(a.labels, apart.stubs, stubTexts(a.labels, apart.stubs), sourcesOf);
+    if (texts) return { view: apart, texts };
+  }
+  const view = detailView(work, part, group);
+  return { view, texts: stubTexts(a.labels, view.stubs) };
+};
+
 // A detail draws edges a whole-group stub would repeat apart, and its
 // members' rows, each when it still meets the target with them.
 const buildDetail = (a: Assembly, g: SplitGroup): DetailBuilt | string => {
   const { work, part } = a.folded;
   const group = part.groups[part.groupOf.get(g.members[0] ?? "") ?? -1] as Group;
-  const apart = detailView(work, part, group, true);
-  const fitsApart = meets(detailShape(work, apart).nodes, scoreOf(detailShape(work, apart), 0, a.config), a.config);
-  const view = fitsApart ? apart : detailView(work, part, group);
+  const { view, texts } = viewOf(a, group);
   const shape = detailShape(work, view);
   const rowsHere = rowCount(work, view.members);
   const rows = rowsHere > 0 && meets(shape.nodes, scoreOf(shape, rowsHere, a.config), a.config);
   const score = scoreOf(shape, rows ? rowsHere : 0, a.config);
-  const texts = stubTexts(a.labels, view.stubs);
   const graph = detailGraph(work, view, texts, rows);
   const stubs = Object.fromEntries(view.stubs.map((s) => [s.id, texts.get(s.id)?.endpoint ?? s.endpoint]));
   const source = emitSource(work, { graph, stubs: new Set(Object.keys(stubs)) });

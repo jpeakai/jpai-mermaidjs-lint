@@ -290,9 +290,19 @@ const checkParents = (c: Ctx): void => {
   }
 };
 
+// The original ids a stub's text names as the member of group gid its edges
+// leave: the group's shown label, " from ", then a label of its own members.
+const fromNamed = (c: Ctx, S: string, gid: string): string[] => {
+  const shown = c.shown.get(gid)?.label;
+  if (shown === undefined || !S.startsWith(`${shown} from `)) return [];
+  const label = S.slice(shown.length + " from ".length);
+  return c.G.nodes.filter((n) => n.label === label && c.ov(n.id) === gid).map((n) => n.id);
+};
+
 // Every referent a stub's text names, by each form a plan writes: a label as
 // it is, a group's shown label, a label with " (in group)" or with its group's
-// shown label in brackets, and any of these with " [id]" naming one reading.
+// shown label in brackets, a group's shown label with " from " and one of its
+// members' labels, and any of these with " [id]" naming one reading.
 const stubReader = (c: Ctx): ((s: string) => Set<string>) => {
   const byLabel = new Map<string, string[]>();
   const referents = [
@@ -326,6 +336,7 @@ const stubReader = (c: Ctx): ((s: string) => Set<string>) => {
       ...[...c.shown].filter(([, gs]) => gs.label === S).map(([gid]) => `group:${gid}`),
       ...tagged(S),
       ...inGroup(S),
+      ...[...c.shown.keys()].filter((gid) => fromNamed(c, S, gid).length > 0).map((gid) => `group:${gid}`),
     ]);
   return read;
 };
@@ -346,6 +357,18 @@ const readStub = (c: Ctx, d: Det, s: GraphNode, read: (s: string) => Set<string>
   return named ?? [...r][0] ?? null;
 };
 
+// A stub naming the member its edges leave draws only edges that member has.
+const checkFrom = (c: Ctx, d: Det, s: GraphNode, named: string[]): void => {
+  if (named.length === 0) return;
+  const gEnd = nameEnds(c.G);
+  const original = new Set(c.G.edges.map((e) => ek(gEnd(e.source), gEnd(e.target), e)));
+  const dEnd = nameEnds(d.D);
+  for (const e of d.D.edges.filter((x) => x.source === s.id)) {
+    if (!named.some((m) => original.has(ek(m, dEnd(e.target), e))))
+      c.add("BUG", "stub", `detail ${d.gid} stub ${s.id} "${s.label}" draws an edge its member has not`);
+  }
+};
+
 const readStubs = (c: Ctx): Map<string, Map<string, string>> => {
   const read = stubReader(c);
   const out = new Map<string, Map<string, string>>();
@@ -354,6 +377,7 @@ const readStubs = (c: Ctx): Map<string, Map<string, string>> => {
     for (const s of d.stubs) {
       const r = readStub(c, d, s, read);
       if (r !== null) m.set(s.id, r);
+      if (r?.startsWith("group:")) checkFrom(c, d, s, fromNamed(c, s.label, r.slice(6)));
     }
     out.set(d.gid, m);
   }

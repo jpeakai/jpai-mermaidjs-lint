@@ -121,11 +121,7 @@ const read = async (source: string, plan: SplitPlan): Promise<Reading | string[]
   return { original, overview, details, groups, groupOf, isOriginal };
 };
 
-// Every node, region or group a stub's text names, by each form a plan
-// writes: a label as it is, a group's shown label, a label with " (in group)"
-// or the shown label of the group holding it in brackets, and any of these
-// with " [id]" naming one of its readings.
-const readerOf = (r: Reading): ((text: string) => Set<string>) => {
+const literalOf = (r: Reading): Map<string, string[]> => {
   const literal = new Map<string, string[]>();
   const add = (label: string, id: string): void => {
     literal.set(label, [...(literal.get(label) ?? []), id]);
@@ -133,13 +129,35 @@ const readerOf = (r: Reading): ((text: string) => Set<string>) => {
   for (const n of r.original.nodes) add(n.label, n.id);
   for (const s of r.original.subgraphs) if (s.label !== "") add(s.label, s.id);
   for (const p of r.original.pseudo?.nodes ?? []) if (p.shape === "lollipop") add(p.label, `()${p.label}`);
+  return literal;
+};
+
+// The members of a group a stub's text names as the one its edges leave: the
+// group's shown label, " from ", then a label of the group's own members.
+const fromOf = (r: Reading, literal: Map<string, string[]>, text: string): Map<string, string[]> => {
+  const out = new Map<string, string[]>();
+  for (const [gid, g] of r.groups) {
+    if (!text.startsWith(`${g.label} from `)) continue;
+    const ids = (literal.get(text.slice(g.label.length + 6)) ?? []).filter((id) => r.groupOf.get(id) === gid);
+    if (ids.length > 0) out.set(gid, ids);
+  }
+  return out;
+};
+
+// Every node, region or group a stub's text names, by each form a plan
+// writes: a label as it is, a group's shown label, a label with " (in group)"
+// or the shown label of the group holding it in brackets, a group's shown
+// label with " from " and one of its members' labels, and any of these with
+// " [id]" naming one of its readings.
+const readerOf = (r: Reading): ((text: string) => Set<string>) => {
+  const literal = literalOf(r);
   const held = (own: string, fits: (g: Shown) => boolean): string[] =>
     (literal.get(own) ?? []).filter((id) => {
       const g = r.groups.get(r.groupOf.get(id) ?? "");
       return g !== undefined && fits(g);
     });
   const readings = (text: string): Set<string> => {
-    const out = new Set<string>(literal.get(text) ?? []);
+    const out = new Set<string>([...(literal.get(text) ?? []), ...fromOf(r, literal, text).keys()]);
     for (const [id, g] of r.groups) if (g.label === text) out.add(id);
     const tag = /^(.*) \[([^\]]+)\]$/s.exec(text);
     if (tag && readings(tag[1] ?? "").has(tag[2] ?? "")) out.add(tag[2] ?? "");
@@ -198,6 +216,26 @@ const stubReadings = (r: Reading): { of: Map<string, Map<string, string>>; probl
     of.set(d.group, stubs);
   }
   return { of, problems };
+};
+
+// A stub naming the member its edges leave draws only that member's edges:
+// each edge from it, read from that member, is an original edge.
+const fromProblems = (r: Reading): string[] => {
+  const literal = literalOf(r);
+  const end = endsOf(r.original);
+  const original = new Set(r.original.edges.map((e) => edgeKey(e, end(e.source), end(e.target))));
+  return r.details.flatMap((d) =>
+    d.graph.nodes
+      .filter((n) => !r.isOriginal(n.id))
+      .flatMap((s) => {
+        const named = [...fromOf(r, literal, s.label).values()].flat();
+        const drawn = d.graph.edges.filter((e) => e.source === s.id);
+        const held = drawn.every((e) => named.some((m) => original.has(edgeKey(e, m, e.target))));
+        return named.length === 0 || (drawn.length > 0 && held)
+          ? []
+          : [`detail ${d.group} stub "${s.label}" draws an edge its member has not`];
+      }),
+  );
 };
 
 // Each original edge once: from the overview between two kept nodes, else
@@ -399,6 +437,7 @@ export const faithful = async (source: string, plan: SplitPlan): Promise<string[
     ...problems,
     ...elementProblems(r),
     ...edgeProblems(r, of, plan),
+    ...fromProblems(r),
     ...markerProblems(r, plan),
     ...protectionProblems(r),
   ];

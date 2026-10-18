@@ -520,12 +520,20 @@ function adaptFlowchart(db: AnyDb): Structure {
     nodes?: string[];
   }>;
   return {
-    nodeIds: [...vertices.keys()],
+    nodeIds: flowchartNodeIds(vertices.keys(), subGraphs),
     edges: edgesArr.length,
     subgraphNames: subGraphs.map((s) => s.title ?? s.id ?? ""),
     maxDepth: subgraphNestingDepth(subGraphs),
   };
 }
+
+// An edge to a subgraph's id (`A --> S`) leaves a vertex named S in the db, but
+// mermaid draws that edge to the subgraph's box and draws no node S. So a
+// vertex that shares a subgraph's id is the subgraph, not a node.
+export const flowchartNodeIds = (ids: Iterable<string>, subGraphs: Array<{ id?: string }>): string[] => {
+  const boxes = new Set(subGraphs.map((s) => s.id));
+  return [...ids].filter((id) => !boxes.has(id));
+};
 
 const lengthOf = (x: unknown): number => (Array.isArray(x) ? x.length : 0);
 

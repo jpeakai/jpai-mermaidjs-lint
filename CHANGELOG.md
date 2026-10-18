@@ -10,7 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- A flowchart edge to a subgraph's id, such as `A --> S` where `S` is a subgraph, no longer counts `S` as a node as well.
+  Mermaid draws that edge to the subgraph's box, so the diagram's node count drops by one for each such subgraph.
 
 ## [0.8.1] - 2026-10-18
 

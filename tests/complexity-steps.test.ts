@@ -29,15 +29,15 @@ describe("extractGraph", () => {
     );
     expect(graph.diagram_type).toBe("flowchart-v2");
     expect(graph.nodes).toEqual([
-      { id: "A", label: "Alpha", parent: "inner" },
-      { id: "B", label: "B", parent: "inner" },
-      { id: "C", label: "C", parent: "outer" },
-      { id: "D", label: "D", parent: null },
+      { id: "A", label: "Alpha", parent: "inner", shape: "square" },
+      { id: "B", label: "B", parent: "inner", shape: "square" },
+      { id: "C", label: "C", parent: "outer", shape: "square" },
+      { id: "D", label: "D", parent: null, shape: "square" },
     ]);
     expect(graph.edges).toEqual([
-      { source: "A", target: "B" },
-      { source: "C", target: "A" },
-      { source: "D", target: "C" },
+      { id: "L_A_B_0", source: "A", target: "B", kind: "-->" },
+      { id: "L_C_A_0", source: "C", target: "A", kind: "-->" },
+      { id: "L_D_C_0", source: "D", target: "C", kind: "-->" },
     ]);
     expect(graph.subgraphs).toEqual([
       { id: "inner", label: "Inner", parent: "outer" },
@@ -54,7 +54,7 @@ describe("extractGraph", () => {
   });
 
   test("refuses a type it does not read, rather than returning an empty graph", async () => {
-    await expect(extractGraph("classDiagram\n  A <|-- B\n")).rejects.toThrow("not classDiagram");
+    await expect(extractGraph('pie\n  "A" : 1\n')).rejects.toThrow("not pie");
   });
 });
 
@@ -68,8 +68,8 @@ describe("extractGraph for sequence, entity and state diagrams", () => {
       { id: "B", label: "B", parent: null },
     ]);
     expect(graph.edges).toEqual([
-      { source: "A", target: "B" },
-      { source: "B", target: "A" },
+      { id: "L_A_B_0", source: "A", target: "B" },
+      { id: "L_B_A_0", source: "B", target: "A" },
     ]);
     expect(graph.subgraphs).toEqual([
       { id: "box_0", label: "Shop", parent: null },
@@ -82,8 +82,8 @@ describe("extractGraph for sequence, entity and state diagrams", () => {
     const graph = await extractGraph("erDiagram\n  A ||--o{ B : has\n  B }|--|| C : in\n");
     expect(graph.nodes.map((n) => n.id)).toEqual(["A", "B", "C"]);
     expect(graph.edges).toEqual([
-      { source: "A", target: "B" },
-      { source: "B", target: "C" },
+      { id: "L_A_B_0", source: "A", target: "B", kind: "--", cardinality: "||--o{", label: "has" },
+      { id: "L_B_C_0", source: "B", target: "C", kind: "--", cardinality: "}|--||", label: "in" },
     ]);
   });
 
@@ -92,11 +92,11 @@ describe("extractGraph for sequence, entity and state diagrams", () => {
       "stateDiagram-v2\n  [*] --> A\n  state A {\n    [*] --> B\n  }\n  A --> C\n  note right of C : n\n",
     );
     expect(graph.nodes).toEqual([
-      { id: "A", label: "A", parent: "A__group" },
-      { id: "B", label: "B", parent: "A__group" },
-      { id: "C", label: "C", parent: null },
+      { id: "A", label: "A", parent: "A__group", shape: "roundedWithTitle" },
+      { id: "B", label: "B", parent: "A__group", shape: "rect" },
+      { id: "C", label: "C", parent: null, shape: "rect" },
     ]);
-    expect(graph.edges).toEqual([{ source: "A", target: "C" }]);
+    expect(graph.edges).toEqual([{ id: "L_A_C_0", source: "A", target: "C" }]);
     expect(graph.subgraphs).toEqual([{ id: "A__group", label: "", parent: null }]);
   });
 

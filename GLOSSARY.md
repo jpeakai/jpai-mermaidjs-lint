@@ -61,12 +61,14 @@ flowchart LR
     STA["Stats"]:::info
     TRD["Tree Depth"]:::info
     ROW["Row"]:::info
+    PSN["Pseudo Node"]:::info
     VCS["Visual Complexity Score"]:::info
     PRE["Preset"]:::rule
     LAD["Ladder"]:::rule
     BND["Band"]:::rule
 
     PEN -- reads --> STA
+    PEN -- reads but never counts --> PSN
     STA -- includes --> TRD
     STA -- includes --> ROW
     STA -- feeds --> VCS
@@ -398,6 +400,11 @@ The github Profile scores declared Pairs, mkdocs-material scores the Host's forc
 
 The nearest ancestor of the working directory with a `package.json`, a Config File or a `.mermaidjs-lint` directory.
 It is the working directory when none has one.
+
+## Pseudo Node
+
+An element the Parse Engine's graph keeps but the Stats never count: a `stateDiagram` start or end marker, or a `classDiagram` lollipop interface.
+It is drawn, so the graph keeps it, apart from the nodes, under `pseudo`.
 
 ## Raw Diagram File
 

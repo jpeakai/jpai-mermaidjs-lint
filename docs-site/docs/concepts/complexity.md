@@ -138,7 +138,7 @@ Each diagram type has its own unit, read from mermaid's parser result.
 
 | Diagram type | A node is | A subgraph is |
 |---|---|---|
-| `flowchart`, `flowchart-elk`, `graph` | A vertex | A `subgraph` |
+| `flowchart`, `flowchart-elk`, `graph` | A vertex, but not a subgraph's id used as an edge's end, since that edge runs to the subgraph | A `subgraph` |
 | `classDiagram` | A class, whose attributes and methods are rows | A `namespace`, and one inside another adds nesting |
 | `sequenceDiagram` | A participant or actor | A `box`, and a block such as `loop`, `alt` or `par` |
 | `stateDiagram` | A state, including a composite state, a fork and a choice | A composite state |

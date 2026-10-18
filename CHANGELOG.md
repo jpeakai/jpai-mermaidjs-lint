@@ -21,6 +21,8 @@ Anything under `Unreleased` is on `main` but not yet released.
 - A `stateDiagram` no longer counts start and end markers, their transitions, or notes.
 - An `erDiagram` entity's attributes, and a `classDiagram` class's attributes and methods, are rows.
   Each row adds 0.25 points to the visual complexity score, and the new `rowWeight` option sets that weight.
+- A `classDiagram` counts each `namespace` as a subgraph.
+  A namespace inside another adds a level of nesting.
 - `DiagramStats` gains `rows`, and `ThresholdConfig` gains `row_weight`.
   `same-diagrams` also compares `rows`.
 - The Measuring complexity page has worked examples for sequence, entity and state diagrams.

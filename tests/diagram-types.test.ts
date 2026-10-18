@@ -165,6 +165,24 @@ describe("what a stateDiagram counts", () => {
   });
 });
 
+describe("what a classDiagram counts", () => {
+  test("classDiagram counts each namespace as a subgraph, with nested namespaces adding depth", async () => {
+    const stats = await statsOf(
+      "classDiagram\n  namespace Outer {\n    namespace Inner {\n      class A\n    }\n    class B\n  }\n  namespace Other {\n    class C\n  }\n  A --> B",
+    );
+    expect(stats.nodes).toBe(3);
+    expect(stats.subgraphs).toBe(3);
+    expect(stats.subgraph_names).toEqual(["Outer", "Inner", "Other"]);
+    expect(stats.max_subgraph_depth).toBe(2);
+  });
+
+  test("a classDiagram with no namespace has no subgraphs", async () => {
+    const stats = await statsOf("classDiagram\n  A <|-- B");
+    expect(stats.subgraphs).toBe(0);
+    expect(stats.max_subgraph_depth).toBe(0);
+  });
+});
+
 describe("rows", () => {
   test("erDiagram counts each attribute as a row, apart from its entity", async () => {
     const stats = await statsOf(

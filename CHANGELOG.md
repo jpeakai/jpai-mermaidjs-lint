@@ -10,6 +10,21 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+### Changed
+
+- **A diagram's keyword now comes from mermaid's own type detection, so some values change.** For example, `graph` now reads as `flowchart` and `C4Context` as `c4`.
+  A `-beta` or `-v2` keyword drops its suffix.
+  A plugin that compares a diagram's keyword with an old value must update it, per [MJL-0022](adrs/0022-start-from-the-official-parsers-output.md).
+- The `diagram_type` of an architecture, packet, radar, treemap, treeView or wardley diagram is mermaid's id, such as `architecture`.
+- `radar`, `treeView` and `wardley` without their `-beta` suffix are unparseable, because mermaid does not draw them.
+- A parse failure is the parser's own error.
+  A diagram under frontmatter or a directive that parses with no nodes now passes.
+- A parser reason is built from the parser's structured error.
+  A line number at the end of a diagram is now the real line.
+- Fences are read from micromark's tokens rather than scanned.
+  `Diagram` gains `closingFence`, and `DiagramStats` gains `error_line`.
+- `micromark` and `stemmer` are new runtime dependencies.
+
 ### Fixed
 
 - A flowchart edge to a subgraph's id, such as `A --> S` where `S` is a subgraph, no longer counts `S` as a node as well.

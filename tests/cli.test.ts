@@ -407,5 +407,6 @@ describe("--split-plan over a detail split once more", () => {
       const r = await runCli(plan, ["plan.md", "--preset", preset, "--category", "parse,complexity"]);
       expect(r.stdout).toContain("0 finding(s) in 1 file(s)");
     }
-  });
+    // Six CLI runs, two per preset, outlast the default 5s on a CI runner.
+  }, 60_000);
 });

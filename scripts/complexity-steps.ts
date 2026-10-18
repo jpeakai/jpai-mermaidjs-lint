@@ -275,14 +275,16 @@ export const stepSnippet = (m: MeasuredStep): string => {
   const rows = m.stats.rows > 0 ? `, ${m.stats.rows} rows` : "";
   const counts = `${m.stats.nodes} nodes, ${m.stats.edges} edges, ${m.stats.subgraphs} subgraphs${rows}`;
   const source = card([caption("Mermaid source"), "", fence(m.step.source, "text")]);
+  // The same source as a mermaid fence, so the page draws the diagram a reader sees.
+  const drawn = card([caption("The diagram as drawn"), "", fence(m.step.source, "mermaid")]);
   const graph = card([
     caption(`What the parser returned: ${counts}`),
     "",
     `<div class="ml-cy${wide ? " ml-cy--wide" : ""}" role="img" aria-label="${escapeAttr(m.step.alt)}" data-direction="${direction}" data-graph="${data}"></div>`,
   ]);
   const cards = wide
-    ? [...source, "", "</div>", "", '<div class="grid ml-compare" markdown>', "", ...graph]
-    : [...source, "", ...graph];
+    ? [...source, "", ...drawn, "", "</div>", "", '<div class="grid ml-compare" markdown>', "", ...graph]
+    : [...source, "", ...drawn, "", ...graph];
   return [
     '<div class="grid ml-compare" markdown>',
     "",

@@ -10,7 +10,9 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- Each worked example on the Measuring complexity page draws its diagram, beside its source and the structure the parser returned.
 
 ## [0.8.0] - 2026-10-18
 

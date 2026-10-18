@@ -139,6 +139,9 @@ describe("the worked complexity steps", () => {
       const m = await measureStep(step);
       const snippet = snippets[`complexity/${step.slug}.md`] ?? "";
       expect(snippet).toContain(`      = ${num(m.score)}\n\`\`\``);
+      // The source is shown as text, then drawn as a diagram.
+      expect(snippet).toContain(`\`\`\`text\n${step.source.trimEnd()}\n\`\`\``);
+      expect(snippet).toContain(`\`\`\`mermaid\n${step.source.trimEnd()}\n\`\`\``);
       expect(snippet).toContain(`${m.stats.nodes} nodes, ${m.stats.edges} edges, ${m.stats.subgraphs} subgraphs`);
       expect(snippet).toContain(m.stats.rows > 0 ? `× ${m.stats.rows} +` : "× edges + ");
       const graph = /data-graph="([^"]*)"/.exec(snippet)?.[1] ?? "";

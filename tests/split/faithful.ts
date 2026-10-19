@@ -258,33 +258,43 @@ const fromProblems = (r: Reading): string[] => {
 // and a second copy is an extra. An edge between two groups is drawn exactly
 // in one end's detail and as a half in the other's. The overview joins the
 // overview nodes of every edge.
-const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan: SplitPlan): string[] => {
-  const end = endsOf(r.original);
-  const over = (x: string): string => r.groupOf.get(x) ?? x;
-  const oEnd = endsOf(r.overview);
-  const exact = r.overview.edges
-    .filter((e) => !(r.groups.has(e.source) || r.groups.has(e.target)))
-    .map((e) => edgeKey(e, oEnd(e.source), oEnd(e.target)));
-  const halves: string[] = [];
-  const problems: string[] = [];
-  const drawnIn = new Map<string, string[]>();
+interface DetailDrawing {
+  exact: string[];
+  halves: string[];
+  problems: string[];
+  // The details drawing each exact edge.
+  drawnIn: Map<string, string[]>;
+}
+
+const drawOne = (r: Reading, out: DetailDrawing, group: string, [e, s, t]: [GraphEdge, string, string]): void => {
+  const key = edgeKey(e, s, t);
+  if (r.groups.has(s) && r.groups.has(t)) out.problems.push(`detail ${group} has an edge between two whole groups`);
+  else if (r.groups.has(s) || r.groups.has(t)) out.halves.push(key);
+  else {
+    out.exact.push(key);
+    out.drawnIn.set(key, [...(out.drawnIn.get(key) ?? []), group]);
+  }
+};
+
+const detailDrawing = (r: Reading, stubs: Map<string, Map<string, string>>): DetailDrawing => {
+  const out: DetailDrawing = { exact: [], halves: [], problems: [], drawnIn: new Map() };
   for (const d of r.details) {
     const dEnd = endsOf(d.graph);
     const named = stubs.get(d.group) ?? new Map<string, string>();
-    for (const e of d.graph.edges) {
-      const [s, t] = [named.get(e.source) ?? dEnd(e.source), named.get(e.target) ?? dEnd(e.target)];
-      if (r.groups.has(s) && r.groups.has(t)) problems.push(`detail ${d.group} has an edge between two whole groups`);
-      else if (r.groups.has(s) || r.groups.has(t)) halves.push(edgeKey(e, s, t));
-      else {
-        const key = edgeKey(e, s, t);
-        exact.push(key);
-        drawnIn.set(key, [...(drawnIn.get(key) ?? []), d.group]);
-      }
-    }
+    for (const e of d.graph.edges)
+      drawOne(r, out, d.group, [e, named.get(e.source) ?? dEnd(e.source), named.get(e.target) ?? dEnd(e.target)]);
   }
+  return out;
+};
+
+// The overview joins the overview nodes of every edge, an undirected link
+// (no arrowhead or end marker and no cardinality) drawn the other way between
+// the same two nodes, one of them a group, counting as declared.
+const joinProblems = (r: Reading, plan: SplitPlan): string[] => {
+  const end = endsOf(r.original);
+  const over = (x: string): string => r.groupOf.get(x) ?? x;
+  const oEnd = endsOf(r.overview);
   const pairs = new Set(r.overview.edges.map((e) => `${oEnd(e.source)}\u0000${oEnd(e.target)}`));
-  // An undirected link, with no arrowhead or end marker and no cardinality,
-  // drawn the other way between the same two nodes, one of them a group.
   const backs = new Set(
     r.overview.edges
       .filter(
@@ -302,11 +312,18 @@ const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan:
       return false;
     })
     .map(([a, b]) => `the overview does not join ${a} to ${b}`);
-  if (reversed !== plan.loss.reversedEdges)
-    problems.push(`the overview draws ${reversed} edges the other way, not the ${plan.loss.reversedEdges} declared`);
-  // The edges of one kind one way between one group and one member read as
-  // one half, with what they all agree on; an erDiagram's per label and
-  // cardinality.
+  return reversed === plan.loss.reversedEdges
+    ? unjoined
+    : [`the overview draws ${reversed} edges the other way, not the ${plan.loss.reversedEdges} declared`, ...unjoined];
+};
+
+// The halves a plan owes: an edge between two groups, from the detail that
+// does not draw it exactly. The edges of one kind one way between one group
+// and one member read as one half, with what they all agree on; an
+// erDiagram's per label and cardinality.
+const owedHalves = (r: Reading, drawnIn: Map<string, string[]>): string[] => {
+  const end = endsOf(r.original);
+  const over = (x: string): string => r.groupOf.get(x) ?? x;
   const er = r.original.diagram_type === "er";
   const buckets = new Map<string, { s: string; t: string; edges: GraphEdge[] }>();
   for (const e of r.original.edges) {
@@ -318,7 +335,7 @@ const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan:
     b.edges.push(e);
     buckets.set(key, b);
   }
-  const wantHalves = [...buckets.values()].map(({ s, t, edges }) => {
+  return [...buckets.values()].map(({ s, t, edges }) => {
     const all = (pick: (e: GraphEdge) => unknown): boolean =>
       edges.every((e) => pick(e) === pick(edges[0] as GraphEdge));
     const [first] = edges as [GraphEdge];
@@ -332,15 +349,27 @@ const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan:
       all((e) => e.cardinality) ? (first.cardinality ?? "") : "",
     ]);
   });
+};
+
+const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan: SplitPlan): string[] => {
+  const end = endsOf(r.original);
+  const oEnd = endsOf(r.overview);
+  const drawing = detailDrawing(r, stubs);
+  const exact = [
+    ...r.overview.edges
+      .filter((e) => !(r.groups.has(e.source) || r.groups.has(e.target)))
+      .map((e) => edgeKey(e, oEnd(e.source), oEnd(e.target))),
+    ...drawing.exact,
+  ];
   return [
-    ...problems,
-    ...unjoined,
+    ...drawing.problems,
+    ...joinProblems(r, plan),
     ...diff(
       r.original.edges.map((e) => edgeKey(e, end(e.source), end(e.target))),
       exact,
       "edge",
     ),
-    ...diff([...new Set(wantHalves)], halves, "half edge"),
+    ...diff([...new Set(owedHalves(r, drawing.drawnIn))], drawing.halves, "half edge"),
   ];
 };
 

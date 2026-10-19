@@ -390,24 +390,27 @@ const markdownOf = (x: { markdown?: true } | undefined): { markdown?: true } => 
 // members' labels, when given, comes after the region and the head, and the
 // members may be taken in natural order of their labels instead. N counts the
 // members the label does not already name.
+// The labels a group folding one author region whole may take from it: the
+// region's label, then that label qualified by the region around it.
+const regionChoices = (work: WorkGraph, g: Group): LabelParts[] => {
+  const roots = regionRoots(work, g.regions);
+  const root = roots.length === 1 ? roots[0] : undefined;
+  const region = root === undefined ? undefined : work.regions.get(root);
+  if (!(root !== undefined && region && g.members.every((m) => regionWithin(work, homeOf(work, m), root)))) return [];
+  const qualified = qualifiedLabel(work, root);
+  return [
+    { base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) },
+    ...(qualified === null ? [] : [{ base: qualified, n: g.members.length, qualified: true as const }]),
+  ];
+};
+
 export const labelChoices = (
   work: WorkGraph,
   g: Group,
   naming: { range: string | null; byLabel: boolean } = { range: null, byLabel: false },
 ): LabelParts[] => {
   const { range } = naming;
-  const roots = regionRoots(work, g.regions);
-  const root = roots.length === 1 ? roots[0] : undefined;
-  const region = root === undefined ? undefined : work.regions.get(root);
-  const whole = root !== undefined && region && g.members.every((m) => regionWithin(work, homeOf(work, m), root));
-  const qualified = whole && root !== undefined ? qualifiedLabel(work, root) : null;
-  const fromRegion: LabelParts[] =
-    whole && region
-      ? [
-          { base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) },
-          ...(qualified === null ? [] : [{ base: qualified, n: g.members.length, qualified: true as const }]),
-        ]
-      : [];
+  const fromRegion = regionChoices(work, g);
   const labelOf = (m: string): string => work.nodes.get(m)?.label ?? m;
   const lookup = g.tier === "T4" && g.head !== undefined && isLookup(work, g.head, g.members);
   const ranked = naming.byLabel

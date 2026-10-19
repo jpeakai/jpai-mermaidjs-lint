@@ -126,9 +126,11 @@ describe("echoing regions", () => {
     },
     SLOW,
   );
+});
 
+describe("a region's qualified label", () => {
   test(
-    "take a qualified label only from the region the group node sits in, as every reader checks",
+    "is taken only from the region the group node sits in, as every reader checks",
     async () => {
       const source = read("flow02-multiregion-nested");
       const cfg = configFromPreset("high");
@@ -218,7 +220,8 @@ describe("two groups that edges join both ways", () => {
       const groupOf = (x: string): string => plan.groups.find((g) => g.members.includes(x))?.id ?? x;
       for (const d of plan.details) {
         const ends = Object.values(d.stubs);
-        for (const end of ends.filter((x) => ids.has(x))) expect(ends.some((x) => x !== end && groupOf(x) === end)).toBe(false);
+        for (const end of ends.filter((x) => ids.has(x)))
+          expect(ends.some((x) => x !== end && groupOf(x) === end)).toBe(false);
         const pairs = d.graph.edges.map((e) => `${d.stubs[e.source] ?? e.source}>${d.stubs[e.target] ?? e.target}`);
         const halves = pairs.filter((p) => p.split(">").some((x) => ids.has(x)));
         expect(new Set(halves).size).toBe(halves.length);
@@ -231,18 +234,28 @@ describe("two groups that edges join both ways", () => {
     },
     SLOW,
   );
+});
+
+const LIFECYCLE = read("state01-order-lifecycle");
+const LOW = configFromPreset("low");
+
+// A plan of the order lifecycle, with a detail drawing a member into a whole group.
+const halfOfPlan = async () => {
+  const build = await buildOf(LIFECYCLE, LOW);
+  const ids = new Set(build.plan.groups.map((g) => g.id));
+  const d = build.plan.details.find((x) => x.graph.edges.some((e) => ids.has(x.stubs[e.target] ?? "")));
+  const edge = d?.graph.edges.find((e) => ids.has(d.stubs[e.target] ?? ""));
+  if (!(d && edge)) throw new Error("no edge into a whole group");
+  return { build, d, edge };
+};
+
+describe("a half edge between a member and a whole group", () => {
+  const [source, cfg] = [LIFECYCLE, LOW];
 
   test(
-    "are held to it by the contract, the reading and the checker",
+    "drawn twice is refused by the contract, the reading and the checker",
     async () => {
-      const source = read("state01-order-lifecycle");
-      const cfg = configFromPreset("low");
-      const build = await buildOf(source, cfg);
-      const ids = new Set(build.plan.groups.map((g) => g.id));
-      const d = build.plan.details.find((x) => x.graph.edges.some((e) => ids.has(x.stubs[e.target] ?? "")));
-      const edge = d?.graph.edges.find((e) => ids.has(d.stubs[e.target] ?? ""));
-      if (!(d && edge)) throw new Error("no edge into a whole group");
-      // Drawn twice.
+      const { build, d, edge } = await halfOfPlan();
       const twice = structuredClone(build);
       const td = twice.plan.details.find((x) => x.group === d.group);
       td?.graph.edges.push({ ...edge, id: `${edge.id}-again` });
@@ -252,7 +265,18 @@ describe("two groups that edges join both ways", () => {
       expect((await checkPlan(source, twice.plan, cfg, "")).some((f) => f.sev === "BUG" && f.kind === "half")).toBe(
         true,
       );
-      // Labelled with a label no original edge carries.
+    },
+    SLOW,
+  );
+});
+
+describe("a relabelled half edge", () => {
+  const [source, cfg] = [LIFECYCLE, LOW];
+
+  test(
+    "labelled with a label no original edge carries is refused by all three",
+    async () => {
+      const { build, d, edge } = await halfOfPlan();
       const relabelled = structuredClone(build);
       const rd = relabelled.plan.details.find((x) => x.group === d.group);
       const re = rd?.graph.edges.find((e) => e.id === edge.id);
@@ -269,7 +293,18 @@ describe("two groups that edges join both ways", () => {
       expect(
         (await checkPlan(source, relabelled.plan, cfg, "")).some((f) => f.sev === "BUG" && f.kind === "half"),
       ).toBe(true);
-      // A group drawn whole beside a stub for one of its members.
+    },
+    SLOW,
+  );
+});
+
+describe("a group drawn both ways in one detail", () => {
+  const cfg = LOW;
+
+  test(
+    "beside a stub for a member of its group is refused by the contract",
+    async () => {
+      const { build, d, edge } = await halfOfPlan();
       const beside = structuredClone(build);
       const bd = beside.plan.details.find((x) => x.group === d.group);
       const whole = d.stubs[edge.target] ?? "";

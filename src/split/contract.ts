@@ -158,25 +158,26 @@ const qualifiedLabels = (work: WorkGraph, g: SplitGroup): string[] =>
 // one rule in label.ts, then " (+N)", N counting the members it does not
 // name, and the group's id when the label is taken. No two groups show one
 // label, and no group shows a node's label.
-const checkLabels = (build: Build): Violations => {
+const groupLabelViolations = (build: Build, g: SplitGroup): Violations => {
   const { plan, work } = build;
   const out: Violations = [];
-  const memberLabels = (g: SplitGroup): string[] => g.members.map((m) => work.nodes.get(m)?.label ?? m);
-  for (const g of plan.groups) {
-    const [base, n] = [g.labelBase, g.hidden];
-    if (!groupLabels(base, n, g.markdown, g.id).includes(g.label)) out.push(`4: group ${g.id} label is not its parts`);
-    const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
-    const range = base === rangeLabel(memberLabels(g), hidden);
-    const plain = regionLabels(work, g).includes(base) || memberLabels(g).includes(base);
-    const qualified = !plain && qualifiedLabels(work, g).includes(base) && shorten(base) === base;
-    if (!(range || plain || qualified)) out.push(`4: group ${g.id} label "${base}" is not from the data`);
-    const counts = range
-      ? [g.members.length - 2]
-      : qualified
-        ? [g.members.length]
-        : [g.members.length, g.members.length - 1];
-    if (!counts.includes(n)) out.push(`4: group ${g.id} counts ${n} hidden members`);
-  }
+  const memberLabels = (x: SplitGroup): string[] => x.members.map((m) => work.nodes.get(m)?.label ?? m);
+  const [base, n] = [g.labelBase, g.hidden];
+  if (!groupLabels(base, n, g.markdown, g.id).includes(g.label)) out.push(`4: group ${g.id} label is not its parts`);
+  const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
+  const range = base === rangeLabel(memberLabels(g), hidden);
+  const plain = regionLabels(work, g).includes(base) || memberLabels(g).includes(base);
+  const qualified = !plain && qualifiedLabels(work, g).includes(base) && shorten(base) === base;
+  if (!(range || plain || qualified)) out.push(`4: group ${g.id} label "${base}" is not from the data`);
+  const all = g.members.length;
+  const counts = range ? [all - 2] : qualified ? [all] : [all, all - 1];
+  if (!counts.includes(n)) out.push(`4: group ${g.id} counts ${n} hidden members`);
+  return out;
+};
+
+const checkLabels = (build: Build): Violations => {
+  const { plan, work } = build;
+  const out: Violations = plan.groups.flatMap((g) => groupLabelViolations(build, g));
   const labels = plan.groups.map((g) => g.label);
   const nodeLabels = new Set([...work.nodes.values()].map((n) => n.label));
   if (new Set(labels).size !== labels.length) out.push("4: two groups show one label");
@@ -274,13 +275,19 @@ const detailNodes = (build: Build): Violations => {
       if ((groups.has(end) ? end : overId(end)) === d.group)
         out.push(`5: stub ${stub} of ${d.group} stands for itself`);
     }
-    // A group is drawn whole or as stubs for its members, never both.
-    const ends = Object.values(d.stubs);
-    for (const end of ends.filter((x) => groups.has(x)))
-      if (ends.some((x) => !groups.has(x) && overId(x) === end))
-        out.push(`5: detail ${d.group} draws ${end} whole beside a stub for one of its members`);
+    out.push(...drawnBothWays(build, d));
   }
   return out;
+};
+
+// A group is drawn whole or as stubs for its members, never both.
+const drawnBothWays = (build: Build, d: SplitPlan["details"][number]): Violations => {
+  const overId = overOf(build);
+  const groups = groupIds(build.plan);
+  const ends = Object.values(d.stubs);
+  return ends
+    .filter((x) => groups.has(x) && ends.some((y) => !groups.has(y) && overId(y) === x))
+    .map((end) => `5: detail ${d.group} draws ${end} whole beside a stub for one of its members`);
 };
 
 const fromSuffix = (work: WorkGraph, from: string[]): string =>

@@ -402,6 +402,14 @@ const aggregatesToo = (start: Measure, snapshots: Snapshot[], walk: Walk): Folde
     : { work, part: m.ctx.part, snapshots: [...snapshots, snapshotOf("T4", m.ctx.part)], tier: "T4" };
 };
 
+// How a walk climbs one tier: held to details that fit but for author regions
+// and aggregates on a walk letting them fold whatever their size, and in T3
+// adding no new reachable pair when the walk asks.
+const stepOf = (t: Tier, walk: Walk): Step => {
+  const capped = (t !== "T3" && t !== "T4") || walk.capT3;
+  return { tier: t, capped, ...(walk.lossless && t === "T3" ? { lossless: true } : {}) };
+};
+
 // Folds tier by tier until the overview meets the target, or returns why not.
 export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Walk): Folded | string => {
   let m = measure(work, EMPTY_PARTITION, config, walk.rules);
@@ -409,8 +417,7 @@ export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Wal
   if (meets(m.nodes, m.score, config)) return aggregatesToo(m, snapshots, walk);
   let tier: Tier = "T1";
   for (const t of walk.order) {
-    const capped = (t !== "T3" && t !== "T4") || walk.capT3;
-    const step: Step = { tier: t, capped, ...(walk.lossless && t === "T3" ? { lossless: true } : {}) };
+    const step = stepOf(t, walk);
     for (let best = bestStep(m.ctx, step, m.score); best; ) {
       m = measure(work, best.part, config, walk.rules);
       tier = t;

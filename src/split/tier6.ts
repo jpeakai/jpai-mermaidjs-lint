@@ -121,22 +121,19 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
 const stagePairs = (ctx: TierContext, w: Map<string, number>): Array<readonly [string, string, number]> => {
   const { work, part } = ctx;
   const around = new Map<string, Set<string>>();
-  for (const e of work.edges) {
-    if (e.source === e.target) continue;
-    around.set(e.source, new Set([...(around.get(e.source) ?? []), e.target]));
-    around.set(e.target, new Set([...(around.get(e.target) ?? []), e.source]));
+  const link = (a: string, b: string): void => {
+    around.set(a, new Set([...(around.get(a) ?? []), b]));
+  };
+  for (const e of work.edges.filter((x) => x.source !== x.target)) {
+    link(e.source, e.target);
+    link(e.target, e.source);
   }
-  const out: Array<readonly [string, string, number]> = [];
-  const seen = new Set<string>();
+  const keys = new Set<string>();
   for (const via of [...around.keys()].sort(byText)) {
     const ks = sorted(new Set([...(around.get(via) ?? [])].map((x) => over(work, part, x))));
-    for (const [i, a] of ks.entries())
-      for (const b of ks.slice(i + 1)) {
-        const key = pairKey(a, b);
-        if (w.has(key) || seen.has(key)) continue;
-        seen.add(key);
-        out.push([a, b, 0]);
-      }
+    for (const [i, a] of ks.entries()) for (const b of ks.slice(i + 1)) keys.add(pairKey(a, b));
   }
-  return out;
+  return [...keys]
+    .filter((key) => !w.has(key))
+    .map((key) => [...(key.split("\u0002") as [string, string]), 0] as const);
 };

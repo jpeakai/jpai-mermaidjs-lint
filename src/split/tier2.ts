@@ -58,7 +58,7 @@ const isLeaf = (adj: Adjacency, key: string): boolean =>
 
 // The runs cut again to sizes that differ by one at most, as many runs as
 // before, when every run still fits; else the runs as they were.
-const evenRuns = (ctx: TierContext, runs: Candidate[]): Candidate[] => {
+export const evenRuns = (ctx: TierContext, runs: Candidate[]): Candidate[] => {
   const keys = runs.flatMap((r) => r.keys);
   const [first] = runs;
   if (!first || runs.length < 2 || keys.length !== runs.reduce((n, r) => n + r.keys.length, 0)) return runs;

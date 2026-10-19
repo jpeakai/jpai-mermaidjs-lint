@@ -1,6 +1,7 @@
 // What the round-11 blind rating held plans to (MJL-0033): a star of leaves
 // no structure sorts is refused, and a tangled erDiagram overview folds its
-// aggregates even when dropping rows alone meets the target.
+// aggregates even when dropping rows alone meets the target, and a ticket
+// graph folds each id family whole.
 
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -9,6 +10,7 @@ import { configFromPreset } from "../../src/parse/metrics.ts";
 import { STAR, splitOutcome } from "../../src/split/index.ts";
 import { tangled } from "../../src/split/plan.ts";
 import { EMPTY_PARTITION } from "../../src/split/quotient.ts";
+import { ID_FAMILY } from "../../src/split/tier6.ts";
 import type { SplitPlan } from "../../src/split/types.ts";
 import { checkPlan } from "./checker.ts";
 import { faithful } from "./faithful.ts";
@@ -76,6 +78,23 @@ describe("an erDiagram overview", () => {
       expect(plan.overviewNodes).toBeGreaterThanOrEqual(9);
       expect(plan.loss.newReachablePairs).toBe(0);
       expect(plan.groups.length).toBeGreaterThan(1);
+    },
+    SLOW,
+  );
+});
+
+describe("an id family", () => {
+  test(
+    "folds whole, hubs and all, so no family is scattered and no node is left loose",
+    async () => {
+      const source = readFileSync(join(import.meta.dir, "cases", "round9", "flow12-id-like-labels.mmd"), "utf8");
+      const plan = await planOf(source, "medium");
+      const families = plan.groups.map((g) => new Set(g.members.map((m) => m.split("-")[0])));
+      expect(families.every((f) => f.size === 1)).toBe(true);
+      expect(new Set(families.map((f) => [...f][0])).size).toBe(plan.groups.length);
+      expect(plan.groups.every((g) => g.reason === ID_FAMILY)).toBe(true);
+      expect(plan.overviewNodes).toBe(plan.groups.length);
+      expect(plan.loss.newReachablePairs).toBe(0);
     },
     SLOW,
   );

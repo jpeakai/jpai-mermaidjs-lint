@@ -17,7 +17,10 @@ import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf } from
 import { floorOf } from "./plan.ts";
 import { idMaker, isGroupKey, over, type Partition, reversible, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
-import { familyOf } from "./tier.ts";
+import { joined } from "./tier.ts";
+
+export { joined };
+
 import type { SplitGroup, SplitPlan } from "./types.ts";
 
 type Violations = string[];
@@ -50,42 +53,6 @@ const checkPartition = (build: Build): Violations => {
   for (const g of plan.groups.filter((x) => x.tier === "T6" && !joined(work, x)))
     out.push(`1: suggested group ${g.id} is not connected`);
   return out;
-};
-
-// Whether a suggested group's members are connected: two members are joined
-// by an edge between them, by an author region the group folds whole holding
-// both, or by a neighbour they share when both name one prefix family (one
-// stage of a pipeline) or both are leaves (sibling leaves of one node), as T5
-// and T6 merge them and no other way (MJL-0032).
-export const joined = (work: WorkGraph, g: Pick<SplitGroup, "members" | "regions">): boolean => {
-  const { members } = g;
-  const inside = new Set(members);
-  const regionOf = (x: string): string | undefined => g.regions.find((r) => regionWithin(work, homeOf(work, x), r));
-  const around = new Map<string, Set<string>>();
-  const link = (a: string, b: string): void => {
-    around.set(a, new Set([...(around.get(a) ?? []), b]));
-    around.set(b, new Set([...(around.get(b) ?? []), a]));
-  };
-  for (const e of work.edges) if (e.source !== e.target) link(e.source, e.target);
-  const leaf = (x: string): boolean => (around.get(x)?.size ?? 0) === 1;
-  const kin = (a: string, b: string): boolean => {
-    if (regionOf(a) !== undefined && regionOf(a) === regionOf(b)) return true;
-    const fa = familyOf(work, a);
-    const shares = [...(around.get(a) ?? [])].some((x) => around.get(b)?.has(x));
-    return shares && ((fa !== null && fa === familyOf(work, b)) || (leaf(a) && leaf(b)));
-  };
-  const [first] = members;
-  const seen = new Set(first === undefined ? [] : [first]);
-  const stack = [...seen];
-  while (stack.length > 0) {
-    const v = stack.pop() as string;
-    for (const w of members) {
-      if (seen.has(w) || !inside.has(w) || !(around.get(v)?.has(w) || kin(v, w))) continue;
-      seen.add(w);
-      stack.push(w);
-    }
-  }
-  return seen.size === inside.size;
 };
 
 const laminar = (work: WorkGraph, g: SplitGroup): Violations => {

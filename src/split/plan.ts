@@ -46,7 +46,7 @@ import { proposeT2 } from "./tier2.ts";
 import { proposeT3 } from "./tier3.ts";
 import { proposeT4 } from "./tier4.ts";
 import { proposeT5 } from "./tier5.ts";
-import { proposeT6 } from "./tier6.ts";
+import { ID_FAMILY, proposeT6 } from "./tier6.ts";
 import { FOLD_TIERS, type Tier } from "./types.ts";
 
 // A detail may be split once more; one at the second level must fit.
@@ -257,12 +257,18 @@ const evenOut = (
     return (c) => parents.has(c.parent) && c.keys.length > 1;
   }
   if (tier !== "T5" && tier !== "T6") return null;
+  if (byFamilies(part)) return (c) => c.reason === ID_FAMILY;
   const largest = Math.max(0, ...part.groups.map((g) => g.members.length));
   return (c) => {
     const n = membersIn(part, c);
     return n <= largest && n > rules.minHidden;
   };
 };
+
+// Whether the plan folds id families, which then fold whole or not at all:
+// the evening takes only the families still open, down to floorOf, since a
+// family half folded or left open reads as scattered.
+const byFamilies = (part: Partition): boolean => part.groups.some((g) => g.reason === ID_FAMILY);
 
 // An overview a reader meets a cycle in for every MIN_OVERVIEW nodes, a
 // chunk held at once: its independent cycles, edges less nodes plus one,
@@ -277,7 +283,7 @@ export const tangled = (work: WorkGraph, part: Partition): boolean => {
 // keeps at least evenFloorOf nodes.
 const foldEvenly = (start: Measure, step: Step, deep: boolean): Measure => {
   const { work, config, rules } = start.ctx;
-  const floor = deep ? floorOf(work) : evenFloorOf(work, config);
+  const floor = deep || byFamilies(start.ctx.part) ? floorOf(work) : evenFloorOf(work, config);
   let m = start;
   for (
     let only = evenOut(m.ctx.part, step.tier, rules, work);
@@ -365,7 +371,7 @@ const loosen = (start: Measure): Measure => {
   let m = start;
   while (m.nodes < floor) {
     const best = m.ctx.part.groups
-      .filter((g) => g.tier !== "T2")
+      .filter((g) => g.tier !== "T2" && g.reason !== ID_FAMILY)
       .flatMap((g) => {
         const next = undo(m, g);
         return next ? [{ next, members: g.members }] : [];

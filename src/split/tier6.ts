@@ -8,18 +8,24 @@
 // hub or joins a decision's branches that do not rejoin (rules.ts).
 
 import { maximalCliques } from "./clique.ts";
-import { byText, sorted } from "./graph.ts";
+import { byNatural, byText, sorted } from "./graph.ts";
+import { ID_LEAD } from "./label.ts";
 import { isGroupKey, membersOfKey, over, overviewKeys, parentOfKey } from "./quotient.ts";
-import { crossesStages, labelBag, oneFamily, similarity } from "./stem.ts";
+import { crossesStages, labelBag, oneFamily, STATUS_MARK, similarity } from "./stem.ts";
 import {
   type Candidate,
   chunksThatFit,
   familiesOf,
+  familyOf,
   foldable,
+  joined,
   keepsBranches,
   keepsFamilies,
+  mergeFits,
   type TierContext,
+  together,
 } from "./tier.ts";
+import { evenRuns } from "./tier2.ts";
 
 const pairKey = (a: string, b: string): string => `${a}\u0002${b}`;
 
@@ -96,7 +102,7 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
   };
   const stagesOf = (k: string): Array<string | null> => familiesOf(ctx, [k]);
   const groupableKeys = new Set(overviewKeys(work, part).filter((k) => foldable(ctx, k)));
-  const out: Candidate[] = cliques(ctx, w, gain);
+  const out: Candidate[] = [...idFamilies(ctx), ...cliques(ctx, w, gain)];
   const pairs = [...w].map(([pair, wab]) => [...(pair.split("\u0002") as [string, string]), wab] as const);
   for (const [a, b, wab] of [...pairs, ...stagePairs(ctx, w)].sort(
     (x, y) => byText(x[0], y[0]) || byText(x[1], y[1]),
@@ -111,6 +117,67 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
     out.push({ keys: [a, b], parent, tier: "T6", reason: "suggested grouping", priority, tie, kin });
   }
   return out;
+};
+
+// Runs cut from a family, one more when the runs leave a key out, so that
+// evened they cover the whole family.
+const spread = (ctx: TierContext, keys: string[], runs: Candidate[]): Candidate[] => {
+  const [first] = runs;
+  const covered = runs.reduce((n, r) => n + r.keys.length, 0);
+  if (!first || covered === keys.length) return runs;
+  const count = runs.length + 1;
+  const cut = Array.from({ length: count }, (_, i) => ({
+    ...first,
+    keys: keys.slice(Math.round((i * keys.length) / count), Math.round(((i + 1) * keys.length) / count)),
+  }));
+  return cut.every((r) => r.keys.length >= 2 && mergeFits(ctx, r)) ? cut : runs;
+};
+
+// The reason an id family's group gives.
+export const ID_FAMILY = "id family";
+
+// What an id family ranks as among T6 candidates: before any pair.
+export const ID_FAMILY_KIN = 2;
+
+// Whether every node's label leads with an id naming a prefix family, as a
+// ticket graph's PLAT-1201 and DATA-0381: the author grouped every node.
+const allIdFamilies = (ctx: TierContext): boolean =>
+  ctx.work.ids.every((id) => {
+    const family = familyOf(ctx.work, id);
+    return family !== null && !family.startsWith(STATUS_MARK) && ID_LEAD.test(ctx.work.nodes.get(id)?.label ?? "");
+  });
+
+// In a diagram whose every label leads with an id naming a family, each
+// family folds whole, hubs and all, into one group when its detail fits, and
+// else into runs in natural order of their labels, each fitting and
+// connected, all in one step, so a family reads as one group or as
+// contiguous ranges, never scattered. The author's ticket keys are the
+// grouping, and a hub inside a family shows through its group's edges.
+const idFamilies = (ctx: TierContext): Candidate[] => {
+  const { work, part } = ctx;
+  if (work.family === "er" || !allIdFamilies(ctx)) return [];
+  const familyOfKey = (k: string): string | null => {
+    const fs = new Set(membersOfKey(part, k).map((m) => familyOf(work, m)));
+    return fs.size === 1 ? ([...fs][0] ?? null) : null;
+  };
+  const first = (k: string): string => work.nodes.get(sorted(membersOfKey(part, k))[0] ?? k)?.label ?? k;
+  const byFamily = new Map<string, string[]>();
+  for (const k of overviewKeys(work, part)) {
+    const f = familyOfKey(k);
+    if (f !== null && !work.protectedIds.has(k)) byFamily.set(f, [...(byFamily.get(f) ?? []), k]);
+  }
+  return [...byFamily.keys()].sort(byText).flatMap((f) => {
+    const keys = (byFamily.get(f) ?? []).sort((a, b) => byNatural(first(a), first(b)) || byText(a, b));
+    const parent = parentOfKey(work, part, keys[0] ?? "");
+    if (keys.length < 2 || keys.some((k) => parentOfKey(work, part, k) !== parent)) return [];
+    const base = { parent, tier: "T6" as const, reason: ID_FAMILY, kin: ID_FAMILY_KIN, priority: 0, tie: 0 };
+    const whole: Candidate = { ...base, keys };
+    const runs = mergeFits(ctx, whole) ? [whole] : evenRuns(ctx, spread(ctx, keys, chunksThatFit(ctx, keys, base)));
+    const connected = runs.every((r) =>
+      joined(work, { members: r.keys.flatMap((k) => membersOfKey(part, k)), regions: [] }),
+    );
+    return connected ? together(runs.map((r) => ({ ...r, ...base, keys: [...r.keys].sort(byText) }))) : [];
+  });
 };
 
 // Two overview nodes no edge joins whose members share an original neighbour:

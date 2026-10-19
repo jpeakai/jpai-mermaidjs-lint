@@ -1,0 +1,100 @@
+%% source: https://codex.wordpress.org/Database_Description (WordPress core schema, paraphrased)
+%% kind: erDiagram CMS with meta tables
+erDiagram
+  WP_USERS ||--o{ WP_USERMETA : "described by"
+  WP_USERS ||--o{ WP_POSTS : authors
+  WP_POSTS ||--o{ WP_POSTMETA : "described by"
+  WP_POSTS |o..o{ WP_POSTS : "parent of"
+  WP_POSTS ||--o{ WP_COMMENTS : receives
+  WP_COMMENTS ||--o{ WP_COMMENTMETA : "described by"
+  WP_USERS |o..o{ WP_COMMENTS : writes
+  WP_POSTS ||--o{ WP_TERM_RELATIONSHIPS : tagged
+  WP_TERM_TAXONOMY ||--o{ WP_TERM_RELATIONSHIPS : groups
+  WP_TERMS ||--|{ WP_TERM_TAXONOMY : "classified as"
+  WP_TERMS ||--o{ WP_TERMMETA : "described by"
+  WP_USERS {
+    bigint ID PK
+    varchar user_login UK
+    varchar user_pass
+    varchar user_nicename
+    varchar user_email
+    varchar user_url
+    datetime user_registered
+    varchar user_activation_key
+    int user_status
+    varchar display_name
+  }
+  WP_USERMETA {
+    bigint umeta_id PK
+    bigint user_id FK
+    varchar meta_key
+    longtext meta_value
+  }
+  WP_POSTS {
+    bigint ID PK
+    bigint post_author FK
+    datetime post_date
+    longtext post_content
+    text post_title
+    text post_excerpt
+    varchar post_status
+    varchar comment_status
+    varchar post_name
+    datetime post_modified
+    bigint post_parent FK
+    varchar guid
+    int menu_order
+    varchar post_type
+    varchar post_mime_type
+    bigint comment_count
+  }
+  WP_POSTMETA {
+    bigint meta_id PK
+    bigint post_id FK
+    varchar meta_key
+    longtext meta_value
+  }
+  WP_COMMENTS {
+    bigint comment_ID PK
+    bigint comment_post_ID FK
+    tinytext comment_author
+    varchar comment_author_email
+    varchar comment_author_IP
+    datetime comment_date
+    text comment_content
+    varchar comment_approved
+    varchar comment_type
+    bigint comment_parent
+    bigint user_id FK
+  }
+  WP_COMMENTMETA {
+    bigint meta_id PK
+    bigint comment_id FK
+    varchar meta_key
+    longtext meta_value
+  }
+  WP_TERMS {
+    bigint term_id PK
+    varchar name
+    varchar slug
+    bigint term_group
+  }
+  WP_TERM_TAXONOMY {
+    bigint term_taxonomy_id PK
+    bigint term_id FK
+    varchar taxonomy
+    longtext description
+    bigint parent
+    bigint count
+  }
+  WP_TERM_RELATIONSHIPS {
+    bigint object_id PK,FK
+    bigint term_taxonomy_id PK,FK
+    int term_order
+  }
+  WP_TERMMETA {
+    bigint meta_id PK
+    bigint term_id FK
+    varchar meta_key
+    longtext meta_value
+  }

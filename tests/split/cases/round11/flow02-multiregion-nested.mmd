@@ -1,0 +1,73 @@
+%% source: authored (modelled on AWS multi-region active-active reference architecture)
+%% kind: flowchart nested subgraphs three deep
+flowchart TB
+  dns["Route 53 latency routing"]
+  cdn["CloudFront distribution"]
+  waf["AWS WAF"]
+  dns --> cdn --> waf
+  subgraph aws["AWS organisation"]
+    subgraph use1["us-east-1"]
+      subgraph use1pub["Public subnets"]
+        alb1["ALB east"]
+        nat1["NAT gateway east"]
+      end
+      subgraph use1app["App subnets"]
+        ecs1["ECS orders service"]
+        ecs1b["ECS catalog service"]
+        lam1["Lambda image resizer"]
+      end
+      subgraph use1data["Data subnets"]
+        aur1[("Aurora global writer")]
+        ddb1[("DynamoDB global table")]
+        ec1[("ElastiCache east")]
+      end
+    end
+    subgraph euw1["eu-west-1"]
+      subgraph euw1pub["Public subnets"]
+        alb2["ALB west"]
+        nat2["NAT gateway west"]
+      end
+      subgraph euw1app["App subnets"]
+        ecs2["ECS orders service"]
+        ecs2b["ECS catalog service"]
+        lam2["Lambda image resizer"]
+      end
+      subgraph euw1data["Data subnets"]
+        aur2[("Aurora global reader")]
+        ddb2[("DynamoDB replica")]
+        ec2[("ElastiCache west")]
+      end
+    end
+    subgraph shared["Shared services account"]
+      ecr["ECR image registry"]
+      kms["KMS keys"]
+      sm["Secrets Manager"]
+      cw["CloudWatch dashboards"]
+    end
+  end
+  waf --> alb1
+  waf --> alb2
+  alb1 --> ecs1
+  alb1 --> ecs1b
+  alb2 --> ecs2
+  alb2 --> ecs2b
+  ecs1 --> aur1
+  ecs1 --> ec1
+  ecs1b --> ddb1
+  ecs2 --> aur2
+  ecs2 --> ec2
+  ecs2b --> ddb2
+  aur1 -. replication .-> aur2
+  ddb1 <-. replication .-> ddb2
+  ecs1 --> nat1
+  ecs2 --> nat2
+  lam1 --> ddb1
+  lam2 --> ddb2
+  ecr --> ecs1
+  ecr --> ecs2
+  sm --> ecs1
+  sm --> ecs2
+  kms --> aur1
+  kms --> aur2
+  ecs1 -.-> cw
+  ecs2 -.-> cw

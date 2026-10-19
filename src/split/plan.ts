@@ -30,6 +30,7 @@ import {
   quotientEdges,
   scoreOf,
 } from "./quotient.ts";
+import { newReachablePairs } from "./reach.ts";
 import { type FoldRules, RELAXED } from "./rules.ts";
 import {
   adjacencyOf,
@@ -134,6 +135,9 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
   const saved = current - scoreOf(shape, 0, config);
   if (saved <= EPSILON) return null;
   const hidden = merges.reduce((s, m) => s + Math.max(1, m.keys.length - 1), 0);
+  const { before } = step;
+  if (before && (before.edges - shape.edges < hidden || newReachablePairs(work, applied.part) - before.loss > hidden))
+    return null;
   return {
     part: applied.part,
     ratio: saved / hidden,
@@ -167,6 +171,10 @@ interface Step {
   only?: (c: Candidate) => boolean;
   // The fewest overview nodes a fold may leave, floorOf by default.
   floor?: number;
+  // The overview before the step, when a fold must take away at least one
+  // overview edge for each node it hides, and add no more new reachable
+  // pairs than nodes it hides.
+  before?: { edges: number; loss: number };
 }
 
 const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null => {
@@ -234,7 +242,13 @@ const membersIn = (part: Partition, c: Candidate): number =>
 // show alike. T5 and T6: merges no larger than the largest group and hiding
 // as many nodes as the rules ask, so the nodes left open gather into groups
 // of about the same size.
-const evenOut = (part: Partition, tier: Tier, rules: FoldRules): ((c: Candidate) => boolean) | null => {
+const evenOut = (
+  part: Partition,
+  tier: Tier,
+  rules: FoldRules,
+  work: WorkGraph,
+): ((c: Candidate) => boolean) | null => {
+  if (tier === "T4") return tangled(work, part) ? () => true : null;
   if (tier === "T2") {
     return part.groups.some((g) => g.reason === "decision region") ? (c) => c.reason === "decision region" : null;
   }
@@ -250,14 +264,29 @@ const evenOut = (part: Partition, tier: Tier, rules: FoldRules): ((c: Candidate)
   };
 };
 
+// An overview a reader meets a cycle in for every MIN_OVERVIEW nodes, a
+// chunk held at once: its independent cycles, edges less nodes plus one,
+// number at least a quarter of its nodes. A tree-like overview is read as it
+// is; a tangled one still reads better with its aggregates folded.
+export const tangled = (work: WorkGraph, part: Partition): boolean => {
+  const shape = overviewShape(work, part, quotientEdges(work, part));
+  return MIN_OVERVIEW * (shape.edges - shape.nodes + 1) >= shape.nodes;
+};
+
 // Takes what evenOut allows, one best step at a time, while the overview
 // keeps at least evenFloorOf nodes.
 const foldEvenly = (start: Measure, step: Step, deep: boolean): Measure => {
   const { work, config, rules } = start.ctx;
   const floor = deep ? floorOf(work) : evenFloorOf(work, config);
   let m = start;
-  for (let only = evenOut(m.ctx.part, step.tier, rules); only; only = evenOut(m.ctx.part, step.tier, rules)) {
-    const best = bestStep(m.ctx, { ...step, only, floor }, m.score);
+  for (
+    let only = evenOut(m.ctx.part, step.tier, rules, work);
+    only;
+    only = evenOut(m.ctx.part, step.tier, rules, work)
+  ) {
+    const before =
+      step.tier === "T4" ? { edges: m.ctx.qedges.length, loss: newReachablePairs(work, m.ctx.part) } : undefined;
+    const best = bestStep(m.ctx, { ...step, only, floor, ...(before ? { before } : {}) }, m.score);
     if (!best) break;
     m = measure(work, best.part, config, rules);
   }
@@ -348,11 +377,25 @@ const loosen = (start: Measure): Measure => {
   return m;
 };
 
+// An erDiagram that meets the target with rows dropped alone still draws
+// every entity and relationship: it folds aggregates evenly too, each fold
+// taking away an overview edge for every entity it hides, so the overview
+// gains the structure its aggregates give it. Any other diagram stays at T1.
+const aggregatesToo = (start: Measure, snapshots: Snapshot[], walk: Walk): Folded => {
+  const { work } = start.ctx;
+  const done: Folded = { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
+  if (work.family !== "er" || !walk.order.includes("T4")) return done;
+  const m = foldEvenly(start, { tier: "T4", capped: true }, false);
+  return m.ctx.part.groups.length === 0
+    ? done
+    : { work, part: m.ctx.part, snapshots: [...snapshots, snapshotOf("T4", m.ctx.part)], tier: "T4" };
+};
+
 // Folds tier by tier until the overview meets the target, or returns why not.
 export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Walk): Folded | string => {
   let m = measure(work, EMPTY_PARTITION, config, walk.rules);
   const snapshots: Snapshot[] = [snapshotOf("T1", EMPTY_PARTITION)];
-  if (meets(m.nodes, m.score, config)) return { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
+  if (meets(m.nodes, m.score, config)) return aggregatesToo(m, snapshots, walk);
   let tier: Tier = "T1";
   for (const t of walk.order) {
     const capped = (t !== "T3" && t !== "T4") || walk.capT3;

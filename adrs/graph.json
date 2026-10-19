@@ -503,6 +503,19 @@
     },
     {
       "data": {
+        "id": "MJL-0032",
+        "label": "0032",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md",
+        "title": "A pipeline stage folds across its lanes, a status stem names a family, and a stub draws each edge once",
+        "description": "How a split plan groups a stage no edge joins, reads a family from id-led statuses, and draws edges from a whole group",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -993,6 +1006,16 @@
     },
     {
       "data": {
+        "id": "MJL-0030-excepted_by-MJL-0032",
+        "source": "MJL-0030",
+        "target": "MJL-0032",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "edges from one group drawing alike are drawn once from one stub, not from a stub each"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0031-extends-MJL-0030",
         "source": "MJL-0031",
         "target": "MJL-0030",
@@ -1019,6 +1042,56 @@
         "label": "excepts",
         "relation": "excepts",
         "note": "any owner's aggregate may fold uncapped, never one swallowing a group over the target"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0031-excepted_by-MJL-0032",
+        "source": "MJL-0031",
+        "target": "MJL-0032",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "stubs for one group are never drawn apart, so only a stub beside its namesake member is named by a member"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0031-extended_by-MJL-0032",
+        "source": "MJL-0031",
+        "target": "MJL-0032",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a family is also read from a status stem, and a pair of one family may share a neighbour"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-excepts-MJL-0030",
+        "source": "MJL-0032",
+        "target": "MJL-0030",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "edges from one group drawing alike are drawn once from one stub, not from a stub each"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-excepts-MJL-0031",
+        "source": "MJL-0032",
+        "target": "MJL-0031",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "stubs for one group are never drawn apart, so only a stub beside its namesake member is named by a member"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-extends-MJL-0031",
+        "source": "MJL-0032",
+        "target": "MJL-0031",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a family is also read from a status stem, and a pair of one family may share a neighbour"
       }
     }
   ],

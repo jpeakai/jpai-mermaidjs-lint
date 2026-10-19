@@ -35,6 +35,7 @@
 | [MJL-0029](0029-runs-meshes-and-terminals-read-as-they-are.md) | Runs of alike nodes are named by range, dense meshes fold by cliques, and shared terminals stay in view | accepted |
 | [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) | A group is named where a reader enters it, a dense mesh is refused, and a state that ends the flow stays in view | accepted |
 | [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) | A plan lands near its target, keeps groups even and to one family, and names each stub once | accepted |
+| [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) | A pipeline stage folds across its lanes, a status stem names a family, and a stub draws each edge once | accepted |
 # By group
 
 ## cli
@@ -49,6 +50,7 @@
 * [MJL-0029](0029-runs-meshes-and-terminals-read-as-they-are.md) - Three choices that make a split plan's groups mean something a reader can check
 * [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) - How a split plan names, refuses and keeps nodes so its overview reads as the diagram does
 * [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) - How a split plan balances its groups, keeps them to one family and tells stubs apart
+* [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) - How a split plan groups a stage no edge joins, reads a family from id-led statuses, and draws edges from a whole group
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -150,6 +152,12 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0030 --excepts--> MJL-0028
 * MJL-0030 --extended_by--> MJL-0031
 * MJL-0030 --excepted_by--> MJL-0031
+* MJL-0030 --excepted_by--> MJL-0032
 * MJL-0031 --extends--> MJL-0030
 * MJL-0031 --excepts--> MJL-0030
 * MJL-0031 --excepts--> MJL-0028
+* MJL-0031 --excepted_by--> MJL-0032
+* MJL-0031 --extended_by--> MJL-0032
+* MJL-0032 --excepts--> MJL-0030
+* MJL-0032 --excepts--> MJL-0031
+* MJL-0032 --extends--> MJL-0031

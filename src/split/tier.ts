@@ -19,7 +19,7 @@ import {
   scoreOf,
 } from "./quotient.ts";
 import { type FoldRules, hubsOf, splitsBranches, terminalsOf } from "./rules.ts";
-import { mixesFamilies, stageOf } from "./stem.ts";
+import { mixesFamilies, stageOf, statusFamilies } from "./stem.ts";
 
 export interface Candidate extends Merge {
   // T6 orders by modularity gain, not by score per node.
@@ -105,7 +105,9 @@ const familyCache = new WeakMap<WorkGraph, Map<string, string | null>>();
 export const familyOf = (work: WorkGraph, id: string): string | null => {
   let known = familyCache.get(work);
   if (!known) {
-    known = new Map(work.ids.map((x) => [x, stageOf(work.nodes.get(x)?.label ?? x, x)]));
+    const labels = new Map(work.ids.map((x) => [x, work.nodes.get(x)?.label ?? x]));
+    const status = statusFamilies(labels);
+    known = new Map(work.ids.map((x) => [x, stageOf(labels.get(x) ?? x, x) ?? status.get(x) ?? null]));
     familyCache.set(work, known);
   }
   return known.get(id) ?? null;

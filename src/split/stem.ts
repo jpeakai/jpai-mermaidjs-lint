@@ -7,6 +7,7 @@
 import { Window } from "happy-dom";
 import { stemmer } from "stemmer";
 import { htmlEntities } from "./emit.ts";
+import { ID_LEAD } from "./label.ts";
 
 // Stop words, and the "fa" of a Font Awesome icon a label names (fa:fa-car).
 const STOP = new Set(["fa", "the", "a", "an", "of", "to", "and", "or", "for", "in", "on", "by", "with", "is", "per"]);
@@ -84,6 +85,33 @@ export const stageOf = (label: string, id: string): string | null => {
   const text = label.trim();
   const found = STAGE_LABEL.exec(text)?.[1] ?? FAMILY_ID_LEAD.exec(text)?.[1] ?? STAGE_ID.exec(id)?.[1] ?? null;
   return found?.toLowerCase() ?? null;
+};
+
+// The status family of each node whose label leads with an id and names no
+// prefix family, as "10008 Ready for Release": the stem of a word after the
+// id that the label shares with another such label, as "releas" in "10009
+// Released". The words after the id are a status, and two statuses sharing a
+// stem name one stage of a workflow. A label sharing no stem, or sharing two,
+// names none. Each family is marked apart from prefix families.
+export const STATUS_MARK = "~";
+
+export const statusFamilies = (labels: ReadonlyMap<string, string>): Map<string, string> => {
+  const stems = new Map<string, Set<string>>();
+  for (const [id, label] of labels) {
+    const text = label.trim();
+    const lead = ID_LEAD.exec(text);
+    if (!lead || stageOf(text, id) !== null) continue;
+    const words = labelBag(text.slice(lead[0].length), id);
+    stems.set(id, new Set([...words].filter((w) => !ID_LIKE.test(w))));
+  }
+  const count = new Map<string, number>();
+  for (const ws of stems.values()) for (const w of ws) count.set(w, (count.get(w) ?? 0) + 1);
+  const out = new Map<string, string>();
+  for (const [id, ws] of stems) {
+    const shared = [...ws].filter((w) => (count.get(w) ?? 0) > 1);
+    if (shared.length === 1) out.set(id, `${STATUS_MARK}${shared[0]}`);
+  }
+  return out;
 };
 
 const named = (xs: Iterable<string | null>): Set<string> => new Set([...xs].filter((s): s is string => s !== null));

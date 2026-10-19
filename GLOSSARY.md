@@ -491,6 +491,7 @@ The code that reads a Diagram's structure from mermaid's own parsers.
 
 The stage of a data pipeline a node names.
 It is a Prefix Family read from a dotted prefix such as `bronze.` or an id prefix such as `br_`.
+Its nodes may fold into one suggested group though no edge joins them, when they share a neighbour.
 
 ## Prefix Family
 
@@ -498,8 +499,9 @@ The family of names a node's label or id belongs to.
 It is a dotted prefix leading the node's label, such as `bronze.`.
 Failing that, it is the letters leading a label that leads with an id, such as `PLAT-` in `PLAT-1201`.
 Failing that, it is letters and an underscore leading its id, such as `br_`.
+Failing that, it is the node's Status Family.
 Under the strict rules, no `T5` or `T6` group holds two Prefix Families, per [MJL-0031](adrs/0031-a-plan-keeps-groups-even-and-names-each-stub-once.md).
-In `T6`, a pair within one family goes before any other.
+In `T6`, a pair within one family goes before any other, joined by an edge or by a neighbour they share, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
 
 ## Pinned Fix
 
@@ -623,15 +625,19 @@ The nodes, edges, Rows, subgraphs, subgraph nesting depth and Tree Depth the Par
 
 A node in a Detail Diagram that stands for a node, subgraph or interface outside its group.
 An edge in from another group starts at one Stub for that whole group.
-Two edges from different members of that group can draw one edge twice.
-They start at a Stub each, when the Detail Diagram still meets its target.
-Each such Stub names the member its edges leave, as `Checkout domain (+5) from paymentservice`, or the Detail Diagram draws one Stub.
-So does a whole-group Stub beside a Stub for the member its group is named after.
+Edges from different members of that group into one member, with one label and kind, are drawn once from it, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
+A whole-group Stub beside a Stub for the member its group is named after names the member its edges leave, as `ORDER (+6) from PAYMENT`.
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
 It adds the node's group label when that differs.
 Its text must have exactly one reading.
 When the text could name anything else, it adds the node's id in brackets, as often as it takes.
+
+## Status Family
+
+The workflow stage a label leading with a bare id names, such as `10008 Ready for Release`.
+It is the one stem a word after the id shares with another such label, as `releas` with `10009 Released`.
+A label sharing no stem, or two, names none, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
 
 ## Style Directive
 

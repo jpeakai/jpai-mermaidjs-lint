@@ -10,7 +10,18 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **A stub draws each edge once.** Edges from different members of one outside group into one member, with one label and kind, are drawn once from the group's one stub, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
+  The source group's detail still draws each of them exactly, so nothing is lost.
+  A detail no longer draws one stub edge twice, or a stub per member such as `Checkout domain (+5) from paymentservice`.
+  The contract, and the test suite's two independent readers, refuse a half edge drawn twice.
+- **A pipeline stage folds though no edge joins it.** In `T6`, two nodes of one prefix family that share a neighbour pair like two an edge joins.
+  So an ETL pipeline's `gold.` tables fold into one group with no new reachable pair.
+- **A status stem names a family.** A label leading with a bare id, such as `10008 Ready for Release`, takes the one stem it shares with another such label.
+  So a Jira workflow keeps `Ready for Release` and `Released` together, apart from `Code Review`.
+- The contract refuses a suggested group its members do not connect.
+  Members are joined by an edge, by an author region the group folds, or by a neighbour two members of one family, or two leaves, share.
 
 ## [0.10.0] - 2026-10-19
 

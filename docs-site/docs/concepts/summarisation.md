@@ -17,12 +17,11 @@ It has two halves:
 - **One detail diagram per group** shows that group's members and every edge between them.
 
 A dashed stub in a detail stands for each outside node an edge reaches, or for a whole group an edge comes in from.
-Two edges from different members of one group can draw the same edge twice.
-When the detail still meets its target, each gets a stub, so a reader sees two sources.
-Each such stub names the member its edges leave, as `Checkout domain (+5) from paymentservice`.
-When that text would not name the group alone, the detail draws one stub instead.
-A stub for a whole group beside a stub for its namesake member is named the same way.
-So `10007 QA (+2) from 10008 Ready for Release` sits beside `10007 QA (in group)`.
+Each outside node or group gets one stub.
+Two edges from different members of one group into one member, with one label and kind, are drawn once from the group's stub.
+The group's own detail draws each of them to that member, so nothing is lost.
+A stub for a whole group beside a stub for its namesake member names the member its edges leave.
+So `ORDER (+6) from PAYMENT` sits beside `ORDER (in group)`.
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
@@ -140,7 +139,10 @@ Once a leaf sits inside the group of the node it hangs from, the overview may sh
 When structure alone finds no more folds, the plan looks for communities: sets of nodes with more edges inside than out.
 Modularity scores a partition by how far its inside edges exceed what chance would give.
 Greedy agglomeration starts with every node alone, then repeatedly merges the pair that gains the most modularity.
-The plan only merges two nodes an edge joins, so a suggested group is always connected.
+The plan merges two nodes an edge joins.
+It also merges two nodes of one prefix family that share a neighbour, as two `silver.` tables fed by one quality suite.
+They are one stage of a pipeline, which no edge joins.
+So a suggested group is always connected, through its own edges or the neighbours its members share, and the contract checks it.
 That is the method of [Clauset, Newman and Moore (2004)](https://doi.org/10.1103/PhysRevE.70.066111).
 
 --8<-- "summarise-communities.md"
@@ -211,7 +213,7 @@ A plan names the last tier that changed it.
 - **Hubs stay in view.** A hub is a node of degree at least four and at least the 90th percentile degree. It keeps its own overview node, and the leaves hanging from it fold beside it as one group. An `erDiagram` never merges two relationship labels, so there its leaves stay open.
 - **Shared terminals stay in view.** A shared terminal is a flowchart or `stateDiagram` node that at least three other nodes lead into and that ends the flow, by directed edges. It leads nowhere, or everything it leads to leads nowhere. A `Notify on-call` step every failure ends at is one, and so is a final `Refunded` state. So is a `Cancelled` state that leads only to `Refunded` and `Voided`. Folded into one branch's group, it would read as that branch's own end.
 - **A decision's branches stay apart.** A decision is a node whose outgoing edges carry two labels or more, in a flowchart or a `stateDiagram`. Two targets of its differently labelled branches never share a group, unless one reaches the other, or both reach a common member, inside the group.
-- **A group keeps to one prefix family.** A prefix family is the dotted prefix leading a label, such as `bronze.`. Failing that, it is the letters leading an id-led label, such as `PLAT-`. Failing that, it is the letters and underscore leading an id, such as `br_`. No suggested group holds members of two families. In `T6`, a pair within one family goes before any other pair.
+- **A group keeps to one prefix family.** A prefix family is the dotted prefix leading a label, such as `bronze.`. Failing that, it is the letters leading an id-led label, such as `PLAT-`. Failing that, it is the letters and underscore leading an id, such as `br_`. Failing that, a label leading with a bare id takes a status stem it shares with another. So `10008 Ready for Release` and `10009 Released` share `releas`. No suggested group holds members of two families. In `T6`, a pair within one family goes before any other pair, joined by an edge or by a neighbour they share.
 - **Every group hides two nodes or more.** Once the target is met, a group hiding one node is undone when the overview and every detail still meet the target without it. Otherwise it is merged into a neighbouring node or suggested group. One that can be neither stays. A decision region from `T2` hiding one node is undone the same way. It is never merged, since a merged region would no longer be a region.
 
 When the target cannot be met under these rules, the plan is walked again with prefix families mixed.
@@ -232,20 +234,20 @@ The plan reports it after each tier.
 | `T3` | Author regions, innermost first: subgraphs, composite states and namespaces | New reachable pairs between nodes folded into one region |
 | `T4` | `erDiagram` aggregates: the largest aggregate that fits, named after its root, or after its most crossed member when the root is a lookup. A junction stays out of both sides. | New reachable pairs. Cardinalities are never merged. |
 | `T5` | Leaves into the node they hang from, repeated, or beside it as one group when it is a hub | New reachable pairs through the group |
-| `T6` | Suggested groups from greedy modularity, over pairs an edge joins, within one prefix family first, with alike labels breaking ties, and tight cliques once the overview is dense | New reachable pairs, and groups the author may not recognise |
+| `T6` | Suggested groups from greedy modularity, over pairs an edge joins, within one prefix family first, with pairs of one family sharing a neighbour too, alike labels breaking ties, and tight cliques once the overview is dense | New reachable pairs, and groups the author may not recognise |
 
 ## What "meaning is preserved" means
 
 A plan is offered only when a contract passes, and `src/split/contract.ts` checks it on every plan.
 The contract is what this page means by "meaning is preserved".
 
-- **Sound.** Every original node is in exactly one overview node. Each overview edge stands for original edges, in the same direction, and none is invented. The one exception is an undirected edge, below.
+- **Sound.** Every original node is in exactly one overview node. A suggested group is connected. Two members are joined by an edge, or by an author region the group folds whole. They are also joined by a neighbour they share, when both name one prefix family or both are leaves. Each overview edge stands for original edges, in the same direction, and none is invented. The one exception is an undirected edge, below.
 - **Sound attributes.** An overview edge keeps a label or an arrow kind only when every edge it stands for agrees.
-- **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds.
+- **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds. Each edge between two groups is drawn exactly in its source's detail. Its target's detail draws it once for every edge from the source group into that member that draws alike.
 - **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
 - **Honest ranges.** A range label, such as `DATA-0381 … DATA-0383 (+1)`, is the group's first and last member labels in natural order. Its count is of the members neither names. No member of another group has a label from the first to the last.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
-- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it. `Checkout domain (+5) from paymentservice` is the whole group, drawn from its member paymentservice, and paymentservice must draw every edge the stub draws.
+- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, beside `ORDER (in group)`, and PAYMENT must draw every edge the stub draws.
 - **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. That region is an author region, or a decision region that is single-entry single-exit in the original graph, every node of which the group holds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
@@ -290,9 +292,11 @@ In `T6`, a pair within one prefix family goes before any other.
 Under the strict rules, a pair across two families is never proposed.
 A family is a dotted prefix leading a label, such as `bronze.`, or the letters leading an id-led label, such as `PLAT-`.
 Failing that, it is letters and an underscore leading an id, such as `br_`.
+Failing that, for a label leading with a bare id, it is the one status stem the label shares with another such label.
+So `10008 Ready for Release` and `10009 Released` form one family, and no other status of that workflow joins it.
 When families are mixed, a pair across two still loses a tie between equal gains.
 Among the rest, the pair with alike labels goes first.
-Two nodes no edge joins never pair, however alike their labels.
+Two nodes no edge joins pair only when they name one family and share a neighbour, however alike their labels.
 
 Labels are compared by stems.
 Each label is split into words by the platform's word segmenter.

@@ -35,6 +35,12 @@ relates_to:
   - relation: excepts
     target: MJL-0028
     note: any owner's aggregate may fold uncapped, never one swallowing a group over the target
+  - relation: excepted_by
+    target: MJL-0032
+    note: stubs for one group are never drawn apart, so only a stub beside its namesake member is named by a member
+  - relation: extended_by
+    target: MJL-0032
+    note: a family is also read from a status stem, and a pair of one family may share a neighbour
 
 decision:
   given: a reader of an overview counts its nodes against the target and compares its groups' sizes. A group's name reads as a promise about its members, and parallel lines read as separate relationships. A detail's stubs are read by their text alone

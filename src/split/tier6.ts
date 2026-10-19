@@ -8,8 +8,8 @@
 // hub or joins a decision's branches that do not rejoin (rules.ts).
 
 import { maximalCliques } from "./clique.ts";
-import { byText } from "./graph.ts";
-import { isGroupKey, membersOfKey, overviewKeys, parentOfKey } from "./quotient.ts";
+import { byText, sorted } from "./graph.ts";
+import { isGroupKey, membersOfKey, over, overviewKeys, parentOfKey } from "./quotient.ts";
 import { crossesStages, labelBag, oneFamily, similarity } from "./stem.ts";
 import {
   type Candidate,
@@ -97,15 +97,46 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
   const stagesOf = (k: string): Array<string | null> => familiesOf(ctx, [k]);
   const groupableKeys = new Set(overviewKeys(work, part).filter((k) => foldable(ctx, k)));
   const out: Candidate[] = cliques(ctx, w, gain);
-  for (const [pair, wab] of [...w].sort((x, y) => byText(x[0], y[0]))) {
-    const [a, b] = pair.split("\u0002") as [string, string];
+  const pairs = [...w].map(([pair, wab]) => [...(pair.split("\u0002") as [string, string]), wab] as const);
+  for (const [a, b, wab] of [...pairs, ...stagePairs(ctx, w)].sort(
+    (x, y) => byText(x[0], y[0]) || byText(x[1], y[1]),
+  )) {
     if (!(groupableKeys.has(a) && groupableKeys.has(b))) continue;
     const parent = parentOfKey(work, part, a);
     if (parent !== parentOfKey(work, part, b) || !keepsBranches(ctx, [a, b]) || !keepsFamilies(ctx, [a, b])) continue;
+    const kin = oneFamily(stagesOf(a), stagesOf(b)) ? 1 : 0;
+    if (wab === 0 && kin === 0) continue;
     const priority = wab / m - (degree(a) * degree(b)) / (2 * m * m);
     const tie = labelSimilarity(ctx, bags, a, b) - (crossesStages(stagesOf(a), stagesOf(b)) ? STAGE_PENALTY : 0);
-    const kin = oneFamily(stagesOf(a), stagesOf(b)) ? 1 : 0;
     out.push({ keys: [a, b], parent, tier: "T6", reason: "suggested grouping", priority, tie, kin });
+  }
+  return out;
+};
+
+// Two overview nodes no edge joins whose members share an original neighbour:
+// the same stage of a pipeline, as silver.payments and silver.sessions both
+// fed by one quality suite. Offered with no edge between them, so only a pair
+// of one prefix family is taken (MJL-0032), and a group so made is connected
+// through the neighbours its members share, as contract.ts joined reads it.
+const stagePairs = (ctx: TierContext, w: Map<string, number>): Array<readonly [string, string, number]> => {
+  const { work, part } = ctx;
+  const around = new Map<string, Set<string>>();
+  for (const e of work.edges) {
+    if (e.source === e.target) continue;
+    around.set(e.source, new Set([...(around.get(e.source) ?? []), e.target]));
+    around.set(e.target, new Set([...(around.get(e.target) ?? []), e.source]));
+  }
+  const out: Array<readonly [string, string, number]> = [];
+  const seen = new Set<string>();
+  for (const via of [...around.keys()].sort(byText)) {
+    const ks = sorted(new Set([...(around.get(via) ?? [])].map((x) => over(work, part, x))));
+    for (const [i, a] of ks.entries())
+      for (const b of ks.slice(i + 1)) {
+        const key = pairKey(a, b);
+        if (w.has(key) || seen.has(key)) continue;
+        seen.add(key);
+        out.push([a, b, 0]);
+      }
   }
   return out;
 };

@@ -129,7 +129,7 @@ describe("a whole-group stub beside a stub for the member it is named after", ()
   test(
     "a stub naming a member that draws none of its edges is caught by the contract, the reading and the checker",
     async () => {
-      const source = read("state08-jira-workflow-ids");
+      const source = read("er01-ecommerce");
       const cfg = configFromPreset("low-density");
       const build = await buildOf(source, cfg);
       const d = build.plan.details.find((x) => x.graph.nodes.some((n) => n.label.includes(" from ")));

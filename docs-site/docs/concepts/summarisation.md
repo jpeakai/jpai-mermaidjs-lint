@@ -21,7 +21,9 @@ Each outside node or group gets one stub.
 Edges of one kind one way between a group's stub and one member are drawn once, keeping only the label they all share.
 The group's own detail draws each of them to that member, so nothing is lost.
 When edges join two groups both ways, one detail draws the other group whole and the other draws its members.
-The detail needing stubs for fewer of the other's members draws them, so no detail shows a group whole beside its members.
+The detail split again draws the other's members, when the other's detail fits, per [MJL-0035](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
+A stub in a nested overview then names the member a reader is sent to, as `PAYMENT_METHOD (CUSTOMER)`.
+Otherwise the detail needing stubs for fewer of the other's members draws them, so no detail shows a group whole beside its members.
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
@@ -216,11 +218,8 @@ A group then takes the label of the region around it in brackets, as `Public sub
 A plan may split a detail again with new reachable pairs.
 It is then walked again holding regions to details that fit, first folding only regions that add no new reachable pair.
 That plan is offered when it declares fewer new reachable pairs in all.
-A region may hold more than half of a diagram's nodes beside another region holding nodes.
-Folded whole, its group would dwarf the rest.
-So the plan is walked first with it folded whole only when its detail fits, per [MJL-0034](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
-It then folds as its parts, as a compiler's `Ast` namespace folds as its subtrees.
-Only when no such walk plans, under any rules, is it folded whole.
+A region folds whole however much of a diagram it holds, its detail split again when it does not fit, per [MJL-0035](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
+So a compiler's `Ast` namespace folds as one group, its subtrees folded inside its detail.
 When that plan fails, it climbs in the order below.
 Within a tier, it applies the fold that saves the most score per node hidden, then measures the overview again.
 In `T4`, of two aggregates that save as much, the one leaving fewer edges between overview nodes goes first.
@@ -254,12 +253,12 @@ A plan names the last tier that changed it.
 - **Hubs stay in view.** A hub is a node of degree at least four and at least the 90th percentile degree. It keeps its own overview node, and the leaves hanging from it fold beside it as one group. An `erDiagram` never merges two relationship labels, so there its leaves stay open.
 - **Shared terminals stay in view.** A shared terminal is a flowchart or `stateDiagram` node that at least three other nodes lead into and that ends the flow, by directed edges. It leads nowhere, or everything it leads to leads nowhere. A `Notify on-call` step every failure ends at is one, and so is a final `Refunded` state. So is a `Cancelled` state that leads only to `Refunded` and `Voided`. Folded into one branch's group, it would read as that branch's own end.
 - **A decision's branches stay apart.** A decision is a node whose outgoing edges carry two labels or more, in a flowchart or a `stateDiagram`. Two targets of its differently labelled branches never share a group, unless one reaches the other, or both reach a common member, inside the group.
-- **A group keeps to one prefix family.** A prefix family is the dotted prefix leading a label, such as `bronze.`. Failing that, it is the letters leading an id-led label, such as `PLAT-`. Failing that, it is the letters and underscore leading an id, such as `br_`. Failing that, a label leading with a bare id takes a status stem it shares with another. So `10008 Ready for Release` and `10009 Released` share `releas`. No suggested group holds members of two families, and no chain stage does either. In `T6`, a pair within one family goes before any other pair, joined by an edge or by a neighbour they share. Of two such pairs alike in gain and label, the one sharing more overview neighbours goes first. So a layer folds in step with the layer beside it.
+- **A group keeps to one prefix family.** A prefix family is the dotted prefix leading a label, such as `bronze.`. Failing that, it is the letters leading an id-led label, such as `PLAT-`. Failing that, it is the letters and underscore leading an id, such as `br_`. Failing that, a label leading with a bare id takes a status stem it shares with another. So `10008 Ready for Release` and `10009 Released` share `releas`. No suggested group holds members of two families. A chain stage may, so an extract folds with the bronze table it lands in as one lane, and lanes alike fold as twins. In `T6`, a pair within one family goes before any other pair, joined by an edge or by a neighbour they share. Of two such pairs alike in gain and label, the one sharing more overview neighbours goes first. So a layer folds in step with the layer beside it.
 - **Every group hides two nodes or more.** Once the target is met, a group hiding one node is undone when the overview and every detail still meet the target without it. Otherwise it is merged into a neighbouring node or suggested group. One that can be neither stays. A decision region from `T2` hiding one node is undone the same way. It is never merged, since a merged region would no longer be a region.
 
 When the target cannot be met under these rules, the plan is walked again with prefix families mixed.
 When that fails, it is walked with hubs and branches folded too, while shared terminals stay in view.
-That walk first keeps prefix families apart, so a pipeline whose hubs must fold still folds layer by layer, and only then mixes them.
+That walk first keeps prefix families apart, and only then mixes them.
 When that fails too, it is walked without the first four rules, and the last still holds.
 As a last resort, the plan is walked once more with groups that hide one node allowed.
 A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk.

@@ -38,6 +38,7 @@
 | [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) | A pipeline stage folds across its lanes, a status stem names a family, and a stub draws each edge once | accepted |
 | [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) | A plan folds ticket families whole, echoing regions alike and tangled aggregates, refuses alphabetical buckets, and draws a group whole or as members | accepted |
 | [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) | A refused plan prints the list or table that reads better, a pipeline folds by layer, aggregates draw no relationship twice, and a region holding most of a diagram folds as its parts | accepted |
+| [MJL-0035](0035-a-region-folds-whole-and-a-nested-detail-names-members.md) | An author region folds whole however much of a diagram it holds, a pipeline folds by lane, and a detail split again names the members it reaches | accepted |
 # By group
 
 ## cli
@@ -55,6 +56,7 @@
 * [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) - How a split plan groups a stage no edge joins, reads a family from id-led statuses, and draws edges from a whole group
 * [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) - How a split plan treats stars, tangled schemas, ticket families, echoing regions and groups joined both ways
 * [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) - What a split plan prints in place of a star or dense mesh, and how pipelines, aggregates and outsized regions fold
+* [MJL-0035](0035-a-region-folds-whole-and-a-nested-detail-names-members.md) - How outsized regions, pipeline lanes and the stubs between two groups joined both ways are drawn
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -146,6 +148,7 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0026 --extended_by--> MJL-0028
 * MJL-0026 --extended_by--> MJL-0033
 * MJL-0026 --excepted_by--> MJL-0034
+* MJL-0026 --extended_by--> MJL-0035
 * MJL-0027 --extends--> MJL-0023
 * MJL-0027 --see_also--> MJL-0022
 * MJL-0028 --extends--> MJL-0026
@@ -186,6 +189,7 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0033 --excepts--> MJL-0032
 * MJL-0033 --extended_by--> MJL-0034
 * MJL-0033 --excepted_by--> MJL-0034
+* MJL-0033 --extended_by--> MJL-0035
 * MJL-0034 --extends--> MJL-0033
 * MJL-0034 --extends--> MJL-0030
 * MJL-0034 --excepts--> MJL-0033
@@ -193,3 +197,9 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0034 --extends--> MJL-0031
 * MJL-0034 --extends--> MJL-0032
 * MJL-0034 --excepts--> MJL-0026
+* MJL-0034 --excepted_by--> MJL-0035
+* MJL-0034 --excepted_by--> MJL-0035
+* MJL-0035 --excepts--> MJL-0034
+* MJL-0035 --excepts--> MJL-0034
+* MJL-0035 --extends--> MJL-0033
+* MJL-0035 --extends--> MJL-0026

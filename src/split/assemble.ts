@@ -305,6 +305,8 @@ interface Assembly {
   config: ThresholdConfig;
   split: SplitDetailFn;
   labels: LabelContext;
+  // The keys of the groups whose details are split again (exactSide).
+  nested: ReadonlySet<string>;
 }
 
 // A detail's view and its stubs' texts, a whole-group stub that reads alike
@@ -313,7 +315,7 @@ interface Assembly {
 // including those whose edges it draws once for several.
 const viewOf = (a: Assembly, group: Group): { view: DetailView; texts: Map<string, StubText> } => {
   const { work, part } = a.folded;
-  const view = detailView(work, part, group);
+  const view = detailView(work, part, group, a.nested);
   const endOf = new Map(view.stubs.map((s) => [s.id, s.endpoint]));
   const here = keyOf(group);
   const sourcesOf = (stub: string): string[] => {
@@ -461,18 +463,30 @@ const rowDetailsOf = (work: WorkGraph, part: Partition, config: ThresholdConfig)
   });
 };
 
+// The keys of the groups whose details exceed the target, so are split again.
+const splitAgain = (work: WorkGraph, part: Partition, config: ThresholdConfig): Set<string> =>
+  new Set(
+    part.groups
+      .filter((g) => {
+        const shape = detailShape(work, detailView(work, part, g));
+        return !meets(shape.nodes, scoreOf(shape, 0, config), config);
+      })
+      .map(keyOf),
+  );
+
 export const assemble = (folded: Folded, config: ThresholdConfig, split: SplitDetailFn): Build | string => {
   const { work, part } = folded;
   const groups = groupsOf(work, part);
   const { graph: overview, covers } = overviewGraph(work, part, groups);
-  const a: Assembly = { folded, config, split, labels: labelContext(work, part, groups) };
+  const nested = splitAgain(work, part, config);
+  const a: Assembly = { folded, config, split, labels: labelContext(work, part, groups), nested };
   const details: SplitDetail[] = [];
-  const nested: Record<string, Build> = {};
+  const builds: Record<string, Build> = {};
   for (const g of groups) {
     const built = buildDetail(a, g);
     if (typeof built === "string") return built;
     details.push(built.detail);
-    if (built.nested) nested[g.id] = built.nested;
+    if (built.nested) builds[g.id] = built.nested;
   }
   const rowDetails = rowDetailsOf(work, part, config);
   const shape = overviewShape(work, part, quotientEdges(work, part));
@@ -490,5 +504,5 @@ export const assemble = (folded: Folded, config: ThresholdConfig, split: SplitDe
     loss: lossOf(work, folded, drawnRows(work, details, rowDetails)),
     ladder: ladderOf(work, folded.snapshots, config),
   };
-  return { plan, work, covers, snapshots: folded.snapshots, nested };
+  return { plan, work, covers, snapshots: folded.snapshots, nested: builds };
 };

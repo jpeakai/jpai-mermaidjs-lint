@@ -542,6 +542,19 @@
     },
     {
       "data": {
+        "id": "MJL-0035",
+        "label": "0035",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0035-a-region-folds-whole-and-a-nested-detail-names-members.md",
+        "title": "An author region folds whole however much of a diagram it holds, a pipeline folds by lane, and a detail split again names the members it reaches",
+        "description": "How outsized regions, pipeline lanes and the stubs between two groups joined both ways are drawn",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -928,6 +941,16 @@
         "label": "excepted by",
         "relation": "excepted_by",
         "note": "a region holding most of a diagram folds as its parts first"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0026-extended_by-MJL-0035",
+        "source": "MJL-0026",
+        "target": "MJL-0035",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "an author region folds whole however much of a diagram it holds"
       }
     },
     {
@@ -1332,6 +1355,16 @@
     },
     {
       "data": {
+        "id": "MJL-0033-extended_by-MJL-0035",
+        "source": "MJL-0033",
+        "target": "MJL-0035",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "of two groups joined both ways, the one whose detail is split again draws the other's members"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0034-extends-MJL-0033",
         "source": "MJL-0034",
         "target": "MJL-0033",
@@ -1398,6 +1431,46 @@
         "label": "excepts",
         "relation": "excepts",
         "note": "a region holding most of a diagram folds as its parts first"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-excepted_by-MJL-0035",
+        "source": "MJL-0034",
+        "target": "MJL-0035",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a region holding most of a diagram folds whole, its detail split again, not as its parts first"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0035-excepts-MJL-0034",
+        "source": "MJL-0035",
+        "target": "MJL-0034",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a region holding most of a diagram folds whole, its detail split again, not as its parts first"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0035-extends-MJL-0033",
+        "source": "MJL-0035",
+        "target": "MJL-0033",
+        "label": "extends",
+        "relation": "extends",
+        "note": "of two groups joined both ways, the one whose detail is split again draws the other's members"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0035-extends-MJL-0026",
+        "source": "MJL-0035",
+        "target": "MJL-0026",
+        "label": "extends",
+        "relation": "extends",
+        "note": "an author region folds whole however much of a diagram it holds"
       }
     }
   ],

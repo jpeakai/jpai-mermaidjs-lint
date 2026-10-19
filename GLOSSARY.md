@@ -495,12 +495,6 @@ A core Rule ID has none.
 The Docs Site's theme, in `docs-site/theme/osakanights/`, which another MkDocs Material site can adopt.
 Its colours come from Design Tokens.
 
-## Outsized Region
-
-An author region holding more than half of a Diagram's nodes, beside another region holding nodes.
-A Split Plan is walked first with it folded whole only when its Detail Diagram fits, so it folds as its parts, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
-Only when no such walk plans is it folded whole.
-
 ## Overview
 
 The half of a Split Plan that keeps the whole Diagram's shape, with each group of nodes folded into one Group Node.
@@ -681,6 +675,7 @@ A node in a Detail Diagram that stands for a node, subgraph or interface outside
 An edge in from another group starts at one Stub for that whole group.
 Edges of one kind one way between that Stub and one member are drawn once, with only the label they share, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
 When edges join two groups both ways, one detail draws the other group as one Stub, and the other draws Stubs for its members.
+The detail split again draws the members when the other's detail fits, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
 It adds the node's group label when that differs.

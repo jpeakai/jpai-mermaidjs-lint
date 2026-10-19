@@ -563,11 +563,20 @@ const halfOf = (halves: Map<string, GraphEdge[]>, e: GraphEdge): GraphEdge => {
 };
 
 // The group whose detail draws exactly every edge between two groups that
-// edges join both ways: the one needing stubs for fewer of the other's
-// members, then the first by key. The other group's detail draws one stub for
-// the whole group, with every edge each way drawn once for those alike, so no
-// detail draws a group whole beside stubs for its members.
-export const exactSide = (work: WorkGraph, part: Partition, a: string, b: string): string => {
+// edges join both ways: the one whose detail is split again when the other's
+// is not, since a stub in a nested overview standing for a whole group hides
+// which member a reader is sent to two levels away (MJL-0035); then the one
+// needing stubs for fewer of the other's members, then the first by key. The
+// other group's detail draws one stub for the whole group, with every edge
+// each way drawn once for those alike, so no detail draws a group whole beside
+// stubs for its members.
+export const exactSide = (
+  work: WorkGraph,
+  part: Partition,
+  [a, b]: [string, string],
+  nested: ReadonlySet<string> = new Set(),
+): string => {
+  if (nested.has(a) !== nested.has(b)) return nested.has(a) ? a : b;
   const between = work.edges.filter((e) => {
     const ends = [over(work, part, e.source), over(work, part, e.target)];
     return ends.includes(a) && ends.includes(b) && a !== b;
@@ -591,13 +600,19 @@ const bothWays = (work: WorkGraph, part: Partition, key: string, touching: Graph
 
 // One stub per outside end, and each edge from a whole group drawn alike
 // another drawn once. A group that edges join to this one both ways is drawn
-// whole, or as stubs for its members, never both, as exactSide decides.
-export const detailView = (work: WorkGraph, part: Partition, g: Group): DetailView => {
+// whole, or as stubs for its members, never both, as exactSide decides from
+// the groups whose details are split again.
+export const detailView = (
+  work: WorkGraph,
+  part: Partition,
+  g: Group,
+  nested: ReadonlySet<string> = new Set(),
+): DetailView => {
   const key = keyOf(g);
   const inside = (id: string): boolean => over(work, part, id) === key;
   const touching = work.edges.filter((e) => inside(e.source) || inside(e.target));
   const pairs = bothWays(work, part, key, touching);
-  const whole = new Set([...pairs].filter((h) => exactSide(work, part, key, h) !== key));
+  const whole = new Set([...pairs].filter((h) => exactSide(work, part, [key, h], nested) !== key));
   const endOf = (e: GraphEdge): string | null => {
     const end = outsideEnd(work, part, e, inside);
     if (end === null) return null;

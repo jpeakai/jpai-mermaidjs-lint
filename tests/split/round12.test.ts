@@ -1,9 +1,9 @@
 // What the round-12 blind rating held plans to (MJL-0034): a plan refused
 // because a list or a table reads better prints that list or table, drawing
-// every node and edge; a pipeline's prefix families fold layer by layer; an
-// aggregate folds only where it draws no relationship beside another, and in
-// a schema met by dropping rows only tight aggregates fold; and a region
-// holding most of a diagram folds as its parts.
+// every node and edge; an aggregate folds only where it draws no relationship
+// beside another, and in a schema met by dropping rows only tight aggregates
+// fold. Round 13 (MJL-0035) folds a pipeline by lane again and an author
+// region whole however much of the diagram it holds: round13.test.ts.
 
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -16,8 +16,6 @@ import type { RuleId } from "../../src/rules/types.ts";
 import { meshMatrix, starList } from "../../src/split/alternative.ts";
 import { DENSE_MESH, STAR, splitOutcome } from "../../src/split/index.ts";
 import { foldedParallels, quotientEdges } from "../../src/split/quotient.ts";
-import { familyOf } from "../../src/split/tier.ts";
-import { isOutsized } from "../../src/split/tier3.ts";
 import type { SplitAlternative, SplitPlan } from "../../src/split/types.ts";
 import { outcomeLines } from "../../src/split-report.ts";
 import { unfaithful } from "./alternatives.ts";
@@ -184,30 +182,6 @@ describe("every refused star or mesh", () => {
   );
 });
 
-describe("a pipeline of prefix families", () => {
-  test(
-    "folds layer by layer, each group of one family, extracts and bronze tables in step",
-    async () => {
-      const source = read("flow05-etl-fanout-fanin");
-      const plan = await planOf(source, "low");
-      const work = await workOf(source);
-      expect(plan.loss.newReachablePairs).toBe(0);
-      for (const g of plan.groups) {
-        const families = new Set(g.members.map((m) => familyOf(work, m)).filter((f) => f !== null));
-        expect(families.size).toBeLessThanOrEqual(1);
-      }
-      const of = (family: string): string[] =>
-        plan.groups.filter((g) => g.members.every((m) => familyOf(work, m) === family)).map((g) => g.id);
-      const [extracts, bronze] = [of("ex"), of("bronze")];
-      expect(extracts).toHaveLength(2);
-      expect(bronze).toHaveLength(2);
-      const lanes = plan.overview.edges.filter((e) => extracts.includes(e.source) && bronze.includes(e.target));
-      expect(lanes).toHaveLength(2);
-    },
-    SLOW,
-  );
-});
-
 describe("an erDiagram aggregate", () => {
   // Each overview edge at a group reaches another end, but for the original's
   // own relationships side by side.
@@ -265,29 +239,4 @@ describe("an erDiagram aggregate", () => {
     };
     expect(foldedParallels(work, quotientEdges(work, part))).toBe(1);
   });
-});
-
-describe("an author region holding most of a diagram", () => {
-  test(
-    "folds as its parts, so no group holds a third of the diagram",
-    async () => {
-      const source = read("class04-compiler-ast");
-      const work = await workOf(source);
-      expect(work.regionIds.filter((r) => isOutsized(work, r))).toHaveLength(1);
-      const plan = await planOf(source, "low");
-      expect(Math.max(...plan.groups.map((g) => g.members.length))).toBeLessThan(work.ids.length / 3);
-      expect(plan.groups.some((g) => g.labelBase === "Ast")).toBe(false);
-    },
-    SLOW,
-  );
-
-  test(
-    "still folds whole when folding it as its parts gives no plan",
-    async () => {
-      const source = readFileSync(join(CASES, "round3", "f01-nested-empty-onenode-regions.mmd"), "utf8");
-      const plan = await planOf(source, "low");
-      expect(plan.groups.some((g) => g.labelBase === "Outer zone")).toBe(true);
-    },
-    SLOW,
-  );
 });

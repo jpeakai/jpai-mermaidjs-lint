@@ -21,6 +21,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 - Extended by [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) (decision regions and erDiagram aggregates fold whole)
 - Extended by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (regions drawn from one template fold to the same depth and are named by the region around them)
 - Excepted by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a region holding most of a diagram folds as its parts first)
+- Extended by [MJL-0035](0035-a-region-folds-whole-and-a-nested-detail-names-members.md) (an author region folds whole however much of a diagram it holds)
 
 ## Decision
 

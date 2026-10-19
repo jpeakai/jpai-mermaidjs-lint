@@ -18,13 +18,12 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ### Changed
 
-- **A pipeline folds layer by layer.** With hubs folded, prefix families such as `bronze.` and `silver.` stay apart before a walk mixes them, and a chain stage keeps to one family.
-  A pair of one family sharing more overview neighbours folds first, so extracts and the bronze tables they land in fold in step.
+- **A pipeline folds by lane.** A chain stage may join prefix families, so each extract folds with the bronze table it lands in. Lanes alike fold as twins, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
+  With hubs folded, prefix families such as `bronze.` and `silver.` stay apart before a walk mixes them.
+  A pair of one family sharing more overview neighbours folds first.
 - **An aggregate draws no relationship twice.** `T4` folds an aggregate only where the overview draws no two relationships between one group and one entity that the original draws between other ends.
   A root's aggregate that would is offered trimmed of its shared parts, so a film rental schema folds its address chain alone.
 - **A schema met by dropping rows folds only tight aggregates.** Past the target, an aggregate folds only when it adds no new reachable pair.
-- **A region holding most of a diagram folds as its parts.** A plan is walked first with such a region folded whole only when its detail fits, so a compiler's `Ast` namespace folds as its subtrees.
-  When no such walk plans, the region folds whole as before.
 - **A star of alphabetical buckets is refused.** A plan whose every group is a range of one hub's sibling leaves gets no plan, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
   The reason says a list reads better, as a gateway fronting 34 services shows.
 - **A tangled `erDiagram` folds its aggregates.** An overview meeting a cycle every four nodes keeps folding aggregates once the target is met, even by dropping rows alone.
@@ -33,7 +32,8 @@ Anything under `Unreleased` is on `main` but not yet released.
 - **Regions drawn from one template fold alike.** Two cloud regions with the same subnets fold to the same depth, in one step.
   Their groups are named apart by the region around them, as `Public subnets (us-east-1) (+2)`.
   The contract, and the test suite's two independent readers, accept that one qualified form.
-- **A detail draws a group whole or as members, never both.** When edges join two groups both ways, the detail needing fewer stubs draws the other's members.
+- **A detail draws a group whole or as members, never both.** When edges join two groups both ways, the detail split again draws the other's members, so a nested overview names `PAYMENT_METHOD (CUSTOMER)`, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
+  Otherwise the detail needing fewer stubs draws them.
   The other draws the group as one stub, with edges each way, so `ORDER (+6) from PAYMENT` beside `ORDER (in group)` no longer appears.
   The contract, and both test readers, read an edge from a member into a whole group's stub as a half edge.
   The contract refuses a group drawn both ways in one detail.

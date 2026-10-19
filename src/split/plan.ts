@@ -45,7 +45,7 @@ import {
   type TierContext,
 } from "./tier.ts";
 import { proposeT2 } from "./tier2.ts";
-import { isOutsized, proposeT3 } from "./tier3.ts";
+import { proposeT3 } from "./tier3.ts";
 import { proposeT4 } from "./tier4.ts";
 import { proposeT5 } from "./tier5.ts";
 import { ID_FAMILY, proposeT6 } from "./tier6.ts";
@@ -514,10 +514,9 @@ const planWith = (
 };
 
 // Plans a working graph along one ladder, holding T5 and T6 to the strict
-// rules first and relaxing them only when that gives no plan. A diagram with
-// a region holding more than half of it is walked first with that region
-// folded as its parts unless its detail fits, under every set of rules, and
-// only then with it folded whole (MJL-0034).
+// rules first and relaxing them only when that gives no plan. An author
+// region folds whole however much of the diagram it holds, its detail split
+// again when it does not fit (MJL-0035).
 export const planWork = (
   work: WorkGraph,
   config: ThresholdConfig,
@@ -525,13 +524,10 @@ export const planWork = (
   order: readonly Tier[] = FOLD_TIERS,
 ): Build | string => {
   let reason = "";
-  const passes = work.regionIds.some((r) => isOutsized(work, r)) ? [true, false] : [false];
-  for (const parts of passes) {
-    for (const rules of RELAXED) {
-      const built = planWith(work, config, depth, { order, rules: parts ? { ...rules, partOutsized: true } : rules });
-      if (typeof built !== "string") return built;
-      reason = built;
-    }
+  for (const rules of RELAXED) {
+    const built = planWith(work, config, depth, { order, rules });
+    if (typeof built !== "string") return built;
+    reason = built;
   }
   return reason;
 };

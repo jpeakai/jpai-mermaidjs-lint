@@ -19,9 +19,6 @@ export interface FoldRules {
   minHidden: number;
   // A T5 or T6 group never holds nodes of two prefix families (stageOf).
   keepFamilies: boolean;
-  // An author region holding more than half of the diagram folds whole only
-  // when its detail fits (tier3.ts isOutsized).
-  partOutsized?: true;
 }
 
 export const STRICT: FoldRules = {

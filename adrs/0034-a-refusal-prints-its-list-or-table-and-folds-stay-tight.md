@@ -30,6 +30,8 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extends [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (with hubs folded, prefix families are kept apart before they are mixed, chain stages too)
 - Extends [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (a pair of one family sharing more overview neighbours folds first, so layers fold in step)
 - Scoped exception to [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) (a region holding most of a diagram folds as its parts first)
+- Excepted by [MJL-0035](0035-a-region-folds-whole-and-a-nested-detail-names-members.md) (a region holding most of a diagram folds whole, its detail split again, not as its parts first)
+- Excepted by [MJL-0035](0035-a-region-folds-whole-and-a-nested-detail-names-members.md) (a chain stage may join prefix families, so an extract folds with the bronze table it lands in)
 
 ## Decision
 

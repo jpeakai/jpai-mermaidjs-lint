@@ -48,6 +48,12 @@ relates_to:
   - relation: excepts
     target: MJL-0026
     note: a region holding most of a diagram folds as its parts first
+  - relation: excepted_by
+    target: MJL-0035
+    note: a region holding most of a diagram folds whole, its detail split again, not as its parts first
+  - relation: excepted_by
+    target: MJL-0035
+    note: a chain stage may join prefix families, so an extract folds with the bronze table it lands in
 
 decision:
   given: a reader of a refusal has nothing to read but the reason. A reader of an overview counts lines and reads groups as the diagram's own layers. A plan that refuses because a list or table reads better owes the reader that list or table. An overview drawing two lines between one group and one entity reads as two relationships the original does not draw

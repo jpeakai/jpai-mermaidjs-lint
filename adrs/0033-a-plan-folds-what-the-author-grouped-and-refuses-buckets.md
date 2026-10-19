@@ -31,6 +31,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Scoped exception to [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (a group is drawn whole or as its members, never both, and like edges to a member draw once)
 - Extended by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a refused star prints its hub and every leaf as a list)
 - Excepted by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a tangled erDiagram folds past the target only aggregates adding no new reachable pair)
+- Extended by [MJL-0035](0035-a-region-folds-whole-and-a-nested-detail-names-members.md) (of two groups joined both ways, the one whose detail is split again draws the other's members)
 
 ## Decision
 

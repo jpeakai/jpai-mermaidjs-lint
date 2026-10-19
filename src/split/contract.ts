@@ -13,10 +13,14 @@ import { extractStats } from "../parse/stats.ts";
 import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { flowRegionsOf } from "./flow.ts";
 import { byOverviewEdge, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf } from "./label.ts";
+import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf, shorten } from "./label.ts";
 import { floorOf } from "./plan.ts";
-import { idMaker, isGroupKey, over, type Partition, reversible, usedIds } from "./quotient.ts";
+import { idMaker, isGroupKey, over, type Partition, qualifiedLabel, reversible, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
+import { joined } from "./tier.ts";
+
+export { joined };
+
 import type { SplitGroup, SplitPlan } from "./types.ts";
 
 type Violations = string[];
@@ -46,6 +50,8 @@ const checkPartition = (build: Build): Violations => {
     if (counts.get(id) !== 1) out.push(`1: node ${id} is in ${counts.get(id) ?? 0} overview nodes`);
   for (const id of counts.keys()) if (!work.nodes.has(id)) out.push(`1: ${id} is not an original node`);
   for (const g of plan.groups) out.push(...laminar(work, g));
+  for (const g of plan.groups.filter((x) => x.tier === "T6" && !joined(work, x)))
+    out.push(`1: suggested group ${g.id} is not connected`);
   return out;
 };
 
@@ -139,25 +145,39 @@ const checkAttributes = (build: Build): Violations => {
 const regionLabels = (work: WorkGraph, g: SplitGroup): string[] =>
   g.regions.map((r) => work.regions.get(r)?.label ?? "").filter((l) => l !== "");
 
-// 4. A group label is an author label, a member's label or the range of its
+// The labels of the regions a group folds whose parent the group node sits
+// in, each qualified by that parent's label (quotient.ts qualifiedLabel).
+const qualifiedLabels = (work: WorkGraph, g: SplitGroup): string[] =>
+  g.regions
+    .filter((r) => (work.regions.get(r)?.parent ?? null) === g.parent)
+    .flatMap((r) => qualifiedLabel(work, r) ?? []);
+
+// 4. A group label is an author label (a folded region's label, alone or,
+// never cut, qualified by the region around it), a member's label or the range of its
 // members' labels (label.ts), shown cut by the
 // one rule in label.ts, then " (+N)", N counting the members it does not
 // name, and the group's id when the label is taken. No two groups show one
 // label, and no group shows a node's label.
-const checkLabels = (build: Build): Violations => {
+const groupLabelViolations = (build: Build, g: SplitGroup): Violations => {
   const { plan, work } = build;
   const out: Violations = [];
-  const memberLabels = (g: SplitGroup): string[] => g.members.map((m) => work.nodes.get(m)?.label ?? m);
-  for (const g of plan.groups) {
-    const [base, n] = [g.labelBase, g.hidden];
-    if (!groupLabels(base, n, g.markdown, g.id).includes(g.label)) out.push(`4: group ${g.id} label is not its parts`);
-    const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
-    const range = base === rangeLabel(memberLabels(g), hidden);
-    if (!(range || regionLabels(work, g).includes(base) || memberLabels(g).includes(base)))
-      out.push(`4: group ${g.id} label "${base}" is not from the data`);
-    const counts = range ? [g.members.length - 2] : [g.members.length, g.members.length - 1];
-    if (!counts.includes(n)) out.push(`4: group ${g.id} counts ${n} hidden members`);
-  }
+  const memberLabels = (x: SplitGroup): string[] => x.members.map((m) => work.nodes.get(m)?.label ?? m);
+  const [base, n] = [g.labelBase, g.hidden];
+  if (!groupLabels(base, n, g.markdown, g.id).includes(g.label)) out.push(`4: group ${g.id} label is not its parts`);
+  const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
+  const range = base === rangeLabel(memberLabels(g), hidden);
+  const plain = regionLabels(work, g).includes(base) || memberLabels(g).includes(base);
+  const qualified = !plain && qualifiedLabels(work, g).includes(base) && shorten(base) === base;
+  if (!(range || plain || qualified)) out.push(`4: group ${g.id} label "${base}" is not from the data`);
+  const all = g.members.length;
+  const counts = range ? [all - 2] : qualified ? [all] : [all, all - 1];
+  if (!counts.includes(n)) out.push(`4: group ${g.id} counts ${n} hidden members`);
+  return out;
+};
+
+const checkLabels = (build: Build): Violations => {
+  const { plan, work } = build;
+  const out: Violations = plan.groups.flatMap((g) => groupLabelViolations(build, g));
   const labels = plan.groups.map((g) => g.label);
   const nodeLabels = new Set([...work.nodes.values()].map((n) => n.label));
   if (new Set(labels).size !== labels.length) out.push("4: two groups show one label");
@@ -172,30 +192,73 @@ const multiset = (keys: string[]): string => sorted(keys).join("\n");
 
 // The edges overview and details give back. Exact: an edge between two kept
 // nodes from the overview, and from a detail every edge whose ends are
-// members or stubs for single nodes. Halves: an edge from a stub standing for
-// a whole group, read as that group and the member it enters.
-const recovered = (build: Build): { exact: string[]; halves: string[] } => {
+// members or stubs for single nodes, with the details drawing each. Halves:
+// an edge from a stub standing for a whole group, read as that group and the
+// member it enters, or from a member into such a stub, read as that member
+// and the group.
+const recovered = (build: Build): { exact: string[]; halves: string[]; drawnIn: Map<string, string[]> } => {
   const groups = groupIds(build.plan);
   const exact: string[] = build.plan.overview.edges
     .filter((o) => !(groups.has(o.source) || groups.has(o.target)))
     .map((o) => tuple(o));
   const halves: string[] = [];
+  const drawnIn = new Map<string, string[]>();
   for (const d of build.plan.details) {
     for (const e of d.graph.edges) {
       const [s, t] = [d.stubs[e.source] ?? e.source, d.stubs[e.target] ?? e.target];
-      (groups.has(s) || groups.has(t) ? halves : exact).push(tuple({ ...e, source: s, target: t }));
+      const key = tuple({ ...e, source: s, target: t });
+      if (groups.has(s) || groups.has(t)) halves.push(key);
+      else {
+        exact.push(key);
+        drawnIn.set(key, [...(drawnIn.get(key) ?? []), d.group]);
+      }
     }
   }
-  return { exact, halves };
+  return { exact, halves, drawnIn };
 };
 
-// Each edge between two groups, read as its source's group and its target.
-const wantedHalves = (build: Build): string[] => {
+// The one value a set of edges agrees on, or none.
+const agreedOn = (edges: GraphEdge[], pick: (e: GraphEdge) => string | undefined): string | undefined =>
+  edges.every((e) => pick(e) === pick(edges[0] as GraphEdge)) ? pick(edges[0] as GraphEdge) : undefined;
+
+// Each edge between two groups, read from the detail that does not draw it
+// exactly: as its source's group and its target when its source's detail
+// draws it, else as its source and its target's group. The edges of one kind
+// one way between one group and one member are one half, keeping the label
+// and cardinality all agree on, and in an erDiagram one half per label and
+// cardinality, as the overview draws one edge per pair.
+const wantedHalves = (build: Build, drawnIn: Map<string, string[]>): string[] => {
   const overId = overOf(build);
   const groups = groupIds(build.plan);
-  return build.work.edges.flatMap((e) => {
+  const er = build.work.family === "er";
+  const left = new Map([...drawnIn].map(([k, v]) => [k, [...v]]));
+  const buckets = new Map<string, GraphEdge[]>();
+  for (const e of build.work.edges) {
     const [a, b] = [overId(e.source), overId(e.target)];
-    return a !== b && groups.has(a) && groups.has(b) ? [tuple({ ...e, source: a })] : [];
+    if (!(a !== b && groups.has(a) && groups.has(b))) continue;
+    const half = left.get(tuple(e))?.shift() === b ? { ...e, target: b } : { ...e, source: a };
+    const key = JSON.stringify([
+      half.source,
+      half.target,
+      e.kind ?? "",
+      er ? (e.label ?? "") : "",
+      er ? (e.cardinality ?? "") : "",
+    ]);
+    buckets.set(key, [...(buckets.get(key) ?? []), half]);
+  }
+  return [...buckets.values()].map((edges) => {
+    const { label: _l, markdown: _m, kind: _k, cardinality: _c, ...bare } = edges[0] as GraphEdge;
+    const label = agreedOn(edges, (x) => (x.label === undefined ? undefined : `${x.markdown ? "m" : "s"}${x.label}`));
+    const kind = agreedOn(edges, (x) => x.kind);
+    const cardinality = agreedOn(edges, (x) => x.cardinality);
+    return tuple({
+      ...bare,
+      ...(label !== undefined
+        ? { label: label.slice(1), ...(label.startsWith("m") ? { markdown: true as const } : {}) }
+        : {}),
+      ...(kind !== undefined ? { kind } : {}),
+      ...(cardinality !== undefined ? { cardinality } : {}),
+    });
   });
 };
 
@@ -212,8 +275,19 @@ const detailNodes = (build: Build): Violations => {
       if ((groups.has(end) ? end : overId(end)) === d.group)
         out.push(`5: stub ${stub} of ${d.group} stands for itself`);
     }
+    out.push(...drawnBothWays(build, d));
   }
   return out;
+};
+
+// A group is drawn whole or as stubs for its members, never both.
+const drawnBothWays = (build: Build, d: SplitPlan["details"][number]): Violations => {
+  const overId = overOf(build);
+  const groups = groupIds(build.plan);
+  const ends = Object.values(d.stubs);
+  return ends
+    .filter((x) => groups.has(x) && ends.some((y) => !groups.has(y) && overId(y) === x))
+    .map((end) => `5: detail ${d.group} draws ${end} whole beside a stub for one of its members`);
 };
 
 const fromSuffix = (work: WorkGraph, from: string[]): string =>
@@ -293,16 +367,21 @@ const checkRows = (build: Build): Violations => {
 };
 
 // 5. Overview and details give back exactly the original node ids and the
-// original edges; every edge between groups is drawn from both ends.
+// original edges; every edge between groups is drawn from both ends, in its
+// target's detail once for all edges from its group drawing alike.
 const checkRecoverable = (build: Build): Violations => {
   const { plan, work } = build;
   const out = [...detailNodes(build), ...stubNames(build), ...checkRows(build)];
   const kept = plan.overview.nodes.map((n) => n.id).filter((id) => !groupIds(plan).has(id));
   const members = plan.details.flatMap((d) => d.graph.nodes.map((n) => n.id).filter((id) => d.stubs[id] === undefined));
   if (multiset([...kept, ...members]) !== multiset(work.ids)) out.push("5: the node ids do not come back exactly");
-  const { exact, halves } = recovered(build);
+  const { exact, halves, drawnIn } = recovered(build);
   if (multiset(exact) !== multiset(work.edges.map(tuple))) out.push("5: the edges do not come back exactly");
-  if (multiset(halves) !== multiset(wantedHalves(build)))
+  // A half stands for every edge between its group and its member that draws
+  // alike, so it is drawn exactly once, and only for such an edge, in the
+  // detail that does not draw that edge exactly.
+  if (new Set(halves).size !== halves.length) out.push("5: a detail draws one edge from a group twice");
+  if (multiset([...new Set(halves)]) !== multiset([...new Set(wantedHalves(build, drawnIn))]))
     out.push("5: the edges between groups do not come back from their targets");
   return out;
 };

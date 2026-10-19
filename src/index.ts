@@ -46,6 +46,7 @@ export { CATEGORIES, RULE } from "./rules/types.ts";
 export {
   type LadderStep,
   type RowDetail,
+  type SplitAlternative,
   type SplitDetail,
   type SplitGroup,
   type SplitLoss,

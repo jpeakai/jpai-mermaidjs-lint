@@ -1,0 +1,165 @@
+%% source: authored (TypeScript-like compiler front end: lexer, AST, binder, checker)
+%% kind: classDiagram deep inheritance with namespaces
+classDiagram
+  namespace Lexing {
+    class Scanner {
+      -string text
+      -int pos
+      -int end
+      -SyntaxKind token
+      +scan() SyntaxKind
+      +getTokenText() string
+      +getTokenPos() int
+      +lookAhead(Function cb) T
+      +reScanGreaterToken() SyntaxKind
+    }
+    class Token {
+      +SyntaxKind kind
+      +int pos
+      +int end
+    }
+    class SyntaxKind {
+      <<enumeration>>
+      Identifier
+      NumericLiteral
+      StringLiteral
+      OpenBraceToken
+      CloseBraceToken
+      EqualsToken
+    }
+  }
+  namespace Ast {
+    class Node {
+      <<abstract>>
+      +SyntaxKind kind
+      +int pos
+      +int end
+      +Node parent
+      +NodeFlags flags
+    }
+    class Statement {
+      <<abstract>>
+    }
+    class Expression {
+      <<abstract>>
+    }
+    class Declaration {
+      <<abstract>>
+      +Symbol symbol
+    }
+    class SourceFile {
+      +string fileName
+      +NodeArray~Statement~ statements
+      +LineMap lineMap
+      +Diagnostic[] parseDiagnostics
+    }
+    class FunctionDeclaration {
+      +Identifier name
+      +NodeArray~Parameter~ parameters
+      +TypeNode returnType
+      +Block body
+    }
+    class ClassDeclaration {
+      +Identifier name
+      +NodeArray~ClassElement~ members
+      +NodeArray~HeritageClause~ heritageClauses
+    }
+    class VariableStatement {
+      +VariableDeclarationList declarationList
+    }
+    class IfStatement {
+      +Expression expression
+      +Statement thenStatement
+      +Statement elseStatement
+    }
+    class ReturnStatement {
+      +Expression expression
+    }
+    class BinaryExpression {
+      +Expression left
+      +Token operatorToken
+      +Expression right
+    }
+    class CallExpression {
+      +Expression expression
+      +NodeArray~Expression~ arguments
+      +NodeArray~TypeNode~ typeArguments
+    }
+    class Identifier {
+      +string escapedText
+    }
+  }
+  namespace Parsing {
+    class Parser {
+      -Scanner scanner
+      -SourceFile sourceFile
+      +parseSourceFile(string fileName, string text) SourceFile
+      +parseStatement() Statement
+      +parseExpression() Expression
+      +parseFunctionDeclaration() FunctionDeclaration
+      +parseClassDeclaration() ClassDeclaration
+      +parseErrorAtCurrentToken(DiagnosticMessage m) void
+    }
+  }
+  namespace Semantics {
+    class Binder {
+      -SymbolTable locals
+      -Node container
+      +bindSourceFile(SourceFile f) void
+      +declareSymbol(SymbolTable t, Declaration d) Symbol
+    }
+    class Symbol {
+      +SymbolFlags flags
+      +string escapedName
+      +Declaration[] declarations
+      +SymbolTable members
+      +SymbolTable exports
+    }
+    class Checker {
+      -Map~Node,Type~ nodeTypes
+      +checkSourceFile(SourceFile f) void
+      +getTypeOfSymbol(Symbol s) Type
+      +getTypeAtLocation(Node n) Type
+      +isTypeAssignableTo(Type source, Type target) bool
+      +getDiagnostics(SourceFile f) Diagnostic[]
+    }
+    class Type {
+      +TypeFlags flags
+      +int id
+      +Symbol symbol
+    }
+    class Diagnostic {
+      +SourceFile file
+      +int start
+      +int length
+      +string messageText
+      +DiagnosticCategory category
+      +int code
+    }
+  }
+  Node <|-- Statement
+  Node <|-- Expression
+  Node <|-- SourceFile
+  Statement <|-- FunctionDeclaration
+  Statement <|-- ClassDeclaration
+  Statement <|-- VariableStatement
+  Statement <|-- IfStatement
+  Statement <|-- ReturnStatement
+  Declaration <|-- FunctionDeclaration
+  Declaration <|-- ClassDeclaration
+  Expression <|-- BinaryExpression
+  Expression <|-- CallExpression
+  Expression <|-- Identifier
+  Scanner ..> Token
+  Token --> SyntaxKind
+  Node --> SyntaxKind
+  Parser --> Scanner
+  Parser ..> SourceFile : produces
+  SourceFile *-- Statement
+  Binder ..> SourceFile
+  Binder ..> Symbol : creates
+  Declaration --> Symbol
+  Checker --> Binder
+  Checker ..> Type : resolves
+  Checker ..> Diagnostic : reports
+  Type --> Symbol

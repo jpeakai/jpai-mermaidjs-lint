@@ -1,0 +1,148 @@
+%% source: https://dev.mysql.com/doc/sakila/en/sakila-structure.html (Sakila DVD rental schema, paraphrased)
+%% kind: erDiagram junction tables and many attributes
+erDiagram
+  ACTOR ||--o{ FILM_ACTOR : "appears in"
+  FILM ||--o{ FILM_ACTOR : casts
+  FILM ||--o{ FILM_CATEGORY : "classified as"
+  CATEGORY ||--o{ FILM_CATEGORY : groups
+  LANGUAGE ||--o{ FILM : "spoken in"
+  LANGUAGE |o..o{ FILM : "original language"
+  FILM ||--|| FILM_TEXT : "indexed by"
+  FILM ||--o{ INVENTORY : "stocked as"
+  STORE ||--o{ INVENTORY : holds
+  INVENTORY ||--o{ RENTAL : "rented as"
+  CUSTOMER ||--o{ RENTAL : rents
+  STAFF ||--o{ RENTAL : processes
+  CUSTOMER ||--o{ PAYMENT : pays
+  STAFF ||--o{ PAYMENT : takes
+  RENTAL |o..o{ PAYMENT : "settled by"
+  STORE ||--o{ CUSTOMER : registers
+  STORE ||--o{ STAFF : employs
+  STORE }o..|| STAFF : "managed by"
+  ADDRESS ||--o{ CUSTOMER : "lives at"
+  ADDRESS ||--o{ STAFF : "lives at"
+  ADDRESS ||--o{ STORE : "located at"
+  CITY ||--o{ ADDRESS : contains
+  COUNTRY ||--o{ CITY : contains
+  ACTOR {
+    smallint actor_id PK
+    varchar first_name
+    varchar last_name
+    timestamp last_update
+  }
+  FILM {
+    smallint film_id PK
+    varchar title
+    text description
+    year release_year
+    tinyint language_id FK
+    tinyint original_language_id FK
+    tinyint rental_duration
+    decimal rental_rate
+    smallint length
+    decimal replacement_cost
+    enum rating
+    set special_features
+    timestamp last_update
+  }
+  FILM_ACTOR {
+    smallint actor_id PK,FK
+    smallint film_id PK,FK
+    timestamp last_update
+  }
+  FILM_CATEGORY {
+    smallint film_id PK,FK
+    tinyint category_id PK,FK
+    timestamp last_update
+  }
+  CATEGORY {
+    tinyint category_id PK
+    varchar name
+    timestamp last_update
+  }
+  LANGUAGE {
+    tinyint language_id PK
+    char name
+    timestamp last_update
+  }
+  FILM_TEXT {
+    smallint film_id PK
+    varchar title
+    text description
+  }
+  INVENTORY {
+    mediumint inventory_id PK
+    smallint film_id FK
+    tinyint store_id FK
+    timestamp last_update
+  }
+  RENTAL {
+    int rental_id PK
+    datetime rental_date
+    mediumint inventory_id FK
+    smallint customer_id FK
+    datetime return_date
+    tinyint staff_id FK
+    timestamp last_update
+  }
+  PAYMENT {
+    smallint payment_id PK
+    smallint customer_id FK
+    tinyint staff_id FK
+    int rental_id FK
+    decimal amount
+    datetime payment_date
+    timestamp last_update
+  }
+  CUSTOMER {
+    smallint customer_id PK
+    tinyint store_id FK
+    varchar first_name
+    varchar last_name
+    varchar email
+    smallint address_id FK
+    boolean active
+    datetime create_date
+    timestamp last_update
+  }
+  STAFF {
+    tinyint staff_id PK
+    varchar first_name
+    varchar last_name
+    smallint address_id FK
+    blob picture
+    varchar email
+    tinyint store_id FK
+    boolean active
+    varchar username
+    varchar password
+    timestamp last_update
+  }
+  STORE {
+    tinyint store_id PK
+    tinyint manager_staff_id FK
+    smallint address_id FK
+    timestamp last_update
+  }
+  ADDRESS {
+    smallint address_id PK
+    varchar address
+    varchar address2
+    varchar district
+    smallint city_id FK
+    varchar postal_code
+    varchar phone
+    geometry location
+    timestamp last_update
+  }
+  CITY {
+    smallint city_id PK
+    varchar city
+    smallint country_id FK
+    timestamp last_update
+  }
+  COUNTRY {
+    smallint country_id PK
+    varchar country
+    timestamp last_update
+  }

@@ -503,6 +503,58 @@
     },
     {
       "data": {
+        "id": "MJL-0032",
+        "label": "0032",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md",
+        "title": "A pipeline stage folds across its lanes, a status stem names a family, and a stub draws each edge once",
+        "description": "How a split plan groups a stage no edge joins, reads a family from id-led statuses, and draws edges from a whole group",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033",
+        "label": "0033",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md",
+        "title": "A plan folds ticket families whole, echoing regions alike and tangled aggregates, refuses alphabetical buckets, and draws a group whole or as members",
+        "description": "How a split plan treats stars, tangled schemas, ticket families, echoing regions and groups joined both ways",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034",
+        "label": "0034",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md",
+        "title": "A refused plan prints the list or table that reads better, a pipeline folds by layer, aggregates draw no relationship twice, and a region holding most of a diagram folds as its parts",
+        "description": "What a split plan prints in place of a star or dense mesh, and how pipelines, aggregates and outsized regions fold",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0035",
+        "label": "0035",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0035-a-region-folds-whole-and-a-nested-detail-names-members.md",
+        "title": "An author region folds whole however much of a diagram it holds, a pipeline folds by lane, and a detail split again names the members it reaches",
+        "description": "How outsized regions, pipeline lanes and the stubs between two groups joined both ways are drawn",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -873,6 +925,36 @@
     },
     {
       "data": {
+        "id": "MJL-0026-extended_by-MJL-0033",
+        "source": "MJL-0026",
+        "target": "MJL-0033",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "regions drawn from one template fold to the same depth and are named by the region around them"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0026-excepted_by-MJL-0034",
+        "source": "MJL-0026",
+        "target": "MJL-0034",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a region holding most of a diagram folds as its parts first"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0026-extended_by-MJL-0035",
+        "source": "MJL-0026",
+        "target": "MJL-0035",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "an author region folds whole however much of a diagram it holds"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0027-extends-MJL-0023",
         "source": "MJL-0027",
         "target": "MJL-0023",
@@ -933,6 +1015,26 @@
     },
     {
       "data": {
+        "id": "MJL-0028-extended_by-MJL-0033",
+        "source": "MJL-0028",
+        "target": "MJL-0033",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a tangled erDiagram folds aggregates past the target, down to the share an evened overview keeps"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0028-excepted_by-MJL-0034",
+        "source": "MJL-0028",
+        "target": "MJL-0034",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "an aggregate draws no relationship twice, and a root's aggregate may fold trimmed"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0029-extends-MJL-0028",
         "source": "MJL-0029",
         "target": "MJL-0028",
@@ -949,6 +1051,16 @@
         "label": "extended by",
         "relation": "extended_by",
         "note": "groups named where a reader enters them, dense meshes refused, terminals that lead only to ends kept in view"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0029-excepted_by-MJL-0033",
+        "source": "MJL-0029",
+        "target": "MJL-0033",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "sibling-leaf runs named by range are not offered when they are every group of one star"
       }
     },
     {
@@ -993,6 +1105,36 @@
     },
     {
       "data": {
+        "id": "MJL-0030-excepted_by-MJL-0032",
+        "source": "MJL-0030",
+        "target": "MJL-0032",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "edges from one group drawing alike are drawn once from one stub, not from a stub each"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0030-extended_by-MJL-0033",
+        "source": "MJL-0030",
+        "target": "MJL-0033",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a star of leaves sorted by nothing is refused, as a dense mesh is"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0030-extended_by-MJL-0034",
+        "source": "MJL-0030",
+        "target": "MJL-0034",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a refused dense mesh prints every link as an adjacency matrix"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0031-extends-MJL-0030",
         "source": "MJL-0031",
         "target": "MJL-0030",
@@ -1019,6 +1161,316 @@
         "label": "excepts",
         "relation": "excepts",
         "note": "any owner's aggregate may fold uncapped, never one swallowing a group over the target"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0031-excepted_by-MJL-0032",
+        "source": "MJL-0031",
+        "target": "MJL-0032",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "stubs for one group are never drawn apart, so only a stub beside its namesake member is named by a member"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0031-extended_by-MJL-0032",
+        "source": "MJL-0031",
+        "target": "MJL-0032",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a family is also read from a status stem, and a pair of one family may share a neighbour"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0031-excepted_by-MJL-0033",
+        "source": "MJL-0031",
+        "target": "MJL-0033",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "id families fold whole below the share an evened overview keeps, and a family group is never undone"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0031-extended_by-MJL-0034",
+        "source": "MJL-0031",
+        "target": "MJL-0034",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "with hubs folded, prefix families are kept apart before they are mixed, chain stages too"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-excepts-MJL-0030",
+        "source": "MJL-0032",
+        "target": "MJL-0030",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "edges from one group drawing alike are drawn once from one stub, not from a stub each"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-excepts-MJL-0031",
+        "source": "MJL-0032",
+        "target": "MJL-0031",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "stubs for one group are never drawn apart, so only a stub beside its namesake member is named by a member"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-extends-MJL-0031",
+        "source": "MJL-0032",
+        "target": "MJL-0031",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a family is also read from a status stem, and a pair of one family may share a neighbour"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-extended_by-MJL-0033",
+        "source": "MJL-0032",
+        "target": "MJL-0033",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "in a ticket graph a whole id family folds before any pair, hubs included"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-excepted_by-MJL-0033",
+        "source": "MJL-0032",
+        "target": "MJL-0033",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a group is drawn whole or as its members, never both, and like edges to a member draw once"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-extended_by-MJL-0034",
+        "source": "MJL-0032",
+        "target": "MJL-0034",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a pair of one family sharing more overview neighbours folds first, so layers fold in step"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extends-MJL-0030",
+        "source": "MJL-0033",
+        "target": "MJL-0030",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a star of leaves sorted by nothing is refused, as a dense mesh is"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-excepts-MJL-0029",
+        "source": "MJL-0033",
+        "target": "MJL-0029",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "sibling-leaf runs named by range are not offered when they are every group of one star"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extends-MJL-0028",
+        "source": "MJL-0033",
+        "target": "MJL-0028",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a tangled erDiagram folds aggregates past the target, down to the share an evened overview keeps"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-excepts-MJL-0031",
+        "source": "MJL-0033",
+        "target": "MJL-0031",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "id families fold whole below the share an evened overview keeps, and a family group is never undone"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extends-MJL-0032",
+        "source": "MJL-0033",
+        "target": "MJL-0032",
+        "label": "extends",
+        "relation": "extends",
+        "note": "in a ticket graph a whole id family folds before any pair, hubs included"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extends-MJL-0026",
+        "source": "MJL-0033",
+        "target": "MJL-0026",
+        "label": "extends",
+        "relation": "extends",
+        "note": "regions drawn from one template fold to the same depth and are named by the region around them"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-excepts-MJL-0032",
+        "source": "MJL-0033",
+        "target": "MJL-0032",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a group is drawn whole or as its members, never both, and like edges to a member draw once"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extended_by-MJL-0034",
+        "source": "MJL-0033",
+        "target": "MJL-0034",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a refused star prints its hub and every leaf as a list"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-excepted_by-MJL-0034",
+        "source": "MJL-0033",
+        "target": "MJL-0034",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a tangled erDiagram folds past the target only aggregates adding no new reachable pair"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extended_by-MJL-0035",
+        "source": "MJL-0033",
+        "target": "MJL-0035",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "of two groups joined both ways, the one whose detail is split again draws the other's members"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-extends-MJL-0033",
+        "source": "MJL-0034",
+        "target": "MJL-0033",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a refused star prints its hub and every leaf as a list"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-extends-MJL-0030",
+        "source": "MJL-0034",
+        "target": "MJL-0030",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a refused dense mesh prints every link as an adjacency matrix"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-excepts-MJL-0033",
+        "source": "MJL-0034",
+        "target": "MJL-0033",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a tangled erDiagram folds past the target only aggregates adding no new reachable pair"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-excepts-MJL-0028",
+        "source": "MJL-0034",
+        "target": "MJL-0028",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "an aggregate draws no relationship twice, and a root's aggregate may fold trimmed"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-extends-MJL-0031",
+        "source": "MJL-0034",
+        "target": "MJL-0031",
+        "label": "extends",
+        "relation": "extends",
+        "note": "with hubs folded, prefix families are kept apart before they are mixed, chain stages too"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-extends-MJL-0032",
+        "source": "MJL-0034",
+        "target": "MJL-0032",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a pair of one family sharing more overview neighbours folds first, so layers fold in step"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-excepts-MJL-0026",
+        "source": "MJL-0034",
+        "target": "MJL-0026",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a region holding most of a diagram folds as its parts first"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-excepted_by-MJL-0035",
+        "source": "MJL-0034",
+        "target": "MJL-0035",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a region holding most of a diagram folds whole, its detail split again, not as its parts first"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0035-excepts-MJL-0034",
+        "source": "MJL-0035",
+        "target": "MJL-0034",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a region holding most of a diagram folds whole, its detail split again, not as its parts first"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0035-extends-MJL-0033",
+        "source": "MJL-0035",
+        "target": "MJL-0033",
+        "label": "extends",
+        "relation": "extends",
+        "note": "of two groups joined both ways, the one whose detail is split again draws the other's members"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0035-extends-MJL-0026",
+        "source": "MJL-0035",
+        "target": "MJL-0026",
+        "label": "extends",
+        "relation": "extends",
+        "note": "an author region folds whole however much of a diagram it holds"
       }
     }
   ],

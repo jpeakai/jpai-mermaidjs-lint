@@ -29,6 +29,9 @@ relates_to:
   - relation: extended_by
     target: MJL-0030
     note: groups named where a reader enters them, dense meshes refused, terminals that lead only to ends kept in view
+  - relation: excepted_by
+    target: MJL-0033
+    note: sibling-leaf runs named by range are not offered when they are every group of one star
 
 decision:
   given: some groups hold interchangeable members, twins, sibling leaves or id-labelled states, where no single member names the group. A dense mesh joins nearly every pair, so a pair says little, and a node many paths end at is no one branch's end

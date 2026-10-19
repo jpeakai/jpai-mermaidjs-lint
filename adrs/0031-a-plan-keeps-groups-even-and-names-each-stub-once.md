@@ -24,6 +24,10 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extends [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) (stubs drawn apart for one group are told apart by the member each one's edges leave)
 - Scoped exception to [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) (under the strict rules a pair never crosses two prefix families)
 - Scoped exception to [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) (any owner's aggregate may fold uncapped, never one swallowing a group over the target)
+- Excepted by [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (stubs for one group are never drawn apart, so only a stub beside its namesake member is named by a member)
+- Extended by [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (a family is also read from a status stem, and a pair of one family may share a neighbour)
+- Excepted by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (id families fold whole below the share an evened overview keeps, and a family group is never undone)
+- Extended by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (with hubs folded, prefix families are kept apart before they are mixed, chain stages too)
 
 ## Decision
 

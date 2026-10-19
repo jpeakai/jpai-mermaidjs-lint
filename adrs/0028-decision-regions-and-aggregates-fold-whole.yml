@@ -33,6 +33,12 @@ relates_to:
   - relation: excepted_by
     target: MJL-0031
     note: any owner's aggregate may fold uncapped, never one swallowing a group over the target
+  - relation: extended_by
+    target: MJL-0033
+    note: a tangled erDiagram folds aggregates past the target, down to the share an evened overview keeps
+  - relation: excepted_by
+    target: MJL-0034
+    note: an aggregate draws no relationship twice, and a root's aggregate may fold trimmed
 
 decision:
   given: some diagrams are mostly decisions, a flowchart or stateDiagram. In others, an erDiagram overview groups entities by leaves and junctions, not by what owns what

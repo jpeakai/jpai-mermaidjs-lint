@@ -10,7 +10,50 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **A refused star or dense mesh prints the list or table that reads better.** `--split-plan` prints a star's hub and every leaf as a markdown list, and a dense mesh as a markdown adjacency matrix, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+  Both are built from the parsed graph and draw every node and edge, each edge's way, label and connector.
+  The complexity finding's remediation points to it, and `SplitOutcome` gains `alternative`, with the library exporting its `SplitAlternative` type.
+
+### Changed
+
+- **A pipeline folds by lane.** A chain stage may join prefix families, so each extract folds with the bronze table it lands in. Lanes alike fold as twins, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
+  With hubs folded, prefix families such as `bronze.` and `silver.` stay apart before a walk mixes them.
+  A pair of one family sharing more overview neighbours folds first.
+- **An aggregate draws no relationship twice.** `T4` folds an aggregate only where the overview draws no two relationships between one group and one entity that the original draws between other ends.
+  A root's aggregate that would is offered trimmed of its shared parts, so a film rental schema folds its address chain alone.
+- **A schema met by dropping rows folds only tight aggregates.** Past the target, an aggregate folds only when it adds no new reachable pair.
+- **A star of alphabetical buckets is refused.** A plan whose every group is a range of one hub's sibling leaves gets no plan, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+  The reason says a list reads better, as a gateway fronting 34 services shows.
+- **A tangled `erDiagram` folds its aggregates.** An overview meeting a cycle every four nodes keeps folding aggregates once the target is met, even by dropping rows alone.
+  Each fold takes away an overview edge per entity it hides, down to 60% of `nodeTarget`. A tree-like schema stays at rows dropped.
+- **A ticket family folds whole.** When every label leads with an id such as `PLAT-1201`, `T6` folds each family whole, hubs included, or in even contiguous runs.
+- **Regions drawn from one template fold alike.** Two cloud regions with the same subnets fold to the same depth, in one step.
+  Their groups are named apart by the region around them, as `Public subnets (us-east-1) (+2)`.
+  The contract, and the test suite's two independent readers, accept that one qualified form.
+- **A detail draws a group whole or as members, never both.** When edges join two groups both ways, the detail split again draws the other's members, so a nested overview names `PAYMENT_METHOD (CUSTOMER)`, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
+  Otherwise the detail needing fewer stubs draws them.
+  The other draws the group as one stub, with edges each way, so `ORDER (+6) from PAYMENT` beside `ORDER (in group)` no longer appears.
+  The contract, and both test readers, read an edge from a member into a whole group's stub as a half edge.
+  The contract refuses a group drawn both ways in one detail.
+- **Edges between a group's stub and a member are drawn once.** Edges of one kind one way keep only the label they share, as the overview does.
+  So three labelled transitions from one group into `Allocating` read as one line.
+- A plan may split a detail again with new reachable pairs.
+  It now gives way to a plan holding regions to details that fit, when that one declares fewer in all.
+
+- **A stub draws each edge once.** Edges from different members of one outside group into one member may share a label and kind.
+  They are drawn once from the group's one stub, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
+  The source group's detail still draws each of them exactly, so nothing is lost.
+  A detail no longer draws one stub edge twice, or a stub per member such as `Checkout domain (+5) from paymentservice`.
+  The contract, and the test suite's two independent readers, refuse a half edge drawn twice.
+- **A pipeline stage folds though no edge joins it.** In `T6`, two nodes of one prefix family that share a neighbour pair like two an edge joins.
+  So an ETL pipeline's `gold.` tables fold into one group with no new reachable pair.
+- **A status stem names a family.** A label leading with a bare id, such as `10008 Ready for Release`, takes the one stem it shares with another such label.
+  So a Jira workflow keeps `Ready for Release` and `Released` together, apart from `Code Review`.
+- The contract refuses a suggested group its members do not connect.
+  Members are joined by an edge, or by an author region the group folds.
+  Two members of one family, or two leaves, are also joined by a neighbour they share.
 
 ## [0.10.0] - 2026-10-19
 

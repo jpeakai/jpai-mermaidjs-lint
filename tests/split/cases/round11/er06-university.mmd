@@ -1,0 +1,182 @@
+%% source: authored (university registrar, junction-heavy)
+%% kind: erDiagram junction tables many-to-many
+erDiagram
+  FACULTY ||--|{ DEPARTMENT : contains
+  DEPARTMENT ||--o{ PROGRAMME : offers
+  DEPARTMENT ||--o{ COURSE : owns
+  DEPARTMENT ||--o{ LECTURER : employs
+  PROGRAMME ||--o{ PROGRAMME_COURSE : requires
+  COURSE ||--o{ PROGRAMME_COURSE : "required by"
+  COURSE ||--o{ COURSE_PREREQ : "has prerequisite"
+  COURSE ||--o{ COURSE_PREREQ : "is prerequisite"
+  COURSE ||--o{ SECTION : "runs as"
+  TERM ||--o{ SECTION : schedules
+  SECTION ||--o{ SECTION_LECTURER : "taught by"
+  LECTURER ||--o{ SECTION_LECTURER : teaches
+  SECTION ||--o{ MEETING : meets
+  ROOM ||--o{ MEETING : hosts
+  BUILDING ||--|{ ROOM : contains
+  STUDENT ||--o{ ENROLMENT : enrols
+  SECTION ||--o{ ENROLMENT : "enrolled in"
+  ENROLMENT ||--o| GRADE : earns
+  STUDENT ||--o{ PROGRAMME_ENROLMENT : pursues
+  PROGRAMME ||--o{ PROGRAMME_ENROLMENT : admits
+  STUDENT }o..o| LECTURER : "advised by"
+  SECTION ||--o{ ASSESSMENT : assesses
+  ASSESSMENT ||--o{ SUBMISSION : receives
+  STUDENT ||--o{ SUBMISSION : submits
+  STUDENT ||--o{ FEE_INVOICE : billed
+  TERM ||--o{ FEE_INVOICE : "for term"
+  STUDENT ||--o{ WAITLIST_ENTRY : waits
+  SECTION ||--o{ WAITLIST_ENTRY : "waitlisted for"
+  FACULTY {
+    int id PK
+    string name
+    string dean
+  }
+  DEPARTMENT {
+    int id PK
+    int faculty_id FK
+    string code UK
+    string name
+  }
+  PROGRAMME {
+    int id PK
+    int department_id FK
+    string code UK
+    string title
+    string award
+    int credits_required
+  }
+  COURSE {
+    int id PK
+    int department_id FK
+    string code UK
+    string title
+    int credits
+    string level
+  }
+  PROGRAMME_COURSE {
+    int programme_id PK,FK
+    int course_id PK,FK
+    boolean core
+    int year
+  }
+  COURSE_PREREQ {
+    int course_id PK,FK
+    int prereq_id PK,FK
+    string min_grade
+  }
+  TERM {
+    int id PK
+    string name
+    date starts_on
+    date ends_on
+  }
+  SECTION {
+    int id PK
+    int course_id FK
+    int term_id FK
+    string section_code
+    int capacity
+    string mode
+  }
+  LECTURER {
+    int id PK
+    int department_id FK
+    string name
+    string email UK
+    string rank
+  }
+  SECTION_LECTURER {
+    int section_id PK,FK
+    int lecturer_id PK,FK
+    string role
+  }
+  MEETING {
+    int id PK
+    int section_id FK
+    int room_id FK
+    string weekday
+    time starts_at
+    time ends_at
+  }
+  ROOM {
+    int id PK
+    int building_id FK
+    string number
+    int seats
+  }
+  BUILDING {
+    int id PK
+    string code UK
+    string name
+    string campus
+  }
+  STUDENT {
+    int id PK
+    string student_number UK
+    string given_name
+    string family_name
+    date dob
+    string email UK
+    int advisor_id FK
+    string status
+  }
+  ENROLMENT {
+    int student_id PK,FK
+    int section_id PK,FK
+    timestamp enrolled_at
+    string status
+  }
+  GRADE {
+    int student_id PK,FK
+    int section_id PK,FK
+    string letter
+    decimal points
+  }
+  PROGRAMME_ENROLMENT {
+    int student_id PK,FK
+    int programme_id PK,FK
+    date admitted_on
+    string status
+  }
+  ASSESSMENT {
+    int id PK
+    int section_id FK
+    string title
+    decimal weight
+    timestamp due_at
+  }
+  SUBMISSION {
+    int assessment_id PK,FK
+    int student_id PK,FK
+    timestamp submitted_at
+    decimal mark
+  }
+  FEE_INVOICE {
+    int id PK
+    int student_id FK
+    int term_id FK
+    decimal amount
+    string status
+  }
+  WAITLIST_ENTRY {
+    int section_id PK,FK
+    int student_id PK,FK
+    int position
+  }
+  SCHOLARSHIP ||--o{ STUDENT_SCHOLARSHIP : awards
+  STUDENT ||--o{ STUDENT_SCHOLARSHIP : holds
+  SCHOLARSHIP {
+    int id PK
+    string name
+    decimal annual_value
+    string criteria
+  }
+  STUDENT_SCHOLARSHIP {
+    int scholarship_id PK,FK
+    int student_id PK,FK
+    int awarded_year
+    string status
+  }

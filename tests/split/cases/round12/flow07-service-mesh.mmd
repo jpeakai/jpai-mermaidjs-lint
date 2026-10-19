@@ -1,0 +1,112 @@
+%% source: authored (near-complete service mesh, almost every pair talks)
+%% kind: flowchart near-complete mesh
+flowchart LR
+  orders["Orders"]
+  inventory["Inventory"]
+  pricing["Pricing"]
+  billing["Billing"]
+  shipping["Shipping"]
+  customers["Customers"]
+  promotions["Promotions"]
+  tax["Tax"]
+  fraud["Fraud"]
+  search["Search"]
+  reviews["Reviews"]
+  loyalty["Loyalty"]
+  returns["Returns"]
+  warehouse["Warehouse"]
+  notifications["Notifications"]
+  orders --- inventory
+  orders --- pricing
+  orders --- billing
+  orders --- shipping
+  orders --- customers
+  orders --- promotions
+  orders --- tax
+  orders --- fraud
+  orders --- reviews
+  orders --- loyalty
+  orders --- returns
+  orders --- warehouse
+  orders --- notifications
+  inventory --- pricing
+  inventory --- billing
+  inventory --- shipping
+  inventory --- promotions
+  inventory --- tax
+  inventory --- fraud
+  inventory --- search
+  inventory --- reviews
+  inventory --- loyalty
+  inventory --- returns
+  inventory --- warehouse
+  pricing --- billing
+  pricing --- shipping
+  pricing --- customers
+  pricing --- promotions
+  pricing --- tax
+  pricing --- fraud
+  pricing --- search
+  pricing --- reviews
+  pricing --- returns
+  pricing --- warehouse
+  pricing --- notifications
+  billing --- shipping
+  billing --- customers
+  billing --- promotions
+  billing --- tax
+  billing --- fraud
+  billing --- reviews
+  billing --- loyalty
+  billing --- returns
+  billing --- warehouse
+  billing --- notifications
+  shipping --- customers
+  shipping --- promotions
+  shipping --- tax
+  shipping --- search
+  shipping --- reviews
+  shipping --- loyalty
+  shipping --- returns
+  shipping --- warehouse
+  shipping --- notifications
+  customers --- promotions
+  customers --- tax
+  customers --- search
+  customers --- reviews
+  customers --- loyalty
+  customers --- returns
+  customers --- warehouse
+  customers --- notifications
+  promotions --- tax
+  promotions --- fraud
+  promotions --- reviews
+  promotions --- loyalty
+  promotions --- returns
+  promotions --- warehouse
+  promotions --- notifications
+  tax --- fraud
+  tax --- search
+  tax --- reviews
+  tax --- returns
+  tax --- warehouse
+  tax --- notifications
+  fraud --- search
+  fraud --- reviews
+  fraud --- loyalty
+  fraud --- returns
+  fraud --- warehouse
+  search --- reviews
+  search --- loyalty
+  search --- returns
+  search --- warehouse
+  search --- notifications
+  reviews --- loyalty
+  reviews --- returns
+  reviews --- warehouse
+  loyalty --- returns
+  loyalty --- warehouse
+  loyalty --- notifications
+  returns --- warehouse
+  returns --- notifications
+  warehouse --- notifications

@@ -234,17 +234,19 @@ describe("a state every failure path ends at", () => {
 
 describe("a detail", () => {
   test(
-    "draws two edges from one outside group into one member from two stubs",
+    "draws two edges from one outside group into one member, drawing alike, once from one stub (MJL-0032)",
     async () => {
       const plan = await planOf(DECISIONS.source, configFromPreset("low-density"));
       for (const d of plan.details) {
         const drawn = d.source.split("\n").filter((l) => l.includes("-->"));
         expect(drawn.length).toBe(new Set(drawn).size);
+        const labels = d.graph.nodes.filter((n) => d.stubs[n.id] !== undefined).map((n) => n.label);
+        expect(new Set(labels).size).toBe(labels.length);
       }
       const fraud = plan.details.find((d) => d.graph.nodes.some((n) => n.id === "fraud"));
       const into = fraud?.graph.edges.filter((e) => e.target === "fraud" && fraud.stubs[e.source] !== undefined) ?? [];
-      expect(into.length).toBe(2);
-      expect(new Set(into.map((e) => e.source)).size).toBe(2);
+      expect(into.length).toBe(1);
+      expect(fraud?.graph.nodes.find((n) => n.id === into[0]?.source)?.label).toBe("Debt-to-income under 40%? (+5)");
     },
     SLOW,
   );

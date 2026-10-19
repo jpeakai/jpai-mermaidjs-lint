@@ -187,6 +187,25 @@ export const quotientEdges = (work: WorkGraph, part: Partition): QEdge[] => {
   return mergeReversed(merged);
 };
 
+// The overview edges beside another between the same two overview nodes, at
+// least one a group, that stand for edges between other ends than it does:
+// parallel lines a fold drew, where the original draws one. Edges the
+// original itself draws side by side between two nodes are not counted.
+export const foldedParallels = (work: WorkGraph, qedges: readonly QEdge[]): number => {
+  const ends = new Map(work.edges.map((e) => [e.id, [e.source, e.target].sort(byText).join("\u0000")]));
+  const pairs = new Map<string, Set<string>[]>();
+  for (const e of qedges) {
+    if (!(isGroupKey(e.source) || isGroupKey(e.target))) continue;
+    const pair = [e.source, e.target].sort(byText).join("\u0000");
+    pairs.set(pair, [...(pairs.get(pair) ?? []), new Set(e.covers.map((id) => ends.get(id) ?? id))]);
+  }
+  let count = 0;
+  for (const drawn of pairs.values()) {
+    if (drawn.length > 1 && new Set(drawn.flatMap((d) => [...d])).size > 1) count += drawn.length - 1;
+  }
+  return count;
+};
+
 export interface Shape {
   nodes: number;
   edges: number;
@@ -365,7 +384,20 @@ export interface LabelParts {
   base: string;
   n: number;
   markdown?: true;
+  // A region's label followed by the label of the region around it, in
+  // brackets, which names it apart from a region of the same label elsewhere.
+  qualified?: true;
 }
+
+// A region's label qualified by the label of the region around it, as
+// "Public subnets (us-east-1)": null when either is empty or markdown, or the
+// region sits at the top level.
+export const qualifiedLabel = (work: WorkGraph, region: string): string | null => {
+  const r = work.regions.get(region);
+  const p = r?.parent ? work.regions.get(r.parent) : undefined;
+  if (!(r && p) || r.owner || p.owner || r.markdown || p.markdown || r.label === "" || p.label === "") return null;
+  return `${r.label} (${p.label})`;
+};
 
 const markdownOf = (x: { markdown?: true } | undefined): { markdown?: true } => (x?.markdown ? { markdown: true } : {});
 
@@ -377,20 +409,27 @@ const markdownOf = (x: { markdown?: true } | undefined): { markdown?: true } => 
 // members' labels, when given, comes after the region and the head, and the
 // members may be taken in natural order of their labels instead. N counts the
 // members the label does not already name.
+// The labels a group folding one author region whole may take from it: the
+// region's label, then that label qualified by the region around it.
+const regionChoices = (work: WorkGraph, g: Group): LabelParts[] => {
+  const roots = regionRoots(work, g.regions);
+  const root = roots.length === 1 ? roots[0] : undefined;
+  const region = root === undefined ? undefined : work.regions.get(root);
+  if (!(root !== undefined && region && g.members.every((m) => regionWithin(work, homeOf(work, m), root)))) return [];
+  const qualified = qualifiedLabel(work, root);
+  return [
+    { base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) },
+    ...(qualified === null ? [] : [{ base: qualified, n: g.members.length, qualified: true as const }]),
+  ];
+};
+
 export const labelChoices = (
   work: WorkGraph,
   g: Group,
   naming: { range: string | null; byLabel: boolean } = { range: null, byLabel: false },
 ): LabelParts[] => {
   const { range } = naming;
-  const roots = regionRoots(work, g.regions);
-  const root = roots.length === 1 ? roots[0] : undefined;
-  const region = root === undefined ? undefined : work.regions.get(root);
-  const whole = root !== undefined && region && g.members.every((m) => regionWithin(work, homeOf(work, m), root));
-  const fromRegion: LabelParts[] =
-    whole && region
-      ? [{ base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) }]
-      : [];
+  const fromRegion = regionChoices(work, g);
   const labelOf = (m: string): string => work.nodes.get(m)?.label ?? m;
   const lookup = g.tier === "T4" && g.head !== undefined && isLookup(work, g.head, g.members);
   const ranked = naming.byLabel
@@ -496,59 +535,116 @@ const outsideEnd = (work: WorkGraph, part: Partition, e: GraphEdge, inside: (id:
   return inside(e.source) && !inside(e.target) ? e.target : null;
 };
 
-// The outside end each edge is drawn from or to, as a stub key: what the edge
-// stands for, and, drawn apart, for edges from one whole group that would
-// draw one edge twice (same member, label and kind) from different members
-// of that group, the rank of the member it leaves among them, so each is
-// drawn from a stub of its own and a reader sees two sources. Each stub still
-// stands for the whole group, and each edge reads back exactly once.
-const SLOT = "\u0003";
+// Which half edges draw as one: those the same way between one group and one
+// member, of one kind (a kind left out would read back as another), and in an
+// erDiagram of one label and cardinality.
+const halfKey = (work: WorkGraph, e: GraphEdge, [s, t]: [string, string]): string =>
+  JSON.stringify([s, t, e.kind ?? "", ...(work.family === "er" ? [e.label ?? "", e.cardinality ?? ""] : [])]);
 
-const stubKeys = (
-  edges: GraphEdge[],
-  ends: Map<string, string | null>,
-  inside: (id: string) => boolean,
-  apart: boolean,
-): Map<string, string> => {
-  const drawn = (e: GraphEdge, end: string): string =>
-    [end, e.target, e.label ?? "", e.markdown ? "m" : "", e.kind ?? "", e.cardinality ?? ""].join(SLOT);
-  const sources = new Map<string, Set<string>>();
-  for (const e of edges) {
-    const end = ends.get(e.id);
-    if (end && isGroupKey(end) && inside(e.target)) {
-      const k = drawn(e, end);
-      sources.set(k, new Set([...(sources.get(k) ?? []), e.source]));
-    }
-  }
-  const keys = new Map<string, string>();
-  for (const e of edges) {
-    const end = ends.get(e.id);
-    if (!end) continue;
-    const rank = sorted(sources.get(drawn(e, end)) ?? new Set()).indexOf(e.source);
-    keys.set(e.id, apart && rank > 0 ? `${end}${SLOT}${rank}` : end);
-  }
-  return keys;
+// A half edge, between a stub for a whole group and a member, drawn once for
+// every edge halfKey puts with it, as the overview draws one edge between two
+// overview nodes: keeping only the label and cardinality all agree on. Each
+// of them is drawn exactly in the other group's detail.
+const halfOf = (halves: Map<string, GraphEdge[]>, e: GraphEdge): GraphEdge => {
+  const bucket = [...halves.values()].find((b) => b[0] === e);
+  if (!bucket) return e;
+  const { label: _l, markdown: _m, kind: _k, cardinality: _c, ...bare } = e;
+  const label = agreed(bucket, (x) => (x.label === undefined ? undefined : `${x.markdown ? "m" : "s"}${x.label}`));
+  const kind = agreed(bucket, (x) => x.kind);
+  const cardinality = agreed(bucket, (x) => x.cardinality);
+  return {
+    ...bare,
+    ...(label !== undefined
+      ? { label: label.slice(1), ...(label.startsWith("m") ? { markdown: true as const } : {}) }
+      : {}),
+    ...(kind !== undefined ? { kind } : {}),
+    ...(cardinality !== undefined ? { cardinality } : {}),
+  };
 };
 
-// A planner measures a detail with one stub per outside end; assemble.ts
-// draws it apart when it still meets the target that way.
-export const detailView = (work: WorkGraph, part: Partition, g: Group, apart = false): DetailView => {
+// The group whose detail draws exactly every edge between two groups that
+// edges join both ways: the one whose detail is split again when the other's
+// is not, since a stub in a nested overview standing for a whole group hides
+// which member a reader is sent to two levels away (MJL-0035); then the one
+// needing stubs for fewer of the other's members, then the first by key. The
+// other group's detail draws one stub for the whole group, with every edge
+// each way drawn once for those alike, so no detail draws a group whole beside
+// stubs for its members.
+export const exactSide = (
+  work: WorkGraph,
+  part: Partition,
+  [a, b]: [string, string],
+  nested: ReadonlySet<string> = new Set(),
+): string => {
+  if (nested.has(a) !== nested.has(b)) return nested.has(a) ? a : b;
+  const between = work.edges.filter((e) => {
+    const ends = [over(work, part, e.source), over(work, part, e.target)];
+    return ends.includes(a) && ends.includes(b) && a !== b;
+  });
+  const needs = (side: string): number =>
+    new Set(between.flatMap((e) => [e.source, e.target]).filter((x) => over(work, part, x) !== side)).size;
+  const [na, nb] = [needs(a), needs(b)];
+  return na !== nb ? (na < nb ? a : b) : byText(a, b) <= 0 ? a : b;
+};
+
+// The outside groups edges join to a group both ways.
+const bothWays = (work: WorkGraph, part: Partition, key: string, touching: GraphEdge[]): Set<string> => {
+  const [into, from] = [new Set<string>(), new Set<string>()];
+  for (const e of touching) {
+    const [s, t] = [over(work, part, e.source), over(work, part, e.target)];
+    if (s === key && t !== key && isGroupKey(t)) into.add(t);
+    if (t === key && s !== key && isGroupKey(s)) from.add(s);
+  }
+  return new Set([...into].filter((x) => from.has(x)));
+};
+
+// One stub per outside end, and each edge from a whole group drawn alike
+// another drawn once. A group that edges join to this one both ways is drawn
+// whole, or as stubs for its members, never both, as exactSide decides from
+// the groups whose details are split again.
+export const detailView = (
+  work: WorkGraph,
+  part: Partition,
+  g: Group,
+  nested: ReadonlySet<string> = new Set(),
+): DetailView => {
   const key = keyOf(g);
   const inside = (id: string): boolean => over(work, part, id) === key;
   const touching = work.edges.filter((e) => inside(e.source) || inside(e.target));
-  const ends = new Map(touching.map((e) => [e.id, outsideEnd(work, part, e, inside)]));
-  const slots = stubKeys(touching, ends, inside, apart);
-  const outside = sorted(new Set(slots.values()));
+  const pairs = bothWays(work, part, key, touching);
+  const whole = new Set([...pairs].filter((h) => exactSide(work, part, [key, h], nested) !== key));
+  const endOf = (e: GraphEdge): string | null => {
+    const end = outsideEnd(work, part, e, inside);
+    if (end === null) return null;
+    const far = inside(e.source) ? e.target : e.source;
+    const group = over(work, part, far);
+    if (!pairs.has(group)) return end;
+    return whole.has(group) ? group : far;
+  };
+  const ends = new Map(touching.map((e) => [e.id, endOf(e)]));
+  const outside = sorted(new Set([...ends.values()].filter((x): x is string => x !== null)));
   const next = idMaker(usedIds(work), "s");
-  const stubs = outside.map((slot) => ({ id: next(), endpoint: slot.split(SLOT)[0] ?? slot }));
-  const stubOf = new Map(outside.map((slot, i) => [slot, stubs[i]?.id]));
-  const edges = touching.map((e) => {
-    const slot = slots.get(e.id);
-    const stub = slot === undefined ? undefined : stubOf.get(slot);
-    if (stub === undefined) return e;
-    return inside(e.source) ? { ...e, target: stub } : { ...e, source: stub };
+  const stubs = outside.map((endpoint) => ({ id: next(), endpoint }));
+  const stubOf = new Map(outside.map((endpoint, i) => [endpoint, stubs[i]?.id ?? endpoint]));
+  const halves = new Map<string, GraphEdge[]>();
+  const edges = touching.flatMap((e) => {
+    const end = ends.get(e.id);
+    if (end === null || end === undefined) return [e];
+    const stub = stubOf.get(end) ?? end;
+    const drawn = inside(e.source) ? { ...e, target: stub } : { ...e, source: stub };
+    if (!isGroupKey(end)) return [drawn];
+    const bucket = halfKey(work, e, inside(e.source) ? [e.source, end] : [end, e.target]);
+    const known = halves.get(bucket);
+    halves.set(bucket, [...(known ?? []), drawn]);
+    return known ? [] : [drawn];
   });
-  return { members: g.members, regions: drawnRegions(work, g), stubs, edges, ...detailMarkers(work, g) };
+  return {
+    members: g.members,
+    regions: drawnRegions(work, g),
+    stubs,
+    edges: edges.map((e) => halfOf(halves, e)),
+    ...detailMarkers(work, g),
+  };
 };
 
 // The regions a detail draws: the ones its group folds, and in a classDiagram

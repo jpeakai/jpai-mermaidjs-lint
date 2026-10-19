@@ -14,6 +14,7 @@ import {
   detailShape,
   detailView,
   EMPTY_PARTITION,
+  foldedParallels,
   type Group,
   groupOfKey,
   isGroupKey,
@@ -28,8 +29,10 @@ import {
   partitionOf,
   type QEdge,
   quotientEdges,
+  type Shape,
   scoreOf,
 } from "./quotient.ts";
+import { newReachablePairs } from "./reach.ts";
 import { type FoldRules, RELAXED } from "./rules.ts";
 import {
   adjacencyOf,
@@ -45,7 +48,7 @@ import { proposeT2 } from "./tier2.ts";
 import { proposeT3 } from "./tier3.ts";
 import { proposeT4 } from "./tier4.ts";
 import { proposeT5 } from "./tier5.ts";
-import { proposeT6 } from "./tier6.ts";
+import { ID_FAMILY, proposeT6 } from "./tier6.ts";
 import { FOLD_TIERS, type Tier } from "./types.ts";
 
 // A detail may be split once more; one at the second level must fit.
@@ -69,6 +72,7 @@ interface Scored {
   priority: number;
   tie: number;
   kin: number;
+  align: number;
   members: string[];
   // The overview edges left, so at an equal saving the aggregate with fewer
   // edges between overview nodes goes first.
@@ -123,6 +127,28 @@ const parallelOf = (qedges: readonly QEdge[]): number => {
   return pairs.length - new Set(pairs).size;
 };
 
+// Whether a fold the step may take: an aggregate drawing no relationship
+// beside another that the original draws between other ends, adding no new
+// reachable pair where the step or the candidate asks, and where the step
+// holds folds to the overview before it, taking away an overview edge per
+// node hidden and adding no new reachable pair (MJL-0034).
+const admits = (ctx: TierContext, cand: Candidate, step: Step, drawn: Drawn): boolean => {
+  const { work } = ctx;
+  const { part } = drawn;
+  if (cand.tier === "T4" && foldedParallels(work, drawn.qedges) > foldedParallels(work, ctx.qedges)) return false;
+  const loss = (): number => newReachablePairs(work, part);
+  if ((step.lossless || cand.lossless) && loss() > newReachablePairs(work, ctx.part)) return false;
+  const { before } = step;
+  return !(before && (before.edges - drawn.shape.edges < drawn.hidden || loss() > before.loss));
+};
+
+interface Drawn {
+  part: Partition;
+  qedges: QEdge[];
+  shape: Shape;
+  hidden: number;
+}
+
 const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step): Scored | null => {
   const { work, config } = ctx;
   const merges = [cand, ...(cand.also ?? [])];
@@ -134,12 +160,14 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
   const saved = current - scoreOf(shape, 0, config);
   if (saved <= EPSILON) return null;
   const hidden = merges.reduce((s, m) => s + Math.max(1, m.keys.length - 1), 0);
+  if (!admits(ctx, cand, step, { part: applied.part, qedges, shape, hidden })) return null;
   return {
     part: applied.part,
     ratio: saved / hidden,
     priority: cand.priority ?? 0,
     tie: cand.tie ?? 0,
     kin: cand.kin ?? 0,
+    align: cand.align ?? 0,
     members: applied.groups[0]?.members ?? [],
     edges: shape.edges,
     parallel: parallelOf(qedges),
@@ -148,12 +176,21 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
 
 // Of two aggregates that save as much, the one leaving fewer overview edges
 // goes first, so fewer relationships run between groups.
+// T6's own order: kin first, then gain, then label similarity, then how many
+// overview neighbours the pair shares.
+const byGain = (a: Scored, b: Scored): number => {
+  if (a.kin !== b.kin) return b.kin - a.kin;
+  for (const pick of [(x: Scored) => x.priority, (x: Scored) => x.tie, (x: Scored) => x.align]) {
+    if (Math.abs(pick(a) - pick(b)) > EPSILON) return pick(b) - pick(a);
+  }
+  return 0;
+};
+
 const better =
   (byPriority: boolean, byEdges = false) =>
   (a: Scored, b: Scored): number => {
-    if (byPriority && a.kin !== b.kin) return b.kin - a.kin;
-    if (byPriority && Math.abs(a.priority - b.priority) > EPSILON) return b.priority - a.priority;
-    if (byPriority && Math.abs(a.tie - b.tie) > EPSILON) return b.tie - a.tie;
+    const gain = byPriority ? byGain(a, b) : 0;
+    if (gain !== 0) return gain;
     if (Math.abs(a.ratio - b.ratio) > EPSILON) return b.ratio - a.ratio;
     if (byEdges && a.edges !== b.edges) return a.edges - b.edges;
     return byNaturalTuple(a.members, b.members);
@@ -167,6 +204,12 @@ interface Step {
   only?: (c: Candidate) => boolean;
   // The fewest overview nodes a fold may leave, floorOf by default.
   floor?: number;
+  // The overview before the step, when a fold must take away at least one
+  // overview edge for each node it hides, and add no new reachable pair
+  // (MJL-0034).
+  before?: { edges: number; loss: number };
+  // Whether a fold may add no new reachable pair.
+  lossless?: boolean;
 }
 
 const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null => {
@@ -217,6 +260,8 @@ export interface Walk {
   // Lets the evening steps go below evenFloorOf, down to floorOf, for a
   // diagram whose details fit only when more of it folds.
   deep?: boolean;
+  // Folds an author region only when that adds no new reachable pair.
+  lossless?: boolean;
 }
 
 // The share of node_target an evening step must leave in the overview, so a
@@ -234,7 +279,13 @@ const membersIn = (part: Partition, c: Candidate): number =>
 // show alike. T5 and T6: merges no larger than the largest group and hiding
 // as many nodes as the rules ask, so the nodes left open gather into groups
 // of about the same size.
-const evenOut = (part: Partition, tier: Tier, rules: FoldRules): ((c: Candidate) => boolean) | null => {
+const evenOut = (
+  part: Partition,
+  tier: Tier,
+  rules: FoldRules,
+  work: WorkGraph,
+): ((c: Candidate) => boolean) | null => {
+  if (tier === "T4") return tangled(work, part) ? () => true : null;
   if (tier === "T2") {
     return part.groups.some((g) => g.reason === "decision region") ? (c) => c.reason === "decision region" : null;
   }
@@ -243,6 +294,7 @@ const evenOut = (part: Partition, tier: Tier, rules: FoldRules): ((c: Candidate)
     return (c) => parents.has(c.parent) && c.keys.length > 1;
   }
   if (tier !== "T5" && tier !== "T6") return null;
+  if (byFamilies(part)) return (c) => c.reason === ID_FAMILY;
   const largest = Math.max(0, ...part.groups.map((g) => g.members.length));
   return (c) => {
     const n = membersIn(part, c);
@@ -250,14 +302,34 @@ const evenOut = (part: Partition, tier: Tier, rules: FoldRules): ((c: Candidate)
   };
 };
 
+// Whether the plan folds id families, which then fold whole or not at all:
+// the evening takes only the families still open, down to floorOf, since a
+// family half folded or left open reads as scattered.
+const byFamilies = (part: Partition): boolean => part.groups.some((g) => g.reason === ID_FAMILY);
+
+// An overview a reader meets a cycle in for every MIN_OVERVIEW nodes, a
+// chunk held at once: its independent cycles, edges less nodes plus one,
+// number at least a quarter of its nodes. A tree-like overview is read as it
+// is; a tangled one still reads better with its aggregates folded.
+export const tangled = (work: WorkGraph, part: Partition): boolean => {
+  const shape = overviewShape(work, part, quotientEdges(work, part));
+  return MIN_OVERVIEW * (shape.edges - shape.nodes + 1) >= shape.nodes;
+};
+
 // Takes what evenOut allows, one best step at a time, while the overview
 // keeps at least evenFloorOf nodes.
 const foldEvenly = (start: Measure, step: Step, deep: boolean): Measure => {
   const { work, config, rules } = start.ctx;
-  const floor = deep ? floorOf(work) : evenFloorOf(work, config);
+  const floor = deep || byFamilies(start.ctx.part) ? floorOf(work) : evenFloorOf(work, config);
   let m = start;
-  for (let only = evenOut(m.ctx.part, step.tier, rules); only; only = evenOut(m.ctx.part, step.tier, rules)) {
-    const best = bestStep(m.ctx, { ...step, only, floor }, m.score);
+  for (
+    let only = evenOut(m.ctx.part, step.tier, rules, work);
+    only;
+    only = evenOut(m.ctx.part, step.tier, rules, work)
+  ) {
+    const before =
+      step.tier === "T4" ? { edges: m.ctx.qedges.length, loss: newReachablePairs(work, m.ctx.part) } : undefined;
+    const best = bestStep(m.ctx, { ...step, only, floor, ...(before ? { before } : {}) }, m.score);
     if (!best) break;
     m = measure(work, best.part, config, rules);
   }
@@ -336,7 +408,7 @@ const loosen = (start: Measure): Measure => {
   let m = start;
   while (m.nodes < floor) {
     const best = m.ctx.part.groups
-      .filter((g) => g.tier !== "T2")
+      .filter((g) => g.tier !== "T2" && g.reason !== ID_FAMILY)
       .flatMap((g) => {
         const next = undo(m, g);
         return next ? [{ next, members: g.members }] : [];
@@ -348,15 +420,37 @@ const loosen = (start: Measure): Measure => {
   return m;
 };
 
+// An erDiagram that meets the target with rows dropped alone still draws
+// every entity and relationship: it folds aggregates evenly too, each fold
+// taking away an overview edge for every entity it hides and adding no new
+// reachable pair, so the overview gains the structure its aggregates give it
+// and only tight aggregates fold. Any other diagram stays at T1.
+const aggregatesToo = (start: Measure, snapshots: Snapshot[], walk: Walk): Folded => {
+  const { work } = start.ctx;
+  const done: Folded = { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
+  if (work.family !== "er" || !walk.order.includes("T4")) return done;
+  const m = foldEvenly(start, { tier: "T4", capped: true }, false);
+  return m.ctx.part.groups.length === 0
+    ? done
+    : { work, part: m.ctx.part, snapshots: [...snapshots, snapshotOf("T4", m.ctx.part)], tier: "T4" };
+};
+
+// How a walk climbs one tier: held to details that fit but for author regions
+// and aggregates on a walk letting them fold whatever their size, and in T3
+// adding no new reachable pair when the walk asks.
+const stepOf = (t: Tier, walk: Walk): Step => {
+  const capped = (t !== "T3" && t !== "T4") || walk.capT3;
+  return { tier: t, capped, ...(walk.lossless && t === "T3" ? { lossless: true } : {}) };
+};
+
 // Folds tier by tier until the overview meets the target, or returns why not.
 export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Walk): Folded | string => {
   let m = measure(work, EMPTY_PARTITION, config, walk.rules);
   const snapshots: Snapshot[] = [snapshotOf("T1", EMPTY_PARTITION)];
-  if (meets(m.nodes, m.score, config)) return { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
+  if (meets(m.nodes, m.score, config)) return aggregatesToo(m, snapshots, walk);
   let tier: Tier = "T1";
   for (const t of walk.order) {
-    const capped = (t !== "T3" && t !== "T4") || walk.capT3;
-    const step: Step = { tier: t, capped };
+    const step = stepOf(t, walk);
     for (let best = bestStep(m.ctx, step, m.score); best; ) {
       m = measure(work, best.part, config, walk.rules);
       tier = t;
@@ -372,6 +466,22 @@ export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Wal
   return `no tier reaches the target: the overview stops at ${m.nodes} nodes and a score of ${m.score}`;
 };
 
+// The new reachable pairs a build's details split again declare, at every depth.
+export const nestedLoss = (build: Build): number =>
+  Object.values(build.nested).reduce((n, b) => n + b.plan.loss.newReachablePairs + nestedLoss(b), 0);
+
+// The new reachable pairs a build declares, its own and its details'.
+const totalLoss = (build: Build): number => build.plan.loss.newReachablePairs + nestedLoss(build);
+
+// The plan holding author regions to details that fit, folding first only
+// regions that add no new reachable pair, which a plan whose details split
+// again with new reachable pairs gives way to when it declares fewer in all:
+// a reader then finds every relationship of a region where it is drawn.
+const fitting = (build: (capT3: boolean, deep: boolean, lossless?: boolean) => Build | string, split: Build): Build => {
+  const held = [build(true, false, true), build(true, false)].find((b): b is Build => typeof b !== "string");
+  return held && totalLoss(held) < totalLoss(split) ? held : split;
+};
+
 // Plans a working graph along one ladder under one set of rules: first
 // letting author regions fold whatever their size, splitting a large detail
 // again, then, if that fails, holding them to details that fit.
@@ -383,8 +493,8 @@ const planWith = (
 ): Build | string => {
   const { order } = walk;
   const reasons: string[] = [];
-  const build = (capT3: boolean, deep: boolean): Build | string => {
-    const folded = foldToTarget(work, config, { ...walk, capT3, deep });
+  const build = (capT3: boolean, deep: boolean, lossless = false): Build | string => {
+    const folded = foldToTarget(work, config, { ...walk, capT3, deep, lossless });
     return typeof folded === "string"
       ? folded
       : assemble(folded, config, (detail) =>
@@ -393,7 +503,7 @@ const planWith = (
   };
   for (const capT3 of depth >= MAX_DEPTH ? [true] : [false, true]) {
     const built = build(capT3, false);
-    if (typeof built !== "string") return built;
+    if (typeof built !== "string") return capT3 || nestedLoss(built) === 0 ? built : fitting(build, built);
     // A detail that fits only when more of the diagram folds: even out
     // further, below evenFloorOf, rather than offer no plan.
     const deeper = build(capT3, true);
@@ -404,7 +514,9 @@ const planWith = (
 };
 
 // Plans a working graph along one ladder, holding T5 and T6 to the strict
-// rules first and relaxing them only when that gives no plan.
+// rules first and relaxing them only when that gives no plan. An author
+// region folds whole however much of the diagram it holds, its detail split
+// again when it does not fit (MJL-0035).
 export const planWork = (
   work: WorkGraph,
   config: ThresholdConfig,

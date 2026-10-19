@@ -3,7 +3,7 @@
 
 import type { ThresholdConfig } from "../parse/metrics.ts";
 import { isJunction } from "./aggregate.ts";
-import { byText, type WorkGraph } from "./graph.ts";
+import { byText, homeOf, regionWithin, type WorkGraph } from "./graph.ts";
 import {
   detailShape,
   detailView,
@@ -19,7 +19,7 @@ import {
   scoreOf,
 } from "./quotient.ts";
 import { type FoldRules, hubsOf, splitsBranches, terminalsOf } from "./rules.ts";
-import { mixesFamilies, stageOf } from "./stem.ts";
+import { mixesFamilies, stageOf, statusFamilies } from "./stem.ts";
 
 export interface Candidate extends Merge {
   // T6 orders by modularity gain, not by score per node.
@@ -28,6 +28,12 @@ export interface Candidate extends Merge {
   tie?: number;
   // T6 takes a pair naming one prefix family before any other: 1, else 0.
   kin?: number;
+  // Of two pairs of one prefix family tied on gain and label, T6 takes the
+  // one whose members share more of their overview neighbours first, so a
+  // layer folds in step with the layer beside it already folded.
+  align?: number;
+  // Whether the merge may add no new reachable pair: a trimmed aggregate.
+  lossless?: true;
   // Merges of the same pattern applied in the same step: every stage of one
   // chain, every run of one twin class. A plan then folds the pattern evenly,
   // not one stage of it.
@@ -105,7 +111,9 @@ const familyCache = new WeakMap<WorkGraph, Map<string, string | null>>();
 export const familyOf = (work: WorkGraph, id: string): string | null => {
   let known = familyCache.get(work);
   if (!known) {
-    known = new Map(work.ids.map((x) => [x, stageOf(work.nodes.get(x)?.label ?? x, x)]));
+    const labels = new Map(work.ids.map((x) => [x, work.nodes.get(x)?.label ?? x]));
+    const status = statusFamilies(labels);
+    known = new Map(work.ids.map((x) => [x, stageOf(labels.get(x) ?? x, x) ?? status.get(x) ?? null]));
     familyCache.set(work, known);
   }
   return known.get(id) ?? null;
@@ -175,4 +183,40 @@ export const chunksThatFit = (ctx: TierContext, keys: string[], base: Omit<Merge
   }
   flush();
   return out;
+};
+
+// Whether a suggested group's members are connected: two members are joined
+// by an edge between them, by an author region the group folds whole holding
+// both, or by a neighbour they share when both name one prefix family (one
+// stage of a pipeline) or both are leaves (sibling leaves of one node), as T5
+// and T6 merge them and no other way (MJL-0032).
+export const joined = (work: WorkGraph, g: { members: readonly string[]; regions: readonly string[] }): boolean => {
+  const { members } = g;
+  const inside = new Set(members);
+  const regionOf = (x: string): string | undefined => g.regions.find((r) => regionWithin(work, homeOf(work, x), r));
+  const around = new Map<string, Set<string>>();
+  const link = (a: string, b: string): void => {
+    around.set(a, new Set([...(around.get(a) ?? []), b]));
+    around.set(b, new Set([...(around.get(b) ?? []), a]));
+  };
+  for (const e of work.edges) if (e.source !== e.target) link(e.source, e.target);
+  const leaf = (x: string): boolean => (around.get(x)?.size ?? 0) === 1;
+  const kin = (a: string, b: string): boolean => {
+    if (regionOf(a) !== undefined && regionOf(a) === regionOf(b)) return true;
+    const fa = familyOf(work, a);
+    const shares = [...(around.get(a) ?? [])].some((x) => around.get(b)?.has(x));
+    return shares && ((fa !== null && fa === familyOf(work, b)) || (leaf(a) && leaf(b)));
+  };
+  const [first] = members;
+  const seen = new Set(first === undefined ? [] : [first]);
+  const stack = [...seen];
+  while (stack.length > 0) {
+    const v = stack.pop() as string;
+    for (const w of members) {
+      if (seen.has(w) || !inside.has(w) || !(around.get(v)?.has(w) || kin(v, w))) continue;
+      seen.add(w);
+      stack.push(w);
+    }
+  }
+  return seen.size === inside.size;
 };

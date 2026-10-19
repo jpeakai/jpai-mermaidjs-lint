@@ -98,8 +98,10 @@ flowchart LR
     VCS["Visual Complexity Score"]:::info
     DRG["Decision Region"]:::info
     AGG["Aggregate"]:::info
+    ALT["Split Alternative"]:::info
 
     REM -- may end with --> SPL
+    REM -- may instead point to --> ALT
     SPL -- is reached at a --> TIR
     SPL -- holds one --> OVR
     SPL -- holds one per group --> DET
@@ -321,6 +323,7 @@ A graph that joins at least half of all its node pairs, and more pairs than twic
 Folding it leaves a Dense Mesh, so a Split Plan is refused for one, per [MJL-0030](adrs/0030-a-group-is-named-where-a-reader-enters-it.md).
 The reason given is "dense mesh: a matrix or table reads better than a diagram".
 The check runs on the Diagram and on each plan's Overview.
+The refusal prints the Diagram as a Split Alternative.
 
 ## Design Token
 
@@ -355,6 +358,13 @@ What a Rule reads for one file: the source, its kind, the markdown tree and its 
 
 A diagram drawn twice: a simplified one inline with a one-sentence summary, and a detailed one in a collapsible block beneath it.
 The docs and the Docs Site draw their diagrams this way.
+
+## Echoing Region
+
+Author regions drawn from one template.
+They are siblings of one shape that hold regions of their own, or the children of echoing regions with one label and shape.
+A region's shape is how many nodes it holds of its own, and each child region's label and shape.
+A Split Plan's `T3` folds a region and its Echoing Regions in one step, so they read alike, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
 
 ## Edit
 
@@ -391,6 +401,13 @@ It proposes Edits and never writes files itself.
 
 The engine's loop of applying verified Edits in a fixed Rule order until nothing changes.
 
+## Folded Parallel
+
+An Overview edge beside another between the same two overview nodes, at least one a Group Node, that stands for edges between other ends.
+The original draws one relationship there, so a reader would count two.
+An Aggregate folds only where it adds no Folded Parallel, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+Edges the original itself draws side by side between two nodes are not one.
+
 ## Fixture
 
 One `.md`, `.mmd` or `.mermaid` file under `tests/fixtures` or `examples/` that the test suite runs as a case.
@@ -425,6 +442,13 @@ The Host may choose the label colour.
 
 A node of degree at least four and at least the 90th percentile degree of its Diagram.
 A Split Plan's `T5` and `T6` keep it as its own node in the Overview, unless the target cannot be met otherwise.
+
+## Id Family
+
+The Prefix Family of a diagram whose every label leads with an id naming one, as a ticket graph's `PLAT-1201` and `DATA-0381`.
+A Split Plan's `T6` folds each Id Family whole, hubs included, before any pair.
+One whose detail does not fit folds in even contiguous runs, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+A family's group is never undone, and once one family folds only families fold.
 
 ## Junction
 
@@ -491,6 +515,7 @@ The code that reads a Diagram's structure from mermaid's own parsers.
 
 The stage of a data pipeline a node names.
 It is a Prefix Family read from a dotted prefix such as `bronze.` or an id prefix such as `br_`.
+Its nodes may fold into one suggested group though no edge joins them, when they share a neighbour.
 
 ## Prefix Family
 
@@ -498,8 +523,11 @@ The family of names a node's label or id belongs to.
 It is a dotted prefix leading the node's label, such as `bronze.`.
 Failing that, it is the letters leading a label that leads with an id, such as `PLAT-` in `PLAT-1201`.
 Failing that, it is letters and an underscore leading its id, such as `br_`.
+Failing that, it is the node's Status Family.
 Under the strict rules, no `T5` or `T6` group holds two Prefix Families, per [MJL-0031](adrs/0031-a-plan-keeps-groups-even-and-names-each-stub-once.md).
-In `T6`, a pair within one family goes before any other.
+In `T6`, a pair within one family goes before any other, joined by an edge or by a neighbour they share, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
+With hubs folded, families stay apart before they are mixed, and a chain stage keeps to one family.
+A pair sharing more overview neighbours goes first, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 
 ## Pinned Fix
 
@@ -537,6 +565,12 @@ It is the working directory when none has one.
 
 An element the Parse Engine's graph keeps but the Stats never count: a `stateDiagram` start or end marker, or a `classDiagram` lollipop interface.
 It is drawn, so the graph keeps it, apart from the nodes, under `pseudo`.
+
+## Qualified Label
+
+A region's label followed by the label of the region around it in brackets, as `Public subnets (us-east-1)`.
+A Group Node takes it when another group is named after a region of the same label.
+It sits in that region in the Overview and counts every member, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
 
 ## Range Label
 
@@ -609,11 +643,27 @@ Where a Plugin came from, shown in `--list-rules` and `--json`.
 It is local for a file in `.mermaidjs-lint/rules`, and package for a declared `mermaidjs-lint-plugin-*` dependency.
 It is config for an entry in the Config File's `plugins` list.
 
+## Split Alternative
+
+What a refused Split Plan prints in its place when its reason says a list or table reads better, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+A Star prints as a markdown list of its hub and every leaf, by way, label and connector.
+A Dense Mesh prints as a markdown adjacency matrix, with a line naming the pairs no edge joins.
+Both are built from the parsed graph alone and draw every node and edge.
+`--split-plan` prints it after the reason, and the Remediation points to it.
+
 ## Split Plan
 
 A recommendation for a Diagram over a node count or score threshold: one Overview and one Detail Diagram per Group Node.
 It is offered only when a contract parses the emitted text and finds every node and edge kept.
 It ends the Remediation, and `--split-plan` prints it, but nothing applies it, per [MJL-0025](adrs/0025-a-fold-is-offered-as-a-split.md).
+
+## Star
+
+A Split Plan whose every group is a run of one hub's sibling leaves of one twin class, named only by a Range Label.
+Its groups hold more than half the Diagram.
+Nothing the author drew sorts the leaves, so the plan is refused, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+The reason given is "a star of leaves around one node, which no label, shape or neighbour sorts: a list reads better".
+The refusal prints the Diagram as a Split Alternative.
 
 ## Stats
 
@@ -623,21 +673,32 @@ The nodes, edges, Rows, subgraphs, subgraph nesting depth and Tree Depth the Par
 
 A node in a Detail Diagram that stands for a node, subgraph or interface outside its group.
 An edge in from another group starts at one Stub for that whole group.
-Two edges from different members of that group can draw one edge twice.
-They start at a Stub each, when the Detail Diagram still meets its target.
-Each such Stub names the member its edges leave, as `Checkout domain (+5) from paymentservice`, or the Detail Diagram draws one Stub.
-So does a whole-group Stub beside a Stub for the member its group is named after.
+Edges of one kind one way between that Stub and one member are drawn once, with only the label they share, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+When edges join two groups both ways, one detail draws the other group as one Stub, and the other draws Stubs for its members.
+The detail split again draws the members when the other's detail fits, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
 It adds the node's group label when that differs.
 Its text must have exactly one reading.
 When the text could name anything else, it adds the node's id in brackets, as often as it takes.
 
+## Status Family
+
+The workflow stage a label leading with a bare id names, such as `10008 Ready for Release`.
+It is the one stem a word after the id shares with another such label, as `releas` with `10009 Released`.
+A label sharing no stem, or two, names none, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
+
 ## Style Directive
 
 One styled class, node or edge, read from mermaid's parsed DB.
 It is a `classDef`, a node a `style` statement styles, or an edge a `linkStyle` styles.
 A node's directive includes what it inherits from its classes.
+
+## Tangled Overview
+
+An `erDiagram` Overview whose independent cycles, edges less nodes plus one, number at least a quarter of its nodes.
+Once the target is met, even by dropping rows alone, it folds Aggregates evenly, down to 60% of `nodeTarget`, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+Each fold takes away an overview edge per entity it hides and adds no new reachable pair, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 
 ## Tenet
 
@@ -662,6 +723,11 @@ The Tiers run least lossy first, and a plan names the last Tier that changed it.
 A set of nodes that all share an edge with each other, found as a maximal clique.
 When the Overview joins at least half of all node pairs during a walk, a Split Plan's `T6` folds Tight Cliques into Group Nodes.
 A Diagram that is a Dense Mesh from the start is refused instead.
+
+## Trimmed Aggregate
+
+An Aggregate without each owned part sharing an outside neighbour with the rest, as an address chain without the `STORE` it locates.
+`T4` offers it when the whole Aggregate would add a Folded Parallel, and only where it adds no new reachable pair, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 
 ## Tree Depth
 

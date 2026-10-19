@@ -41,11 +41,13 @@ export const LOOSE: FoldRules = {
 
 // The rules a plan is walked with: strict first; then strict with prefix
 // families mixed; then hubs and branches folded while shared terminals stay
-// in view; then loose; and last, for a diagram no other walk plans, with
-// groups hiding one node allowed too.
+// in view, first with prefix families kept apart, so a pipeline folds layer
+// by layer (MJL-0034), then mixed; then loose; and last, for a diagram no
+// other walk plans, with groups hiding one node allowed too.
 export const RELAXED: readonly FoldRules[] = [
   STRICT,
   { ...STRICT, keepFamilies: false },
+  { ...LOOSE, keepTerminals: true, keepFamilies: true },
   { ...LOOSE, keepTerminals: true },
   LOOSE,
   { ...LOOSE, minHidden: 1 },

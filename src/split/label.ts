@@ -2,9 +2,9 @@
 // diagram's own labels. A long author label is shown cut, with an ellipsis,
 // and kept whole in the plan data. A stub names the outside node it stands
 // for; a stub for a node inside another group adds that group's label, and a
-// label several stubs could share adds the id it stands for. Stubs for one
-// whole group that one detail draws apart name the member each one's edges
-// leave, as "Checkout domain (+5) from paymentservice".
+// label several stubs could share adds the id it stands for. A stub for a
+// whole group beside a stub for its namesake member names the member its
+// edges leave, as "ORDER (+6) from PAYMENT".
 
 import { byNatural, type WorkGraph } from "./graph.ts";
 import { endpointLabel, isGroupKey, over, type Partition, type Stub } from "./quotient.ts";
@@ -190,11 +190,11 @@ export const stubTexts = (ctx: LabelContext, stubs: Stub[]): Map<string, StubTex
 };
 
 // A stub for a whole group reads alike another stub when they show one text,
-// as stubs for one group drawn apart do, or when the other stands for the
-// member the group is named after ("QA (in group)" beside "QA (+2)"). Each
-// such stub takes FROM and the label of the one member its edges leave, when
-// that text has exactly the one reading. Null when two stubs would still
-// show one text: the detail then draws one stub for the group.
+// or when the other stands for the member the group is named after ("ORDER
+// (in group)" beside "ORDER (+6)"). Each such stub takes FROM and the label of
+// the one member its edges leave, when that text has exactly the one reading
+// and that member is not the namesake, which the group's label already names.
+// Null when two stubs would still show one text.
 export const namedStubs = (
   ctx: LabelContext,
   stubs: Stub[],
@@ -213,6 +213,8 @@ export const namedStubs = (
     if (!(t && isGroupKey(s.endpoint) && alike(s.endpoint, t.label)) || t.markdown || !source || more.length > 0)
       continue;
     const member = endpointLabel(ctx.work, source);
+    // The namesake itself is what the group's label already names.
+    if (member === ctx.groups.get(s.endpoint)?.base) continue;
     const label = `${t.label}${FROM}${member}`;
     const read = readingsOf(reader, label);
     const node = ctx.work.nodes.get(source);

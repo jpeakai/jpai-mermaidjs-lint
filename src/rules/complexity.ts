@@ -5,6 +5,7 @@
 
 import type { Diagram } from "../model.ts";
 import { type ThresholdConfig, thresholdsFrom } from "../parse/metrics.ts";
+import type { SplitAlternative } from "../split/index.ts";
 import { COMPLEXITY_OPTIONS, finding, type Measured, measure, splitOutcomeOf, splitSentence } from "./shared.ts";
 import type { Rule, RuleId } from "./types.ts";
 
@@ -24,13 +25,22 @@ export const SPLIT_RULES: ReadonlySet<RuleId> = new Set<RuleId>([
   "complexity-visual-score-critical",
 ]);
 
+// The sentence a remediation ends with when no plan is offered because a list
+// or a table reads better, which --split-plan prints (MJL-0034).
+const ALTERNATIVE_SENTENCE: Record<SplitAlternative["kind"], string> = {
+  list: " A list reads better than a split: --split-plan prints the hub and every node it links as one.",
+  matrix: " A table reads better than a split: --split-plan prints every link as an adjacency matrix.",
+};
+
 // The hit, with the split plan's sentence after its remediation when the rule
-// splits and a plan meets the contract. The plan is a recommendation only, so
-// the rule still has no fixer (MJL-0004).
+// splits and a plan meets the contract, or the sentence pointing to the list
+// or table that reads better. The plan is a recommendation only, so the rule
+// still has no fixer (MJL-0004).
 const withPlan = async (id: RuleId, hit: Hit, diagram: Diagram, config: ThresholdConfig): Promise<Hit> => {
   if (!SPLIT_RULES.has(id)) return hit;
-  const { plan } = await splitOutcomeOf(diagram, config);
-  return plan ? { ...hit, remediation: hit.remediation + splitSentence(plan) } : hit;
+  const { plan, alternative } = await splitOutcomeOf(diagram, config);
+  if (plan) return { ...hit, remediation: hit.remediation + splitSentence(plan) };
+  return alternative ? { ...hit, remediation: hit.remediation + ALTERNATIVE_SENTENCE[alternative.kind] } : hit;
 };
 
 export const complexityRule = (spec: {

@@ -21,6 +21,15 @@ relates_to:
   - relation: extended_by
     target: MJL-0028
     note: decision regions and erDiagram aggregates fold whole
+  - relation: extended_by
+    target: MJL-0033
+    note: regions drawn from one template fold to the same depth and are named by the region around them
+  - relation: excepted_by
+    target: MJL-0034
+    note: a region holding most of a diagram folds as its parts first
+  - relation: extended_by
+    target: MJL-0035
+    note: an author region folds whole however much of a diagram it holds
 
 decision:
   given: a diagram over a threshold can be folded many ways, and some folds change what it says

@@ -46,6 +46,9 @@ relates_to:
   - relation: extended_by
     target: MJL-0033
     note: a star of leaves sorted by nothing is refused, as a dense mesh is
+  - relation: extended_by
+    target: MJL-0034
+    note: a refused dense mesh prints every link as an adjacency matrix
 
 decision:
   given: a group's name is the first thing a reader reads of it, and the overview's edges are read between those names. Some diagrams cannot be summarised by folding at all, and some states end every failure path without being sinks themselves

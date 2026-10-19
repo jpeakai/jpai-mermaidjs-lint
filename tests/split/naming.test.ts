@@ -75,7 +75,13 @@ describe("a star", () => {
       const cfg = configFromPreset("medium-density");
       const { plan } = await buildOf(GATEWAY, cfg);
       expect(isStar(plan, 21)).toBe(true);
-      expect(await splitOutcome(GATEWAY, cfg)).toEqual({ plan: null, reason: STAR, violations: [] });
+      const out = await splitOutcome(GATEWAY, cfg);
+      expect({ ...out, alternative: out.alternative?.kind }).toEqual({
+        plan: null,
+        reason: STAR,
+        violations: [],
+        alternative: "list",
+      });
       // Groups that sit apart in the overview, or hold half the diagram or less, are no star.
       const apart = structuredClone(plan);
       const [g] = apart.groups;

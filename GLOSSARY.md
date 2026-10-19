@@ -98,8 +98,10 @@ flowchart LR
     VCS["Visual Complexity Score"]:::info
     DRG["Decision Region"]:::info
     AGG["Aggregate"]:::info
+    ALT["Split Alternative"]:::info
 
     REM -- may end with --> SPL
+    REM -- may instead point to --> ALT
     SPL -- is reached at a --> TIR
     SPL -- holds one --> OVR
     SPL -- holds one per group --> DET
@@ -321,6 +323,7 @@ A graph that joins at least half of all its node pairs, and more pairs than twic
 Folding it leaves a Dense Mesh, so a Split Plan is refused for one, per [MJL-0030](adrs/0030-a-group-is-named-where-a-reader-enters-it.md).
 The reason given is "dense mesh: a matrix or table reads better than a diagram".
 The check runs on the Diagram and on each plan's Overview.
+The refusal prints the Diagram as a Split Alternative.
 
 ## Design Token
 
@@ -397,6 +400,13 @@ It proposes Edits and never writes files itself.
 ## Fixpoint
 
 The engine's loop of applying verified Edits in a fixed Rule order until nothing changes.
+
+## Folded Parallel
+
+An Overview edge beside another between the same two overview nodes, at least one a Group Node, that stands for edges between other ends.
+The original draws one relationship there, so a reader would count two.
+An Aggregate folds only where it adds no Folded Parallel, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+Edges the original itself draws side by side between two nodes are not one.
 
 ## Fixture
 
@@ -485,6 +495,12 @@ A core Rule ID has none.
 The Docs Site's theme, in `docs-site/theme/osakanights/`, which another MkDocs Material site can adopt.
 Its colours come from Design Tokens.
 
+## Outsized Region
+
+An author region holding more than half of a Diagram's nodes, beside another region holding nodes.
+A Split Plan is walked first with it folded whole only when its Detail Diagram fits, so it folds as its parts, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+Only when no such walk plans is it folded whole.
+
 ## Overview
 
 The half of a Split Plan that keeps the whole Diagram's shape, with each group of nodes folded into one Group Node.
@@ -516,6 +532,8 @@ Failing that, it is letters and an underscore leading its id, such as `br_`.
 Failing that, it is the node's Status Family.
 Under the strict rules, no `T5` or `T6` group holds two Prefix Families, per [MJL-0031](adrs/0031-a-plan-keeps-groups-even-and-names-each-stub-once.md).
 In `T6`, a pair within one family goes before any other, joined by an edge or by a neighbour they share, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
+With hubs folded, families stay apart before they are mixed, and a chain stage keeps to one family.
+A pair sharing more overview neighbours goes first, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 
 ## Pinned Fix
 
@@ -631,6 +649,14 @@ Where a Plugin came from, shown in `--list-rules` and `--json`.
 It is local for a file in `.mermaidjs-lint/rules`, and package for a declared `mermaidjs-lint-plugin-*` dependency.
 It is config for an entry in the Config File's `plugins` list.
 
+## Split Alternative
+
+What a refused Split Plan prints in its place when its reason says a list or table reads better, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+A Star prints as a markdown list of its hub and every leaf, by way, label and connector.
+A Dense Mesh prints as a markdown adjacency matrix, with a line naming the pairs no edge joins.
+Both are built from the parsed graph alone and draw every node and edge.
+`--split-plan` prints it after the reason, and the Remediation points to it.
+
 ## Split Plan
 
 A recommendation for a Diagram over a node count or score threshold: one Overview and one Detail Diagram per Group Node.
@@ -643,6 +669,7 @@ A Split Plan whose every group is a run of one hub's sibling leaves of one twin 
 Its groups hold more than half the Diagram.
 Nothing the author drew sorts the leaves, so the plan is refused, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
 The reason given is "a star of leaves around one node, which no label, shape or neighbour sorts: a list reads better".
+The refusal prints the Diagram as a Split Alternative.
 
 ## Stats
 
@@ -676,7 +703,7 @@ A node's directive includes what it inherits from its classes.
 
 An `erDiagram` Overview whose independent cycles, edges less nodes plus one, number at least a quarter of its nodes.
 Once the target is met, even by dropping rows alone, it folds Aggregates evenly, down to 60% of `nodeTarget`, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
-Each fold takes away an overview edge per entity it hides.
+Each fold takes away an overview edge per entity it hides and adds no new reachable pair, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 
 ## Tenet
 
@@ -701,6 +728,11 @@ The Tiers run least lossy first, and a plan names the last Tier that changed it.
 A set of nodes that all share an edge with each other, found as a maximal clique.
 When the Overview joins at least half of all node pairs during a walk, a Split Plan's `T6` folds Tight Cliques into Group Nodes.
 A Diagram that is a Dense Mesh from the start is refused instead.
+
+## Trimmed Aggregate
+
+An Aggregate without each owned part sharing an outside neighbour with the rest, as an address chain without the `STORE` it locates.
+`T4` offers it when the whole Aggregate would add a Folded Parallel, and only where it adds no new reachable pair, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 
 ## Tree Depth
 

@@ -6,6 +6,7 @@
 import { type DiagramGraph, extractGraph } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats, getMermaidCore } from "../parse/stats.ts";
+import { meshMatrix, starList } from "./alternative.ts";
 import { checkContract } from "./contract.ts";
 import { buildWorkGraph, familyOf, type WorkGraph } from "./graph.ts";
 import { RANGE_SEPARATOR } from "./label.ts";
@@ -17,6 +18,7 @@ import type { SplitOutcome, SplitPlan } from "./types.ts";
 export type {
   LadderStep,
   RowDetail,
+  SplitAlternative,
   SplitDetail,
   SplitGroup,
   SplitLoss,
@@ -26,6 +28,13 @@ export type {
 } from "./types.ts";
 
 const refuse = (reason: string, violations: string[] = []): SplitOutcome => ({ plan: null, reason, violations });
+
+// A refusal because a list or a table reads better, with that list or table
+// built from the whole diagram (MJL-0034).
+const refuseFor = (graph: DiagramGraph, reason: string): SplitOutcome => ({
+  ...refuse(reason),
+  alternative: reason === STAR ? starList(graph) : meshMatrix(graph),
+});
 
 export const DENSE_MESH = "dense mesh: a matrix or table reads better than a diagram";
 
@@ -73,9 +82,12 @@ export const splitOutcome = async (source: string, config: ThresholdConfig): Pro
   // A detail or overview would draw a composite's regions as one, which the
   // emitted text cannot tell apart, so no plan is offered.
   if (graph.subgraphs.some((s) => (s.regions ?? 0) > 1)) return refuse("concurrent state regions are not split");
-  if (isDenseMesh(graph)) return refuse(DENSE_MESH);
+  if (isDenseMesh(graph)) return refuseFor(graph, DENSE_MESH);
   const work = buildWorkGraph(graph, { direction: await directionOf(source), rows: stats.rows });
-  return firstPassing(work, config);
+  const outcome = await firstPassing(work, config);
+  return outcome.plan === null && (outcome.reason === STAR || outcome.reason === DENSE_MESH)
+    ? refuseFor(graph, outcome.reason)
+    : outcome;
 };
 
 export const STAR = "a star of leaves around one node, which no label, shape or neighbour sorts: a list reads better";

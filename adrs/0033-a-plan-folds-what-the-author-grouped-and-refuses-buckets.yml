@@ -48,6 +48,12 @@ relates_to:
   - relation: excepts
     target: MJL-0032
     note: a group is drawn whole or as its members, never both, and like edges to a member draw once
+  - relation: extended_by
+    target: MJL-0034
+    note: a refused star prints its hub and every leaf as a list
+  - relation: excepted_by
+    target: MJL-0034
+    note: a tangled erDiagram folds past the target only aggregates adding no new reachable pair
 
 decision:
   given: a reader of an overview reads its groups as the diagram's own structure. The reader compares regions drawn from one template side by side, and counts relationships as lines. A ticket key or a template is the author's own grouping, and an alphabetical range is no grouping at all

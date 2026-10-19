@@ -187,6 +187,25 @@ export const quotientEdges = (work: WorkGraph, part: Partition): QEdge[] => {
   return mergeReversed(merged);
 };
 
+// The overview edges beside another between the same two overview nodes, at
+// least one a group, that stand for edges between other ends than it does:
+// parallel lines a fold drew, where the original draws one. Edges the
+// original itself draws side by side between two nodes are not counted.
+export const foldedParallels = (work: WorkGraph, qedges: readonly QEdge[]): number => {
+  const ends = new Map(work.edges.map((e) => [e.id, [e.source, e.target].sort(byText).join("\u0000")]));
+  const pairs = new Map<string, Set<string>[]>();
+  for (const e of qedges) {
+    if (!(isGroupKey(e.source) || isGroupKey(e.target))) continue;
+    const pair = [e.source, e.target].sort(byText).join("\u0000");
+    pairs.set(pair, [...(pairs.get(pair) ?? []), new Set(e.covers.map((id) => ends.get(id) ?? id))]);
+  }
+  let count = 0;
+  for (const drawn of pairs.values()) {
+    if (drawn.length > 1 && new Set(drawn.flatMap((d) => [...d])).size > 1) count += drawn.length - 1;
+  }
+  return count;
+};
+
 export interface Shape {
   nodes: number;
   edges: number;

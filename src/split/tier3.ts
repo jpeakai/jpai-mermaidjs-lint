@@ -6,7 +6,7 @@
 
 import { byText, homeOf, regionWithin, type WorkGraph } from "./graph.ts";
 import { membersOfKey, overviewKeys } from "./quotient.ts";
-import type { Candidate, TierContext } from "./tier.ts";
+import { type Candidate, mergeFits, type TierContext } from "./tier.ts";
 
 const holdsNode = (work: WorkGraph, region: string): boolean =>
   work.ids.some((id) => regionWithin(work, homeOf(work, id), region));
@@ -35,7 +35,25 @@ const candidateOf = (ctx: TierContext, r: string): Candidate | null => {
   const regions = [r, ...descendants(work, r).filter((d) => !part.regionOf.has(d))];
   const members = keys.flatMap((k) => membersOfKey(part, k));
   if (members.length < 2 || !pinsHold(work, members, regions)) return null;
-  return { keys, regions, parent: work.regions.get(r)?.parent ?? null, tier: "T3", reason: "author region" };
+  const c: Candidate = {
+    keys,
+    regions,
+    parent: work.regions.get(r)?.parent ?? null,
+    tier: "T3",
+    reason: "author region",
+  };
+  return ctx.rules.partOutsized && isOutsized(work, r) && !mergeFits(ctx, c) ? null : c;
+};
+
+// Whether a region holds more than half of the diagram's nodes beside
+// another region holding nodes: folded whole into a detail split again, the
+// overview would read as that one region beside a few small ones, so a walk
+// first folds it whole only when its detail fits, and else as its parts
+// (MJL-0034).
+export const isOutsized = (work: WorkGraph, r: string): boolean => {
+  const inside = work.ids.filter((id) => regionWithin(work, homeOf(work, id), r)).length;
+  const others = work.regionIds.filter((x) => !(regionWithin(work, x, r) || regionWithin(work, r, x)));
+  return 2 * inside > work.ids.length && others.some((x) => holdsNode(work, x));
 };
 
 const ready = (ctx: TierContext, region: string): boolean =>

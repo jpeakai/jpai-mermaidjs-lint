@@ -14,6 +14,7 @@ import {
   detailShape,
   detailView,
   EMPTY_PARTITION,
+  foldedParallels,
   type Group,
   groupOfKey,
   isGroupKey,
@@ -28,6 +29,7 @@ import {
   partitionOf,
   type QEdge,
   quotientEdges,
+  type Shape,
   scoreOf,
 } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
@@ -43,7 +45,7 @@ import {
   type TierContext,
 } from "./tier.ts";
 import { proposeT2 } from "./tier2.ts";
-import { proposeT3 } from "./tier3.ts";
+import { isOutsized, proposeT3 } from "./tier3.ts";
 import { proposeT4 } from "./tier4.ts";
 import { proposeT5 } from "./tier5.ts";
 import { ID_FAMILY, proposeT6 } from "./tier6.ts";
@@ -70,6 +72,7 @@ interface Scored {
   priority: number;
   tie: number;
   kin: number;
+  align: number;
   members: string[];
   // The overview edges left, so at an equal saving the aggregate with fewer
   // edges between overview nodes goes first.
@@ -124,6 +127,28 @@ const parallelOf = (qedges: readonly QEdge[]): number => {
   return pairs.length - new Set(pairs).size;
 };
 
+// Whether a fold the step may take: an aggregate drawing no relationship
+// beside another that the original draws between other ends, adding no new
+// reachable pair where the step or the candidate asks, and where the step
+// holds folds to the overview before it, taking away an overview edge per
+// node hidden and adding no new reachable pair (MJL-0034).
+const admits = (ctx: TierContext, cand: Candidate, step: Step, drawn: Drawn): boolean => {
+  const { work } = ctx;
+  const { part } = drawn;
+  if (cand.tier === "T4" && foldedParallels(work, drawn.qedges) > foldedParallels(work, ctx.qedges)) return false;
+  const loss = (): number => newReachablePairs(work, part);
+  if ((step.lossless || cand.lossless) && loss() > newReachablePairs(work, ctx.part)) return false;
+  const { before } = step;
+  return !(before && (before.edges - drawn.shape.edges < drawn.hidden || loss() > before.loss));
+};
+
+interface Drawn {
+  part: Partition;
+  qedges: QEdge[];
+  shape: Shape;
+  hidden: number;
+}
+
 const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step): Scored | null => {
   const { work, config } = ctx;
   const merges = [cand, ...(cand.also ?? [])];
@@ -135,16 +160,14 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
   const saved = current - scoreOf(shape, 0, config);
   if (saved <= EPSILON) return null;
   const hidden = merges.reduce((s, m) => s + Math.max(1, m.keys.length - 1), 0);
-  if (step.lossless && newReachablePairs(work, applied.part) > newReachablePairs(work, ctx.part)) return null;
-  const { before } = step;
-  if (before && (before.edges - shape.edges < hidden || newReachablePairs(work, applied.part) - before.loss > hidden))
-    return null;
+  if (!admits(ctx, cand, step, { part: applied.part, qedges, shape, hidden })) return null;
   return {
     part: applied.part,
     ratio: saved / hidden,
     priority: cand.priority ?? 0,
     tie: cand.tie ?? 0,
     kin: cand.kin ?? 0,
+    align: cand.align ?? 0,
     members: applied.groups[0]?.members ?? [],
     edges: shape.edges,
     parallel: parallelOf(qedges),
@@ -153,12 +176,21 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
 
 // Of two aggregates that save as much, the one leaving fewer overview edges
 // goes first, so fewer relationships run between groups.
+// T6's own order: kin first, then gain, then label similarity, then how many
+// overview neighbours the pair shares.
+const byGain = (a: Scored, b: Scored): number => {
+  if (a.kin !== b.kin) return b.kin - a.kin;
+  for (const pick of [(x: Scored) => x.priority, (x: Scored) => x.tie, (x: Scored) => x.align]) {
+    if (Math.abs(pick(a) - pick(b)) > EPSILON) return pick(b) - pick(a);
+  }
+  return 0;
+};
+
 const better =
   (byPriority: boolean, byEdges = false) =>
   (a: Scored, b: Scored): number => {
-    if (byPriority && a.kin !== b.kin) return b.kin - a.kin;
-    if (byPriority && Math.abs(a.priority - b.priority) > EPSILON) return b.priority - a.priority;
-    if (byPriority && Math.abs(a.tie - b.tie) > EPSILON) return b.tie - a.tie;
+    const gain = byPriority ? byGain(a, b) : 0;
+    if (gain !== 0) return gain;
     if (Math.abs(a.ratio - b.ratio) > EPSILON) return b.ratio - a.ratio;
     if (byEdges && a.edges !== b.edges) return a.edges - b.edges;
     return byNaturalTuple(a.members, b.members);
@@ -173,8 +205,8 @@ interface Step {
   // The fewest overview nodes a fold may leave, floorOf by default.
   floor?: number;
   // The overview before the step, when a fold must take away at least one
-  // overview edge for each node it hides, and add no more new reachable
-  // pairs than nodes it hides.
+  // overview edge for each node it hides, and add no new reachable pair
+  // (MJL-0034).
   before?: { edges: number; loss: number };
   // Whether a fold may add no new reachable pair.
   lossless?: boolean;
@@ -390,8 +422,9 @@ const loosen = (start: Measure): Measure => {
 
 // An erDiagram that meets the target with rows dropped alone still draws
 // every entity and relationship: it folds aggregates evenly too, each fold
-// taking away an overview edge for every entity it hides, so the overview
-// gains the structure its aggregates give it. Any other diagram stays at T1.
+// taking away an overview edge for every entity it hides and adding no new
+// reachable pair, so the overview gains the structure its aggregates give it
+// and only tight aggregates fold. Any other diagram stays at T1.
 const aggregatesToo = (start: Measure, snapshots: Snapshot[], walk: Walk): Folded => {
   const { work } = start.ctx;
   const done: Folded = { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
@@ -481,7 +514,10 @@ const planWith = (
 };
 
 // Plans a working graph along one ladder, holding T5 and T6 to the strict
-// rules first and relaxing them only when that gives no plan.
+// rules first and relaxing them only when that gives no plan. A diagram with
+// a region holding more than half of it is walked first with that region
+// folded as its parts unless its detail fits, under every set of rules, and
+// only then with it folded whole (MJL-0034).
 export const planWork = (
   work: WorkGraph,
   config: ThresholdConfig,
@@ -489,10 +525,13 @@ export const planWork = (
   order: readonly Tier[] = FOLD_TIERS,
 ): Build | string => {
   let reason = "";
-  for (const rules of RELAXED) {
-    const built = planWith(work, config, depth, { order, rules });
-    if (typeof built !== "string") return built;
-    reason = built;
+  const passes = work.regionIds.some((r) => isOutsized(work, r)) ? [true, false] : [false];
+  for (const parts of passes) {
+    for (const rules of RELAXED) {
+      const built = planWith(work, config, depth, { order, rules: parts ? { ...rules, partOutsized: true } : rules });
+      if (typeof built !== "string") return built;
+      reason = built;
+    }
   }
   return reason;
 };

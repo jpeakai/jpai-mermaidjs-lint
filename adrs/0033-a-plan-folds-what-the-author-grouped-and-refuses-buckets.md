@@ -29,6 +29,8 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extends [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (in a ticket graph a whole id family folds before any pair, hubs included)
 - Extends [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) (regions drawn from one template fold to the same depth and are named by the region around them)
 - Scoped exception to [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (a group is drawn whole or as its members, never both, and like edges to a member draw once)
+- Extended by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a refused star prints its hub and every leaf as a list)
+- Excepted by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a tangled erDiagram folds past the target only aggregates adding no new reachable pair)
 
 ## Decision
 

@@ -101,9 +101,19 @@ export interface SplitPlan {
   ladder: LadderStep[];
 }
 
-// Why no plan was offered, beside the plan when there is one.
+// What reads better than the diagram where no plan is offered because a list
+// or a table would: a star's hub and leaves as a markdown list, or a dense
+// mesh as a markdown adjacency matrix, drawing every node and edge.
+export interface SplitAlternative {
+  kind: "list" | "matrix";
+  markdown: string;
+}
+
+// Why no plan was offered, beside the plan when there is one, and when a list
+// or a table reads better, that list or table.
 export interface SplitOutcome {
   plan: SplitPlan | null;
   reason: string;
   violations: string[];
+  alternative?: SplitAlternative;
 }

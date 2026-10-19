@@ -41,10 +41,22 @@ const page = new Window({
 });
 const words = new Intl.Segmenter("en", { granularity: "word" });
 
-const wordsOf = (label: string): string[] => {
+const textOf = (label: string): string => {
   const el = page.document.createElement("div");
   el.innerHTML = htmlEntities(label);
-  return [...words.segment(el.textContent ?? "")].filter((s) => s.isWordLike).map((s) => s.segment.toLowerCase());
+  return el.textContent ?? "";
+};
+
+const wordsOf = (label: string): string[] =>
+  [...words.segment(textOf(label))].filter((s) => s.isWordLike).map((s) => s.segment.toLowerCase());
+
+// A label as the text a reader sees: its markup read by a DOM, each line
+// break element replaced by a space first, so the lines do not run together.
+export const plainText = (label: string): string => {
+  const el = page.document.createElement("div");
+  el.innerHTML = htmlEntities(label);
+  for (const br of [...el.querySelectorAll("br")]) br.replaceWith(" ");
+  return (el.textContent ?? "").split(/\s+/).filter(Boolean).join(" ");
 };
 
 // The stems of a label's words, or none for an id-like label.

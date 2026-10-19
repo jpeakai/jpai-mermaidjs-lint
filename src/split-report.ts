@@ -10,7 +10,7 @@ import { SPLIT_RULES } from "./rules/complexity.ts";
 import type { Registry } from "./rules/registry.ts";
 import { splitOutcomeOf } from "./rules/shared.ts";
 import type { Finding, Rule } from "./rules/types.ts";
-import type { SplitOutcome, SplitPlan } from "./split/index.ts";
+import type { SplitAlternative, SplitOutcome, SplitPlan } from "./split/index.ts";
 
 // One checked file: its absolute path, its model, and what the check found.
 export interface CheckedFile {
@@ -47,13 +47,27 @@ export const planLines = (plan: SplitPlan, level: number, parent: string | null 
 
 const sentence = (reason: string): string => `${reason.charAt(0).toUpperCase()}${reason.slice(1)}.`;
 
+// What stands in a refused plan's place, when a list or a table reads better.
+const ALTERNATIVE_LEAD: Record<SplitAlternative["kind"], string> = {
+  list: "In its place, the hub and every node it links, as a list:",
+  matrix: "In its place, every link as an adjacency matrix:",
+};
+
 // One diagram's section: a heading naming file:line and the tier, then the
-// plan, or the reason no plan was offered. Each section starts with a blank
+// plan, or the reason no plan was offered, followed by the list or table that
+// reads better when there is one (MJL-0034). Each section starts with a blank
 // line, so it stands apart from the report and the section before it.
 export const outcomeLines = (where: string, outcome: SplitOutcome): string[] => {
-  const { plan } = outcome;
+  const { plan, alternative } = outcome;
   if (!plan) {
-    return ["", `## ${where}: no split plan`, "", sentence(outcome.reason), ...outcome.violations.map((v) => `- ${v}`)];
+    return [
+      "",
+      `## ${where}: no split plan`,
+      "",
+      sentence(outcome.reason),
+      ...outcome.violations.map((v) => `- ${v}`),
+      ...(alternative ? ["", ALTERNATIVE_LEAD[alternative.kind], "", alternative.markdown] : []),
+    ];
   }
   return ["", `## ${where}: split plan (${plan.tier})`, ...planLines(plan, 3)];
 };

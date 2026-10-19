@@ -44,6 +44,9 @@ relates_to:
   - relation: excepted_by
     target: MJL-0033
     note: id families fold whole below the share an evened overview keeps, and a family group is never undone
+  - relation: extended_by
+    target: MJL-0034
+    note: with hubs folded, prefix families are kept apart before they are mixed, chain stages too
 
 decision:
   given: a reader of an overview counts its nodes against the target and compares its groups' sizes. A group's name reads as a promise about its members, and parallel lines read as separate relationships. A detail's stubs are read by their text alone

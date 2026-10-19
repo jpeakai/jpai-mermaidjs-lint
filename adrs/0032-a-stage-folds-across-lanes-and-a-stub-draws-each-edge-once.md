@@ -25,6 +25,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extends [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (a family is also read from a status stem, and a pair of one family may share a neighbour)
 - Extended by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (in a ticket graph a whole id family folds before any pair, hubs included)
 - Excepted by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (a group is drawn whole or as its members, never both, and like edges to a member draw once)
+- Extended by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a pair of one family sharing more overview neighbours folds first, so layers fold in step)
 
 ## Decision
 

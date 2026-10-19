@@ -28,6 +28,12 @@ export interface Candidate extends Merge {
   tie?: number;
   // T6 takes a pair naming one prefix family before any other: 1, else 0.
   kin?: number;
+  // Of two pairs of one prefix family tied on gain and label, T6 takes the
+  // one whose members share more of their overview neighbours first, so a
+  // layer folds in step with the layer beside it already folded.
+  align?: number;
+  // Whether the merge may add no new reachable pair: a trimmed aggregate.
+  lossless?: true;
   // Merges of the same pattern applied in the same step: every stage of one
   // chain, every run of one twin class. A plan then folds the pattern evenly,
   // not one stage of it.

@@ -10,8 +10,21 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+### Added
+
+- **A refused star or dense mesh prints the list or table that reads better.** `--split-plan` prints a star's hub and every leaf as a markdown list, and a dense mesh as a markdown adjacency matrix, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+  Both are built from the parsed graph and draw every node and edge, each edge's way, label and connector.
+  The complexity finding's remediation points to it, and `SplitOutcome` gains `alternative`, with the library exporting its `SplitAlternative` type.
+
 ### Changed
 
+- **A pipeline folds layer by layer.** With hubs folded, prefix families such as `bronze.` and `silver.` stay apart before a walk mixes them, and a chain stage keeps to one family.
+  A pair of one family sharing more overview neighbours folds first, so extracts and the bronze tables they land in fold in step.
+- **An aggregate draws no relationship twice.** `T4` folds an aggregate only where the overview draws no two relationships between one group and one entity that the original draws between other ends.
+  A root's aggregate that would is offered trimmed of its shared parts, so a film rental schema folds its address chain alone.
+- **A schema met by dropping rows folds only tight aggregates.** Past the target, an aggregate folds only when it adds no new reachable pair.
+- **A region holding most of a diagram folds as its parts.** A plan is walked first with such a region folded whole only when its detail fits, so a compiler's `Ast` namespace folds as its subtrees.
+  When no such walk plans, the region folds whole as before.
 - **A star of alphabetical buckets is refused.** A plan whose every group is a range of one hub's sibling leaves gets no plan, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
   The reason says a list reads better, as a gateway fronting 34 services shows.
 - **A tangled `erDiagram` folds its aggregates.** An overview meeting a cycle every four nodes keeps folding aggregates once the target is met, even by dropping rows alone.

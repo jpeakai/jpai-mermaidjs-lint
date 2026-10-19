@@ -120,6 +120,14 @@ An aggregate folded over the target is never folded again into its owner's, so n
 A junction, an entity identified by entities in two aggregates, such as a review joining a product and a customer, is owned by neither.
 It stays in the overview, since folding it into one side would draw the other side's relationship onto the wrong root.
 
+An `erDiagram` never merges two relationship labels, so a group can draw two lines to one entity where the original draws one.
+An address chain folded with the `STORE` it locates draws `CUSTOMER` twice, once for "lives at" and once for "registers".
+So an aggregate folds only where it draws no such pair of lines, per [MJL-0034](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+Lines the original itself draws side by side between two entities are kept.
+A root whose whole aggregate would draw one is offered trimmed too.
+Each owned part sharing an outside neighbour with the rest is cut away, so the address chain folds alone and `STORE` stays in view.
+A trimmed aggregate folds only where it adds no new reachable pair.
+
 --8<-- "summarise-aggregates.md"
 
 ### Leaves and the k-core
@@ -174,6 +182,19 @@ Folding such a mesh leaves a mesh, since its groups are joined to each other too
 So the plan is refused with the reason "dense mesh: a matrix or table reads better than a diagram".
 The same check runs on each plan's overview, so a plan never offers one, per [MJL-0030](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0030-a-group-is-named-where-a-reader-enters-it.md).
 
+The refusal prints the table it names, per [MJL-0034](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+`--split-plan` prints the diagram as a markdown adjacency matrix after the reason, a row and a column per node.
+Each cell holds every edge between its row and column, drawn from the row's side.
+
+- `→` runs from the row to the column.
+- `←` runs from the column to the row.
+- `↔` runs both ways.
+- `●` has no direction.
+
+A label follows in italics and any connector but a plain arrow or line in code.
+A line before the table names the pairs no edge joins, which in a near-complete mesh is what a reader looks for.
+The matrix is built from the parsed graph alone, and a test reads it back through mdast to find every node and edge.
+
 ### Measures that did not help
 
 Bridges and betweenness are the usual tools for finding where a network divides.
@@ -195,6 +216,11 @@ A group then takes the label of the region around it in brackets, as `Public sub
 A plan may split a detail again with new reachable pairs.
 It is then walked again holding regions to details that fit, first folding only regions that add no new reachable pair.
 That plan is offered when it declares fewer new reachable pairs in all.
+A region may hold more than half of a diagram's nodes beside another region holding nodes.
+Folded whole, its group would dwarf the rest.
+So the plan is walked first with it folded whole only when its detail fits, per [MJL-0034](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+It then folds as its parts, as a compiler's `Ast` namespace folds as its subtrees.
+Only when no such walk plans, under any rules, is it folded whole.
 When that plan fails, it climbs in the order below.
 Within a tier, it applies the fold that saves the most score per node hidden, then measures the overview again.
 In `T4`, of two aggregates that save as much, the one leaving fewer edges between overview nodes goes first.
@@ -214,7 +240,7 @@ A `T2` group stays, since undoing one run would leave its pattern half folded.
 In `T2` it folds the remaining decision regions, so every decision reads alike.
 In `T3` it folds the sibling regions of the ones folded, so sibling regions read alike.
 In `T4` it folds more aggregates when the `erDiagram` overview is tangled, meeting a cycle for every four nodes.
-Each such fold takes away an overview edge per entity it hides and adds no more new reachable pairs than it hides.
+Each such fold takes away an overview edge per entity it hides and adds no new reachable pair, so only tight aggregates fold.
 A tangled overview folds so even when dropping rows alone meets the target, while a tree-like one stays as it is.
 In `T5` and `T6` it gathers what is left open into groups of three or more, no larger than the largest.
 When every label leads with an id naming a family, such as `PLAT-1201`, `T6` first folds each family whole, hubs included.
@@ -228,11 +254,12 @@ A plan names the last tier that changed it.
 - **Hubs stay in view.** A hub is a node of degree at least four and at least the 90th percentile degree. It keeps its own overview node, and the leaves hanging from it fold beside it as one group. An `erDiagram` never merges two relationship labels, so there its leaves stay open.
 - **Shared terminals stay in view.** A shared terminal is a flowchart or `stateDiagram` node that at least three other nodes lead into and that ends the flow, by directed edges. It leads nowhere, or everything it leads to leads nowhere. A `Notify on-call` step every failure ends at is one, and so is a final `Refunded` state. So is a `Cancelled` state that leads only to `Refunded` and `Voided`. Folded into one branch's group, it would read as that branch's own end.
 - **A decision's branches stay apart.** A decision is a node whose outgoing edges carry two labels or more, in a flowchart or a `stateDiagram`. Two targets of its differently labelled branches never share a group, unless one reaches the other, or both reach a common member, inside the group.
-- **A group keeps to one prefix family.** A prefix family is the dotted prefix leading a label, such as `bronze.`. Failing that, it is the letters leading an id-led label, such as `PLAT-`. Failing that, it is the letters and underscore leading an id, such as `br_`. Failing that, a label leading with a bare id takes a status stem it shares with another. So `10008 Ready for Release` and `10009 Released` share `releas`. No suggested group holds members of two families. In `T6`, a pair within one family goes before any other pair, joined by an edge or by a neighbour they share.
+- **A group keeps to one prefix family.** A prefix family is the dotted prefix leading a label, such as `bronze.`. Failing that, it is the letters leading an id-led label, such as `PLAT-`. Failing that, it is the letters and underscore leading an id, such as `br_`. Failing that, a label leading with a bare id takes a status stem it shares with another. So `10008 Ready for Release` and `10009 Released` share `releas`. No suggested group holds members of two families, and no chain stage does either. In `T6`, a pair within one family goes before any other pair, joined by an edge or by a neighbour they share. Of two such pairs alike in gain and label, the one sharing more overview neighbours goes first. So a layer folds in step with the layer beside it.
 - **Every group hides two nodes or more.** Once the target is met, a group hiding one node is undone when the overview and every detail still meet the target without it. Otherwise it is merged into a neighbouring node or suggested group. One that can be neither stays. A decision region from `T2` hiding one node is undone the same way. It is never merged, since a merged region would no longer be a region.
 
 When the target cannot be met under these rules, the plan is walked again with prefix families mixed.
 When that fails, it is walked with hubs and branches folded too, while shared terminals stay in view.
+That walk first keeps prefix families apart, so a pipeline whose hubs must fold still folds layer by layer, and only then mixes them.
 When that fails too, it is walked without the first four rules, and the last still holds.
 As a last resort, the plan is walked once more with groups that hide one node allowed.
 A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk.
@@ -242,6 +269,9 @@ An `erDiagram` junction between two aggregates is kept in view under the first t
 A plan may group only runs of one hub's sibling leaves, each named only by a range.
 It is refused when those groups hold more than half the diagram.
 Nothing the author drew sorts those leaves, so the groups would be alphabetical buckets, and a list reads better.
+`--split-plan` prints that list after the reason, per [MJL-0034](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+It names the node with the most links, then each of its links by way, label and connector, each leaf an item.
+Every other edge follows under its source, and a node no edge touches follows last.
 
 The declared loss is the number of pairs of overview nodes where one reaches the other in the overview but not in the original.
 The plan reports it after each tier.

@@ -13,6 +13,7 @@ import { ID_LEAD } from "./label.ts";
 import { isGroupKey, membersOfKey, over, overviewKeys, parentOfKey } from "./quotient.ts";
 import { crossesStages, labelBag, oneFamily, STATUS_MARK, similarity } from "./stem.ts";
 import {
+  adjacencyOf,
   type Candidate,
   chunksThatFit,
   familiesOf,
@@ -22,6 +23,7 @@ import {
   keepsBranches,
   keepsFamilies,
   mergeFits,
+  neighboursOf,
   type TierContext,
   together,
 } from "./tier.ts";
@@ -102,6 +104,7 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
   };
   const stagesOf = (k: string): Array<string | null> => familiesOf(ctx, [k]);
   const groupableKeys = new Set(overviewKeys(work, part).filter((k) => foldable(ctx, k)));
+  const align = aligner(ctx);
   const out: Candidate[] = [...idFamilies(ctx), ...cliques(ctx, w, gain)];
   const pairs = [...w].map(([pair, wab]) => [...(pair.split("\u0002") as [string, string]), wab] as const);
   for (const [a, b, wab] of [...pairs, ...stagePairs(ctx, w)].sort(
@@ -114,9 +117,33 @@ export const proposeT6 = (ctx: TierContext): Candidate[] => {
     if (wab === 0 && kin === 0) continue;
     const priority = wab / m - (degree(a) * degree(b)) / (2 * m * m);
     const tie = labelSimilarity(ctx, bags, a, b) - (crossesStages(stagesOf(a), stagesOf(b)) ? STAGE_PENALTY : 0);
-    out.push({ keys: [a, b], parent, tier: "T6", reason: "suggested grouping", priority, tie, kin });
+    out.push({
+      keys: [a, b],
+      parent,
+      tier: "T6",
+      reason: "suggested grouping",
+      priority,
+      tie,
+      kin,
+      align: align(a, b, kin),
+    });
   }
   return out;
+};
+
+// The share of two overview nodes' neighbours, each other left out, that
+// both have: one when every neighbour is shared.
+const overlap = (na: ReadonlySet<string>, nb: ReadonlySet<string>, a: string, b: string): number => {
+  const union = new Set([...na, ...nb].filter((k) => k !== a && k !== b));
+  const shared = [...union].filter((k) => na.has(k) && nb.has(k)).length;
+  return union.size === 0 ? 0 : shared / union.size;
+};
+
+// A pair's alignment: for a pair of one prefix family, the share of their
+// overview neighbours they share, else none.
+const aligner = (ctx: TierContext): ((a: string, b: string, kin: number) => number) => {
+  const adj = adjacencyOf(ctx.qedges);
+  return (a, b, kin) => (kin === 1 ? overlap(neighboursOf(adj, a), neighboursOf(adj, b), a, b) : 0);
 };
 
 // Runs cut from a family, one more when the runs leave a key out, so that

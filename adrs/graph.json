@@ -529,6 +529,19 @@
     },
     {
       "data": {
+        "id": "MJL-0034",
+        "label": "0034",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md",
+        "title": "A refused plan prints the list or table that reads better, a pipeline folds by layer, aggregates draw no relationship twice, and a region holding most of a diagram folds as its parts",
+        "description": "What a split plan prints in place of a star or dense mesh, and how pipelines, aggregates and outsized regions fold",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -909,6 +922,16 @@
     },
     {
       "data": {
+        "id": "MJL-0026-excepted_by-MJL-0034",
+        "source": "MJL-0026",
+        "target": "MJL-0034",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a region holding most of a diagram folds as its parts first"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0027-extends-MJL-0023",
         "source": "MJL-0027",
         "target": "MJL-0023",
@@ -975,6 +998,16 @@
         "label": "extended by",
         "relation": "extended_by",
         "note": "a tangled erDiagram folds aggregates past the target, down to the share an evened overview keeps"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0028-excepted_by-MJL-0034",
+        "source": "MJL-0028",
+        "target": "MJL-0034",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "an aggregate draws no relationship twice, and a root's aggregate may fold trimmed"
       }
     },
     {
@@ -1069,6 +1102,16 @@
     },
     {
       "data": {
+        "id": "MJL-0030-extended_by-MJL-0034",
+        "source": "MJL-0030",
+        "target": "MJL-0034",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a refused dense mesh prints every link as an adjacency matrix"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0031-extends-MJL-0030",
         "source": "MJL-0031",
         "target": "MJL-0030",
@@ -1129,6 +1172,16 @@
     },
     {
       "data": {
+        "id": "MJL-0031-extended_by-MJL-0034",
+        "source": "MJL-0031",
+        "target": "MJL-0034",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "with hubs folded, prefix families are kept apart before they are mixed, chain stages too"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0032-excepts-MJL-0030",
         "source": "MJL-0032",
         "target": "MJL-0030",
@@ -1175,6 +1228,16 @@
         "label": "excepted by",
         "relation": "excepted_by",
         "note": "a group is drawn whole or as its members, never both, and like edges to a member draw once"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-extended_by-MJL-0034",
+        "source": "MJL-0032",
+        "target": "MJL-0034",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a pair of one family sharing more overview neighbours folds first, so layers fold in step"
       }
     },
     {
@@ -1245,6 +1308,96 @@
         "label": "excepts",
         "relation": "excepts",
         "note": "a group is drawn whole or as its members, never both, and like edges to a member draw once"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extended_by-MJL-0034",
+        "source": "MJL-0033",
+        "target": "MJL-0034",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a refused star prints its hub and every leaf as a list"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-excepted_by-MJL-0034",
+        "source": "MJL-0033",
+        "target": "MJL-0034",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a tangled erDiagram folds past the target only aggregates adding no new reachable pair"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-extends-MJL-0033",
+        "source": "MJL-0034",
+        "target": "MJL-0033",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a refused star prints its hub and every leaf as a list"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-extends-MJL-0030",
+        "source": "MJL-0034",
+        "target": "MJL-0030",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a refused dense mesh prints every link as an adjacency matrix"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-excepts-MJL-0033",
+        "source": "MJL-0034",
+        "target": "MJL-0033",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a tangled erDiagram folds past the target only aggregates adding no new reachable pair"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-excepts-MJL-0028",
+        "source": "MJL-0034",
+        "target": "MJL-0028",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "an aggregate draws no relationship twice, and a root's aggregate may fold trimmed"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-extends-MJL-0031",
+        "source": "MJL-0034",
+        "target": "MJL-0031",
+        "label": "extends",
+        "relation": "extends",
+        "note": "with hubs folded, prefix families are kept apart before they are mixed, chain stages too"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-extends-MJL-0032",
+        "source": "MJL-0034",
+        "target": "MJL-0032",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a pair of one family sharing more overview neighbours folds first, so layers fold in step"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0034-excepts-MJL-0026",
+        "source": "MJL-0034",
+        "target": "MJL-0026",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a region holding most of a diagram folds as its parts first"
       }
     }
   ],

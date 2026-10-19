@@ -2,7 +2,9 @@
 // and a shape, so one node stands for them without changing what reaches
 // what; a bundle of sibling leaves is the case of twins with one neighbour.
 // A chain of single-in single-out nodes folds in stages sized to the target,
-// never a long chain into one node.
+// never a long chain into one node, and under rules keeping prefix families
+// apart never a stage of two families, as an extract and the bronze table it
+// lands in (MJL-0034).
 
 import { type FlowRegion, flowRegionsOf } from "./flow.ts";
 import { byNatural, byText } from "./graph.ts";
@@ -13,6 +15,7 @@ import {
   type Candidate,
   chunksThatFit,
   groupable,
+  keepsFamilies,
   mergeFits,
   shapeOfKey,
   type TierContext,
@@ -157,7 +160,7 @@ export const proposeChains = (ctx: TierContext): Candidate[] => {
           const parent = parentOfKey(ctx.work, ctx.part, keys[0] ?? "");
           return { keys: [...keys].sort(byText), parent, tier: "T2", reason: "chain stage" };
         })
-        .filter((c) => mergeFits(ctx, c)),
+        .filter((c) => mergeFits(ctx, c) && keepsFamilies(ctx, c.keys)),
     ),
   );
 };

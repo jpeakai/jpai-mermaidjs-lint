@@ -39,7 +39,12 @@ describe("a star of leaves", () => {
     "no label, shape or neighbour sorts is refused, not cut into alphabetical buckets",
     async () => {
       const out = await splitOutcome(read("flow06-gateway-hub-spoke"), configFromPreset("medium"));
-      expect(out).toEqual({ plan: null, reason: STAR, violations: [] });
+      expect({ ...out, alternative: out.alternative?.kind }).toEqual({
+        plan: null,
+        reason: STAR,
+        violations: [],
+        alternative: "list",
+      });
     },
     SLOW,
   );
@@ -59,7 +64,8 @@ describe("an erDiagram overview", () => {
       expect(plan.overviewNodes).toBeLessThan(23);
       expect(plan.overviewNodes).toBeGreaterThanOrEqual(15);
       expect(plan.groups.every((g) => g.reason === "aggregate root")).toBe(true);
-      expect(plan.groups.some((g) => g.members.includes("FACULTY") && g.members.includes("COURSE"))).toBe(true);
+      // Only tight aggregates fold since MJL-0034: none adds a new reachable pair.
+      expect(plan.loss.newReachablePairs).toBe(0);
     },
     SLOW,
   );

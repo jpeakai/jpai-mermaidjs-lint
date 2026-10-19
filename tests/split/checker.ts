@@ -431,9 +431,17 @@ const checkEdges = (c: Ctx, stubRef: Map<string, Map<string, string>>): void => 
     const [s, t] = [gEnd(e.source), gEnd(e.target)];
     return c.ov(s) !== s && c.ov(t) !== t && c.ov(s) !== c.ov(t) ? [ek(c.ov(s), t, e)] : [];
   });
-  const h = multisetDiff(wantHalves, out.halves);
+  // One half edge stands for every edge from its group into its member with
+  // its attributes, so each is drawn exactly once.
+  const want = new Set(wantHalves);
+  const h = multisetDiff([...want], out.halves);
   for (const k of h.missing) c.add("WARN", "half", `cross-group edge not shown in its target detail: ${k}`);
-  for (const k of h.extra) c.add("BUG", "half", `whole-group stub edge with no original: ${k}`);
+  for (const k of h.extra)
+    c.add(
+      "BUG",
+      "half",
+      want.has(k) ? `whole-group stub edge drawn twice: ${k}` : `whole-group stub edge with no original: ${k}`,
+    );
 };
 
 // The original edges one overview edge with a group at an end stands for.

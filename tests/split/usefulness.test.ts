@@ -54,6 +54,8 @@ describe("an overview of the order lifecycle", () => {
 });
 
 // A GitOps pipeline whose application-controller is a hub the walk may fold.
+// Its overlays reach the repo-server by three differently labelled links, so
+// the Argo CD region's detail draws all three and does not split again.
 const GITOPS = lines(
   "flowchart LR",
   "  dev --> pr --> review --> merge",
@@ -76,9 +78,9 @@ const GITOPS = lines(
   "    notif",
   "    appset",
   "  end",
-  "  ovdev --> repo",
-  "  ovstg --> repo",
-  "  ovprd --> repo",
+  "  ovdev -->|dev| repo",
+  "  ovstg -->|staging| repo",
+  "  ovprd -->|prod| repo",
   "  repo --> ctrl",
   "  ctrl --> redis",
   "  apisrv --> redis",

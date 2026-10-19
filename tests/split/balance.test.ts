@@ -70,42 +70,40 @@ describe("a detail never draws two stubs with one text", () => {
   };
 
   test(
-    "names each stub for one whole group by the member its edges leave",
+    "draws one stub for one whole group, and its edges drawing alike once (MJL-0032)",
     async () => {
       const { source, plan } = await flow01();
       expect(await faithful(source, plan)).toEqual([]);
       for (const d of plan.details) {
         const labels = d.graph.nodes.filter((n) => d.stubs[n.id] !== undefined).map((n) => n.label);
         expect(new Set(labels).size).toBe(labels.length);
+        const drawn = d.graph.edges.map((e) => JSON.stringify([e.source, e.target, e.label ?? "", e.kind ?? ""]));
+        expect(new Set(drawn).size).toBe(drawn.length);
       }
-      const named = observability(plan).graph.nodes.filter((n) => n.label.includes(" from "));
-      expect(named.map((n) => n.label.split(" from ")[1])).toEqual([
-        "checkoutservice",
-        "paymentservice",
-        "shippingservice",
-      ]);
+      const d = observability(plan);
+      const checkout = d.graph.nodes.filter((n) => n.label === "Checkout domain (+5)");
+      expect(checkout).toHaveLength(1);
+      expect(d.graph.edges.filter((e) => e.source === checkout[0]?.id)).toHaveLength(1);
     },
     SLOW,
   );
 
   test(
-    "a stub naming a member that draws none of its edges is caught by the contract, the reading and the checker",
+    "an edge from a whole group drawn twice is caught by the contract, the reading and the checker",
     async () => {
-      const { source, cfg, plan } = await flow01();
+      const { source, cfg } = await flow01();
       const build = await buildOf(source, cfg);
       const d = observability(build.plan);
-      const stub = d.graph.nodes.find((n) => n.label.endsWith(" from paymentservice"));
-      if (!stub) throw new Error("no stub from paymentservice");
-      const wrong = stub.label.replace(" from paymentservice", " from emailservice");
-      d.source = d.source.replace(stub.label, wrong);
-      stub.label = wrong;
-      expect((await checkContract(build, cfg)).some((v) => v.includes("names a member that does not draw"))).toBe(true);
-      expect((await faithful(source, build.plan)).some((p) => p.includes("draws an edge its member has not"))).toBe(
-        true,
-      );
+      const stub = d.graph.nodes.find((n) => n.label === "Checkout domain (+5)");
+      const edge = d.graph.edges.find((e) => e.source === stub?.id);
+      if (!edge) throw new Error("no edge from the Checkout domain stub");
+      d.graph.edges.push({ ...edge, id: `${edge.id}-again` });
+      const line = d.source.split("\n").find((l) => l.trim().startsWith(`${edge.source} `)) ?? "";
+      d.source = d.source.replace(`${line}\n`, `${line}\n${line}\n`);
+      expect((await checkContract(build, cfg)).some((v) => v.includes("draws one edge from a group twice"))).toBe(true);
+      expect((await faithful(source, build.plan)).some((p) => p.startsWith("half edge extra"))).toBe(true);
       const found = await checkPlan(source, build.plan, cfg, "");
-      expect(found.some((f) => f.sev === "BUG" && f.msg.includes("draws an edge its member has not"))).toBe(true);
-      expect(plan.groups.length).toBe(build.plan.groups.length);
+      expect(found.some((f) => f.sev === "BUG" && f.msg.includes("whole-group stub edge drawn twice"))).toBe(true);
     },
     SLOW,
   );
@@ -124,6 +122,32 @@ describe("a whole-group stub beside a stub for the member it is named after", ()
           expect(whole.filter((n) => !n.label.startsWith(`${g.label} from `)).map((n) => n.label)).toEqual([]);
         }
       }
+    },
+    SLOW,
+  );
+
+  test(
+    "a stub naming a member that draws none of its edges is caught by the contract, the reading and the checker",
+    async () => {
+      const source = read("state08-jira-workflow-ids");
+      const cfg = configFromPreset("low-density");
+      const build = await buildOf(source, cfg);
+      const d = build.plan.details.find((x) => x.graph.nodes.some((n) => n.label.includes(" from ")));
+      const stub = d?.graph.nodes.find((n) => n.label.includes(" from "));
+      if (!(d && stub)) throw new Error("no stub naming a member");
+      const g = build.plan.groups.find((x) => x.id === d.stubs[stub.id]);
+      const named = stub.label.slice(stub.label.indexOf(" from ") + " from ".length);
+      const other = g?.members.map((m) => build.work.nodes.get(m)?.label ?? m).find((l) => l !== named);
+      if (!other) throw new Error("no other member to name");
+      const wrong = `${stub.label.slice(0, stub.label.indexOf(" from "))} from ${other}`;
+      d.source = d.source.replace(stub.label, wrong);
+      stub.label = wrong;
+      expect((await checkContract(build, cfg)).some((v) => v.includes("names a member that does not draw"))).toBe(true);
+      expect((await faithful(source, build.plan)).some((p) => p.includes("draws an edge its member has not"))).toBe(
+        true,
+      );
+      const found = await checkPlan(source, build.plan, cfg, "");
+      expect(found.some((f) => f.sev === "BUG" && f.msg.includes("draws an edge its member has not"))).toBe(true);
     },
     SLOW,
   );

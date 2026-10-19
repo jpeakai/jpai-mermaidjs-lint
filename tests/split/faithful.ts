@@ -240,7 +240,9 @@ const fromProblems = (r: Reading): string[] => {
 
 // Each original edge once: from the overview between two kept nodes, else
 // from a detail. A stub read as a whole group gives the half edge from that
-// group into the member. The overview joins the overview nodes of every edge.
+// group into the member, which stands for every edge from the group into the
+// member that draws alike, so each is drawn exactly once and a second copy is
+// an extra. The overview joins the overview nodes of every edge.
 const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan: SplitPlan): string[] => {
   const end = endsOf(r.original);
   const over = (x: string): string => r.groupOf.get(x) ?? x;
@@ -293,7 +295,7 @@ const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan:
       exact,
       "edge",
     ),
-    ...diff(wantHalves, halves, "half edge"),
+    ...diff([...new Set(wantHalves)], halves, "half edge"),
   ];
 };
 

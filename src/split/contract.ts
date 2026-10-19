@@ -293,7 +293,8 @@ const checkRows = (build: Build): Violations => {
 };
 
 // 5. Overview and details give back exactly the original node ids and the
-// original edges; every edge between groups is drawn from both ends.
+// original edges; every edge between groups is drawn from both ends, in its
+// target's detail once for all edges from its group drawing alike.
 const checkRecoverable = (build: Build): Violations => {
   const { plan, work } = build;
   const out = [...detailNodes(build), ...stubNames(build), ...checkRows(build)];
@@ -302,7 +303,10 @@ const checkRecoverable = (build: Build): Violations => {
   if (multiset([...kept, ...members]) !== multiset(work.ids)) out.push("5: the node ids do not come back exactly");
   const { exact, halves } = recovered(build);
   if (multiset(exact) !== multiset(work.edges.map(tuple))) out.push("5: the edges do not come back exactly");
-  if (multiset(halves) !== multiset(wantedHalves(build)))
+  // A half stands for every edge from its group into its member that draws
+  // alike, so it is drawn exactly once, and only for such an edge.
+  if (new Set(halves).size !== halves.length) out.push("5: a detail draws one edge from a group twice");
+  if (multiset([...new Set(halves)]) !== multiset([...new Set(wantedHalves(build))]))
     out.push("5: the edges between groups do not come back from their targets");
   return out;
 };

@@ -297,27 +297,30 @@ interface Assembly {
   labels: LabelContext;
 }
 
-// A detail's view and its stubs' texts: drawn apart when it still meets the
-// target so and every stub that reads alike another can be named by the
-// member its edges leave (namedStubs), else with one stub per outside end,
-// named so where it can be.
+// A detail's view and its stubs' texts, a whole-group stub that reads alike
+// another named by the member its edges leave where it can be (namedStubs).
+// A stub's sources are every member of its group with an edge into this one,
+// including those whose edges it draws once for several.
 const viewOf = (a: Assembly, group: Group): { view: DetailView; texts: Map<string, StubText> } => {
   const { work, part } = a.folded;
-  const origin = new Map(work.edges.map((e) => [e.id, e.source]));
-  const named = (view: DetailView): Map<string, StubText> | null =>
-    namedStubs(a.labels, view.stubs, stubTexts(a.labels, view.stubs), (stub) =>
-      sorted(new Set(view.edges.filter((e) => e.source === stub).map((e) => origin.get(e.id) ?? e.source))),
-    );
-  const apart = detailView(work, part, group, true);
-  const shape = detailShape(work, apart);
-  const texts = meets(shape.nodes, scoreOf(shape, 0, a.config), a.config) ? named(apart) : null;
-  if (texts) return { view: apart, texts };
   const view = detailView(work, part, group);
-  return { view, texts: named(view) ?? stubTexts(a.labels, view.stubs) };
+  const endOf = new Map(view.stubs.map((s) => [s.id, s.endpoint]));
+  const here = keyOf(group);
+  const sourcesOf = (stub: string): string[] => {
+    const end = endOf.get(stub);
+    return sorted(
+      new Set(
+        work.edges
+          .filter((e) => over(work, part, e.source) === end && over(work, part, e.target) === here)
+          .map((e) => e.source),
+      ),
+    );
+  };
+  const texts = stubTexts(a.labels, view.stubs);
+  return { view, texts: namedStubs(a.labels, view.stubs, texts, sourcesOf) ?? texts };
 };
 
-// A detail draws edges a whole-group stub would repeat apart, and its
-// members' rows, each when it still meets the target with them.
+// A detail draws its members' rows when it still meets the target with them.
 const buildDetail = (a: Assembly, g: SplitGroup): DetailBuilt | string => {
   const { work, part } = a.folded;
   const group = part.groups[part.groupOf.get(g.members[0] ?? "") ?? -1] as Group;

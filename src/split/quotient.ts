@@ -496,57 +496,36 @@ const outsideEnd = (work: WorkGraph, part: Partition, e: GraphEdge, inside: (id:
   return inside(e.source) && !inside(e.target) ? e.target : null;
 };
 
-// The outside end each edge is drawn from or to, as a stub key: what the edge
-// stands for, and, drawn apart, for edges from one whole group that would
-// draw one edge twice (same member, label and kind) from different members
-// of that group, the rank of the member it leaves among them, so each is
-// drawn from a stub of its own and a reader sees two sources. Each stub still
-// stands for the whole group, and each edge reads back exactly once.
-const SLOT = "\u0003";
+// What an edge into a member from a whole group draws: the group, the member
+// and the edge's attributes. Edges from several members of one group that
+// draw alike are drawn once, as the overview draws one edge per pair: the
+// source group's own detail draws each of them to this exact member, so the
+// one drawn here says only that the group leads here, and each original edge
+// still reads back exactly once, from its source's detail.
+const drawnFrom = (e: GraphEdge, end: string): string =>
+  JSON.stringify([end, e.target, e.label ?? "", e.markdown ?? false, e.kind ?? "", e.cardinality ?? ""]);
 
-const stubKeys = (
-  edges: GraphEdge[],
-  ends: Map<string, string | null>,
-  inside: (id: string) => boolean,
-  apart: boolean,
-): Map<string, string> => {
-  const drawn = (e: GraphEdge, end: string): string =>
-    [end, e.target, e.label ?? "", e.markdown ? "m" : "", e.kind ?? "", e.cardinality ?? ""].join(SLOT);
-  const sources = new Map<string, Set<string>>();
-  for (const e of edges) {
-    const end = ends.get(e.id);
-    if (end && isGroupKey(end) && inside(e.target)) {
-      const k = drawn(e, end);
-      sources.set(k, new Set([...(sources.get(k) ?? []), e.source]));
-    }
-  }
-  const keys = new Map<string, string>();
-  for (const e of edges) {
-    const end = ends.get(e.id);
-    if (!end) continue;
-    const rank = sorted(sources.get(drawn(e, end)) ?? new Set()).indexOf(e.source);
-    keys.set(e.id, apart && rank > 0 ? `${end}${SLOT}${rank}` : end);
-  }
-  return keys;
-};
-
-// A planner measures a detail with one stub per outside end; assemble.ts
-// draws it apart when it still meets the target that way.
-export const detailView = (work: WorkGraph, part: Partition, g: Group, apart = false): DetailView => {
+// One stub per outside end, and each edge from a whole group drawn alike
+// another drawn once.
+export const detailView = (work: WorkGraph, part: Partition, g: Group): DetailView => {
   const key = keyOf(g);
   const inside = (id: string): boolean => over(work, part, id) === key;
   const touching = work.edges.filter((e) => inside(e.source) || inside(e.target));
   const ends = new Map(touching.map((e) => [e.id, outsideEnd(work, part, e, inside)]));
-  const slots = stubKeys(touching, ends, inside, apart);
-  const outside = sorted(new Set(slots.values()));
+  const outside = sorted(new Set([...ends.values()].filter((x): x is string => x !== null)));
   const next = idMaker(usedIds(work), "s");
-  const stubs = outside.map((slot) => ({ id: next(), endpoint: slot.split(SLOT)[0] ?? slot }));
-  const stubOf = new Map(outside.map((slot, i) => [slot, stubs[i]?.id]));
-  const edges = touching.map((e) => {
-    const slot = slots.get(e.id);
-    const stub = slot === undefined ? undefined : stubOf.get(slot);
-    if (stub === undefined) return e;
-    return inside(e.source) ? { ...e, target: stub } : { ...e, source: stub };
+  const stubs = outside.map((endpoint) => ({ id: next(), endpoint }));
+  const stubOf = new Map(outside.map((endpoint, i) => [endpoint, stubs[i]?.id ?? endpoint]));
+  const seen = new Set<string>();
+  const edges = touching.flatMap((e) => {
+    const end = ends.get(e.id);
+    if (end === null || end === undefined) return [e];
+    const stub = stubOf.get(end) ?? end;
+    if (inside(e.source)) return [{ ...e, target: stub }];
+    const drawn = drawnFrom(e, end);
+    if (isGroupKey(end) && seen.has(drawn)) return [];
+    seen.add(drawn);
+    return [{ ...e, source: stub }];
   });
   return { members: g.members, regions: drawnRegions(work, g), stubs, edges, ...detailMarkers(work, g) };
 };

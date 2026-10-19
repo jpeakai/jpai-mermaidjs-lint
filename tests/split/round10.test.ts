@@ -9,6 +9,8 @@ import { join } from "node:path";
 import { configFromPreset } from "../../src/parse/metrics.ts";
 import { checkContract, joined } from "../../src/split/contract.ts";
 import { splitOutcome } from "../../src/split/index.ts";
+import { type LabelContext, namedStubs, stubTexts } from "../../src/split/label.ts";
+import { detailView, type Group, keyOf, partitionOf } from "../../src/split/quotient.ts";
 import { STATUS_MARK, statusFamilies } from "../../src/split/stem.ts";
 import type { SplitPlan } from "../../src/split/types.ts";
 import { checkPlan } from "./checker.ts";
@@ -68,6 +70,49 @@ describe("a status family", () => {
     },
     SLOW,
   );
+});
+
+describe("a whole-group stub beside its namesake member", () => {
+  test("never names the namesake as the member its edges leave", async () => {
+    const work = await workOf(
+      lines(
+        "flowchart LR",
+        '  a["A"] --> d["D"]',
+        "  d --> a",
+        '  a --> b["B"]',
+        '  b --> c["C"]',
+        '  d --> e["E"]',
+        '  e --> f["F"]',
+      ),
+    );
+    const one: Group = {
+      members: ["a", "b", "c"],
+      regions: [],
+      parent: null,
+      tier: "T6",
+      reason: "suggested grouping",
+    };
+    const two: Group = {
+      members: ["d", "e", "f"],
+      regions: [],
+      parent: null,
+      tier: "T6",
+      reason: "suggested grouping",
+    };
+    const part = partitionOf([one, two]);
+    const ctx: LabelContext = {
+      work,
+      part,
+      groups: new Map([
+        [keyOf(one), { id: "g1", base: "A", label: "A (+2)" }],
+        [keyOf(two), { id: "g2", base: "D", label: "D (+2)" }],
+      ]),
+    };
+    const view = detailView(work, part, two);
+    const texts = stubTexts(ctx, view.stubs);
+    const named = namedStubs(ctx, view.stubs, texts, () => ["a"]);
+    expect([...(named ?? texts).values()].map((t) => t.label).sort()).toEqual(["A (+2)", "A (in group)"]);
+  });
 });
 
 describe("one stage of a pipeline", () => {

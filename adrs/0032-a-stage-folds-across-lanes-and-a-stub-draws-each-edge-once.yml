@@ -15,7 +15,7 @@ provenance: >-
   A loan detail drew "Debt-to-income under 40%? (+5) from Debt-to-income under 40%?" beside a second stub for the same group, and a GitOps detail drew one stub edge into repo-server three times
 enforced_in:
   - src/split/quotient.ts detailView, which draws an edge from a whole group into a member once for every edge drawing alike
-  - src/split/assemble.ts viewOf, which names a whole-group stub by the member its edges leave only beside a stub for its namesake member
+  - src/split/assemble.ts viewOf and src/split/label.ts namedStubs, which name a whole-group stub by the member its edges leave only beside a stub for its namesake member, and never by the namesake
   - src/split/contract.ts checkRecoverable, which reads half edges as a set and refuses one drawn twice
   - src/split/tier6.ts stagePairs, which offers two overview nodes of one prefix family whose members share an original neighbour
   - src/split/contract.ts joined, which refuses a T6 group its members do not connect
@@ -41,6 +41,7 @@ decision:
     The contract, the reading and the checker read such half edges as a set, and a half drawn twice is refused.
     A whole-group stub may sit beside a stub for the member its group is named after.
     It still takes " from " and the one member its edges leave.
+    It takes none when that member is the namesake, which the group's label already names.
     In T6, two overview nodes no edge joins are offered as a pair when members of each share an original neighbour.
     Such a pair is taken only when it names one prefix family.
     So it ranks with the other pairs of one family, before any other pair.

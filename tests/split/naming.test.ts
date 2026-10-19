@@ -6,7 +6,7 @@ import { describe, expect, test } from "bun:test";
 import { configFromPreset } from "../../src/parse/metrics.ts";
 import { MAX_CLIQUES, maximalCliques } from "../../src/split/clique.ts";
 import { checkContract } from "../../src/split/contract.ts";
-import { splitOutcome } from "../../src/split/index.ts";
+import { isStar, STAR, splitOutcome } from "../../src/split/index.ts";
 import { ID_LEAD, rangeLabel } from "../../src/split/label.ts";
 import { LOOSE, STRICT, terminalsOf } from "../../src/split/rules.ts";
 import { keptHub } from "../../src/split/tier.ts";
@@ -68,12 +68,32 @@ describe("a range label", () => {
   });
 });
 
+describe("a star", () => {
+  test(
+    "is never offered when every group is a range of one star's leaves (MJL-0033)",
+    async () => {
+      const cfg = configFromPreset("medium-density");
+      const { plan } = await buildOf(GATEWAY, cfg);
+      expect(isStar(plan, 21)).toBe(true);
+      expect(await splitOutcome(GATEWAY, cfg)).toEqual({ plan: null, reason: STAR, violations: [] });
+      // Groups that sit apart in the overview, or hold half the diagram or less, are no star.
+      const apart = structuredClone(plan);
+      const [g] = apart.groups;
+      if (!g) throw new Error("no group");
+      g.shape = "cylinder";
+      expect(isStar(apart, 21)).toBe(false);
+      expect(isStar(plan, 2 * plan.groups.reduce((n, x) => n + x.members.length, 0))).toBe(false);
+    },
+    SLOW,
+  );
+});
+
 describe("a range label in a plan", () => {
   test(
     "names sibling-leaf runs cut in label order, and reads back",
     async () => {
       const cfg = configFromPreset("medium-density");
-      const plan = (await splitOutcome(GATEWAY, cfg)).plan as SplitPlan;
+      const { plan } = await buildOf(GATEWAY, cfg);
       const ranges = plan.groups.map((g) => g.labelBase);
       expect(ranges.every((b) => b.includes(" … "))).toBe(true);
       const first = plan.groups.find((g) => g.labelBase.startsWith("accounts-service … "));

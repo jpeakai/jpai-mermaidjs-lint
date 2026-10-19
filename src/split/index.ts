@@ -8,6 +8,7 @@ import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { extractStats, getMermaidCore } from "../parse/stats.ts";
 import { checkContract } from "./contract.ts";
 import { buildWorkGraph, familyOf, type WorkGraph } from "./graph.ts";
+import { RANGE_SEPARATOR } from "./label.ts";
 import { laddersOf, planWork } from "./plan.ts";
 import { meets } from "./quotient.ts";
 import { DENSE } from "./tier6.ts";
@@ -77,8 +78,36 @@ export const splitOutcome = async (source: string, config: ThresholdConfig): Pro
   return firstPassing(work, config);
 };
 
+export const STAR = "a star of leaves around one node, which no label, shape or neighbour sorts: a list reads better";
+
+// A star: a plan whose every group is a run of sibling leaves named only by
+// the range of its labels, holding more than half of the diagram. Nothing
+// the author drew sorts the leaves (twins already part by edge label, kind
+// and shape), so the groups are alphabetical buckets, which carry no meaning
+// a reader could use: a list of the leaves reads better than such a plan.
+export const isStar = (plan: SplitPlan, nodes: number): boolean => {
+  // A group's place in the overview: its shape and every edge it draws, by
+  // the other end, the way it runs and its attributes. Groups of one twin
+  // class all sit alike.
+  const place = (id: string, shape: string | undefined): string =>
+    JSON.stringify([
+      shape ?? null,
+      plan.overview.edges
+        .filter((e) => e.source === id || e.target === id)
+        .map((e) => [e.source === id ? ">" : "<", e.source === id ? e.target : e.source, e.label, e.kind])
+        .sort(),
+    ]);
+  const { groups } = plan;
+  return (
+    groups.length > 0 &&
+    groups.every((g) => g.reason === "sibling leaves" && g.labelBase.includes(RANGE_SEPARATOR)) &&
+    new Set(groups.map((g) => place(g.id, g.shape))).size === 1 &&
+    2 * groups.reduce((n, g) => n + g.members.length, 0) > nodes
+  );
+};
+
 // The plan of the first ladder that passes the contract, and whose overview
-// is no dense mesh: author regions
+// is no dense mesh and no star: author regions
 // first when the diagram has them, then the default ladder. With none, the
 // last ladder's reason.
 const firstPassing = async (work: WorkGraph, config: ThresholdConfig): Promise<SplitOutcome> => {
@@ -91,6 +120,10 @@ const firstPassing = async (work: WorkGraph, config: ThresholdConfig): Promise<S
     }
     if (isDenseMesh(built.plan.overview)) {
       outcome = refuse(DENSE_MESH);
+      continue;
+    }
+    if (isStar(built.plan, work.ids.length)) {
+      outcome = refuse(STAR);
       continue;
     }
     const violations = await checkContract(built, config);

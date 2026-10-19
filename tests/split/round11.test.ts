@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { configFromPreset } from "../../src/parse/metrics.ts";
 import { checkContract } from "../../src/split/contract.ts";
 import { STAR, splitOutcome } from "../../src/split/index.ts";
+import { shorten } from "../../src/split/label.ts";
 import { tangled } from "../../src/split/plan.ts";
 import { EMPTY_PARTITION } from "../../src/split/quotient.ts";
 import { echoesOf } from "../../src/split/tier3.ts";
@@ -156,6 +157,53 @@ describe("echoing regions", () => {
       expect(await checkContract(counted, cfg)).toContain(`4: group ${g.id} counts ${cg.hidden} hidden members`);
       expect((await faithful(source, counted.plan)).some((p) => p.includes(`group ${g.id} label`))).toBe(true);
       expect((await checkPlan(source, counted.plan, cfg, "")).some((f) => f.kind === "glabel")).toBe(true);
+    },
+    SLOW,
+  );
+});
+
+describe("a qualified label", () => {
+  const ACCOUNTS = [
+    "flowchart TB",
+    "  subgraph aws_org[AWS Organization — acme.com]",
+    "    subgraph acct_prod[prod account — 111122223333]",
+    "      subgraph region_use1[us-east-1]",
+    "        prod_use1_web[ec2-web] --> prod_use1_rds[(rds-prod-use1)]",
+    "      end",
+    "    end",
+    "    subgraph acct_staging[staging account — 444455556666]",
+    "      subgraph region_use1_stg[us-east-1]",
+    "        stg_use1_web[ec2-web] --> stg_use1_rds[(rds-staging-use1)]",
+    "      end",
+    "    end",
+    "  end",
+  ].join("\n");
+
+  test(
+    "is offered only whole, and the contract refuses one cut",
+    async () => {
+      const cfg = configFromPreset("low");
+      const plan = await planOf(ACCOUNTS, "low");
+      expect(plan.groups.map((g) => g.label)).toEqual([
+        "us-east-1 (prod account — 111122223333) (+2)",
+        "us-east-1 (+2)",
+      ]);
+      const build = await buildOf(ACCOUNTS, cfg);
+      const g = build.plan.groups.find((x) => x.label === "us-east-1 (+2)");
+      if (!g) throw new Error("no plain group");
+      const whole = "us-east-1 (staging account — 444455556666)";
+      const cut = structuredClone(build);
+      const cg = cut.plan.groups.find((x) => x.id === g.id);
+      if (!cg) throw new Error("no group");
+      cg.labelBase = whole;
+      cg.hidden = g.members.length;
+      cg.label = `${shorten(whole)} (+${cg.hidden})`;
+      cut.plan.overviewSource = cut.plan.overviewSource.replace(g.label, cg.label);
+      expect(await checkContract(cut, cfg)).toContain(`4: group ${g.id} label "${whole}" is not from the data`);
+      expect((await faithful(ACCOUNTS, cut.plan)).some((p) => p.includes(`group ${g.id} label`))).toBe(true);
+      expect((await checkPlan(ACCOUNTS, cut.plan, cfg, "")).some((f) => f.sev === "BUG" && f.kind === "glabel")).toBe(
+        true,
+      );
     },
     SLOW,
   );

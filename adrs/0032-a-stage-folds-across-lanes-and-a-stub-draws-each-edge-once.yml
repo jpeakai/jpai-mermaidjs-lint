@@ -31,6 +31,9 @@ relates_to:
   - relation: extends
     target: MJL-0031
     note: a family is also read from a status stem, and a pair of one family may share a neighbour
+  - relation: extended_by
+    target: MJL-0033
+    note: in a ticket graph a whole id family folds before any pair, hubs included
 
 decision:
   given: a reader of a detail reads each stub as one outside thing and each line as one relationship. A pipeline's stage is the set of tables one step produces, and they rarely feed each other. A workflow named by status ids carries its stages only in the status words

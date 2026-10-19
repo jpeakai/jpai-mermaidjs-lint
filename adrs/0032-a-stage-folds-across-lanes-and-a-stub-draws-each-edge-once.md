@@ -23,6 +23,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Scoped exception to [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) (edges from one group drawing alike are drawn once from one stub, not from a stub each)
 - Scoped exception to [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (stubs for one group are never drawn apart, so only a stub beside its namesake member is named by a member)
 - Extends [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (a family is also read from a status stem, and a pair of one family may share a neighbour)
+- Extended by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (in a ticket graph a whole id family folds before any pair, hubs included)
 
 ## Decision
 

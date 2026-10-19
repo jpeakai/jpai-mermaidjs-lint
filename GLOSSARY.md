@@ -356,6 +356,13 @@ What a Rule reads for one file: the source, its kind, the markdown tree and its 
 A diagram drawn twice: a simplified one inline with a one-sentence summary, and a detailed one in a collapsible block beneath it.
 The docs and the Docs Site draw their diagrams this way.
 
+## Echoing Region
+
+Author regions drawn from one template.
+They are siblings of one shape that hold regions of their own, or the children of echoing regions with one label and shape.
+A region's shape is how many nodes it holds of its own, and each child region's label and shape.
+A Split Plan's `T3` folds a region and its Echoing Regions in one step, so they read alike, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+
 ## Edit
 
 A proposed change: a start offset, an end offset, replacement text and an Expectation.
@@ -425,6 +432,13 @@ The Host may choose the label colour.
 
 A node of degree at least four and at least the 90th percentile degree of its Diagram.
 A Split Plan's `T5` and `T6` keep it as its own node in the Overview, unless the target cannot be met otherwise.
+
+## Id Family
+
+The Prefix Family of a diagram whose every label leads with an id naming one, as a ticket graph's `PLAT-1201` and `DATA-0381`.
+A Split Plan's `T6` folds each Id Family whole, hubs included, before any pair.
+One whose detail does not fit folds in even contiguous runs, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+A family's group is never undone, and once one family folds only families fold.
 
 ## Junction
 
@@ -540,6 +554,12 @@ It is the working directory when none has one.
 An element the Parse Engine's graph keeps but the Stats never count: a `stateDiagram` start or end marker, or a `classDiagram` lollipop interface.
 It is drawn, so the graph keeps it, apart from the nodes, under `pseudo`.
 
+## Qualified Label
+
+A region's label followed by the label of the region around it in brackets, as `Public subnets (us-east-1)`.
+A Group Node takes it when another group is named after a region of the same label.
+It sits in that region in the Overview and counts every member, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+
 ## Range Label
 
 A Group Node label made of its first and last member labels in natural order, joined by a spaced ellipsis.
@@ -617,6 +637,13 @@ A recommendation for a Diagram over a node count or score threshold: one Overvie
 It is offered only when a contract parses the emitted text and finds every node and edge kept.
 It ends the Remediation, and `--split-plan` prints it, but nothing applies it, per [MJL-0025](adrs/0025-a-fold-is-offered-as-a-split.md).
 
+## Star
+
+A Split Plan whose every group is a run of one hub's sibling leaves of one twin class, named only by a Range Label.
+Its groups hold more than half the Diagram.
+Nothing the author drew sorts the leaves, so the plan is refused, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+The reason given is "a star of leaves around one node, which no label, shape or neighbour sorts: a list reads better".
+
 ## Stats
 
 The nodes, edges, Rows, subgraphs, subgraph nesting depth and Tree Depth the Parse Engine reads from a Diagram.
@@ -644,6 +671,12 @@ A label sharing no stem, or two, names none, per [MJL-0032](adrs/0032-a-stage-fo
 One styled class, node or edge, read from mermaid's parsed DB.
 It is a `classDef`, a node a `style` statement styles, or an edge a `linkStyle` styles.
 A node's directive includes what it inherits from its classes.
+
+## Tangled Overview
+
+An `erDiagram` Overview whose independent cycles, edges less nodes plus one, number at least a quarter of its nodes.
+Once the target is met, even by dropping rows alone, it folds Aggregates evenly, down to 60% of `nodeTarget`, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+Each fold takes away an overview edge per entity it hides.
 
 ## Tenet
 

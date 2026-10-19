@@ -12,6 +12,17 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ### Changed
 
+- **A star of alphabetical buckets is refused.** A plan whose every group is a range of one hub's sibling leaves gets no plan, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+  The reason says a list reads better, as a gateway fronting 34 services shows.
+- **A tangled `erDiagram` folds its aggregates.** An overview meeting a cycle every four nodes keeps folding aggregates once the target is met, even by dropping rows alone.
+  Each fold takes away an overview edge per entity it hides, down to 60% of `nodeTarget`. A tree-like schema stays at rows dropped.
+- **A ticket family folds whole.** When every label leads with an id such as `PLAT-1201`, `T6` folds each family whole, hubs included, or in even contiguous runs.
+- **Regions drawn from one template fold alike.** Two cloud regions with the same subnets fold to the same depth, in one step.
+  Their groups are named apart by the region around them, as `Public subnets (us-east-1) (+2)`.
+  The contract, and the test suite's two independent readers, accept that one qualified form.
+- A plan may split a detail again with new reachable pairs.
+  It now gives way to a plan holding regions to details that fit, when that one declares fewer in all.
+
 - **A stub draws each edge once.** Edges from different members of one outside group into one member may share a label and kind.
   They are drawn once from the group's one stub, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
   The source group's detail still draws each of them exactly, so nothing is lost.

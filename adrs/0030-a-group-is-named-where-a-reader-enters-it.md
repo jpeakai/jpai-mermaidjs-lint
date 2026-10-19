@@ -28,6 +28,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extended by [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (stubs drawn apart for one group are told apart by the member each one's edges leave)
 - Excepted by [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (under the strict rules a pair never crosses two prefix families)
 - Excepted by [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (edges from one group drawing alike are drawn once from one stub, not from a stub each)
+- Extended by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (a star of leaves sorted by nothing is refused, as a dense mesh is)
 
 ## Decision
 

@@ -24,6 +24,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extended by [MJL-0029](0029-runs-meshes-and-terminals-read-as-they-are.md) (runs named by range, dense meshes folded by cliques, shared terminals kept in view)
 - Excepted by [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) (an aggregate whose root is a lookup is named after its most crossed member)
 - Excepted by [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (any owner's aggregate may fold uncapped, never one swallowing a group over the target)
+- Extended by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (a tangled erDiagram folds aggregates past the target, down to the share an evened overview keeps)
 
 ## Decision
 

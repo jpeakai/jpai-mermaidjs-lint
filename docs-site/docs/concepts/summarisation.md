@@ -186,6 +186,15 @@ Betweenness peaks at the hubs, which are the nodes an overview should keep in vi
 
 The plan applies its folds in tiers, least lossy first.
 A diagram with author regions climbs `T3` first, since a reader finds the author's own boundaries first.
+In `T3`, a region folds in one step with every region that echoes it.
+An echo is a sibling of the same shape holding regions of its own, or the same-labelled child of an echoing region.
+A region's shape is how many nodes it holds and each child region's label and shape.
+So two cloud regions with the same subnets fold to the same depth.
+Another group may be named after a region of the same label.
+A group then takes the label of the region around it in brackets, as `Public subnets (us-east-1) (+2)`.
+A plan may split a detail again with new reachable pairs.
+It is then walked again holding regions to details that fit, first folding only regions that add no new reachable pair.
+That plan is offered when it declares fewer new reachable pairs in all.
 When that plan fails, it climbs in the order below.
 Within a tier, it applies the fold that saves the most score per node hidden, then measures the overview again.
 In `T4`, of two aggregates that save as much, the one leaving fewer edges between overview nodes goes first.
@@ -204,7 +213,13 @@ The plan then undoes the group whose undoing gives back the most nodes and still
 A `T2` group stays, since undoing one run would leave its pattern half folded.
 In `T2` it folds the remaining decision regions, so every decision reads alike.
 In `T3` it folds the sibling regions of the ones folded, so sibling regions read alike.
+In `T4` it folds more aggregates when the `erDiagram` overview is tangled, meeting a cycle for every four nodes.
+Each such fold takes away an overview edge per entity it hides and adds no more new reachable pairs than it hides.
+A tangled overview folds so even when dropping rows alone meets the target, while a tree-like one stays as it is.
 In `T5` and `T6` it gathers what is left open into groups of three or more, no larger than the largest.
+When every label leads with an id naming a family, such as `PLAT-1201`, `T6` first folds each family whole, hubs included.
+A family too large for one detail folds as even contiguous runs, each connected.
+Once a family folds, the evening takes only families, below the 60% share, and a family's group is never undone.
 A detail diagram must meet the same targets, and one that does not is split once more.
 A plan names the last tier that changed it.
 
@@ -223,6 +238,10 @@ As a last resort, the plan is walked once more with groups that hide one node al
 A decision node drawn as a diamond, a fork, a join and a choice are protected on every walk.
 Each folds only with a whole decision region or author region around it.
 An `erDiagram` junction between two aggregates is kept in view under the first two rules, like a hub.
+
+A plan may group only runs of one hub's sibling leaves, each named only by a range.
+It is refused when those groups hold more than half the diagram.
+Nothing the author drew sorts those leaves, so the groups would be alphabetical buckets, and a list reads better.
 
 The declared loss is the number of pairs of overview nodes where one reaches the other in the overview but not in the original.
 The plan reports it after each tier.

@@ -19,6 +19,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 
 - Extends [MJL-0025](0025-a-fold-is-offered-as-a-split.md) (how a fold offered as a split is chosen and drawn)
 - Extended by [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) (decision regions and erDiagram aggregates fold whole)
+- Extended by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (regions drawn from one template fold to the same depth and are named by the region around them)
 
 ## Decision
 

@@ -13,7 +13,7 @@ import { extractStats } from "../parse/stats.ts";
 import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { flowRegionsOf } from "./flow.ts";
 import { byOverviewEdge, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf } from "./label.ts";
+import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf, shorten } from "./label.ts";
 import { floorOf } from "./plan.ts";
 import { idMaker, isGroupKey, over, type Partition, qualifiedLabel, reversible, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
@@ -152,8 +152,8 @@ const qualifiedLabels = (work: WorkGraph, g: SplitGroup): string[] =>
     .filter((r) => (work.regions.get(r)?.parent ?? null) === g.parent)
     .flatMap((r) => qualifiedLabel(work, r) ?? []);
 
-// 4. A group label is an author label (a folded region's label, alone or
-// qualified by the region around it), a member's label or the range of its
+// 4. A group label is an author label (a folded region's label, alone or,
+// never cut, qualified by the region around it), a member's label or the range of its
 // members' labels (label.ts), shown cut by the
 // one rule in label.ts, then " (+N)", N counting the members it does not
 // name, and the group's id when the label is taken. No two groups show one
@@ -168,7 +168,7 @@ const checkLabels = (build: Build): Violations => {
     const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
     const range = base === rangeLabel(memberLabels(g), hidden);
     const plain = regionLabels(work, g).includes(base) || memberLabels(g).includes(base);
-    const qualified = !plain && qualifiedLabels(work, g).includes(base);
+    const qualified = !plain && qualifiedLabels(work, g).includes(base) && shorten(base) === base;
     if (!(range || plain || qualified)) out.push(`4: group ${g.id} label "${base}" is not from the data`);
     const counts = range
       ? [g.members.length - 2]

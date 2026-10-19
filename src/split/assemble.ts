@@ -17,7 +17,16 @@ import {
   type WNode,
   type WorkGraph,
 } from "./graph.ts";
-import { groupLabels, ID_LEAD, type LabelContext, namedStubs, rangeLabel, type StubText, stubTexts } from "./label.ts";
+import {
+  groupLabels,
+  ID_LEAD,
+  type LabelContext,
+  namedStubs,
+  rangeLabel,
+  type StubText,
+  shorten,
+  stubTexts,
+} from "./label.ts";
 import {
   chainEntries,
   type DetailView,
@@ -364,9 +373,10 @@ const namingOf = (work: WorkGraph, part: Partition, g: Group): { range: string |
 // any label tagged with an id.
 const optionsOf = (choices: LabelParts[], id: string, shared: boolean): Array<LabelParts & { label: string }> => {
   const all = choices.flatMap((c) => groupLabels(c.base, c.n, c.markdown, id).map((label) => ({ ...c, label })));
-  const qualified = all.filter((o) => o.qualified && !o.label.endsWith(`[${id}]`));
+  // A qualified label is offered only whole: cut, it would hide where the region sits.
+  const qualified = all.filter((o) => o.qualified && shorten(o.base) === o.base && !o.label.endsWith(`[${id}]`));
   if (qualified.length === 0) return all;
-  const rest = all.filter((o) => !qualified.includes(o));
+  const rest = all.filter((o) => !o.qualified);
   const plain = rest.filter((o) => o.base === choices[0]?.base && !o.label.endsWith(`[${id}]`));
   const others = rest.filter((o) => !plain.includes(o));
   return shared ? [...qualified, ...plain, ...others] : [...plain, ...qualified, ...others];

@@ -516,6 +516,19 @@
     },
     {
       "data": {
+        "id": "MJL-0033",
+        "label": "0033",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md",
+        "title": "A plan folds ticket families whole, echoing regions alike and tangled aggregates, and refuses alphabetical buckets",
+        "description": "How a split plan treats a star, a tangled erDiagram, a ticket graph and regions drawn from one template",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -886,6 +899,16 @@
     },
     {
       "data": {
+        "id": "MJL-0026-extended_by-MJL-0033",
+        "source": "MJL-0026",
+        "target": "MJL-0033",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "regions drawn from one template fold to the same depth and are named by the region around them"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0027-extends-MJL-0023",
         "source": "MJL-0027",
         "target": "MJL-0023",
@@ -946,6 +969,16 @@
     },
     {
       "data": {
+        "id": "MJL-0028-extended_by-MJL-0033",
+        "source": "MJL-0028",
+        "target": "MJL-0033",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a tangled erDiagram folds aggregates past the target, down to the share an evened overview keeps"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0029-extends-MJL-0028",
         "source": "MJL-0029",
         "target": "MJL-0028",
@@ -962,6 +995,16 @@
         "label": "extended by",
         "relation": "extended_by",
         "note": "groups named where a reader enters them, dense meshes refused, terminals that lead only to ends kept in view"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0029-excepted_by-MJL-0033",
+        "source": "MJL-0029",
+        "target": "MJL-0033",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "sibling-leaf runs named by range are not offered when they are every group of one star"
       }
     },
     {
@@ -1016,6 +1059,16 @@
     },
     {
       "data": {
+        "id": "MJL-0030-extended_by-MJL-0033",
+        "source": "MJL-0030",
+        "target": "MJL-0033",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a star of leaves sorted by nothing is refused, as a dense mesh is"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0031-extends-MJL-0030",
         "source": "MJL-0031",
         "target": "MJL-0030",
@@ -1066,6 +1119,16 @@
     },
     {
       "data": {
+        "id": "MJL-0031-excepted_by-MJL-0033",
+        "source": "MJL-0031",
+        "target": "MJL-0033",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "id families fold whole below the share an evened overview keeps, and a family group is never undone"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0032-excepts-MJL-0030",
         "source": "MJL-0032",
         "target": "MJL-0030",
@@ -1092,6 +1155,76 @@
         "label": "extends",
         "relation": "extends",
         "note": "a family is also read from a status stem, and a pair of one family may share a neighbour"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-extended_by-MJL-0033",
+        "source": "MJL-0032",
+        "target": "MJL-0033",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "in a ticket graph a whole id family folds before any pair, hubs included"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extends-MJL-0030",
+        "source": "MJL-0033",
+        "target": "MJL-0030",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a star of leaves sorted by nothing is refused, as a dense mesh is"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-excepts-MJL-0029",
+        "source": "MJL-0033",
+        "target": "MJL-0029",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "sibling-leaf runs named by range are not offered when they are every group of one star"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extends-MJL-0028",
+        "source": "MJL-0033",
+        "target": "MJL-0028",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a tangled erDiagram folds aggregates past the target, down to the share an evened overview keeps"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-excepts-MJL-0031",
+        "source": "MJL-0033",
+        "target": "MJL-0031",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "id families fold whole below the share an evened overview keeps, and a family group is never undone"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extends-MJL-0032",
+        "source": "MJL-0033",
+        "target": "MJL-0032",
+        "label": "extends",
+        "relation": "extends",
+        "note": "in a ticket graph a whole id family folds before any pair, hubs included"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-extends-MJL-0026",
+        "source": "MJL-0033",
+        "target": "MJL-0026",
+        "label": "extends",
+        "relation": "extends",
+        "note": "regions drawn from one template fold to the same depth and are named by the region around them"
       }
     }
   ],

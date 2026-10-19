@@ -34,6 +34,9 @@ relates_to:
   - relation: extended_by
     target: MJL-0033
     note: in a ticket graph a whole id family folds before any pair, hubs included
+  - relation: excepted_by
+    target: MJL-0033
+    note: a group is drawn whole or as its members, never both, and like edges to a member draw once
 
 decision:
   given: a reader of a detail reads each stub as one outside thing and each line as one relationship. A pipeline's stage is the set of tables one step produces, and they rarely feed each other. A workflow named by status ids carries its stages only in the status words

@@ -253,9 +253,11 @@ const fromProblems = (r: Reading): string[] => {
 
 // Each original edge once: from the overview between two kept nodes, else
 // from a detail. A stub read as a whole group gives the half edge from that
-// group into the member, which stands for every edge from the group into the
-// member that draws alike, so each is drawn exactly once and a second copy is
-// an extra. The overview joins the overview nodes of every edge.
+// group into the member, or from the member into that group, which stands for
+// every edge between the two that draws alike, so each is drawn exactly once
+// and a second copy is an extra. An edge between two groups is drawn exactly
+// in one end's detail and as a half in the other's. The overview joins the
+// overview nodes of every edge.
 const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan: SplitPlan): string[] => {
   const end = endsOf(r.original);
   const over = (x: string): string => r.groupOf.get(x) ?? x;
@@ -265,13 +267,19 @@ const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan:
     .map((e) => edgeKey(e, oEnd(e.source), oEnd(e.target)));
   const halves: string[] = [];
   const problems: string[] = [];
+  const drawnIn = new Map<string, string[]>();
   for (const d of r.details) {
     const dEnd = endsOf(d.graph);
     const named = stubs.get(d.group) ?? new Map<string, string>();
     for (const e of d.graph.edges) {
       const [s, t] = [named.get(e.source) ?? dEnd(e.source), named.get(e.target) ?? dEnd(e.target)];
-      if (r.groups.has(t)) problems.push(`detail ${d.group} has an edge into the whole group ${t}`);
-      else (r.groups.has(s) ? halves : exact).push(edgeKey(e, s, t));
+      if (r.groups.has(s) && r.groups.has(t)) problems.push(`detail ${d.group} has an edge between two whole groups`);
+      else if (r.groups.has(s) || r.groups.has(t)) halves.push(edgeKey(e, s, t));
+      else {
+        const key = edgeKey(e, s, t);
+        exact.push(key);
+        drawnIn.set(key, [...(drawnIn.get(key) ?? []), d.group]);
+      }
     }
   }
   const pairs = new Set(r.overview.edges.map((e) => `${oEnd(e.source)}\u0000${oEnd(e.target)}`));
@@ -296,9 +304,33 @@ const edgeProblems = (r: Reading, stubs: Map<string, Map<string, string>>, plan:
     .map(([a, b]) => `the overview does not join ${a} to ${b}`);
   if (reversed !== plan.loss.reversedEdges)
     problems.push(`the overview draws ${reversed} edges the other way, not the ${plan.loss.reversedEdges} declared`);
-  const wantHalves = r.original.edges.flatMap((e) => {
+  // The edges of one kind one way between one group and one member read as
+  // one half, with what they all agree on; an erDiagram's per label and
+  // cardinality.
+  const er = r.original.diagram_type === "er";
+  const buckets = new Map<string, { s: string; t: string; edges: GraphEdge[] }>();
+  for (const e of r.original.edges) {
     const [s, t] = [end(e.source), end(e.target)];
-    return over(s) !== s && over(t) !== t && over(s) !== over(t) ? [edgeKey(e, over(s), t)] : [];
+    if (!(over(s) !== s && over(t) !== t && over(s) !== over(t))) continue;
+    const [hs, ht] = drawnIn.get(edgeKey(e, s, t))?.shift() === over(t) ? [s, over(t)] : [over(s), t];
+    const key = JSON.stringify([hs, ht, e.kind ?? "", er ? (e.label ?? "") : "", er ? (e.cardinality ?? "") : ""]);
+    const b = buckets.get(key) ?? { s: hs, t: ht, edges: [] };
+    b.edges.push(e);
+    buckets.set(key, b);
+  }
+  const wantHalves = [...buckets.values()].map(({ s, t, edges }) => {
+    const all = (pick: (e: GraphEdge) => unknown): boolean =>
+      edges.every((e) => pick(e) === pick(edges[0] as GraphEdge));
+    const [first] = edges as [GraphEdge];
+    const labelled = all((e) => e.label) && all((e) => e.markdown ?? false);
+    return JSON.stringify([
+      s,
+      t,
+      labelled ? (first.label ?? "") : "",
+      labelled ? (first.markdown ?? false) : false,
+      all((e) => e.kind) ? (first.kind ?? "") : "",
+      all((e) => e.cardinality) ? (first.cardinality ?? "") : "",
+    ]);
   });
   return [
     ...problems,

@@ -652,8 +652,8 @@ The nodes, edges, Rows, subgraphs, subgraph nesting depth and Tree Depth the Par
 
 A node in a Detail Diagram that stands for a node, subgraph or interface outside its group.
 An edge in from another group starts at one Stub for that whole group.
-Edges from different members of that group into one member, with one label and kind, are drawn once from it, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
-A whole-group Stub beside a Stub for the member its group is named after names the member its edges leave, as `ORDER (+6) from PAYMENT`.
+Edges of one kind one way between that Stub and one member are drawn once, with only the label they share, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+When edges join two groups both ways, one detail draws the other group as one Stub, and the other draws Stubs for its members.
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
 It adds the node's group label when that differs.

@@ -391,31 +391,53 @@ const readStubs = (c: Ctx): Map<string, Map<string, string>> => {
   return out;
 };
 
+interface Drawn {
+  exact: string[];
+  halves: string[];
+  // The details drawing each exact edge.
+  drawnIn: Map<string, string[]>;
+}
+
 // A detail's edges, each read back to original ends: exact edges, and half
-// edges from a whole-group stub into a member.
-const detailEdges = (c: Ctx, d: Det, sr: Map<string, string>, out: { exact: string[]; halves: string[] }): void => {
+// edges from a whole-group stub into a member or from a member into one.
+const detailEdges = (c: Ctx, d: Det, sr: Map<string, string>, out: Drawn): void => {
   const dEnd = nameEnds(d.D);
   const isStub = (x: string): boolean => !(c.isOrig(x) || c.lolLabels.has(x));
   const end = (x: string): string => (isStub(x) ? (sr.get(x) ?? "?") : x);
   for (const e of d.D.edges) {
     const [a, b] = [dEnd(e.source), dEnd(e.target)];
-    const problem = edgeProblem(c, isStub, [a, b], [end(a), end(b)]);
+    const problem = edgeProblem(c, d.gid, isStub, [a, b], [end(a), end(b)]);
     if (problem) c.add(problem[0], "edge", `detail ${d.gid} ${problem[1]}`);
     else if (end(a).startsWith("group:")) out.halves.push(ek(end(a).slice(6), end(b), e));
-    else out.exact.push(ek(end(a), end(b), e));
+    else if (end(b).startsWith("group:")) out.halves.push(ek(end(a), end(b).slice(6), e));
+    else {
+      const key = ek(end(a), end(b), e);
+      out.exact.push(key);
+      out.drawnIn.set(key, [...(out.drawnIn.get(key) ?? []), d.gid]);
+    }
   }
+};
+
+// Whether original edges run both ways between two groups.
+const bothWays = (c: Ctx, x: string, y: string): boolean => {
+  const gEnd = nameEnds(c.G);
+  const runs = (s: string, t: string): boolean =>
+    c.G.edges.some((e) => c.ov(gEnd(e.source)) === s && c.ov(gEnd(e.target)) === t);
+  return runs(x, y) && runs(y, x);
 };
 
 const edgeProblem = (
   c: Ctx,
+  gid: string,
   isStub: (x: string) => boolean,
   [a, b]: [string, string],
   [A, B]: [string, string],
 ): [Severity, string] | null => {
   if (isStub(a) && isStub(b)) return ["BUG", `edge between stubs ${a}->${b}`];
-  if (A.startsWith("group:")) return null;
-  if (B.startsWith("group:")) return ["BUG", `edge into a whole-group stub ${a}->${b}`];
-  if (isStub(a) && c.ov(A) !== A) return ["WARN", `stub ${a} names ${A} of another group`];
+  if (A.startsWith("group:") && B.startsWith("group:")) return ["BUG", `edge between whole groups ${a}->${b}`];
+  if (A.startsWith("group:") || B.startsWith("group:")) return null;
+  if (isStub(a) && c.ov(A) !== A && !bothWays(c, c.ov(A), gid))
+    return ["WARN", `stub ${a} names ${A} of another group`];
   return null;
 };
 
@@ -426,7 +448,7 @@ const checkEdges = (c: Ctx, stubRef: Map<string, Map<string, string>>): void => 
   const exact = c.O.edges
     .filter((e) => !(c.groupIds.has(oEnd(e.source)) || c.groupIds.has(oEnd(e.target))))
     .map((e) => ek(oEnd(e.source), oEnd(e.target), e));
-  const out = { exact, halves: [] as string[] };
+  const out: Drawn = { exact, halves: [], drawnIn: new Map() };
   for (const d of c.dets) detailEdges(c, d, stubRef.get(d.gid) ?? new Map(), out);
   const { missing, extra } = multisetDiff(
     c.G.edges.map((e) => ek(gEnd(e.source), gEnd(e.target), e)),
@@ -434,12 +456,36 @@ const checkEdges = (c: Ctx, stubRef: Map<string, Map<string, string>>): void => 
   );
   for (const k of missing) c.add("BUG", "edge", `edge not recovered: ${k}`);
   for (const k of extra) c.add("BUG", "edge", `edge invented or duplicated: ${k}`);
-  const wantHalves = c.G.edges.flatMap((e) => {
+  // An edge between two groups is drawn exactly in one end's detail, and as
+  // a half in the other's.
+  // The edges of one kind one way between one group and one member are one
+  // half, with the label and cardinality they all share (an erDiagram's apart
+  // by label and cardinality), as the overview draws one edge per pair.
+  const isEr = c.G.diagram_type === "er";
+  const buckets = new Map<string, GraphEdge[]>();
+  for (const e of c.G.edges) {
     const [s, t] = [gEnd(e.source), gEnd(e.target)];
-    return c.ov(s) !== s && c.ov(t) !== t && c.ov(s) !== c.ov(t) ? [ek(c.ov(s), t, e)] : [];
+    if (!(c.ov(s) !== s && c.ov(t) !== t && c.ov(s) !== c.ov(t))) continue;
+    const at = out.drawnIn.get(ek(s, t, e))?.shift();
+    const [hs, ht] = at === c.ov(t) ? [s, c.ov(t)] : [c.ov(s), t];
+    const key = JSON.stringify([hs, ht, e.kind ?? "", isEr ? (e.label ?? "") : "", isEr ? (e.cardinality ?? "") : ""]);
+    buckets.set(key, [...(buckets.get(key) ?? []), { ...e, source: hs, target: ht }]);
+  }
+  const wantHalves = [...buckets.values()].map((edges) => {
+    const [first] = edges as [GraphEdge];
+    const same = (pick: (e: GraphEdge) => unknown): boolean => edges.every((e) => pick(e) === pick(first));
+    const labelled = same((e) => e.label) && same((e) => e.markdown ?? false);
+    const shared: GraphEdge = {
+      ...first,
+      label: labelled ? first.label : undefined,
+      markdown: labelled ? first.markdown : undefined,
+      kind: same((e) => e.kind) ? first.kind : undefined,
+      cardinality: same((e) => e.cardinality) ? first.cardinality : undefined,
+    };
+    return ek(first.source, first.target, shared);
   });
-  // One half edge stands for every edge from its group into its member with
-  // its attributes, so each is drawn exactly once.
+  // One half edge stands for every edge between its group and its member
+  // with its attributes, so each is drawn exactly once.
   const want = new Set(wantHalves);
   const h = multisetDiff([...want], out.halves);
   for (const k of h.missing) c.add("WARN", "half", `cross-group edge not shown in its target detail: ${k}`);

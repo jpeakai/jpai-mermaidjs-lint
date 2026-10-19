@@ -18,10 +18,10 @@ It has two halves:
 
 A dashed stub in a detail stands for each outside node an edge reaches, or for a whole group an edge comes in from.
 Each outside node or group gets one stub.
-Two edges from different members of one group into one member, with one label and kind, are drawn once from the group's stub.
+Edges of one kind one way between a group's stub and one member are drawn once, keeping only the label they all share.
 The group's own detail draws each of them to that member, so nothing is lost.
-A stub for a whole group beside a stub for its namesake member names the member its edges leave.
-So `ORDER (+6) from PAYMENT` sits beside `ORDER (in group)`.
+When edges join two groups both ways, one detail draws the other group whole and the other draws its members.
+The detail needing stubs for fewer of the other's members draws them, so no detail shows a group whole beside its members.
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
@@ -266,7 +266,7 @@ The contract is what this page means by "meaning is preserved".
 - **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
 - **Honest ranges.** A range label, such as `DATA-0381 … DATA-0383 (+1)`, is the group's first and last member labels in natural order. Its count is of the members neither names. No member of another group has a label from the first to the last.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
-- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, beside `ORDER (in group)`, and PAYMENT must draw every edge the stub draws.
+- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, and PAYMENT must draw every edge the stub draws. A plan no longer writes it, since no detail draws a group whole beside its members.
 - **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. That region is an author region, or a decision region that is single-entry single-exit in the original graph, every node of which the group holds. So does a state a composite's start or end marker reaches, unless that composite folds whole.

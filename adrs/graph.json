@@ -521,8 +521,8 @@
         "parent": "group-complexity",
         "colour": "#0891b2",
         "file": "0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md",
-        "title": "A plan folds ticket families whole, echoing regions alike and tangled aggregates, and refuses alphabetical buckets",
-        "description": "How a split plan treats a star, a tangled erDiagram, a ticket graph and regions drawn from one template",
+        "title": "A plan folds ticket families whole, echoing regions alike and tangled aggregates, refuses alphabetical buckets, and draws a group whole or as members",
+        "description": "How a split plan treats stars, tangled schemas, ticket families, echoing regions and groups joined both ways",
         "status": "accepted",
         "tags": "complexity, split"
       }
@@ -1169,6 +1169,16 @@
     },
     {
       "data": {
+        "id": "MJL-0032-excepted_by-MJL-0033",
+        "source": "MJL-0032",
+        "target": "MJL-0033",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a group is drawn whole or as its members, never both, and like edges to a member draw once"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0033-extends-MJL-0030",
         "source": "MJL-0033",
         "target": "MJL-0030",
@@ -1225,6 +1235,16 @@
         "label": "extends",
         "relation": "extends",
         "note": "regions drawn from one template fold to the same depth and are named by the region around them"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0033-excepts-MJL-0032",
+        "source": "MJL-0033",
+        "target": "MJL-0032",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a group is drawn whole or as its members, never both, and like edges to a member draw once"
       }
     }
   ],

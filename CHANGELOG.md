@@ -20,6 +20,12 @@ Anything under `Unreleased` is on `main` but not yet released.
 - **Regions drawn from one template fold alike.** Two cloud regions with the same subnets fold to the same depth, in one step.
   Their groups are named apart by the region around them, as `Public subnets (us-east-1) (+2)`.
   The contract, and the test suite's two independent readers, accept that one qualified form.
+- **A detail draws a group whole or as members, never both.** When edges join two groups both ways, the detail needing fewer stubs draws the other's members.
+  The other draws the group as one stub, with edges each way, so `ORDER (+6) from PAYMENT` beside `ORDER (in group)` no longer appears.
+  The contract, and both test readers, read an edge from a member into a whole group's stub as a half edge.
+  The contract refuses a group drawn both ways in one detail.
+- **Edges between a group's stub and a member are drawn once.** Edges of one kind one way keep only the label they share, as the overview does.
+  So three labelled transitions from one group into `Allocating` read as one line.
 - A plan may split a detail again with new reachable pairs.
   It now gives way to a plan holding regions to details that fit, when that one declares fewer in all.
 

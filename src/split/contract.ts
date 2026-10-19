@@ -191,30 +191,73 @@ const multiset = (keys: string[]): string => sorted(keys).join("\n");
 
 // The edges overview and details give back. Exact: an edge between two kept
 // nodes from the overview, and from a detail every edge whose ends are
-// members or stubs for single nodes. Halves: an edge from a stub standing for
-// a whole group, read as that group and the member it enters.
-const recovered = (build: Build): { exact: string[]; halves: string[] } => {
+// members or stubs for single nodes, with the details drawing each. Halves:
+// an edge from a stub standing for a whole group, read as that group and the
+// member it enters, or from a member into such a stub, read as that member
+// and the group.
+const recovered = (build: Build): { exact: string[]; halves: string[]; drawnIn: Map<string, string[]> } => {
   const groups = groupIds(build.plan);
   const exact: string[] = build.plan.overview.edges
     .filter((o) => !(groups.has(o.source) || groups.has(o.target)))
     .map((o) => tuple(o));
   const halves: string[] = [];
+  const drawnIn = new Map<string, string[]>();
   for (const d of build.plan.details) {
     for (const e of d.graph.edges) {
       const [s, t] = [d.stubs[e.source] ?? e.source, d.stubs[e.target] ?? e.target];
-      (groups.has(s) || groups.has(t) ? halves : exact).push(tuple({ ...e, source: s, target: t }));
+      const key = tuple({ ...e, source: s, target: t });
+      if (groups.has(s) || groups.has(t)) halves.push(key);
+      else {
+        exact.push(key);
+        drawnIn.set(key, [...(drawnIn.get(key) ?? []), d.group]);
+      }
     }
   }
-  return { exact, halves };
+  return { exact, halves, drawnIn };
 };
 
-// Each edge between two groups, read as its source's group and its target.
-const wantedHalves = (build: Build): string[] => {
+// The one value a set of edges agrees on, or none.
+const agreedOn = (edges: GraphEdge[], pick: (e: GraphEdge) => string | undefined): string | undefined =>
+  edges.every((e) => pick(e) === pick(edges[0] as GraphEdge)) ? pick(edges[0] as GraphEdge) : undefined;
+
+// Each edge between two groups, read from the detail that does not draw it
+// exactly: as its source's group and its target when its source's detail
+// draws it, else as its source and its target's group. The edges of one kind
+// one way between one group and one member are one half, keeping the label
+// and cardinality all agree on, and in an erDiagram one half per label and
+// cardinality, as the overview draws one edge per pair.
+const wantedHalves = (build: Build, drawnIn: Map<string, string[]>): string[] => {
   const overId = overOf(build);
   const groups = groupIds(build.plan);
-  return build.work.edges.flatMap((e) => {
+  const er = build.work.family === "er";
+  const left = new Map([...drawnIn].map(([k, v]) => [k, [...v]]));
+  const buckets = new Map<string, GraphEdge[]>();
+  for (const e of build.work.edges) {
     const [a, b] = [overId(e.source), overId(e.target)];
-    return a !== b && groups.has(a) && groups.has(b) ? [tuple({ ...e, source: a })] : [];
+    if (!(a !== b && groups.has(a) && groups.has(b))) continue;
+    const half = left.get(tuple(e))?.shift() === b ? { ...e, target: b } : { ...e, source: a };
+    const key = JSON.stringify([
+      half.source,
+      half.target,
+      e.kind ?? "",
+      er ? (e.label ?? "") : "",
+      er ? (e.cardinality ?? "") : "",
+    ]);
+    buckets.set(key, [...(buckets.get(key) ?? []), half]);
+  }
+  return [...buckets.values()].map((edges) => {
+    const { label: _l, markdown: _m, kind: _k, cardinality: _c, ...bare } = edges[0] as GraphEdge;
+    const label = agreedOn(edges, (x) => (x.label === undefined ? undefined : `${x.markdown ? "m" : "s"}${x.label}`));
+    const kind = agreedOn(edges, (x) => x.kind);
+    const cardinality = agreedOn(edges, (x) => x.cardinality);
+    return tuple({
+      ...bare,
+      ...(label !== undefined
+        ? { label: label.slice(1), ...(label.startsWith("m") ? { markdown: true as const } : {}) }
+        : {}),
+      ...(kind !== undefined ? { kind } : {}),
+      ...(cardinality !== undefined ? { cardinality } : {}),
+    });
   });
 };
 
@@ -231,6 +274,11 @@ const detailNodes = (build: Build): Violations => {
       if ((groups.has(end) ? end : overId(end)) === d.group)
         out.push(`5: stub ${stub} of ${d.group} stands for itself`);
     }
+    // A group is drawn whole or as stubs for its members, never both.
+    const ends = Object.values(d.stubs);
+    for (const end of ends.filter((x) => groups.has(x)))
+      if (ends.some((x) => !groups.has(x) && overId(x) === end))
+        out.push(`5: detail ${d.group} draws ${end} whole beside a stub for one of its members`);
   }
   return out;
 };
@@ -320,12 +368,13 @@ const checkRecoverable = (build: Build): Violations => {
   const kept = plan.overview.nodes.map((n) => n.id).filter((id) => !groupIds(plan).has(id));
   const members = plan.details.flatMap((d) => d.graph.nodes.map((n) => n.id).filter((id) => d.stubs[id] === undefined));
   if (multiset([...kept, ...members]) !== multiset(work.ids)) out.push("5: the node ids do not come back exactly");
-  const { exact, halves } = recovered(build);
+  const { exact, halves, drawnIn } = recovered(build);
   if (multiset(exact) !== multiset(work.edges.map(tuple))) out.push("5: the edges do not come back exactly");
-  // A half stands for every edge from its group into its member that draws
-  // alike, so it is drawn exactly once, and only for such an edge.
+  // A half stands for every edge between its group and its member that draws
+  // alike, so it is drawn exactly once, and only for such an edge, in the
+  // detail that does not draw that edge exactly.
   if (new Set(halves).size !== halves.length) out.push("5: a detail draws one edge from a group twice");
-  if (multiset([...new Set(halves)]) !== multiset([...new Set(wantedHalves(build))]))
+  if (multiset([...new Set(halves)]) !== multiset([...new Set(wantedHalves(build, drawnIn))]))
     out.push("5: the edges between groups do not come back from their targets");
   return out;
 };

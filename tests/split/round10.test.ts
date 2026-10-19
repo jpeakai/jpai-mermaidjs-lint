@@ -108,9 +108,18 @@ describe("a whole-group stub beside its namesake member", () => {
         [keyOf(two), { id: "g2", base: "D", label: "D (+2)" }],
       ]),
     };
+    // Edges join the two groups both ways, so a detail draws the other group
+    // whole or as stubs for its members, never both (MJL-0033).
     const view = detailView(work, part, two);
-    const texts = stubTexts(ctx, view.stubs);
-    const named = namedStubs(ctx, view.stubs, texts, () => ["a"]);
+    const ends = view.stubs.map((s) => s.endpoint);
+    expect(ends.includes(keyOf(one)) && ends.some((e) => one.members.includes(e))).toBe(false);
+    // Drawn beside its namesake member, the whole stub would still not name it.
+    const stubs = [
+      { id: "s1", endpoint: keyOf(one) },
+      { id: "s2", endpoint: "a" },
+    ];
+    const texts = stubTexts(ctx, stubs);
+    const named = namedStubs(ctx, stubs, texts, () => ["a"]);
     expect([...(named ?? texts).values()].map((t) => t.label).sort()).toEqual(["A (+2)", "A (in group)"]);
   });
 });

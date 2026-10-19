@@ -1,8 +1,8 @@
 id: MJL-0033
 slug: a-plan-folds-what-the-author-grouped-and-refuses-buckets
 plan_id: null
-title: A plan folds ticket families whole, echoing regions alike and tangled aggregates, and refuses alphabetical buckets
-description: How a split plan treats a star, a tangled erDiagram, a ticket graph and regions drawn from one template
+title: A plan folds ticket families whole, echoing regions alike and tangled aggregates, refuses alphabetical buckets, and draws a group whole or as members
+description: How a split plan treats stars, tangled schemas, ticket families, echoing regions and groups joined both ways
 status: accepted
 accepted_on: 2026-10-19
 last_changed_on: 2026-10-19
@@ -14,7 +14,8 @@ provenance: >-
   A university schema met its target by dropping rows alone, so its overview kept all 23 entities and 30 relationships.
   A film rental schema folded only LANGUAGE into FILM, leaving a 15-node overview of the original.
   A Jira epic graph split PLAT tickets across two groups and five loose hubs.
-  A two-region cloud diagram folded us-east-1 whole and eu-west-1 into three subnets, so two groups showed "Public subnets (+2)" and a detail split again declared 9 new reachable pairs
+  A two-region cloud diagram folded us-east-1 whole and eu-west-1 into three subnets, so two groups showed "Public subnets (+2)" and a detail split again declared 9 new reachable pairs.
+  An order lifecycle detail drew ReturnRequested as two stubs, and three labelled transitions from one group into Allocating side by side
 enforced_in:
   - src/split/index.ts isStar and STAR, which refuse a plan whose every group is a range of one star's sibling leaves
   - src/split/plan.ts aggregatesToo, tangled and evenOut, which fold aggregates evenly in a tangled erDiagram, each fold taking an overview edge away per entity it hides
@@ -22,6 +23,8 @@ enforced_in:
   - src/split/tier3.ts echoesOf and proposeT3, which fold echoing regions in one step
   - src/split/plan.ts fitting and nestedLoss, which prefer a plan holding regions to details that fit when it declares fewer new reachable pairs in all
   - src/split/quotient.ts qualifiedLabel, src/split/assemble.ts optionsOf, and src/split/contract.ts qualifiedLabels, which name echoing regions apart by the region around them
+  - src/split/quotient.ts exactSide, detailView, halfKey and halfOf, which draw a group joined both ways whole or as members, and edges alike one way between a group's stub and a member once
+  - src/split/contract.ts recovered, wantedHalves and detailNodes, which read a half edge from either side and refuse a group drawn whole beside a stub for its member
 
 relates_to:
   - relation: extends
@@ -42,6 +45,9 @@ relates_to:
   - relation: extends
     target: MJL-0026
     note: regions drawn from one template fold to the same depth and are named by the region around them
+  - relation: excepts
+    target: MJL-0032
+    note: a group is drawn whole or as its members, never both, and like edges to a member draw once
 
 decision:
   given: a reader of an overview reads its groups as the diagram's own structure. The reader compares regions drawn from one template side by side, and counts relationships as lines. A ticket key or a template is the author's own grouping, and an alphabetical range is no grouping at all
@@ -65,14 +71,21 @@ decision:
     It sits in that region in the overview and counts every member.
     A plan whose details split again with new reachable pairs is walked again, holding regions to details that fit.
     That walk first folds only regions adding no new reachable pair.
-    It is offered when it declares fewer new reachable pairs in all
+    It is offered when it declares fewer new reachable pairs in all.
+    When edges join two groups both ways, one detail draws every edge between them exactly, with stubs for the other's members.
+    That is the detail needing stubs for fewer members, then the first group by key.
+    The other detail draws the group as one stub, with each edge into it from a member read as a half edge.
+    No detail draws a group whole beside a stub for one of its members.
+    The edges of one kind one way between a group's stub and one member draw once.
+    They keep only the label and cardinality they all share, and an erDiagram keeps one per label and cardinality, as the overview does
   because: >-
     alphabetical buckets give a reader nothing to find, while a list of the leaves gives the same in reading order.
     An overview of every entity and relationship is the original with its rows hidden, and aggregates are the structure an erDiagram carries.
     A tree-like overview already reads, so it stays as it is.
     A ticket family scattered across groups and loose hubs reads as noise, while one group per family reads as the author's plan.
     Two regions drawn from one template folded to different depths read as different things.
-    Their groups need names a reader can tell apart without an id
+    Their groups need names a reader can tell apart without an id.
+    One outside group drawn twice in one detail reads as two things, and three lines from one stub into one member read as three sources
   unless: a plan has no star, or a diagram has no aggregate that takes an edge away per entity. Labels may name no id family, or regions echo none. The plan then stands as before
 consequences:
   pros:
@@ -80,7 +93,10 @@ consequences:
     - The university and film rental overviews fold their aggregates, and the WordPress tree stays at rows dropped.
     - The Jira epic graph shows one group per ticket family and no loose node.
     - The two cloud regions fold into three subnets each, named apart, with no new reachable pair and no detail split again.
+    - No detail draws one group as two stubs, and the order lifecycle's returns fold into one group.
   cons:
     - A star of interchangeable leaves gets no plan, where a split was offered before.
     - An id-family overview may land below 60% of node_target.
     - A qualified label is longer, and the contract and both test readers accept one more form.
+    - A detail on the side drawn whole no longer shows which member of the other group an edge reaches.
+    - An edge drawn once for several no longer shows a label they do not share.

@@ -208,3 +208,92 @@ describe("a qualified label", () => {
     SLOW,
   );
 });
+
+describe("two groups that edges join both ways", () => {
+  test(
+    "are drawn whole on one side and as members on the other, with edges alike drawn once",
+    async () => {
+      const plan = await planOf(read("state01-order-lifecycle"), "low");
+      const ids = new Set(plan.groups.map((g) => g.id));
+      const groupOf = (x: string): string => plan.groups.find((g) => g.members.includes(x))?.id ?? x;
+      for (const d of plan.details) {
+        const ends = Object.values(d.stubs);
+        for (const end of ends.filter((x) => ids.has(x))) expect(ends.some((x) => x !== end && groupOf(x) === end)).toBe(false);
+        const pairs = d.graph.edges.map((e) => `${d.stubs[e.source] ?? e.source}>${d.stubs[e.target] ?? e.target}`);
+        const halves = pairs.filter((p) => p.split(">").some((x) => ids.has(x)));
+        expect(new Set(halves).size).toBe(halves.length);
+      }
+      // A detail drawing a member into a whole group stands for the edge its target draws exactly.
+      const into = plan.details.flatMap((d) =>
+        d.graph.edges.filter((e) => ids.has(d.stubs[e.target] ?? "")).map((e) => ({ d, e })),
+      );
+      expect(into.length).toBeGreaterThan(0);
+    },
+    SLOW,
+  );
+
+  test(
+    "are held to it by the contract, the reading and the checker",
+    async () => {
+      const source = read("state01-order-lifecycle");
+      const cfg = configFromPreset("low");
+      const build = await buildOf(source, cfg);
+      const ids = new Set(build.plan.groups.map((g) => g.id));
+      const d = build.plan.details.find((x) => x.graph.edges.some((e) => ids.has(x.stubs[e.target] ?? "")));
+      const edge = d?.graph.edges.find((e) => ids.has(d.stubs[e.target] ?? ""));
+      if (!(d && edge)) throw new Error("no edge into a whole group");
+      // Drawn twice.
+      const twice = structuredClone(build);
+      const td = twice.plan.details.find((x) => x.group === d.group);
+      td?.graph.edges.push({ ...edge, id: `${edge.id}-again` });
+      if (td) td.source = td.source.replace(/\n {2}classDef/, `\n  ${edge.source} --> ${edge.target}\n  classDef`);
+      expect((await checkContract(twice, cfg)).some((v) => v.includes("draws one edge from a group twice"))).toBe(true);
+      expect((await faithful(source, twice.plan)).some((p) => p.startsWith("half edge extra"))).toBe(true);
+      expect((await checkPlan(source, twice.plan, cfg, "")).some((f) => f.sev === "BUG" && f.kind === "half")).toBe(
+        true,
+      );
+      // Labelled with a label no original edge carries.
+      const relabelled = structuredClone(build);
+      const rd = relabelled.plan.details.find((x) => x.group === d.group);
+      const re = rd?.graph.edges.find((e) => e.id === edge.id);
+      if (!(rd && re)) throw new Error("no edge");
+      re.label = "invented";
+      rd.source = rd.source.replace(
+        `${edge.source} --> ${edge.target}\n`,
+        `${edge.source} --> ${edge.target} : invented\n`,
+      );
+      expect(
+        (await checkContract(relabelled, cfg)).some((v) => v.includes("do not come back from their targets")),
+      ).toBe(true);
+      expect((await faithful(source, relabelled.plan)).some((p) => p.startsWith("half edge"))).toBe(true);
+      expect(
+        (await checkPlan(source, relabelled.plan, cfg, "")).some((f) => f.sev === "BUG" && f.kind === "half"),
+      ).toBe(true);
+      // A group drawn whole beside a stub for one of its members.
+      const beside = structuredClone(build);
+      const bd = beside.plan.details.find((x) => x.group === d.group);
+      const whole = d.stubs[edge.target] ?? "";
+      const member = build.plan.groups.find((g) => g.id === whole)?.members[0] ?? "";
+      if (bd) bd.stubs.s99 = member;
+      expect(await checkContract(beside, cfg)).toContain(
+        `5: detail ${d.group} draws ${whole} whole beside a stub for one of its members`,
+      );
+    },
+    SLOW,
+  );
+
+  test(
+    "draw the edges one way between a group and a member once, keeping only the label they share",
+    async () => {
+      const plan = await planOf(read("state01-order-lifecycle"), "low");
+      const d = plan.details.find((x) => x.graph.nodes.some((n) => n.id === "Allocating"));
+      const into = d?.graph.edges.filter((e) => e.target === "Allocating" && d.stubs[e.source] !== undefined) ?? [];
+      const from = new Map<string, number>();
+      for (const e of into) from.set(d?.stubs[e.source] ?? "", (from.get(d?.stubs[e.source] ?? "") ?? 0) + 1);
+      expect([...from.values()].every((n) => n === 1)).toBe(true);
+      const merged = into.find((e) => e.label === undefined);
+      expect(merged).toBeDefined();
+    },
+    SLOW,
+  );
+});

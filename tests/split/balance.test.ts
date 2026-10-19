@@ -132,14 +132,21 @@ describe("a whole-group stub beside a stub for the member it is named after", ()
       const source = read("er01-ecommerce");
       const cfg = configFromPreset("low-density");
       const build = await buildOf(source, cfg);
-      const d = build.plan.details.find((x) => x.graph.nodes.some((n) => n.label.includes(" from ")));
-      const stub = d?.graph.nodes.find((n) => n.label.includes(" from "));
-      if (!(d && stub)) throw new Error("no stub naming a member");
+      // A whole-group stub drawing an edge out, named after a member whose
+      // edges it does not draw.
+      const groupIds = new Set(build.plan.groups.map((g) => g.id));
+      const d = build.plan.details.find((x) =>
+        x.graph.edges.some((e) => groupIds.has(x.stubs[e.source] ?? "") && x.stubs[e.target] === undefined),
+      );
+      const edge = d?.graph.edges.find((e) => groupIds.has(d.stubs[e.source] ?? ""));
+      const stub = d?.graph.nodes.find((n) => n.id === edge?.source);
+      if (!(d && edge && stub)) throw new Error("no whole-group stub drawing an edge out");
       const g = build.plan.groups.find((x) => x.id === d.stubs[stub.id]);
-      const named = stub.label.slice(stub.label.indexOf(" from ") + " from ".length);
-      const other = g?.members.map((m) => build.work.nodes.get(m)?.label ?? m).find((l) => l !== named);
-      if (!other) throw new Error("no other member to name");
-      const wrong = `${stub.label.slice(0, stub.label.indexOf(" from "))} from ${other}`;
+      const draws = (m: string): boolean =>
+        build.work.edges.some((e) => e.source === m && e.target === edge.target && e.label === edge.label);
+      const other = g?.members.filter((m) => !draws(m)).map((m) => build.work.nodes.get(m)?.label ?? m)[0];
+      if (!(g && other)) throw new Error("no other member to name");
+      const wrong = `${g.label} from ${other}`;
       d.source = d.source.replace(stub.label, wrong);
       stub.label = wrong;
       expect((await checkContract(build, cfg)).some((v) => v.includes("names a member that does not draw"))).toBe(true);

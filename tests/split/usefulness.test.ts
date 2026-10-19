@@ -111,11 +111,12 @@ describe("a group hiding one node", () => {
     expect(suggested(plan).filter((g) => g.members.length < 3)).toEqual([]);
   });
 
-  test("is still undone or merged on the walk that may fold hubs, which can give the hub back", async () => {
+  test("never stays beside the author regions a hub sits in, folded whole", async () => {
     const plan = await planOf(GITOPS, configFromPreset("low-density"));
     const hubs = hubsOf(await workOf(GITOPS));
     expect(hubs.has("ctrl")).toBe(true);
-    expect(plan.overview.nodes.map((n) => n.id)).toContain("ctrl");
+    const regions = plan.groups.flatMap((g) => g.regions).sort();
+    expect(regions).toEqual(["argocd", "cfg", "ci", "clusters"]);
     expect(suggested(plan).filter((g) => g.members.length < 3)).toEqual([]);
   });
 });

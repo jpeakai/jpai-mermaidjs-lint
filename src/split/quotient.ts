@@ -513,38 +513,101 @@ const outsideEnd = (work: WorkGraph, part: Partition, e: GraphEdge, inside: (id:
   return inside(e.source) && !inside(e.target) ? e.target : null;
 };
 
-// What an edge into a member from a whole group draws: the group, the member
-// and the edge's attributes. Edges from several members of one group that
-// draw alike are drawn once, as the overview draws one edge per pair: the
-// source group's own detail draws each of them to this exact member, so the
-// one drawn here says only that the group leads here, and each original edge
-// still reads back exactly once, from its source's detail.
-const drawnFrom = (e: GraphEdge, end: string): string =>
-  JSON.stringify([end, e.target, e.label ?? "", e.markdown ?? false, e.kind ?? "", e.cardinality ?? ""]);
+// Which half edges draw as one: those the same way between one group and one
+// member, of one kind (a kind left out would read back as another), and in an
+// erDiagram of one label and cardinality.
+const halfKey = (work: WorkGraph, e: GraphEdge, [s, t]: [string, string]): string =>
+  JSON.stringify([s, t, e.kind ?? "", ...(work.family === "er" ? [e.label ?? "", e.cardinality ?? ""] : [])]);
+
+// A half edge, between a stub for a whole group and a member, drawn once for
+// every edge halfKey puts with it, as the overview draws one edge between two
+// overview nodes: keeping only the label and cardinality all agree on. Each
+// of them is drawn exactly in the other group's detail.
+const halfOf = (halves: Map<string, GraphEdge[]>, e: GraphEdge): GraphEdge => {
+  const bucket = [...halves.values()].find((b) => b[0] === e);
+  if (!bucket) return e;
+  const { label: _l, markdown: _m, kind: _k, cardinality: _c, ...bare } = e;
+  const label = agreed(bucket, (x) => (x.label === undefined ? undefined : `${x.markdown ? "m" : "s"}${x.label}`));
+  const kind = agreed(bucket, (x) => x.kind);
+  const cardinality = agreed(bucket, (x) => x.cardinality);
+  return {
+    ...bare,
+    ...(label !== undefined
+      ? { label: label.slice(1), ...(label.startsWith("m") ? { markdown: true as const } : {}) }
+      : {}),
+    ...(kind !== undefined ? { kind } : {}),
+    ...(cardinality !== undefined ? { cardinality } : {}),
+  };
+};
+
+// The group whose detail draws exactly every edge between two groups that
+// edges join both ways: the one needing stubs for fewer of the other's
+// members, then the first by key. The other group's detail draws one stub for
+// the whole group, with every edge each way drawn once for those alike, so no
+// detail draws a group whole beside stubs for its members.
+export const exactSide = (work: WorkGraph, part: Partition, a: string, b: string): string => {
+  const between = work.edges.filter((e) => {
+    const ends = [over(work, part, e.source), over(work, part, e.target)];
+    return ends.includes(a) && ends.includes(b) && a !== b;
+  });
+  const needs = (side: string): number =>
+    new Set(between.flatMap((e) => [e.source, e.target]).filter((x) => over(work, part, x) !== side)).size;
+  const [na, nb] = [needs(a), needs(b)];
+  return na !== nb ? (na < nb ? a : b) : byText(a, b) <= 0 ? a : b;
+};
+
+// The outside groups edges join to a group both ways.
+const bothWays = (work: WorkGraph, part: Partition, key: string, touching: GraphEdge[]): Set<string> => {
+  const [into, from] = [new Set<string>(), new Set<string>()];
+  for (const e of touching) {
+    const [s, t] = [over(work, part, e.source), over(work, part, e.target)];
+    if (s === key && t !== key && isGroupKey(t)) into.add(t);
+    if (t === key && s !== key && isGroupKey(s)) from.add(s);
+  }
+  return new Set([...into].filter((x) => from.has(x)));
+};
 
 // One stub per outside end, and each edge from a whole group drawn alike
-// another drawn once.
+// another drawn once. A group that edges join to this one both ways is drawn
+// whole, or as stubs for its members, never both, as exactSide decides.
 export const detailView = (work: WorkGraph, part: Partition, g: Group): DetailView => {
   const key = keyOf(g);
   const inside = (id: string): boolean => over(work, part, id) === key;
   const touching = work.edges.filter((e) => inside(e.source) || inside(e.target));
-  const ends = new Map(touching.map((e) => [e.id, outsideEnd(work, part, e, inside)]));
+  const pairs = bothWays(work, part, key, touching);
+  const whole = new Set([...pairs].filter((h) => exactSide(work, part, key, h) !== key));
+  const endOf = (e: GraphEdge): string | null => {
+    const end = outsideEnd(work, part, e, inside);
+    if (end === null) return null;
+    const far = inside(e.source) ? e.target : e.source;
+    const group = over(work, part, far);
+    if (!pairs.has(group)) return end;
+    return whole.has(group) ? group : far;
+  };
+  const ends = new Map(touching.map((e) => [e.id, endOf(e)]));
   const outside = sorted(new Set([...ends.values()].filter((x): x is string => x !== null)));
   const next = idMaker(usedIds(work), "s");
   const stubs = outside.map((endpoint) => ({ id: next(), endpoint }));
   const stubOf = new Map(outside.map((endpoint, i) => [endpoint, stubs[i]?.id ?? endpoint]));
-  const seen = new Set<string>();
+  const halves = new Map<string, GraphEdge[]>();
   const edges = touching.flatMap((e) => {
     const end = ends.get(e.id);
     if (end === null || end === undefined) return [e];
     const stub = stubOf.get(end) ?? end;
-    if (inside(e.source)) return [{ ...e, target: stub }];
-    const drawn = drawnFrom(e, end);
-    if (isGroupKey(end) && seen.has(drawn)) return [];
-    seen.add(drawn);
-    return [{ ...e, source: stub }];
+    const drawn = inside(e.source) ? { ...e, target: stub } : { ...e, source: stub };
+    if (!isGroupKey(end)) return [drawn];
+    const bucket = halfKey(work, e, inside(e.source) ? [e.source, end] : [end, e.target]);
+    const known = halves.get(bucket);
+    halves.set(bucket, [...(known ?? []), drawn]);
+    return known ? [] : [drawn];
   });
-  return { members: g.members, regions: drawnRegions(work, g), stubs, edges, ...detailMarkers(work, g) };
+  return {
+    members: g.members,
+    regions: drawnRegions(work, g),
+    stubs,
+    edges: edges.map((e) => halfOf(halves, e)),
+    ...detailMarkers(work, g),
+  };
 };
 
 // The regions a detail draws: the ones its group folds, and in a classDiagram

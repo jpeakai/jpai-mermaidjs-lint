@@ -1,20 +1,23 @@
 // What the round-11 blind rating held plans to (MJL-0033): a star of leaves
 // no structure sorts is refused, and a tangled erDiagram overview folds its
 // aggregates even when dropping rows alone meets the target, and a ticket
-// graph folds each id family whole.
+// graph folds each id family whole, and regions drawn from one template fold
+// alike, named apart by the region around them.
 
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { configFromPreset } from "../../src/parse/metrics.ts";
+import { checkContract } from "../../src/split/contract.ts";
 import { STAR, splitOutcome } from "../../src/split/index.ts";
 import { tangled } from "../../src/split/plan.ts";
 import { EMPTY_PARTITION } from "../../src/split/quotient.ts";
+import { echoesOf } from "../../src/split/tier3.ts";
 import { ID_FAMILY } from "../../src/split/tier6.ts";
 import type { SplitPlan } from "../../src/split/types.ts";
 import { checkPlan } from "./checker.ts";
 import { faithful } from "./faithful.ts";
-import { workOf } from "./helpers.ts";
+import { buildOf, workOf } from "./helpers.ts";
 
 const SLOW = 30_000;
 const read = (name: string): string => readFileSync(join(import.meta.dir, "cases", "round11", `${name}.mmd`), "utf8");
@@ -95,6 +98,64 @@ describe("an id family", () => {
       expect(plan.groups.every((g) => g.reason === ID_FAMILY)).toBe(true);
       expect(plan.overviewNodes).toBe(plan.groups.length);
       expect(plan.loss.newReachablePairs).toBe(0);
+    },
+    SLOW,
+  );
+});
+
+describe("echoing regions", () => {
+  test("are siblings of one shape and their children of one label", async () => {
+    const work = await workOf(read("flow02-multiregion-nested"));
+    expect(echoesOf(work, "use1")).toEqual(["euw1"]);
+    expect(echoesOf(work, "use1pub")).toEqual(["euw1pub"]);
+    expect(echoesOf(work, "euw1data")).toEqual(["use1data"]);
+    expect(echoesOf(work, "shared")).toEqual([]);
+  });
+
+  test(
+    "fold to the same depth, named apart by the region each sits in, with no new reachable pair",
+    async () => {
+      const plan = await planOf(read("flow02-multiregion-nested"), "high");
+      const labels = plan.groups.map((g) => g.label);
+      for (const sub of ["Public subnets", "App subnets", "Data subnets"])
+        for (const region of ["us-east-1", "eu-west-1"])
+          expect(labels.some((l) => l.startsWith(`${sub} (${region}) (+`))).toBe(true);
+      expect(plan.details.every((d) => d.split === null)).toBe(true);
+      expect(plan.loss.newReachablePairs).toBe(0);
+    },
+    SLOW,
+  );
+
+  test(
+    "take a qualified label only from the region the group node sits in, as every reader checks",
+    async () => {
+      const source = read("flow02-multiregion-nested");
+      const cfg = configFromPreset("high");
+      const out = await splitOutcome(source, cfg);
+      if (!out.plan) throw new Error(out.reason);
+      const build = await buildOf(source, cfg);
+      const g = build.plan.groups.find((x) => x.labelBase === "Public subnets (us-east-1)");
+      if (!g) throw new Error("no qualified group");
+      const wrong = "Public subnets (AWS organisation)";
+      const broken = structuredClone(build);
+      const bg = broken.plan.groups.find((x) => x.id === g.id);
+      if (!bg) throw new Error("no group");
+      bg.labelBase = wrong;
+      bg.label = `${wrong} (+${g.hidden})`;
+      broken.plan.overviewSource = broken.plan.overviewSource.replace(g.label, bg.label);
+      expect(await checkContract(broken, cfg)).toContain(`4: group ${g.id} label "${wrong}" is not from the data`);
+      expect((await faithful(source, broken.plan)).some((p) => p.includes(`group ${g.id} label`))).toBe(true);
+      const found = await checkPlan(source, broken.plan, cfg, "");
+      expect(found.some((f) => f.sev === "BUG" && f.kind === "glabel")).toBe(true);
+      const counted = structuredClone(build);
+      const cg = counted.plan.groups.find((x) => x.id === g.id);
+      if (!cg) throw new Error("no group");
+      cg.hidden -= 1;
+      cg.label = `${g.labelBase} (+${cg.hidden})`;
+      counted.plan.overviewSource = counted.plan.overviewSource.replace(g.label, cg.label);
+      expect(await checkContract(counted, cfg)).toContain(`4: group ${g.id} counts ${cg.hidden} hidden members`);
+      expect((await faithful(source, counted.plan)).some((p) => p.includes(`group ${g.id} label`))).toBe(true);
+      expect((await checkPlan(source, counted.plan, cfg, "")).some((f) => f.kind === "glabel")).toBe(true);
     },
     SLOW,
   );

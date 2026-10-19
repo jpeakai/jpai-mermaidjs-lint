@@ -365,7 +365,20 @@ export interface LabelParts {
   base: string;
   n: number;
   markdown?: true;
+  // A region's label followed by the label of the region around it, in
+  // brackets, which names it apart from a region of the same label elsewhere.
+  qualified?: true;
 }
+
+// A region's label qualified by the label of the region around it, as
+// "Public subnets (us-east-1)": null when either is empty or markdown, or the
+// region sits at the top level.
+export const qualifiedLabel = (work: WorkGraph, region: string): string | null => {
+  const r = work.regions.get(region);
+  const p = r?.parent ? work.regions.get(r.parent) : undefined;
+  if (!(r && p) || r.owner || p.owner || r.markdown || p.markdown || r.label === "" || p.label === "") return null;
+  return `${r.label} (${p.label})`;
+};
 
 const markdownOf = (x: { markdown?: true } | undefined): { markdown?: true } => (x?.markdown ? { markdown: true } : {});
 
@@ -387,9 +400,13 @@ export const labelChoices = (
   const root = roots.length === 1 ? roots[0] : undefined;
   const region = root === undefined ? undefined : work.regions.get(root);
   const whole = root !== undefined && region && g.members.every((m) => regionWithin(work, homeOf(work, m), root));
+  const qualified = whole && root !== undefined ? qualifiedLabel(work, root) : null;
   const fromRegion: LabelParts[] =
     whole && region
-      ? [{ base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) }]
+      ? [
+          { base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) },
+          ...(qualified === null ? [] : [{ base: qualified, n: g.members.length, qualified: true as const }]),
+        ]
       : [];
   const labelOf = (m: string): string => work.nodes.get(m)?.label ?? m;
   const lookup = g.tier === "T4" && g.head !== undefined && isLookup(work, g.head, g.members);

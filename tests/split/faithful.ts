@@ -176,7 +176,10 @@ const readerOf = (r: Reading): ((text: string) => Set<string>) => {
 };
 
 // Each group label is a member's or a folded region's label, cut by the
-// documented rule, and counts the members it does not name.
+// documented rule, and counts the members it does not name. A folded
+// region's label may be qualified by the label of the region it sits in, in
+// the original and as the overview draws the group node, as "Public subnets
+// (us-east-1)", counting every member.
 const labelProblems = (r: Reading): string[] =>
   r.details.flatMap((d) => {
     const g = r.groups.get(d.group);
@@ -185,6 +188,16 @@ const labelProblems = (r: Reading): string[] =>
     const folded = d.graph.subgraphs.filter((s) => r.groupOf.get(s.id) === d.group);
     const byMember = members.some((m) => cutOf(g.base, m.label)) && g.n === members.length - 1;
     const byRegion = folded.some((s) => cutOf(g.base, s.label)) && g.n >= members.length - 1;
+    const sits = r.overview.nodes.find((n) => n.id === d.group)?.parent ?? null;
+    const around = r.original.subgraphs.find((x) => x.id === sits);
+    const byQualified =
+      around !== undefined &&
+      g.n === members.length &&
+      folded.some(
+        (s) =>
+          r.original.subgraphs.find((x) => x.id === s.id)?.parent === around.id &&
+          g.base === `${s.label} (${around.label})`,
+      );
     const others = r.details.filter((x) => x.group !== d.group);
     const hidden = others.flatMap((x) => x.graph.nodes.filter((n) => r.isOriginal(n.id)).map((n) => n.label));
     const byRange =
@@ -194,7 +207,7 @@ const labelProblems = (r: Reading): string[] =>
       ) === g.base && g.n === members.length - 2;
     const named = r.original.nodes.some((n) => n.label === g.label);
     return [
-      ...(byMember || byRegion || byRange
+      ...(byMember || byRegion || byQualified || byRange
         ? []
         : [`group ${d.group} label "${g.label}" is not its members' or region's`]),
       ...(named ? [`group ${d.group} label "${g.label}" is a node's label`] : []),

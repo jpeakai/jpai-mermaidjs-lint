@@ -135,6 +135,7 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
   const saved = current - scoreOf(shape, 0, config);
   if (saved <= EPSILON) return null;
   const hidden = merges.reduce((s, m) => s + Math.max(1, m.keys.length - 1), 0);
+  if (step.lossless && newReachablePairs(work, applied.part) > newReachablePairs(work, ctx.part)) return null;
   const { before } = step;
   if (before && (before.edges - shape.edges < hidden || newReachablePairs(work, applied.part) - before.loss > hidden))
     return null;
@@ -175,6 +176,8 @@ interface Step {
   // overview edge for each node it hides, and add no more new reachable
   // pairs than nodes it hides.
   before?: { edges: number; loss: number };
+  // Whether a fold may add no new reachable pair.
+  lossless?: boolean;
 }
 
 const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null => {
@@ -225,6 +228,8 @@ export interface Walk {
   // Lets the evening steps go below evenFloorOf, down to floorOf, for a
   // diagram whose details fit only when more of it folds.
   deep?: boolean;
+  // Folds an author region only when that adds no new reachable pair.
+  lossless?: boolean;
 }
 
 // The share of node_target an evening step must leave in the overview, so a
@@ -405,7 +410,7 @@ export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Wal
   let tier: Tier = "T1";
   for (const t of walk.order) {
     const capped = (t !== "T3" && t !== "T4") || walk.capT3;
-    const step: Step = { tier: t, capped };
+    const step: Step = { tier: t, capped, ...(walk.lossless && t === "T3" ? { lossless: true } : {}) };
     for (let best = bestStep(m.ctx, step, m.score); best; ) {
       m = measure(work, best.part, config, walk.rules);
       tier = t;
@@ -421,6 +426,22 @@ export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Wal
   return `no tier reaches the target: the overview stops at ${m.nodes} nodes and a score of ${m.score}`;
 };
 
+// The new reachable pairs a build's details split again declare, at every depth.
+export const nestedLoss = (build: Build): number =>
+  Object.values(build.nested).reduce((n, b) => n + b.plan.loss.newReachablePairs + nestedLoss(b), 0);
+
+// The new reachable pairs a build declares, its own and its details'.
+const totalLoss = (build: Build): number => build.plan.loss.newReachablePairs + nestedLoss(build);
+
+// The plan holding author regions to details that fit, folding first only
+// regions that add no new reachable pair, which a plan whose details split
+// again with new reachable pairs gives way to when it declares fewer in all:
+// a reader then finds every relationship of a region where it is drawn.
+const fitting = (build: (capT3: boolean, deep: boolean, lossless?: boolean) => Build | string, split: Build): Build => {
+  const held = [build(true, false, true), build(true, false)].find((b): b is Build => typeof b !== "string");
+  return held && totalLoss(held) < totalLoss(split) ? held : split;
+};
+
 // Plans a working graph along one ladder under one set of rules: first
 // letting author regions fold whatever their size, splitting a large detail
 // again, then, if that fails, holding them to details that fit.
@@ -432,8 +453,8 @@ const planWith = (
 ): Build | string => {
   const { order } = walk;
   const reasons: string[] = [];
-  const build = (capT3: boolean, deep: boolean): Build | string => {
-    const folded = foldToTarget(work, config, { ...walk, capT3, deep });
+  const build = (capT3: boolean, deep: boolean, lossless = false): Build | string => {
+    const folded = foldToTarget(work, config, { ...walk, capT3, deep, lossless });
     return typeof folded === "string"
       ? folded
       : assemble(folded, config, (detail) =>
@@ -442,7 +463,7 @@ const planWith = (
   };
   for (const capT3 of depth >= MAX_DEPTH ? [true] : [false, true]) {
     const built = build(capT3, false);
-    if (typeof built !== "string") return built;
+    if (typeof built !== "string") return capT3 || nestedLoss(built) === 0 ? built : fitting(build, built);
     // A detail that fits only when more of the diagram folds: even out
     // further, below evenFloorOf, rather than offer no plan.
     const deeper = build(capT3, true);

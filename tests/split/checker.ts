@@ -220,13 +220,20 @@ const checkPartition = (c: Ctx): void => {
 };
 
 // A group label is a member's or a folded region's label, cut by rule, and
-// counts the members it does not name.
+// counts the members it does not name. A folded region's label may be
+// qualified by the label of the region the group node sits in, which is that
+// region's parent in the original, counting every member.
 const checkGroupLabel = (c: Ctx, d: Det): void => {
   const gs = c.shown.get(d.gid);
   if (!gs) return;
   const fromMember = d.members.some((m) => cutOf(gs.base, m.label));
   const folded = d.D.subgraphs.filter((s) => !c.ovSubs.has(s.id));
   const fromRegion = folded.some((s) => cutOf(gs.base, s.label));
+  const sits = c.O.nodes.find((n) => n.id === d.gid)?.parent ?? null;
+  const around = sits === null ? undefined : c.subById.get(sits);
+  const fromQualified =
+    around !== undefined &&
+    folded.some((s) => c.subById.get(s.id)?.parent === around.id && gs.base === `${s.label} (${around.label})`);
   const hidden = c.dets.filter((x) => x !== d).flatMap((x) => x.members.map((m) => m.label));
   const fromRange =
     gs.base ===
@@ -234,11 +241,11 @@ const checkGroupLabel = (c: Ctx, d: Det): void => {
       d.members.map((m) => m.label),
       hidden,
     );
-  if (!(fromMember || fromRegion || fromRange))
+  if (!(fromMember || fromRegion || fromQualified || fromRange))
     c.add("BUG", "glabel", `group ${d.gid} base "${gs.base}" names no member, region or honest range`);
   const okN =
     (fromMember && gs.n === d.members.length - 1) ||
-    (fromRegion && gs.n === d.members.length) ||
+    ((fromRegion || fromQualified) && gs.n === d.members.length) ||
     (fromRange && gs.n === d.members.length - 2);
   if (!okN) c.add("BUG", "glabel", `group ${d.gid} says +${gs.n} but its detail holds ${d.members.length} members`);
 };

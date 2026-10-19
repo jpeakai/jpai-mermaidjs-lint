@@ -27,6 +27,7 @@ import {
   idMaker,
   isGroupKey,
   keyOf,
+  type LabelParts,
   labelChoices,
   meets,
   over,
@@ -356,17 +357,36 @@ const namingOf = (work: WorkGraph, part: Partition, g: Group): { range: string |
   return { range: rangeLabel(labels, hidden), byLabel: idLed };
 };
 
+// The labels a group may show, preferred first. A region's label qualified
+// by the region around it comes first when another group is named after a
+// region of the same label, so echoing regions read apart by where they sit
+// rather than by an id; else it comes after the region's own label, before
+// any label tagged with an id.
+const optionsOf = (choices: LabelParts[], id: string, shared: boolean): Array<LabelParts & { label: string }> => {
+  const all = choices.flatMap((c) => groupLabels(c.base, c.n, c.markdown, id).map((label) => ({ ...c, label })));
+  const qualified = all.filter((o) => o.qualified && !o.label.endsWith(`[${id}]`));
+  if (qualified.length === 0) return all;
+  const rest = all.filter((o) => !qualified.includes(o));
+  const plain = rest.filter((o) => o.base === choices[0]?.base && !o.label.endsWith(`[${id}]`));
+  const others = rest.filter((o) => !plain.includes(o));
+  return shared ? [...qualified, ...plain, ...others] : [...plain, ...qualified, ...others];
+};
+
 // Each group's label: the first of its choices no original node, region or
 // earlier group already shows, so a group never reads as another node.
 const groupsOf = (work: WorkGraph, part: Partition): SplitGroup[] => {
   const next = idMaker(usedIds(work), "g");
   const taken = new Set([...work.nodes.values()].map((n) => n.label));
   for (const r of work.regions.values()) taken.add(r.label);
-  return part.groups.map((g) => {
+  const choices = part.groups.map((g) => labelChoices(work, g, namingOf(work, part, g)));
+  const regionBase = (cs: LabelParts[]): string | undefined => (cs[1]?.qualified ? cs[0]?.base : undefined);
+  const bases = choices.map(regionBase);
+  return part.groups.map((g, i) => {
     const id = next();
-    const options = labelChoices(work, g, namingOf(work, part, g)).flatMap((c) =>
-      groupLabels(c.base, c.n, c.markdown, id).map((label) => ({ ...c, label })),
-    );
+    const mine = choices[i] ?? [];
+    const named = regionBase(mine);
+    const shared = named !== undefined && bases.filter((b) => b === named).length > 1;
+    const options = optionsOf(mine, id, shared);
     const pick = options.find((o) => !taken.has(o.label)) ?? options[0];
     const { base, n, markdown, label } = pick ?? { base: "", n: 0, label: "" };
     taken.add(label);

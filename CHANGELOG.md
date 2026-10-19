@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.11.0] - 2026-10-19
+
 ### Added
 
 - **A refused star or dense mesh prints the list or table that reads better.** `--split-plan` prints a star's hub and every leaf as a markdown list, and a dense mesh as a markdown adjacency matrix, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
@@ -462,7 +466,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.8.0...v0.8.1

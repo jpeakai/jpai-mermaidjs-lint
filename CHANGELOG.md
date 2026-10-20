@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.12.0] - 2026-10-20
+
 ### Changed
 
 - **A group is named by what all its members share.** A group holding a whole dotted family reads `gold.* (+5)`, and twin chains read by their stages, as `Extract → bronze (+8)`, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
@@ -477,7 +481,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.8.1...v0.9.0

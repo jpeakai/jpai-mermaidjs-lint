@@ -21,10 +21,10 @@ Start the package in a new folder, with this `package.json`:
   "exports": "./index.js",
   "files": ["index.js"],
   "peerDependencies": {
-    "@jpeakai/mermaidjs-lint": "^0.11.0"
+    "@jpeakai/mermaidjs-lint": "^0.12.0"
   },
   "devDependencies": {
-    "@jpeakai/mermaidjs-lint": "^0.11.0"
+    "@jpeakai/mermaidjs-lint": "^0.12.0"
   }
 }
 ```
@@ -35,8 +35,8 @@ Start the package in a new folder, with this `package.json`:
   A rule with a `canvas`-type option under another name needs 0.6.1 or newer, so the template starts there.
   0.6.1 is the first release where such an option receives the canvas flags.
   Before it, only an option named `canvas` received them.
-  Under 0.x a caret range accepts only patch releases, so `^0.11.0` matches 0.11.5 but not 0.12.0.
-  Each 0.x minor may change the plugin contract, so widen the range only after testing the next minor, for example to `>=0.11.0 <0.13.0`.
+  Under 0.x a caret range accepts only patch releases, so `^0.12.0` matches 0.12.5 but not 0.13.0.
+  Each 0.x minor may change the plugin contract, so widen the range only after testing the next minor, for example to `>=0.12.0 <0.14.0`.
 - **`devDependencies`** installs the linter, so the plugin's tests can run.
 
 ## Export the plugin

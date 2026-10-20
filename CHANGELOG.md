@@ -10,7 +10,9 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- A split plan parses each candidate diagram once, not once per measurement, so a complexity finding with a plan is reported about twice as fast.
 
 ## [0.11.0] - 2026-10-19
 

@@ -4,6 +4,7 @@
 // the docs site can draw what the parser returned beside the score it earns.
 // Only the types read below are read, and any other type throws.
 
+import { memoBySource } from "./memo.ts";
 import {
   countedStateElements,
   flowchartNodeIds,
@@ -581,7 +582,7 @@ const READERS: Record<string, (type: string, db: AnyDb) => DiagramGraph> = {
   "stateDiagram-v2": stateGraph,
 };
 
-export const extractGraph = async (content: string): Promise<DiagramGraph> => {
+export const extractGraph = memoBySource(async (content: string): Promise<DiagramGraph> => {
   const mermaid = await getMermaidCore();
   await mermaid.parse(content);
   const diagram = (await mermaid.mermaidAPI.getDiagramFromText(content)) as { db: AnyDb; type?: string };
@@ -589,4 +590,4 @@ export const extractGraph = async (content: string): Promise<DiagramGraph> => {
   const read = READERS[type];
   if (!read) throw new Error(`extractGraph reads ${Object.keys(READERS).join(", ")}, not ${type}`);
   return read(type, diagram.db);
-};
+});

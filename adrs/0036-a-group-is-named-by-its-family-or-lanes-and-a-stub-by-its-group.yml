@@ -40,6 +40,12 @@ relates_to:
   - relation: excepts
     target: MJL-0032
     note: one member's edges into a group joined one way draw in the target's detail
+  - relation: excepted_by
+    target: MJL-0037
+    note: a stub inside a box shows its member's own label
+  - relation: extended_by
+    target: MJL-0037
+    note: a one-way pair's target draws its edges when it needs fewer stubs
 
 decision:
   given: a reader of an overview reads a group's name as a promise about all its members. A name taken from one member promises that member and some others. A reader of a detail follows a stub to the overview node it names, and finds that node by its text

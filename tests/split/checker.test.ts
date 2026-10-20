@@ -18,7 +18,18 @@ import { lines, target } from "./helpers.ts";
 
 const SLOW = 30_000;
 const CASES = join(import.meta.dir, "cases");
-const SETS = ["round3", "adversarial", "semantic", "blind", "round9", "round11", "round12", "round13", "round14"];
+const SETS = [
+  "round3",
+  "adversarial",
+  "semantic",
+  "blind",
+  "round9",
+  "round11",
+  "round12",
+  "round13",
+  "round14",
+  "round15",
+];
 
 const serious = async (source: string, plan: SplitPlan, cfg: ThresholdConfig): Promise<string[]> =>
   (await checkPlan(source, plan, cfg, "")).filter((f) => f.sev === "BUG" || f.sev === "AMBIG").map((f) => f.msg);

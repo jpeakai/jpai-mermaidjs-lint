@@ -697,6 +697,16 @@ For a node inside a group, it adds the label the Overview shows for that group i
 An example is `PAYMENT_METHOD (in CUSTOMER (+2))`, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Its text must have exactly one reading.
 When the text could name anything else, it adds the node's id in brackets, as often as it takes.
+The target of edges joining two groups one way may draw Stubs for the source's members.
+It does so when it needs fewer, or as many and meets fewer outside nodes, per [MJL-0037](adrs/0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md).
+
+## Stub Box
+
+A subgraph in a flowchart Detail Diagram holding its Stubs for two or more members of one other group.
+It shows the label the Overview shows for that group, and each Stub inside it shows its member's own label, per [MJL-0037](adrs/0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md).
+For a group folding one author region whole, it stands for that region, so an edge to the region meets it.
+For any other group, it stands for the group and draws no edge.
+A detail draws one only while it still meets the target.
 
 ## Status Family
 

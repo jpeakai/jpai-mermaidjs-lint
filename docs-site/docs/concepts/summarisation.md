@@ -18,6 +18,11 @@ It has two halves:
 
 A dashed stub in a detail stands for each outside node an edge reaches, or for a whole group an edge comes in from.
 Each outside node or group gets one stub.
+In a flowchart, a detail draws its stubs for two or more members of one group inside one box.
+The box shows the label the overview shows for that group.
+Each stub inside shows its member's own label, as `Zuul edge proxy` inside `Edge tier (+2)`, per [MJL-0037](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md).
+A group standing for one author region whole is boxed as that region, so an edge to the region meets the box.
+A detail draws a box only while it still meets the target.
 Edges of one kind one way between a group's stub and one member are drawn once, keeping only the label they all share.
 The group's own detail draws each of them to that member, so nothing is lost.
 When edges join two groups both ways, one detail draws the other group whole and the other draws its members.
@@ -29,6 +34,10 @@ Otherwise the detail needing stubs for fewer of the other's members draws them, 
 Edges may run one way only from a single member into several members of another group.
 The target's detail then draws them from one stub for that member, unless the source's detail is split again.
 The source's detail draws the target as one stub, per [MJL-0036](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
+More generally, the target draws edges joining two groups one way when it needs fewer stubs.
+That is, stubs for fewer of the source's members than the source needs of its own.
+With as many, two or more, it draws them when its detail meets fewer outside nodes than the source's.
+It does so only while its detail still meets the target, per [MJL-0037](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md).
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
@@ -296,11 +305,11 @@ The contract is what this page means by "meaning is preserved".
 
 - **Sound.** Every original node is in exactly one overview node. A suggested group is connected. Two members are joined by an edge, or by an author region the group folds whole. They are also joined by a neighbour they share, when both name one prefix family or both are leaves. Each overview edge stands for original edges, in the same direction, and none is invented. The one exception is an undirected edge, below.
 - **Sound attributes.** An overview edge keeps a label or an arrow kind only when every edge it stands for agrees.
-- **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds. Each edge between two groups is drawn exactly in its source's detail. Its target's detail draws it once for every edge from the source group into that member that draws alike.
+- **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds. Each edge between two groups is drawn exactly in one of the two groups' details. The other detail draws it once for every edge between the other group and that member that draws alike.
 - **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A family label or a lane label, recomputed from the members, counts every member, such as `gold.* (+5)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
 - **Honest ranges.** A range label, such as `DATA-0381 … DATA-0383 (+1)`, is the group's first and last member labels in natural order. Its count is of the members neither names. No member of another group has a label from the first to the last.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
-- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (in Delivered (+3))` is the member Refunded inside the group the overview shows as `Delivered (+3)`, and `Delivered (in Delivered (+3))` is the member that group is named after. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, and PAYMENT must draw every edge the stub draws. A plan no longer writes it, since no detail draws a group whole beside its members.
+- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (in Delivered (+3))` is the member Refunded inside the group the overview shows as `Delivered (+3)`, and `Delivered (in Delivered (+3))` is the member that group is named after. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, and PAYMENT must draw every edge the stub draws. A plan no longer writes it, since no detail draws a group whole beside its members. A box showing `Edge tier (+2)` stands for the region that group folds whole. A group folding no one region holding every member is boxed as the group, and its box draws no edge. A stub inside it showing `Zuul edge proxy` is the one member of that group with that label.
 - **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. That region is an author region, or a decision region that is single-entry single-exit in the original graph, every node of which the group holds. So does a state a composite's start or end marker reaches, unless that composite folds whole.

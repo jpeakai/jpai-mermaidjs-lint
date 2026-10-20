@@ -9,7 +9,11 @@
 // since the emitted text carries no link. A decision, choice, fork or join
 // folded into a group must sit in a whole region the group folds: an author
 // region, or a single-entry single-exit region of the original, found here
-// by its own search. Nothing here calls the split code.
+// by its own search. A detail's subgraph with no original id is a box of
+// stubs (MJL-0037): it shows the label one group shows and reads as the one
+// region that group folds whole holding every member, else as the group; a
+// stub inside it shows a member's own label and reads as the one member of
+// that group with it. Nothing here calls the split code.
 
 import { type DiagramGraph, extractGraph, type GraphEdge, type GraphNode } from "../../src/parse/graph.ts";
 import type { SplitPlan } from "../../src/split/types.ts";
@@ -115,7 +119,7 @@ const read = async (source: string, plan: SplitPlan): Promise<Reading | string[]
   const groupOf = new Map<string, string>();
   for (const d of details) {
     for (const n of d.graph.nodes.filter((x) => isOriginal(x.id))) groupOf.set(n.id, d.group);
-    for (const s of d.graph.subgraphs.filter((x) => !drawn.has(x.id))) groupOf.set(s.id, d.group);
+    for (const s of d.graph.subgraphs.filter((x) => !drawn.has(x.id) && isOriginal(x.id))) groupOf.set(s.id, d.group);
   }
   if (problems.length > 0) return problems;
   return { original, overview, details, groups, groupOf, isOriginal };
@@ -274,14 +278,79 @@ const labelProblems = (r: Reading): string[] =>
     ];
   });
 
+// The one region a group folds whole holding every member, or null: of the
+// original regions its detail folds, the one no other folded region holds,
+// when every member sits inside it.
+const regionOfGroup = (r: Reading, gid: string): string | null => {
+  const parent = new Map(r.original.subgraphs.map((s) => [s.id, s.parent]));
+  const folded = r.original.subgraphs.filter((s) => r.groupOf.get(s.id) === gid).map((s) => s.id);
+  const roots = folded.filter((x) => r.groupOf.get(parent.get(x) ?? "") !== gid);
+  const [root, ...more] = roots;
+  if (root === undefined || more.length > 0) return null;
+  const within = (p: string | null | undefined): boolean => {
+    for (let x = p; x !== null && x !== undefined; x = parent.get(x)) if (x === root) return true;
+    return false;
+  };
+  const members = r.original.nodes.filter((n) => r.groupOf.get(n.id) === gid);
+  return members.every((n) => within(n.parent)) ? root : null;
+};
+
+// A box of stubs read as the region its group folds whole, else as the
+// group, by the one group whose label it shows, with the problems: it shows
+// the label of exactly one group, sits at the top level, and draws no edge
+// when it reads as a whole group.
+const boxReading = (r: Reading, d: Reading["details"][number], b: GraphNode): { gid?: string; problems: string[] } => {
+  const gids = [...r.groups].filter(([, g]) => g.label === b.label).map(([id]) => id);
+  const gid = gids[0];
+  if (gid === undefined || gids.length > 1)
+    return { problems: [`detail ${d.group} box "${b.label}" shows no one group's label`] };
+  const region = regionOfGroup(r, gid);
+  const edged = d.graph.edges.some((e) => e.source === b.id || e.target === b.id);
+  return {
+    gid,
+    problems: [
+      ...(b.parent === null ? [] : [`detail ${d.group} box "${b.label}" sits inside ${b.parent}`]),
+      ...(region === null && edged ? [`detail ${d.group} box "${b.label}" draws an edge for a whole group`] : []),
+    ],
+  };
+};
+
+// Each box of stubs and each stub inside one, read by its form, with the
+// problems: a stub inside a box shows the label of exactly one member of the
+// box's group.
+const boxReadings = (r: Reading, d: Reading["details"][number]): { of: Map<string, string>; problems: string[] } => {
+  const of = new Map<string, string>();
+  const problems: string[] = [];
+  const groupOfBox = new Map<string, string>();
+  for (const b of d.graph.subgraphs.filter((x) => !r.isOriginal(x.id))) {
+    const read = boxReading(r, d, b);
+    problems.push(...read.problems);
+    if (read.gid === undefined) continue;
+    groupOfBox.set(b.id, read.gid);
+    of.set(b.id, regionOfGroup(r, read.gid) ?? read.gid);
+  }
+  for (const n of d.graph.nodes.filter((x) => x.parent !== null && groupOfBox.has(x.parent))) {
+    const gid = groupOfBox.get(n.parent ?? "") ?? "";
+    const named = r.original.nodes.filter((m) => m.label === n.label && r.groupOf.get(m.id) === gid).map((m) => m.id);
+    if (named.length === 1) of.set(n.id, named[0] ?? "");
+    else
+      problems.push(
+        `detail ${d.group} stub "${n.label}" in box ${n.parent} reads as ${named.join(" or ") || "nothing"}`,
+      );
+  }
+  return { of, problems };
+};
+
 // Each stub's one reading, or a problem when it has none or several.
 const stubReadings = (r: Reading): { of: Map<string, Map<string, string>>; problems: string[] } => {
   const readings = readerOf(r);
   const problems: string[] = [];
   const of = new Map<string, Map<string, string>>();
   for (const d of r.details) {
-    const stubs = new Map<string, string>();
-    for (const s of d.graph.nodes.filter((n) => !r.isOriginal(n.id))) {
+    const boxed = boxReadings(r, d);
+    problems.push(...boxed.problems);
+    const stubs = new Map<string, string>(boxed.of);
+    for (const s of d.graph.nodes.filter((n) => !r.isOriginal(n.id) && (n.parent === null || r.isOriginal(n.parent)))) {
       const read = [...readings(s.label)];
       if (read.length === 1) stubs.set(s.id, read[0] ?? "");
       else problems.push(`detail ${d.group} stub "${s.label}" reads as ${read.join(" or ") || "nothing"}`);
@@ -483,7 +552,9 @@ const markerProblems = (r: Reading, plan: SplitPlan): string[] => {
 const elementProblems = (r: Reading): string[] => {
   const kept = r.overview.nodes.filter((n) => r.isOriginal(n.id) && !r.groups.has(n.id));
   const members = r.details.flatMap((d) => d.graph.nodes.filter((n) => r.isOriginal(n.id)));
-  const all = [...r.overview.subgraphs, ...r.details.flatMap((d) => d.graph.subgraphs)].map(regionKey);
+  const all = [...r.overview.subgraphs, ...r.details.flatMap((d) => d.graph.subgraphs)]
+    .filter((s) => r.isOriginal(s.id))
+    .map(regionKey);
   const regions = r.original.diagram_type.startsWith("class") ? [...new Set(all)] : all;
   return [
     ...diff(r.original.nodes.map(nodeKey), [...kept, ...members].map(nodeKey), "node"),

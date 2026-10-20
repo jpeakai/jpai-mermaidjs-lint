@@ -389,6 +389,14 @@ export const regionRoots = (work: WorkGraph, regions: readonly string[]): string
   return regions.filter((r) => !inSet.has(work.regions.get(r)?.parent ?? ""));
 };
 
+// The author region a group stands for whole: its one outermost folded
+// region, when every member sits inside it. Null for any other group.
+export const soleRegion = (work: WorkGraph, g: Pick<Group, "members" | "regions">): string | null => {
+  const roots = regionRoots(work, g.regions);
+  const root = roots.length === 1 ? roots[0] : undefined;
+  return root !== undefined && g.members.every((m) => regionWithin(work, homeOf(work, m), root)) ? root : null;
+};
+
 export interface LabelParts {
   base: string;
   n: number;
@@ -421,10 +429,9 @@ const markdownOf = (x: { markdown?: true } | undefined): { markdown?: true } => 
 // The labels a group folding one author region whole may take from it: the
 // region's label, then that label qualified by the region around it.
 const regionChoices = (work: WorkGraph, g: Group): LabelParts[] => {
-  const roots = regionRoots(work, g.regions);
-  const root = roots.length === 1 ? roots[0] : undefined;
-  const region = root === undefined ? undefined : work.regions.get(root);
-  if (!(root !== undefined && region && g.members.every((m) => regionWithin(work, homeOf(work, m), root)))) return [];
+  const root = soleRegion(work, g);
+  const region = root === null ? undefined : work.regions.get(root);
+  if (!(root !== null && region)) return [];
   const qualified = qualifiedLabel(work, root);
   return [
     { base: region.label, n: g.members.length - (region.owner ? 1 : 0), ...markdownOf(region) },
@@ -614,24 +621,75 @@ export const exactSide = (
   return na !== nb ? (na < nb ? a : b) : byText(a, b) <= 0 ? a : b;
 };
 
-// The group whose detail draws exactly the edges from group a into group b,
-// joined one way only, as a plan draws it. The source draws them, unless the
-// target needs a stub for only one of the source's members while the source
-// needs stubs for more of the target's, and the source's detail is not split
-// again (MJL-0035). Then the target draws them from that one member, and the
-// source draws the target as one stub, so the source's detail sheds stubs
-// and the target's keeps as many.
-export const oneWayExact = (
+// How a plan draws its details: the groups whose details are split again,
+// and the target each detail is held to.
+export interface Drawing {
+  nested: ReadonlySet<string>;
+  config: ThresholdConfig;
+}
+
+const betweenOf = (work: WorkGraph, part: Partition, [a, b]: [string, string]): GraphEdge[] =>
+  work.edges.filter((e) => over(work, part, e.source) === a && over(work, part, e.target) === b);
+
+// The outside overview nodes a group's detail meets: the far end of every
+// edge with one end in the group.
+const outsideOf = (work: WorkGraph, part: Partition, key: string): number =>
+  new Set(
+    work.edges.flatMap((e) => {
+      const [s, t] = [over(work, part, e.source), over(work, part, e.target)];
+      return s === key && t !== key ? [t] : t === key && s !== key ? [s] : [];
+    }),
+  ).size;
+
+// Whether the target of edges joining group a to group b one way only asks
+// to draw them exactly (MJL-0037): the source's detail is not split again
+// (MJL-0035), and the target needs stubs for fewer of the source's members
+// than the source needs of the target's, or for as many, two or more, when
+// the target's detail meets fewer outside nodes than the source's, so stubs
+// spread evenly. A single edge is drawn exactly by its source, as before.
+const asksExact = (
   work: WorkGraph,
   part: Partition,
   [a, b]: [string, string],
-  nested: ReadonlySet<string> = new Set(),
-): string => {
-  const between = work.edges.filter((e) => over(work, part, e.source) === a && over(work, part, e.target) === b);
-  const sources = new Set(between.map((e) => e.source));
-  const targets = new Set(between.map((e) => e.target));
-  return sources.size === 1 && targets.size > 1 && !nested.has(a) ? b : a;
+  nested: ReadonlySet<string>,
+): boolean => {
+  if (nested.has(a)) return false;
+  const between = betweenOf(work, part, [a, b]);
+  const sources = new Set(between.map((e) => e.source)).size;
+  const targets = new Set(between.map((e) => e.target)).size;
+  if (sources !== targets) return sources < targets;
+  return sources > 1 && outsideOf(work, part, b) < outsideOf(work, part, a);
 };
+
+// Whether a group's detail still meets the target with every group joined to
+// it one way that asks so drawn as stubs for that group's members: planning
+// measures each as one stub, its edges alike drawn once.
+const holdsExact = (work: WorkGraph, part: Partition, b: string, drawing: Drawing): boolean => {
+  const g = groupOfKey(part, b);
+  if (!g) return false;
+  const shape = detailShape(work, detailView(work, part, g));
+  const sources = new Set(
+    work.edges.filter((e) => over(work, part, e.target) === b).map((e) => over(work, part, e.source)),
+  );
+  let [nodes, edges] = [shape.nodes, shape.edges];
+  for (const a of sources) {
+    if (a === b || !isGroupKey(a) || betweenOf(work, part, [b, a]).length > 0) continue;
+    if (!asksExact(work, part, [a, b], drawing.nested)) continue;
+    const between = betweenOf(work, part, [a, b]);
+    nodes += new Set(between.map((e) => e.source)).size - 1;
+    edges += between.length - new Set(between.map((e) => halfKey(work, e, [a, e.target]))).size;
+  }
+  return meets(nodes, scoreOf({ ...shape, nodes, edges }, 0, drawing.config), drawing.config);
+};
+
+// The group whose detail draws exactly the edges from group a into group b,
+// joined one way only, as a plan draws it. The source draws them, unless the
+// target asks to (asksExact) and its detail still meets the target with
+// every group asking so drawn as stubs (holdsExact). Then the target draws
+// them from a stub for each source member, and the source draws the target
+// as one stub, each edge alike drawn once.
+export const oneWayExact = (work: WorkGraph, part: Partition, [a, b]: [string, string], drawing: Drawing): string =>
+  asksExact(work, part, [a, b], drawing.nested) && holdsExact(work, part, b, drawing) ? b : a;
 
 // The outside groups edges join to a group one way only, each with the way
 // they run: true when out of the group.
@@ -667,13 +725,8 @@ const bothWays = (work: WorkGraph, part: Partition, key: string, touching: Graph
 // oneWayExact decides; planning, which gives none, measures each
 // detail with edges from a group drawn from one stub, so a drawn detail never
 // holds more stubs than the one measured.
-export const detailView = (
-  work: WorkGraph,
-  part: Partition,
-  g: Group,
-  drawing: ReadonlySet<string> | null = null,
-): DetailView => {
-  const nested = drawing ?? new Set<string>();
+export const detailView = (work: WorkGraph, part: Partition, g: Group, drawing: Drawing | null = null): DetailView => {
+  const nested = drawing?.nested ?? new Set<string>();
   const key = keyOf(g);
   const inside = (id: string): boolean => over(work, part, id) === key;
   const touching = work.edges.filter((e) => inside(e.source) || inside(e.target));
@@ -683,7 +736,8 @@ export const detailView = (
   const exact = (h: string): string => {
     const out = ways.get(h);
     if (out === undefined) return exactSide(work, part, [key, h], nested);
-    return out ? oneWayExact(work, part, [key, h], nested) : oneWayExact(work, part, [h, key], nested);
+    if (drawing === null) return key;
+    return out ? oneWayExact(work, part, [key, h], drawing) : oneWayExact(work, part, [h, key], drawing);
   };
   const whole = new Set([...pairs].filter((h) => exact(h) !== key));
   const endOf = (e: GraphEdge): string | null => {

@@ -10,7 +10,18 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **Stubs for one group's members share a box.** A flowchart detail draws its stubs for two or more members of one group inside one subgraph showing that group's label.
+  Each stub inside shows its member's own label, per [MJL-0037](adrs/0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md).
+  A group folding one author region whole is boxed as that region, so an edge to the region meets the box.
+  A detail draws a box only while it still meets the target.
+  The contract reads each box and each stub inside it with exactly one reading.
+- **The lighter detail draws edges joining two groups one way.** The target draws them when it needs stubs for fewer of the source's members.
+  With as many, it draws them when it meets fewer outside nodes, while it still meets the target.
+  So a streaming platform's Edge tier detail draws five stubs where it drew seven, and a boutique's Checkout detail draws six where it drew nine.
+- **A leaf fold saving alike keeps groups even.** Of two `T5` folds saving as much, the one leaving the smaller largest group goes first.
+  So a compiler's nested Ast overview keeps `Node` in view and names `Expression (+3)`, where it named `Node (+4)`.
 
 ## [0.12.0] - 2026-10-20
 

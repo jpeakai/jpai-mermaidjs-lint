@@ -80,6 +80,9 @@ interface Scored {
   // The overview edges left beside another between the same two nodes, at
   // least one a group: what a reader sees as parallel lines.
   parallel: number;
+  // The members of the largest group the fold leaves, so at an equal saving
+  // the fold keeping groups even goes first (MJL-0037).
+  largest: number;
 }
 
 const EPSILON = 1e-9;
@@ -171,6 +174,7 @@ const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step
     members: applied.groups[0]?.members ?? [],
     edges: shape.edges,
     parallel: parallelOf(qedges),
+    largest: Math.max(0, ...applied.part.groups.map((g) => g.members.length)),
   };
 };
 
@@ -187,12 +191,13 @@ const byGain = (a: Scored, b: Scored): number => {
 };
 
 const better =
-  (byPriority: boolean, byEdges = false) =>
+  (byPriority: boolean, byEdges = false, byEven = false) =>
   (a: Scored, b: Scored): number => {
     const gain = byPriority ? byGain(a, b) : 0;
     if (gain !== 0) return gain;
     if (Math.abs(a.ratio - b.ratio) > EPSILON) return b.ratio - a.ratio;
     if (byEdges && a.edges !== b.edges) return a.edges - b.edges;
+    if (byEven && a.largest !== b.largest) return a.largest - b.largest;
     return byNaturalTuple(a.members, b.members);
   };
 
@@ -218,7 +223,7 @@ const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null 
     .filter(only)
     .map((c) => evaluate(ctx, c, current, step))
     .filter((s): s is Scored => s !== null);
-  const ranked = scored.sort(better(tier === "T6", tier === "T4"));
+  const ranked = scored.sort(better(tier === "T6", tier === "T4", tier === "T5"));
   return NEAR_TIERS.has(tier) ? nearest(ranked, tier === "T6") : (ranked[0] ?? null);
 };
 

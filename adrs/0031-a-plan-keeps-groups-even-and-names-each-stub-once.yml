@@ -50,6 +50,9 @@ relates_to:
   - relation: excepted_by
     target: MJL-0036
     note: a member stub names its group by the label the overview shows
+  - relation: extended_by
+    target: MJL-0037
+    note: of two leaf folds saving alike, the one leaving groups more even goes first
 
 decision:
   given: a reader of an overview counts its nodes against the target and compares its groups' sizes. A group's name reads as a promise about its members, and parallel lines read as separate relationships. A detail's stubs are read by their text alone

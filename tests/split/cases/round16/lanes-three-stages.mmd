@@ -1,0 +1,31 @@
+%% source: authored (round 16: twin chains too many for one detail, led by two verbs)
+%% kind: flowchart ingest pipeline with lanes
+flowchart LR
+  cron["Hourly trigger"] --> fan["Dispatch pulls"]
+  fan --> p1["Pull billing events"]
+  fan --> p2["Pull shipping events"]
+  fan --> p3["Pull support events"]
+  fan --> p4["Pull refund events"]
+  fan --> p5["Fetch partner feed"]
+  fan --> p6["Fetch pricing feed"]
+  fan --> p7["Fetch weather feed"]
+  fan --> p8["Fetch holiday feed"]
+  p1 --> r1["raw.billing"]
+  p2 --> r2["raw.shipping"]
+  p3 --> r3["raw.support"]
+  p4 --> r4["raw.refunds"]
+  p5 --> r5["raw.partner"]
+  p6 --> r6["raw.pricing"]
+  p7 --> r7["raw.weather"]
+  p8 --> r8["raw.holidays"]
+  r1 --> merge["Merge to warehouse"]
+  r2 --> merge
+  r3 --> merge
+  r4 --> merge
+  r5 --> merge
+  r6 --> merge
+  r7 --> merge
+  r8 --> merge
+  merge --> model["Forecast model"]
+  model --> report["Daily report"]
+  model --> alert["Anomaly alert"]

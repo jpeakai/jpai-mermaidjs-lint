@@ -21,6 +21,9 @@ export interface SplitGroup {
   // The label's two parts: the whole author or member label, and N.
   labelBase: string;
   hidden: number;
+  // For a pair label, the other member's label it shows in place of " (+N)",
+  // as "ROOM (+BUILDING)", N then 0 (MJL-0038).
+  paired?: string;
   // Whether the label is a markdown string, as the label it is taken from.
   markdown?: true;
   members: string[];

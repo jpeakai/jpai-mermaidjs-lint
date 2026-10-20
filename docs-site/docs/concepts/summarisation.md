@@ -29,10 +29,12 @@ When edges join two groups both ways, one detail draws the other group whole and
 The detail split again draws the other's members, when the other's detail fits, per [MJL-0035](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
 A stub in a nested overview then names the member a reader is sent to, as `PAYMENT_METHOD (in CUSTOMER (+2))`.
 A stub for a member of a group names that group by the label the overview shows it with.
+A stub for the member the group is named after shows its own label alone, since the group's label leads with it.
 So a reader finds the group by its text, per [MJL-0036](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Otherwise the detail needing stubs for fewer of the other's members draws them, so no detail shows a group whole beside its members.
 Edges may run one way only from a single member into several members of another group.
 The target's detail then draws them from one stub for that member, unless the source's detail is split again.
+A target whose detail is split again draws them too, per [MJL-0038](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
 The source's detail draws the target as one stub, per [MJL-0036](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 More generally, the target draws edges joining two groups one way when it needs fewer stubs.
 That is, stubs for fewer of the source's members than the source needs of its own.
@@ -85,6 +87,11 @@ A bundle of sibling leaves is the simplest module of all: pendants of one node, 
 A large set of twins is cut into runs, each small enough for its detail to meet the target.
 The twins are first put in natural order of their labels, so each run reads as an alphabetical volume of an index.
 A gateway's twenty services become runs such as `accounts-service … feature-flag-service (+9)`.
+Twin chains are the exception, per [MJL-0038](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
+They are lanes, such as extracts each feeding the bronze table it lands in, and nothing in their labels sorts them.
+So they fold whole, every lane in one step.
+When their detail does not fit, it is split again, and each lane folds as one group in it.
+Only when that gives no plan are they cut into runs.
 
 ### Chains and stages
 
@@ -306,10 +313,10 @@ The contract is what this page means by "meaning is preserved".
 - **Sound.** Every original node is in exactly one overview node. A suggested group is connected. Two members are joined by an edge, or by an author region the group folds whole. They are also joined by a neighbour they share, when both name one prefix family or both are leaves. Each overview edge stands for original edges, in the same direction, and none is invented. The one exception is an undirected edge, below.
 - **Sound attributes.** An overview edge keeps a label or an arrow kind only when every edge it stands for agrees.
 - **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds. Each edge between two groups is drawn exactly in one of the two groups' details. The other detail draws it once for every edge between the other group and that member that draws alike.
-- **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A family label or a lane label, recomputed from the members, counts every member, such as `gold.* (+5)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
+- **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A family, lane or fan label, recomputed from the members, counts every member, such as `gold.* (+5)`. A pair label, recomputed from a group's two members, shows the other's label in place of the count, such as `ROOM (+BUILDING)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
 - **Honest ranges.** A range label, such as `DATA-0381 … DATA-0383 (+1)`, is the group's first and last member labels in natural order. Its count is of the members neither names. No member of another group has a label from the first to the last.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
-- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (in Delivered (+3))` is the member Refunded inside the group the overview shows as `Delivered (+3)`, and `Delivered (in Delivered (+3))` is the member that group is named after. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, and PAYMENT must draw every edge the stub draws. A plan no longer writes it, since no detail draws a group whole beside its members. A box showing `Edge tier (+2)` stands for the region that group folds whole. A group folding no one region holding every member is boxed as the group, and its box draws no edge. A stub inside it showing `Zuul edge proxy` is the one member of that group with that label.
+- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (in Delivered (+3))` is the member Refunded inside the group the overview shows as `Delivered (+3)`. `Delivered` is the member that group is named after, and the group's label leads with it. A stub for a member of a group with a pair label shows its own label alone. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, and PAYMENT must draw every edge the stub draws. A plan no longer writes it, since no detail draws a group whole beside its members. A box showing `Edge tier (+2)` stands for the region that group folds whole. A group folding no one region holding every member is boxed as the group, and its box draws no edge. A stub inside it showing `Zuul edge proxy` is the one member of that group with that label.
 - **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. That region is an author region, or a decision region that is single-entry single-exit in the original graph, every node of which the group holds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
@@ -356,7 +363,13 @@ It holds three members or more, and no node outside it leads with that namespace
 Twin chains are named by their stages, as `Extract → bronze (+8)` for four extracts each feeding the bronze table it lands in.
 Each place along the chains is named by the namespace every label there leads with.
 Failing that, it is named by the first word they all lead with, and failing that it shows an ellipsis.
-So lanes whose sources share no word read `… → bronze (+6)`.
+Failing both, two first words name the place, joined by a slash, per [MJL-0038](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
+So lanes led by extracts and an ingest read `Extract/Ingest → bronze (+14)`, and lanes whose sources share no word read `… → bronze (+6)`.
+A group holding every leaf one overview node leads to is named by that node, as `Checkout domain → … (+4)` for the APIs Checkout calls.
+Leaves leading into one node read `… → ` and its name.
+A group of two members names both, as `ROOM (+BUILDING)`, the other's label in place of the count.
+Neither label may hold a bracket or markup, and the label holds 40 characters at most.
+Groups of two folded alike take it only when every one of them can, and a stub for either member shows its own label.
 Both labels count every member, and come after an author region's label and a decision region's question, before a range or a member's label.
 
 In `T6`, a pair within one prefix family goes before any other.

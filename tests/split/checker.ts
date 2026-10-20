@@ -119,7 +119,20 @@ interface Shown {
   label: string;
   base: string;
   n: number;
+  // The other member's label a pair label shows in place of the count.
+  pair?: string;
 }
+
+// A pair label, written out: a group of two members shows one member's whole
+// label, " (+", the other's label and ")". Neither label holds a bracket or
+// markup, or a space at either end, the other is not a number, and the whole
+// label holds at most forty characters.
+const PAIR_LABEL = /^(.*) \(\+(.+)\)$/s;
+const pairOk = (a: string, b: string): boolean =>
+  a !== b &&
+  [a, b].every((l) => l.trim() !== "" && l === l.trim() && !/[()[\]<&*`#]/.test(l)) &&
+  !/^\d+$/.test(b) &&
+  [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(`${a} (+${b})`)].length <= 40;
 
 interface Ctx {
   G: DiagramGraph;
@@ -141,16 +154,24 @@ interface Ctx {
   ov: (x: string) => string;
 }
 
+// A group node's label read by its two forms, a count or a pair, or null.
+const shownOf = (c: Pick<Ctx, "add">, n: GraphNode): Shown | null => {
+  const m = GROUP_LABEL.exec(n.label);
+  const pair = m ? null : PAIR_LABEL.exec(n.label);
+  if (pair) return { label: n.label, base: pair[1] ?? "", n: 0, pair: pair[2] ?? "" };
+  if (!m) {
+    c.add("BUG", "glabel", `group ${n.id} label "${n.label}" has no (+N)`);
+    return null;
+  }
+  if (m[3] && m[3] !== n.id) c.add("BUG", "glabel", `group ${n.id} label tag [${m[3]}] names another id`);
+  return { label: n.label, base: m[1] ?? "", n: Number(m[2]) };
+};
+
 const readGroupLabels = (c: Pick<Ctx, "add" | "groupNodes" | "O" | "G">): Map<string, Shown> => {
   const shown = new Map<string, Shown>();
   for (const n of c.groupNodes) {
-    const m = GROUP_LABEL.exec(n.label);
-    if (!m) {
-      c.add("BUG", "glabel", `group ${n.id} label "${n.label}" has no (+N)`);
-      continue;
-    }
-    if (m[3] && m[3] !== n.id) c.add("BUG", "glabel", `group ${n.id} label tag [${m[3]}] names another id`);
-    shown.set(n.id, { label: n.label, base: m[1] ?? "", n: Number(m[2]) });
+    const s = shownOf(c, n);
+    if (s) shown.set(n.id, s);
   }
   const count = new Map<string, number>();
   for (const n of c.O.nodes) bump(count, n.label);
@@ -238,8 +259,10 @@ const checkPartition = (c: Ctx): void => {
 // flowchart or stateDiagram: the members' directed edges form two paths or
 // more of one length, two or more, each member on one; each place along them
 // is named by the namespace all its labels lead with, else the first word all
-// of them lead with, else "…", at least one place named, joined by " → ", at
-// most forty characters. Both count every member.
+// of them lead with, else the two first words they lead with between them,
+// every label leading with one, in natural order joined by "/", else "…", at
+// least one place named, joined by " → ", at most forty characters. Both count
+// every member.
 const wholeNs = (l: string): string | null => /^([A-Za-z][A-Za-z0-9-]*)\.[A-Za-z0-9_]/.exec(l.trim())?.[1] ?? null;
 const wholeWord = (l: string): string | null => /^(\p{L}[\p{L}\p{N}-]*)\s/u.exec(l.trim())?.[1] ?? null;
 const wholeOnly = (xs: Array<string | null>): string | null => (new Set(xs).size === 1 ? (xs[0] ?? null) : null);
@@ -273,7 +296,10 @@ const wholeLane = (paths: string[][]): string | null => {
   if (paths.length < 2 || len < 2 || paths.some((p) => p.length !== len)) return null;
   const places = Array.from({ length: len }, (_, i) => {
     const at = paths.map((p) => p[i] ?? "");
-    return wholeOnly(at.map(wholeNs)) ?? wholeOnly(at.map(wholeWord));
+    const words = at.map(wholeWord);
+    const two = [...new Set(words)];
+    const both = two.length === 2 && !words.includes(null) ? [...(two as string[])].sort(natural).join("/") : null;
+    return wholeOnly(at.map(wholeNs)) ?? wholeOnly(words) ?? both;
   });
   const lane = places.map((p) => p ?? "…").join(" → ");
   const short = [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(lane)].length <= 40;
@@ -291,14 +317,75 @@ const wholeOf = (original: DiagramGraph, members: readonly GraphNode[]): string[
   return lane === null ? out : [...out, lane];
 };
 
+// A fan label, written out: in a flowchart or stateDiagram, a group of two
+// members or more, each with one directed edge and no start or end
+// transition, every one hanging the same way from one overview node, which
+// is no group of such leaves, and no leaf outside the group hanging from it
+// that way. It reads as that node's name (a kept node's label, or a group's
+// base), " → …" when the edges leave it, or "… → " and the name when they
+// enter it, with no markup, at most forty characters, counting every member.
+const fanOfReading = (
+  original: DiagramGraph,
+  members: readonly GraphNode[],
+  overviewOf: (id: string) => string,
+  nameOf: (overviewNode: string) => string | undefined,
+): string | null => {
+  if (!/^(flowchart|graph|state)/.test(original.diagram_type) || members.length < 2) return null;
+  const marked = new Set((original.pseudo?.edges ?? []).flatMap((e) => [e.source, e.target]));
+  const ids = new Set(original.nodes.map((n) => n.id));
+  const hang = (id: string): { at: string; out: boolean } | null => {
+    const es = original.edges.filter((e) => e.source !== e.target && (e.source === id || e.target === id));
+    const [e] = es;
+    if (es.length !== 1 || !e || marked.has(id) || UNDIRECTED.has(e.kind ?? "") || !ids.has(id)) return null;
+    const out = e.target === id;
+    return { at: overviewOf(out ? e.source : e.target), out };
+  };
+  const inside = new Set(members.map((m) => m.id));
+  const ends = members.map((m) => hang(m.id));
+  const [first] = ends;
+  if (!first || first.at === overviewOf(members[0]?.id ?? "")) return null;
+  if (ends.some((x) => !x || x.at !== first.at || x.out !== first.out)) return null;
+  const outside = original.nodes.some((n) => {
+    const h = inside.has(n.id) ? null : hang(n.id);
+    return h !== null && h.at === first.at && h.out === first.out;
+  });
+  const held = original.nodes.filter((n) => overviewOf(n.id) === first.at && n.id !== first.at);
+  if (outside || (held.length > 0 && held.every((n) => hang(n.id) !== null))) return null;
+  const name = nameOf(first.at);
+  if (name === undefined || name.trim() === "" || /[<&*_`#]/.test(name)) return null;
+  const fan = first.out ? `${name} → …` : `… → ${name}`;
+  return [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(fan)].length <= 40 ? fan : null;
+};
+
 // A group label is a member's or a folded region's label, cut by rule, and
 // counts the members it does not name, or a family or lane label counting
 // every member. A folded region's label may be
 // qualified by the label of the region the group node sits in, which is that
 // region's parent in the original, counting every member.
+// A pair label names the group's two members, by the rule.
+const checkPair = (c: Ctx, d: Det, gs: Shown): void => {
+  const labels = d.members.map((m) => m.label).sort();
+  const ok =
+    d.members.length === 2 &&
+    pairOk(gs.base, gs.pair ?? "") &&
+    labels.join("\u0000") === [gs.base, gs.pair ?? ""].sort().join("\u0000");
+  if (!ok) c.add("BUG", "glabel", `group ${d.gid} pair label "${gs.label}" does not name its two members`);
+};
+
+// Whether a base is a family, lane or fan label of the members.
+const wholeOrFan = (c: Ctx, d: Det, base: string): boolean => {
+  const nameOf = (x: string): string | undefined => c.shown.get(x)?.base ?? c.nodeById.get(x)?.label;
+  const fan = fanOfReading(c.G, d.members, (id) => c.groupOf.get(id) ?? id, nameOf);
+  return wholeOf(c.G, d.members).includes(base) || (fan !== null && fan === base);
+};
+
 const checkGroupLabel = (c: Ctx, d: Det): void => {
   const gs = c.shown.get(d.gid);
   if (!gs) return;
+  if (gs.pair !== undefined) {
+    checkPair(c, d, gs);
+    return;
+  }
   const fromMember = d.members.some((m) => cutOf(gs.base, m.label));
   const folded = d.D.subgraphs.filter((s) => !c.ovSubs.has(s.id));
   const fromRegion = folded.some((s) => cutOf(gs.base, s.label));
@@ -314,7 +401,7 @@ const checkGroupLabel = (c: Ctx, d: Det): void => {
       d.members.map((m) => m.label),
       hidden,
     );
-  const fromWhole = wholeOf(c.G, d.members).includes(gs.base);
+  const fromWhole = wholeOrFan(c, d, gs.base);
   if (!(fromMember || fromRegion || fromQualified || fromRange || fromWhole))
     c.add("BUG", "glabel", `group ${d.gid} base "${gs.base}" names no member, region or honest range`);
   const okN =

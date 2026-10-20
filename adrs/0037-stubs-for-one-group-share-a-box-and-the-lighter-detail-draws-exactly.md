@@ -25,6 +25,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Scoped exception to [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a stub inside a box shows its member's own label)
 - Extends [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a one-way pair's target draws its edges when it needs fewer stubs)
 - Extends [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (of two leaf folds saving alike, the one leaving groups more even goes first)
+- Extended by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a target whose detail is split again draws the edges joining two groups one way)
 
 ## Decision
 

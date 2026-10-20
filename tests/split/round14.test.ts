@@ -55,7 +55,7 @@ describe("a family label", () => {
 });
 
 describe("a lane label", () => {
-  test("names each stage by its namespace or shared first word, else an ellipsis", () => {
+  test("names each stage by its namespace, shared first word or two first words, else an ellipsis", () => {
     expect(
       laneLabel([
         ["Extract GA4 events", "bronze.events"],
@@ -66,6 +66,13 @@ describe("a lane label", () => {
       laneLabel([
         ["Extract Postgres orders", "bronze.orders"],
         ["Ingest partner SFTP drops", "bronze.partner_sales"],
+      ]),
+    ).toBe("Extract/Ingest → bronze");
+    expect(
+      laneLabel([
+        ["Extract a", "bronze.a"],
+        ["Ingest b", "bronze.b"],
+        ["Load c", "bronze.c"],
       ]),
     ).toBe("… → bronze");
     expect(
@@ -88,12 +95,13 @@ describe("an ETL pipeline at low density", () => {
       const gold = plan.groups.find((g) => g.members.includes("g_ltv"));
       expect(gold?.label).toBe("gold.* (+5)");
       const lanes = plan.groups.filter((g) => g.members.some((m) => m.startsWith("ex_"))).map((g) => g.labelBase);
-      expect(lanes.sort()).toEqual(["Extract → bronze", "… → bronze"]);
+      // Every lane folds into one group, named by the two words its extracts lead with (MJL-0038).
+      expect(lanes).toEqual(["Extract/Ingest → bronze"]);
       // Silver is cut in two, so neither half claims the whole family.
       const silver = plan.groups.filter((g) => g.members.some((m) => m.startsWith("sv_")));
       for (const g of silver) expect(g.labelBase.endsWith(".*")).toBe(false);
-      // A member stub names the group by the label the overview shows.
-      expect(stubTexts(plan)).toContain("Start extract (in Airflow daily 02:00 (+1))");
+      // The scheduler pair shows both names, so a stub for either reads as its own label.
+      expect(plan.groups.map((g) => g.label)).toContain("Airflow daily 02:00 (+Start extract)");
       // Start extract alone feeds every lane, so each lane's detail draws it
       // exactly and the scheduler's detail draws each lane group as one stub.
       const sched = plan.details.find((d) => d.graph.nodes.some((n) => n.id === "extract_start"));
@@ -125,7 +133,8 @@ describe("a stub for a member of a group", () => {
       const plan = await planOf(read("er01-ecommerce"), "low");
       const texts = stubTexts(plan);
       expect(texts.filter((t) => t.endsWith(" (in group)"))).toEqual([]);
-      expect(texts).toContain("CUSTOMER (in CUSTOMER (+2))");
+      // The member a group is named after shows its own label alone (MJL-0038).
+      expect(texts).toContain("CUSTOMER");
       expect(texts).toContain("PAYMENT_METHOD (in CUSTOMER (+2))");
     },
     SLOW,

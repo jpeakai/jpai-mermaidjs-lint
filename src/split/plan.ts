@@ -44,7 +44,7 @@ import {
   neighboursOf,
   type TierContext,
 } from "./tier.ts";
-import { proposeT2 } from "./tier2.ts";
+import { hasLanes, proposeT2 } from "./tier2.ts";
 import { proposeT3 } from "./tier3.ts";
 import { proposeT4 } from "./tier4.ts";
 import { proposeT5 } from "./tier5.ts";
@@ -98,7 +98,8 @@ const othersFit = (ctx: TierContext, part: Partition): boolean =>
   ctx.part.groups.every((g) => !(part.groups.includes(g) && detailFits(ctx, ctx.part, g)) || detailFits(ctx, part, g));
 
 // Applies each merge of a candidate in turn, with the group each one made;
-// null when a merge makes no group or, capped, a detail over the target.
+// null when a merge makes no group or, capped, a detail over the target, unless
+// the candidate folds whatever its detail's size (Candidate.splits).
 const applyAll = (ctx: TierContext, merges: Merge[], capped: boolean): { part: Partition; groups: Group[] } | null => {
   let part = ctx.part;
   const groups: Group[] = [];
@@ -155,7 +156,7 @@ interface Drawn {
 const evaluate = (ctx: TierContext, cand: Candidate, current: number, step: Step): Scored | null => {
   const { work, config } = ctx;
   const merges = [cand, ...(cand.also ?? [])];
-  const applied = applyAll(ctx, merges, step.capped);
+  const applied = applyAll(ctx, merges, step.capped && cand.splits !== true);
   if (!applied) return null;
   const qedges = quotientEdges(work, applied.part);
   const shape = overviewShape(work, applied.part, qedges);
@@ -215,11 +216,20 @@ interface Step {
   before?: { edges: number; loss: number };
   // Whether a fold may add no new reachable pair.
   lossless?: boolean;
+  // Whether twin chains fold whole, and whether their detail may be split
+  // again (MJL-0038).
+  lanes?: Lanes;
 }
+
+// How a walk folds twin chains: whole, their detail split again when it does
+// not fit ("nest"), or whole only when it fits ("whole"); left out, cut into
+// runs as any twin class is.
+export type Lanes = "nest" | "whole";
 
 const bestStep = (ctx: TierContext, step: Step, current: number): Scored | null => {
   const { tier, only = () => true } = step;
-  const scored = PROPOSE[tier]({ ...ctx, uncapped: !step.capped })
+  const lanes = step.lanes === undefined ? {} : { wholeLanes: true, nestLanes: step.lanes === "nest" };
+  const scored = PROPOSE[tier]({ ...ctx, uncapped: !step.capped, ...lanes })
     .filter(only)
     .map((c) => evaluate(ctx, c, current, step))
     .filter((s): s is Scored => s !== null);
@@ -267,6 +277,8 @@ export interface Walk {
   deep?: boolean;
   // Folds an author region only when that adds no new reachable pair.
   lossless?: boolean;
+  // How twin chains fold (MJL-0038).
+  lanes?: Lanes;
 }
 
 // The share of node_target an evening step must leave in the overview, so a
@@ -442,10 +454,16 @@ const aggregatesToo = (start: Measure, snapshots: Snapshot[], walk: Walk): Folde
 
 // How a walk climbs one tier: held to details that fit but for author regions
 // and aggregates on a walk letting them fold whatever their size, and in T3
-// adding no new reachable pair when the walk asks.
+// adding no new reachable pair when the walk asks. T2 folds twin chains as the
+// walk asks (MJL-0038).
 const stepOf = (t: Tier, walk: Walk): Step => {
   const capped = (t !== "T3" && t !== "T4") || walk.capT3;
-  return { tier: t, capped, ...(walk.lossless && t === "T3" ? { lossless: true } : {}) };
+  return {
+    tier: t,
+    capped,
+    ...(walk.lossless && t === "T3" ? { lossless: true } : {}),
+    ...(t === "T2" && walk.lanes ? { lanes: walk.lanes } : {}),
+  };
 };
 
 // Folds tier by tier until the overview meets the target, or returns why not.
@@ -494,7 +512,7 @@ const planWith = (
   work: WorkGraph,
   config: ThresholdConfig,
   depth: number,
-  walk: Pick<Walk, "order" | "rules">,
+  walk: Pick<Walk, "order" | "rules" | "lanes">,
 ): Build | string => {
   const { order } = walk;
   const reasons: string[] = [];
@@ -521,7 +539,9 @@ const planWith = (
 // Plans a working graph along one ladder, holding T5 and T6 to the strict
 // rules first and relaxing them only when that gives no plan. An author
 // region folds whole however much of the diagram it holds, its detail split
-// again when it does not fit (MJL-0035).
+// again when it does not fit (MJL-0035). Twin chains fold whole first, their
+// detail split again while the depth allows; only when that gives no plan,
+// and the walk met twin chains, are they cut into runs (MJL-0038).
 export const planWork = (
   work: WorkGraph,
   config: ThresholdConfig,
@@ -529,10 +549,14 @@ export const planWork = (
   order: readonly Tier[] = FOLD_TIERS,
 ): Build | string => {
   let reason = "";
-  for (const rules of RELAXED) {
-    const built = planWith(work, config, depth, { order, rules });
-    if (typeof built !== "string") return built;
-    reason = built;
+  const whole: Lanes = depth < MAX_DEPTH ? "nest" : "whole";
+  for (const lanes of [whole, undefined]) {
+    if (lanes === undefined && !hasLanes(work)) break;
+    for (const rules of RELAXED) {
+      const built = planWith(work, config, depth, { order, rules, ...(lanes ? { lanes } : {}) });
+      if (typeof built !== "string") return built;
+      reason = built;
+    }
   }
   return reason;
 };

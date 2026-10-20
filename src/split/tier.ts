@@ -38,6 +38,9 @@ export interface Candidate extends Merge {
   // chain, every run of one twin class. A plan then folds the pattern evenly,
   // not one stage of it.
   also?: Merge[];
+  // Whether the group may fold whatever its detail's size, the detail split
+  // again: twin chains folded whole (MJL-0038).
+  splits?: true;
 }
 
 export interface TierContext {
@@ -49,6 +52,10 @@ export interface TierContext {
   // Whether the step may fold a group whose detail is over the target, to be
   // split again: author regions and aggregates on the first walk.
   uncapped?: boolean;
+  // Whether twin chains fold whole, never cut into runs, and whether such a
+  // group's detail may be split again when it does not fit (MJL-0038).
+  wholeLanes?: boolean;
+  nestLanes?: boolean;
 }
 
 export interface Adjacency {

@@ -32,6 +32,9 @@ relates_to:
   - relation: excepted_by
     target: MJL-0033
     note: sibling-leaf runs named by range are not offered when they are every group of one star
+  - relation: excepted_by
+    target: MJL-0038
+    note: twin chains are never cut into runs, since no label sorts lanes
 
 decision:
   given: some groups hold interchangeable members, twins, sibling leaves or id-labelled states, where no single member names the group. A dense mesh joins nearly every pair, so a pair says little, and a node many paths end at is no one branch's end

@@ -1,0 +1,78 @@
+%% source: authored (round 16: a tangled schema within the high target, its aggregates pairs)
+%% kind: erDiagram library lending
+erDiagram
+  MEMBER ||--o{ LOAN : borrows
+  MEMBER ||--o{ HOLD : places
+  MEMBER ||--o{ FINE : owes
+  MEMBER }o--|| BRANCH : "registered at"
+  BOOK ||--o{ COPY : "stocked as"
+  BOOK }o--|| PUBLISHER : "published by"
+  BOOK ||--o{ HOLD : "held as"
+  COPY ||--o{ LOAN : "lent as"
+  COPY }o--|| BRANCH : "shelved at"
+  LOAN ||--o| FINE : incurs
+  LOAN ||--o{ RENEWAL : "renewed by"
+  BRANCH ||--o{ STAFF : employs
+  STAFF ||--o{ LOAN : processes
+  STAFF ||--o{ SHIFT : works
+  BRANCH ||--o{ EVENT : hosts
+  MEMBER ||--o{ EVENT_SIGNUP : "signs up"
+  EVENT ||--o{ EVENT_SIGNUP : "takes"
+  FINE ||--o{ PAYMENT : "settled by"
+  MEMBER ||--o{ PAYMENT : makes
+  MEMBER {
+    int id PK
+    string name
+    string email
+    date joined
+  }
+  BOOK {
+    string isbn PK
+    string title
+    string author
+    int year
+  }
+  LOAN {
+    int id PK
+    date lent
+    date due
+    date returned
+  }
+  COPY {
+    int id PK
+    string barcode
+    string condition
+  }
+  BRANCH {
+    int id PK
+    string name
+    string address
+  }
+  FINE {
+    int id PK
+    decimal amount
+    boolean paid
+  }
+  STAFF {
+    int id PK
+    string name
+    string role
+    date hired
+  }
+  EVENT {
+    int id PK
+    string title
+    date held
+    int seats
+  }
+  PAYMENT {
+    int id PK
+    decimal amount
+    date paid
+    string method
+  }
+  HOLD {
+    int id PK
+    date placed
+    date expires
+  }

@@ -6,8 +6,18 @@
 // extract and the bronze table it lands in fold as one lane (MJL-0035).
 
 import { type FlowRegion, flowRegionsOf } from "./flow.ts";
-import { byNatural, byText } from "./graph.ts";
-import { groupOfKey, membersOfKey, over, overviewKeys, parentOfKey, type QEdge, rankedMembers } from "./quotient.ts";
+import { byNatural, byText, type WorkGraph } from "./graph.ts";
+import {
+  chainsOf,
+  groupOfKey,
+  isGroupKey,
+  membersOfKey,
+  over,
+  overviewKeys,
+  parentOfKey,
+  type QEdge,
+  rankedMembers,
+} from "./quotient.ts";
 import {
   type Adjacency,
   adjacencyOf,
@@ -70,20 +80,59 @@ export const evenRuns = (ctx: TierContext, runs: Candidate[]): Candidate[] => {
   return even.every((r) => r.keys.length >= 2 && mergeFits(ctx, r)) ? even : runs;
 };
 
+// Whether a twin class is twin chains: every key a group holding whole paths,
+// the members of all of them forming paths of one length, two or more, as
+// extracts each feeding the bronze table it lands in.
+const isLanes = (ctx: TierContext, keys: readonly string[]): boolean => {
+  if (!keys.every(isGroupKey)) return false;
+  const all = chainsOf(
+    ctx.work,
+    keys.flatMap((k) => membersOfKey(ctx.part, k)),
+  );
+  const each = keys.map((k) => chainsOf(ctx.work, membersOfKey(ctx.part, k))?.length ?? 0);
+  const length = all?.[0]?.length ?? 0;
+  return (
+    all !== null &&
+    length >= 2 &&
+    all.every((c) => c.length === length) &&
+    each.every((n) => n > 0) &&
+    each.reduce((a, b) => a + b, 0) === all.length
+  );
+};
+
+// The working graphs a walk folding twin chains whole met them in, so the
+// planner walks again cutting them into runs only where it did.
+const metLanes = new WeakSet<WorkGraph>();
+
+export const hasLanes = (work: WorkGraph): boolean => metLanes.has(work);
+
+// Twin chains folded whole, never cut into runs, since no label sorts lanes
+// (MJL-0038): split again when the walk lets a detail be, else only when the
+// detail fits.
+const wholeLanes = (ctx: TierContext, keys: string[]): Candidate[] => {
+  metLanes.add(ctx.work);
+  const c: Candidate = { keys, parent: parentOfKey(ctx.work, ctx.part, keys[0] ?? ""), tier: "T2", reason: "twins" };
+  if (ctx.nestLanes) return [{ ...c, splits: true }];
+  return mergeFits(ctx, c) ? [c] : [];
+};
+
 // Every run of one twin class folds in one step, so the class folds evenly.
+// On a walk folding twin chains whole, they fold as one group (wholeLanes).
 export const proposeTwins = (ctx: TierContext): Candidate[] => {
   const adj = adjacencyOf(ctx.qedges);
   return twinClasses(ctx, adj).flatMap((keys) =>
-    together(
-      evenRuns(
-        ctx,
-        chunksThatFit(ctx, keys, {
-          parent: parentOfKey(ctx.work, ctx.part, keys[0] ?? ""),
-          tier: "T2",
-          reason: keys.every((k) => isLeaf(adj, k)) ? "sibling leaves" : "twins",
-        }),
-      ),
-    ),
+    ctx.wholeLanes && isLanes(ctx, keys)
+      ? wholeLanes(ctx, keys)
+      : together(
+          evenRuns(
+            ctx,
+            chunksThatFit(ctx, keys, {
+              parent: parentOfKey(ctx.work, ctx.part, keys[0] ?? ""),
+              tier: "T2",
+              reason: keys.every((k) => isLeaf(adj, k)) ? "sibling leaves" : "twins",
+            }),
+          ),
+        ),
   );
 };
 
@@ -148,20 +197,37 @@ const stages = (ctx: TierContext, run: string[]): string[][] => {
   return windows.filter((w) => w.length > 1);
 };
 
-// Every stage of one chain folds in one step, so the chain is cut evenly.
+// Chain runs by where they sit: the node before the first, the node after
+// the last, the region and the length. Runs alike are twin chains.
+const placeOf = (ctx: TierContext, adj: Adjacency, run: string[]): string =>
+  JSON.stringify([
+    adj.in.get(run[0] ?? "")?.[0]?.source,
+    adj.out.get(run.at(-1) ?? "")?.[0]?.target,
+    parentOfKey(ctx.work, ctx.part, run[0] ?? ""),
+    run.length,
+  ]);
+
+// Every stage of one chain folds in one step, so the chain is cut evenly. On
+// a walk folding twin chains whole, every stage of twin chains folds in one
+// step, so each lane folds alike (MJL-0038).
 export const proposeChains = (ctx: TierContext): Candidate[] => {
   const adj = adjacencyOf(ctx.qedges);
-  return chainRuns(ctx, adj).flatMap((run) =>
-    together(
-      stages(ctx, run)
-        .map((keys): Candidate => {
-          const parent = parentOfKey(ctx.work, ctx.part, keys[0] ?? "");
-          return { keys: [...keys].sort(byText), parent, tier: "T2", reason: "chain stage" };
-        })
-        .filter((c) => mergeFits(ctx, c)),
-    ),
-  );
+  const runs = chainRuns(ctx, adj);
+  const places = new Map<string, string[][]>();
+  for (const run of runs) {
+    const k = ctx.wholeLanes ? placeOf(ctx, adj, run) : JSON.stringify(run);
+    places.set(k, [...(places.get(k) ?? []), run]);
+  }
+  return [...places.values()].flatMap((alike) => together(alike.flatMap((run) => stagesOf(ctx, run))));
 };
+
+const stagesOf = (ctx: TierContext, run: string[]): Candidate[] =>
+  stages(ctx, run)
+    .map((keys): Candidate => {
+      const parent = parentOfKey(ctx.work, ctx.part, keys[0] ?? "");
+      return { keys: [...keys].sort(byText), parent, tier: "T2", reason: "chain stage" };
+    })
+    .filter((c) => mergeFits(ctx, c));
 
 // A decision region folded whole: every overview node inside it, none
 // straddling its boundary. Null when it is already one group.

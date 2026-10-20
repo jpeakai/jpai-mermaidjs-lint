@@ -28,6 +28,8 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Scoped exception to [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (one member's edges into a group joined one way draw in the target's detail)
 - Excepted by [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (a stub inside a box shows its member's own label)
 - Extended by [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (a one-way pair's target draws its edges when it needs fewer stubs)
+- Extended by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a lane's place may take two first words, and leaves are named by the node they hang from)
+- Excepted by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a stub for a member of a pair, or for a group's namesake, shows its own label)
 
 ## Decision
 

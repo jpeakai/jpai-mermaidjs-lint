@@ -23,6 +23,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extends [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) (how groups are named and chosen once regions and aggregates have folded)
 - Extended by [MJL-0030](0030-a-group-is-named-where-a-reader-enters-it.md) (groups named where a reader enters them, dense meshes refused, terminals that lead only to ends kept in view)
 - Excepted by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (sibling-leaf runs named by range are not offered when they are every group of one star)
+- Excepted by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (twin chains are never cut into runs, since no label sorts lanes)
 
 ## Decision
 

@@ -83,11 +83,24 @@ export const familyLabel = (labels: readonly string[], outside: readonly string[
 // members' labels in flow order, and every chain is as long as the others,
 // two members or more. A stage is named by the dotted namespace every label
 // at that place leads with, else by the first word every one of them leads
-// with, else shown as an ellipsis. At least one stage is named, and the label
-// counts every member.
+// with, else by the two first words they lead with between them, in natural
+// order and joined by a slash, as "Extract/Ingest" (MJL-0038), else shown as
+// an ellipsis. At least one stage is named, and the label counts every member.
 export const LANE_SEPARATOR = " → ";
 
 const FIRST_WORD = /^(\p{L}[\p{L}\p{N}-]*)\s/u;
+
+// What joins the two first words a stage of twin chains is named by.
+export const WORD_SEPARATOR = "/";
+
+// The two first words a place's labels lead with between them, in natural
+// order and joined by WORD_SEPARATOR: null unless every label leads with a
+// word and they lead with exactly two.
+const twoWords = (words: Array<string | null>): string | null => {
+  const set = [...new Set(words)];
+  if (set.length !== 2 || set.some((w) => w === null)) return null;
+  return (set as string[]).sort(byNatural).join(WORD_SEPARATOR);
+};
 
 export const laneLabel = (chains: readonly (readonly string[])[]): string | null => {
   const length = chains[0]?.length ?? 0;
@@ -99,10 +112,22 @@ export const laneLabel = (chains: readonly (readonly string[])[]): string | null
   };
   const stages = Array.from({ length }, (_, i) => {
     const labels = chains.map((c) => (c[i] ?? "").trim());
-    return one(labels.map(dottedFamily)) ?? one(labels.map((l) => FIRST_WORD.exec(l)?.[1] ?? null));
+    const words = labels.map((l) => FIRST_WORD.exec(l)?.[1] ?? null);
+    return one(labels.map(dottedFamily)) ?? one(words) ?? twoWords(words);
   });
   if (stages.every((s) => s === null)) return null;
   const base = stages.map((s) => s ?? "…").join(LANE_SEPARATOR);
+  return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
+};
+
+// A fan label names a group holding every leaf one overview node leads to,
+// or every leaf leading to it, by that node's name and an ellipsis, as
+// "Checkout domain → …" for the external APIs Checkout calls (MJL-0038). The
+// name holds no markup and the label at most LABEL_CAP characters; it counts
+// every member.
+export const fanLabel = (name: string, out: boolean): string | null => {
+  if (name.trim() === "" || MARKUP.test(name)) return null;
+  const base = out ? `${name}${LANE_SEPARATOR}…` : `…${LANE_SEPARATOR}${name}`;
   return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
 };
 
@@ -126,10 +151,28 @@ export const wholeNaming = (
   };
 };
 
+// A pair label names a group of two members by both, the one it is named
+// after and then, in place of the count, the other's label after a plus, as
+// "ROOM (+BUILDING)", so the overview hides no name (MJL-0038). Neither label
+// holds markup or a bracket, the other is not a number, which the count
+// would read as, and the whole label holds at most LABEL_CAP characters.
+const NOT_PAIRED = /[()[\]<&*`#]|^\d+$/;
+
+export const pairLabel = (named: string, other: string): string | null => {
+  if (named === other || named.trim() === "" || other.trim() === "") return null;
+  if ([named, other].some((l) => NOT_PAIRED.test(l) || l !== l.trim())) return null;
+  const label = `${named} (+${other})`;
+  return [...graphemes.segment(label)].length <= LABEL_CAP ? label : null;
+};
+
 // The labels a group may show, preferred first: the label cut, the whole
 // label, then the label cut with the group's id, for when another node or
-// group already shows the others.
-export const groupLabels = (base: string, n: number, markdown: true | undefined, id: string): string[] => {
+// group already shows the others. A pair label is shown only whole.
+export const groupLabels = (
+  { base, n, markdown, pair }: { base: string; n: number; markdown?: true | undefined; pair?: string | undefined },
+  id: string,
+): string[] => {
+  if (pair !== undefined) return [`${base} (+${pair})`];
   const cut = `${shorten(base, markdown)} (+${n})`;
   return [...new Set([cut, `${base} (+${n})`, `${cut} [${id}]`])];
 };
@@ -145,16 +188,28 @@ export interface LabelContext {
   work: WorkGraph;
   part: Partition;
   // Each group by its key in the partition: its id, its whole author label,
-  // and the label it shows.
-  groups: Map<string, { id: string; base: string; label: string; markdown?: true }>;
+  // the label it shows, and whether that is a pair label.
+  groups: Map<string, { id: string; base: string; label: string; markdown?: true; paired?: true }>;
 }
 
 const markdownOf = (work: WorkGraph, id: string): { markdown?: true } =>
   work.nodes.get(id)?.markdown || work.regions.get(id)?.markdown ? { markdown: true } : {};
 
+// Whether a stub for a member of a group shows its own label alone: the
+// group shows both members' labels in a pair label, or the member is the one
+// the group is named after, so the group's shown label leads with the
+// member's own label, uncut (MJL-0038).
+export const ownSuffices = (
+  g: { label: string; base: string; markdown?: true; paired?: unknown },
+  own: string,
+  markdown: boolean,
+): boolean =>
+  g.paired !== undefined || (!(markdown || g.markdown) && g.base === own && g.label.startsWith(`${own} (+`));
+
 // The text before any id is added: the node's label, then IN, the label its
 // group shows and a closing bracket when it sits in a group; a whole group by
-// its shown label.
+// its shown label. A member whose own label suffices (ownSuffices) is named
+// by its own label alone.
 const plainText = (ctx: LabelContext, endpoint: string): StubText => {
   if (isGroupKey(endpoint)) {
     const g = ctx.groups.get(endpoint);
@@ -162,9 +217,13 @@ const plainText = (ctx: LabelContext, endpoint: string): StubText => {
   }
   const own = endpointLabel(ctx.work, endpoint);
   const g = ctx.groups.get(over(ctx.work, ctx.part, endpoint));
-  const label = g === undefined ? own : `${own}${IN}${g.label})`;
-  return { label, endpoint, ...markdownOf(ctx.work, endpoint) };
+  const md = markdownOf(ctx.work, endpoint);
+  const label = g === undefined || ownSuffices(g, own, md.markdown === true) ? own : `${own}${IN}${g.label})`;
+  return { label, endpoint, ...md };
 };
+
+// A stub's text before any id is added (plainText).
+export const memberText = (ctx: LabelContext, endpoint: string): string => plainText(ctx, endpoint).label;
 
 // What a reader of a plan has to go on when a stub's text names a node: every
 // label the diagram's own nodes, regions and interfaces show, each group's
@@ -258,8 +317,8 @@ export const stubTexts = (ctx: LabelContext, stubs: Stub[]): Map<string, StubTex
 };
 
 // A stub for a whole group reads alike another stub when they show one text,
-// or when the other stands for the member the group is named after ("ORDER
-// (in ORDER (+6))" beside "ORDER (+6)"). Each such stub takes FROM and the label of
+// or when the other stands for the member the group is named after ("ORDER"
+// beside "ORDER (+6)"). Each such stub takes FROM and the label of
 // the one member its edges leave, when that text has exactly the one reading
 // and that member is not the namesake, which the group's label already names.
 // Null when two stubs would still show one text.
@@ -272,8 +331,10 @@ export const namedStubs = (
   const reader = contextReader(ctx);
   const count = new Map<string, number>();
   for (const t of texts.values()) count.set(t.label, (count.get(t.label) ?? 0) + 1);
-  const alike = (endpoint: string, label: string): boolean =>
-    (count.get(label) ?? 0) > 1 || count.has(`${ctx.groups.get(endpoint)?.base}${IN}${label})`);
+  const alike = (endpoint: string, label: string): boolean => {
+    const base = ctx.groups.get(endpoint)?.base;
+    return (count.get(label) ?? 0) > 1 || count.has(`${base}${IN}${label})`) || (base !== undefined && count.has(base));
+  };
   const out = new Map(texts);
   for (const s of stubs) {
     const t = texts.get(s.id);

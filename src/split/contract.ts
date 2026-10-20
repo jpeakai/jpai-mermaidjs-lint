@@ -13,10 +13,24 @@ import { extractStats } from "../parse/stats.ts";
 import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { flowRegionsOf } from "./flow.ts";
 import { byOverviewEdge, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { FROM, fromMembers, groupLabels, IN, rangeLabel, readerOf, readingsOf, shorten, wholeNaming } from "./label.ts";
+import {
+  FROM,
+  fanLabel,
+  fromMembers,
+  groupLabels,
+  IN,
+  ownSuffices,
+  pairLabel,
+  rangeLabel,
+  readerOf,
+  readingsOf,
+  shorten,
+  wholeNaming,
+} from "./label.ts";
 import { floorOf } from "./plan.ts";
 import {
   endpointLabel,
+  fanOf,
   idMaker,
   isGroupKey,
   over,
@@ -173,18 +187,41 @@ const groupLabelViolations = (build: Build, g: SplitGroup): Violations => {
   const out: Violations = [];
   const memberLabels = (x: SplitGroup): string[] => x.members.map((m) => work.nodes.get(m)?.label ?? m);
   const [base, n] = [g.labelBase, g.hidden];
-  if (!groupLabels(base, n, g.markdown, g.id).includes(g.label)) out.push(`4: group ${g.id} label is not its parts`);
+  if (!groupLabels({ base, n, markdown: g.markdown, pair: g.paired }, g.id).includes(g.label))
+    out.push(`4: group ${g.id} label is not its parts`);
+  if (g.paired !== undefined) return [...out, ...pairViolations(build, g)];
   const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
   const range = base === rangeLabel(memberLabels(g), hidden);
   const plain = regionLabels(work, g).includes(base) || memberLabels(g).includes(base);
   const qualified = !plain && qualifiedLabels(work, g).includes(base) && shorten(base) === base;
   const naming = wholeNaming(work, g);
-  const whole = !plain && (base === naming.family || base === naming.lane) && !g.markdown;
+  const whole = !plain && (base === naming.family || base === naming.lane || base === fanName(build, g)) && !g.markdown;
   if (!(range || plain || qualified || whole)) out.push(`4: group ${g.id} label "${base}" is not from the data`);
   const all = g.members.length;
   const counts = range ? [all - 2] : qualified || whole ? [all] : [all, all - 1];
   if (!counts.includes(n)) out.push(`4: group ${g.id} counts ${n} hidden members`);
   return out;
+};
+
+// A pair label (label.ts pairLabel): a group of two members, named after one
+// whole and showing the other's label in place of the count, N being 0.
+const pairViolations = (build: Build, g: SplitGroup): Violations => {
+  const labels = g.members.map((m) => build.work.nodes.get(m)?.label ?? m);
+  const named = labels.length === 2 && labels.includes(g.labelBase) && labels.includes(g.paired ?? "");
+  const exact = pairLabel(g.labelBase, g.paired ?? "") === g.label && g.hidden === 0 && !g.markdown;
+  return named && exact ? [] : [`4: group ${g.id} pair label "${g.label}" is not its two members'`];
+};
+
+// The fan label a group of leaves may show (label.ts fanLabel), from the name
+// the node they hang from shows: a kept node's label, or a group's base.
+const fanName = (build: Build, g: SplitGroup): string | null => {
+  const part = partFromGroups(build.plan.groups);
+  const group = part.groups[part.groupOf.get(g.members[0] ?? "") ?? -1];
+  const fan = group ? fanOf(build.work, part, group) : null;
+  if (!fan) return null;
+  const other = isGroupKey(fan.node) ? build.plan.groups.find((x) => x.members[0] === fan.node.slice(1)) : undefined;
+  const name = isGroupKey(fan.node) ? other?.labelBase : (build.work.nodes.get(fan.node)?.label ?? fan.node);
+  return name === undefined ? null : fanLabel(name, fan.out);
 };
 
 const checkLabels = (build: Build): Violations => {
@@ -361,7 +398,8 @@ const readInBox = (build: Build, d: Detail, n: DiagramGraph["nodes"][number], in
       `5: stub ${n.id} in box ${n.parent} of ${d.group}, "${n.label}", reads as ${read}, not ${d.stubs[n.id]}`,
     );
   }
-  into.bases.set(n.id, `${n.label}${IN}${g.label})`);
+  const own = ownSuffices({ ...g, base: g.labelBase }, n.label, n.markdown === true);
+  into.bases.set(n.id, own ? n.label : `${n.label}${IN}${g.label})`);
 };
 
 const boxNames = (build: Build, d: Detail): Boxed => {

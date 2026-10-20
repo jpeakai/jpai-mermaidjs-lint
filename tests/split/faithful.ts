@@ -82,9 +82,22 @@ interface Shown {
   label: string;
   base: string;
   n: number;
+  // The other member's label a pair label shows in place of the count.
+  pair?: string;
 }
 
 const GROUP_LABEL = /^(.*) \(\+(\d+)\)(?: \[([^\]]+)\])?$/s;
+
+// A pair label, written out: a group of two members shows one member's whole
+// label, " (+", the other's label and ")". Neither label holds a bracket or
+// markup, or a space at either end, the other is not a number, and the whole
+// label holds at most forty characters.
+const PAIR_LABEL = /^(.*) \(\+(.+)\)$/s;
+const pairOk = (a: string, b: string): boolean =>
+  a !== b &&
+  [a, b].every((l) => l.trim() !== "" && l === l.trim() && !/[()[\]<&*`#]/.test(l)) &&
+  !/^\d+$/.test(b) &&
+  [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(`${a} (+${b})`)].length <= 40;
 
 interface Reading {
   original: DiagramGraph;
@@ -96,6 +109,36 @@ interface Reading {
   isOriginal: (id: string) => boolean;
 }
 
+// A group node's label read by its two forms, a count or a pair, or why not.
+const shownOf = (n: GraphNode): Shown | string => {
+  const m = GROUP_LABEL.exec(n.label);
+  const pair = m ? null : PAIR_LABEL.exec(n.label);
+  if (pair) return { label: n.label, base: pair[1] ?? "", n: 0, pair: pair[2] ?? "" };
+  if (!m) return `group ${n.id} label "${n.label}" has no (+N)`;
+  if (m[3] !== undefined && m[3] !== n.id) return `group ${n.id} label names ${m[3]}`;
+  return { label: n.label, base: m[1] ?? "", n: Number(m[2]) };
+};
+
+// A pair label's problems: it names the group's two members, by the rule.
+const pairProblems = (r: Reading, gid: string, g: Shown, members: readonly GraphNode[]): string[] => {
+  const labels = members.map((m) => m.label).sort();
+  const byPair =
+    members.length === 2 &&
+    pairOk(g.base, g.pair ?? "") &&
+    labels.join("\u0000") === [g.base, g.pair ?? ""].sort().join("\u0000");
+  const clash = r.original.nodes.some((n) => n.label === g.label);
+  return byPair && !clash ? [] : [`group ${gid} pair label "${g.label}" is not its two members'`];
+};
+
+// Whether a base is a family, lane or fan label of the members.
+const wholeOrFan = (r: Reading, base: string, members: readonly GraphNode[]): boolean => {
+  const overviewOf = (id: string): string => r.groupOf.get(id) ?? id;
+  const nameOf = (x: string): string | undefined =>
+    r.groups.get(x)?.base ?? r.original.nodes.find((n) => n.id === x)?.label;
+  const fan = fanOfReading(r.original, members, overviewOf, nameOf);
+  return wholeLabels(r.original, members).includes(base) || (fan !== null && fan === base);
+};
+
 const read = async (source: string, plan: SplitPlan): Promise<Reading | string[]> => {
   const original = await extractGraph(source);
   const overview = await extractGraph(plan.overviewSource);
@@ -104,10 +147,9 @@ const read = async (source: string, plan: SplitPlan): Promise<Reading | string[]
   const problems: string[] = [];
   const groups = new Map<string, Shown>();
   for (const n of overview.nodes.filter((x) => !isOriginal(x.id))) {
-    const m = GROUP_LABEL.exec(n.label);
-    if (!m) problems.push(`group ${n.id} label "${n.label}" has no (+N)`);
-    else if (m[3] !== undefined && m[3] !== n.id) problems.push(`group ${n.id} label names ${m[3]}`);
-    else groups.set(n.id, { label: n.label, base: m[1] ?? "", n: Number(m[2]) });
+    const shown = shownOf(n);
+    if (typeof shown === "string") problems.push(shown);
+    else groups.set(n.id, shown);
   }
   const order = plan.details.map((d) => d.group);
   if ([...order].sort().join() !== [...groups.keys()].sort().join())
@@ -184,8 +226,10 @@ const readerOf = (r: Reading): ((text: string) => Set<string>) => {
 // flowchart or stateDiagram: the members' directed edges form two paths or
 // more of one length, two or more, each member on one; each place along them
 // is named by the namespace all its labels lead with, else the first word all
-// of them lead with, else "…", at least one place named, joined by " → ", at
-// most forty characters. Both count every member.
+// of them lead with, else the two first words they lead with between them,
+// every label leading with one, in natural order joined by "/", else "…", at
+// least one place named, joined by " → ", at most forty characters. Both count
+// every member.
 const wholeNs = (l: string): string | null => /^([A-Za-z][A-Za-z0-9-]*)\.[A-Za-z0-9_]/.exec(l.trim())?.[1] ?? null;
 const wholeWord = (l: string): string | null => /^(\p{L}[\p{L}\p{N}-]*)\s/u.exec(l.trim())?.[1] ?? null;
 const wholeOnly = (xs: Array<string | null>): string | null => (new Set(xs).size === 1 ? (xs[0] ?? null) : null);
@@ -219,7 +263,10 @@ const wholeLane = (paths: string[][]): string | null => {
   if (paths.length < 2 || len < 2 || paths.some((p) => p.length !== len)) return null;
   const places = Array.from({ length: len }, (_, i) => {
     const at = paths.map((p) => p[i] ?? "");
-    return wholeOnly(at.map(wholeNs)) ?? wholeOnly(at.map(wholeWord));
+    const words = at.map(wholeWord);
+    const two = [...new Set(words)];
+    const both = two.length === 2 && !words.includes(null) ? [...(two as string[])].sort(byNatural).join("/") : null;
+    return wholeOnly(at.map(wholeNs)) ?? wholeOnly(words) ?? both;
   });
   const lane = places.map((p) => p ?? "…").join(" → ");
   const short = [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(lane)].length <= 40;
@@ -237,6 +284,46 @@ const wholeLabels = (original: DiagramGraph, members: readonly GraphNode[]): str
   return lane === null ? out : [...out, lane];
 };
 
+// A fan label, written out: in a flowchart or stateDiagram, a group of two
+// members or more, each with one directed edge and no start or end
+// transition, every one hanging the same way from one overview node, which
+// is no group of such leaves, and no leaf outside the group hanging from it
+// that way. It reads as that node's name (a kept node's label, or a group's
+// base), " → …" when the edges leave it, or "… → " and the name when they
+// enter it, with no markup, at most forty characters, counting every member.
+const fanOfReading = (
+  original: DiagramGraph,
+  members: readonly GraphNode[],
+  overviewOf: (id: string) => string,
+  nameOf: (overviewNode: string) => string | undefined,
+): string | null => {
+  if (!/^(flowchart|graph|state)/.test(original.diagram_type) || members.length < 2) return null;
+  const marked = new Set((original.pseudo?.edges ?? []).flatMap((e) => [e.source, e.target]));
+  const ids = new Set(original.nodes.map((n) => n.id));
+  const hang = (id: string): { at: string; out: boolean } | null => {
+    const es = original.edges.filter((e) => e.source !== e.target && (e.source === id || e.target === id));
+    const [e] = es;
+    if (es.length !== 1 || !e || marked.has(id) || UNDIRECTED.has(e.kind ?? "") || !ids.has(id)) return null;
+    const out = e.target === id;
+    return { at: overviewOf(out ? e.source : e.target), out };
+  };
+  const inside = new Set(members.map((m) => m.id));
+  const ends = members.map((m) => hang(m.id));
+  const [first] = ends;
+  if (!first || first.at === overviewOf(members[0]?.id ?? "")) return null;
+  if (ends.some((x) => !x || x.at !== first.at || x.out !== first.out)) return null;
+  const outside = original.nodes.some((n) => {
+    const h = inside.has(n.id) ? null : hang(n.id);
+    return h !== null && h.at === first.at && h.out === first.out;
+  });
+  const held = original.nodes.filter((n) => overviewOf(n.id) === first.at && n.id !== first.at);
+  if (outside || (held.length > 0 && held.every((n) => hang(n.id) !== null))) return null;
+  const name = nameOf(first.at);
+  if (name === undefined || name.trim() === "" || /[<&*_`#]/.test(name)) return null;
+  const fan = first.out ? `${name} → …` : `… → ${name}`;
+  return [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(fan)].length <= 40 ? fan : null;
+};
+
 // Each group label is a member's or a folded region's label, cut by the
 // documented rule, and counts the members it does not name, or a family or
 // lane label counting every member. A folded
@@ -248,6 +335,7 @@ const labelProblems = (r: Reading): string[] =>
     const g = r.groups.get(d.group);
     if (!g) return [];
     const members = d.graph.nodes.filter((n) => r.isOriginal(n.id));
+    if (g.pair !== undefined) return pairProblems(r, d.group, g, members);
     const folded = d.graph.subgraphs.filter((s) => r.groupOf.get(s.id) === d.group);
     const byMember = members.some((m) => cutOf(g.base, m.label)) && g.n === members.length - 1;
     const byRegion = folded.some((s) => cutOf(g.base, s.label)) && g.n >= members.length - 1;
@@ -268,7 +356,7 @@ const labelProblems = (r: Reading): string[] =>
         members.map((m) => m.label),
         hidden,
       ) === g.base && g.n === members.length - 2;
-    const byWhole = wholeLabels(r.original, members).includes(g.base) && g.n === members.length;
+    const byWhole = wholeOrFan(r, g.base, members) && g.n === members.length;
     const named = r.original.nodes.some((n) => n.label === g.label);
     return [
       ...(byMember || byRegion || byQualified || byRange || byWhole

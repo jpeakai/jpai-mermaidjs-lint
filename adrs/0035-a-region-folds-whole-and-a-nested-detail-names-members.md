@@ -23,6 +23,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extends [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (of two groups joined both ways, the one whose detail is split again draws the other's members)
 - Extends [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) (an author region folds whole however much of a diagram it holds)
 - Excepted by [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a nested overview names the member a reader is sent to with the group's shown label, as "PAYMENT_METHOD (in CUSTOMER (+2))")
+- Extended by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (twin chains fold whole however many there are, their detail split again into one group per lane, as an author region does)
 
 ## Decision
 

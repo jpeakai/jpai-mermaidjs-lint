@@ -1,0 +1,56 @@
+%% source: authored (modelled on Airflow/dbt medallion lakehouse DAG)
+%% kind: flowchart data pipeline fan-out fan-in
+flowchart LR
+  sched["Airflow daily 02:00"] --> extract_start["Start extract"]
+  extract_start --> ex_pg["Extract Postgres orders"]
+  extract_start --> ex_mysql["Extract MySQL inventory"]
+  extract_start --> ex_sf["Extract Salesforce accounts"]
+  extract_start --> ex_stripe["Extract Stripe charges"]
+  extract_start --> ex_ga["Extract GA4 events"]
+  extract_start --> ex_zd["Extract Zendesk tickets"]
+  extract_start --> ex_hub["Extract HubSpot contacts"]
+  extract_start --> ex_s3["Ingest partner SFTP drops"]
+  ex_pg --> br_orders["bronze.orders"]
+  ex_mysql --> br_inv["bronze.inventory"]
+  ex_sf --> br_acc["bronze.accounts"]
+  ex_stripe --> br_chg["bronze.charges"]
+  ex_ga --> br_evt["bronze.events"]
+  ex_zd --> br_tix["bronze.tickets"]
+  ex_hub --> br_con["bronze.contacts"]
+  ex_s3 --> br_partner["bronze.partner_sales"]
+  br_orders --> dq["Great Expectations suite"]
+  br_inv --> dq
+  br_acc --> dq
+  br_chg --> dq
+  br_evt --> dq
+  br_tix --> dq
+  br_con --> dq
+  br_partner --> dq
+  dq --> sv_orders["silver.orders_clean"]
+  dq --> sv_cust["silver.customers_resolved"]
+  dq --> sv_pay["silver.payments"]
+  dq --> sv_sess["silver.sessions"]
+  dq --> sv_support["silver.support_cases"]
+  sv_orders --> g_rev["gold.daily_revenue"]
+  sv_pay --> g_rev
+  sv_orders --> g_ltv["gold.customer_ltv"]
+  sv_cust --> g_ltv
+  sv_pay --> g_ltv
+  sv_sess --> g_funnel["gold.conversion_funnel"]
+  sv_orders --> g_funnel
+  sv_support --> g_csat["gold.csat_by_segment"]
+  sv_cust --> g_csat
+  br_inv --> g_stock["gold.stock_cover"]
+  sv_orders --> g_stock
+  g_rev --> publish["Publish semantic layer"]
+  g_ltv --> publish
+  g_funnel --> publish
+  g_csat --> publish
+  g_stock --> publish
+  publish --> looker["Looker dashboards"]
+  publish --> reverse["Hightouch reverse ETL"]
+  publish --> ml["Churn model features"]
+  dq -->|suite failed| page["PagerDuty data on-call"]
+  ml --> train["Weekly churn retrain"] --> score["Score active customers"] --> crm["Push churn risk to CRM"]
+  reverse --> crm
+  reverse --> ads["Ad audiences sync"]

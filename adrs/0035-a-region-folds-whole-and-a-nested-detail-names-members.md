@@ -22,6 +22,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Scoped exception to [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a chain stage may join prefix families, so an extract folds with the bronze table it lands in)
 - Extends [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (of two groups joined both ways, the one whose detail is split again draws the other's members)
 - Extends [MJL-0026](0026-a-split-plan-follows-the-authors-structure.md) (an author region folds whole however much of a diagram it holds)
+- Excepted by [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a nested overview names the member a reader is sent to with the group's shown label, as "PAYMENT_METHOD (in CUSTOMER (+2))")
 
 ## Decision
 

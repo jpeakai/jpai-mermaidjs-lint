@@ -13,7 +13,7 @@ import { extractStats } from "../parse/stats.ts";
 import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { flowRegionsOf } from "./flow.ts";
 import { byOverviewEdge, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf, shorten } from "./label.ts";
+import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf, shorten, wholeNaming } from "./label.ts";
 import { floorOf } from "./plan.ts";
 import { idMaker, isGroupKey, over, type Partition, qualifiedLabel, reversible, usedIds } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
@@ -153,8 +153,8 @@ const qualifiedLabels = (work: WorkGraph, g: SplitGroup): string[] =>
     .flatMap((r) => qualifiedLabel(work, r) ?? []);
 
 // 4. A group label is an author label (a folded region's label, alone or,
-// never cut, qualified by the region around it), a member's label or the range of its
-// members' labels (label.ts), shown cut by the
+// never cut, qualified by the region around it), a member's label, the range of its
+// members' labels, or the family or lane label of its members (label.ts), shown cut by the
 // one rule in label.ts, then " (+N)", N counting the members it does not
 // name, and the group's id when the label is taken. No two groups show one
 // label, and no group shows a node's label.
@@ -168,9 +168,11 @@ const groupLabelViolations = (build: Build, g: SplitGroup): Violations => {
   const range = base === rangeLabel(memberLabels(g), hidden);
   const plain = regionLabels(work, g).includes(base) || memberLabels(g).includes(base);
   const qualified = !plain && qualifiedLabels(work, g).includes(base) && shorten(base) === base;
-  if (!(range || plain || qualified)) out.push(`4: group ${g.id} label "${base}" is not from the data`);
+  const naming = wholeNaming(work, g);
+  const whole = !plain && (base === naming.family || base === naming.lane) && !g.markdown;
+  if (!(range || plain || qualified || whole)) out.push(`4: group ${g.id} label "${base}" is not from the data`);
   const all = g.members.length;
-  const counts = range ? [all - 2] : qualified ? [all] : [all, all - 1];
+  const counts = range ? [all - 2] : qualified || whole ? [all] : [all, all - 1];
   if (!counts.includes(n)) out.push(`4: group ${g.id} counts ${n} hidden members`);
   return out;
 };

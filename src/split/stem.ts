@@ -7,7 +7,7 @@
 import { Window } from "happy-dom";
 import { stemmer } from "stemmer";
 import { htmlEntities } from "./emit.ts";
-import { ID_LEAD } from "./label.ts";
+import { DOTTED, ID_LEAD } from "./label.ts";
 
 // Stop words, and the "fa" of a Font Awesome icon a label names (fa:fa-car).
 const STOP = new Set(["fa", "the", "a", "an", "of", "to", "and", "or", "for", "in", "on", "by", "with", "is", "per"]);
@@ -89,13 +89,12 @@ export const similarity = (a: ReadonlySet<string>, b: ReadonlySet<string>): numb
 // bronze.orders; else the letters leading a label that leads with an id, as
 // PLAT-1201 or OPS_12; else the letters before an underscore leading its id,
 // as br_orders. Null for a node that names none, as "10002 Backlog".
-const STAGE_LABEL = /^([A-Za-z][A-Za-z0-9-]*)\.[A-Za-z0-9_]/;
 const FAMILY_ID_LEAD = /^([A-Za-z]{1,5})[-_]?\d{2,}(?=$|[\s:._-])/;
 const STAGE_ID = /^([A-Za-z]+)_[A-Za-z0-9]/;
 
 export const stageOf = (label: string, id: string): string | null => {
   const text = label.trim();
-  const found = STAGE_LABEL.exec(text)?.[1] ?? FAMILY_ID_LEAD.exec(text)?.[1] ?? STAGE_ID.exec(id)?.[1] ?? null;
+  const found = DOTTED.exec(text)?.[1] ?? FAMILY_ID_LEAD.exec(text)?.[1] ?? STAGE_ID.exec(id)?.[1] ?? null;
   return found?.toLowerCase() ?? null;
 };
 

@@ -291,7 +291,11 @@ export const flowOrder = (work: WorkGraph): Map<string, number> => {
 // disjoint paths (twin chains), with at least one edge between members. The
 // entries are the members no member leads into, where a reader enters each
 // path. Null for any other group.
-export const chainEntries = (work: WorkGraph, members: readonly string[]): string[] | null => {
+export const chainEntries = (work: WorkGraph, members: readonly string[]): string[] | null =>
+  chainsOf(work, members)?.map((c) => c[0] as string) ?? null;
+
+// The paths of a chain-like group, each from its entry in flow order.
+export const chainsOf = (work: WorkGraph, members: readonly string[]): string[][] | null => {
   if (work.family !== "flowchart" && work.family !== "state") return null;
   const inside = new Set(members);
   const next = new Map<string, string>();
@@ -303,10 +307,15 @@ export const chainEntries = (work: WorkGraph, members: readonly string[]): strin
     entered.add(e.target);
   }
   if (next.size === 0) return null;
-  const entries = members.filter((m) => !entered.has(m));
-  let walked = 0;
-  for (const s of entries) for (let x: string | undefined = s; x !== undefined; x = next.get(x)) walked++;
-  return walked === members.length ? entries : null;
+  const chains = members
+    .filter((m) => !entered.has(m))
+    .map((s) => {
+      const path: string[] = [];
+      for (let x: string | undefined = s; x !== undefined && path.length <= members.length; x = next.get(x))
+        path.push(x);
+      return path;
+    });
+  return chains.reduce((n, c) => n + c.length, 0) === members.length ? chains : null;
 };
 
 // Each member by the edges crossing the group's boundary at it, either way, a
@@ -423,10 +432,21 @@ const regionChoices = (work: WorkGraph, g: Group): LabelParts[] => {
   ];
 };
 
+// How a group may be named beyond its region, head and members: a range of
+// its members' labels, its members taken by label, and a label naming a whole
+// dotted family or twin chains by their stages (label.ts familyLabel and
+// laneLabel), each null when it does not apply.
+export interface Naming {
+  range: string | null;
+  byLabel: boolean;
+  family?: string | null;
+  lane?: string | null;
+}
+
 export const labelChoices = (
   work: WorkGraph,
   g: Group,
-  naming: { range: string | null; byLabel: boolean } = { range: null, byLabel: false },
+  naming: Naming = { range: null, byLabel: false },
 ): LabelParts[] => {
   const { range } = naming;
   const fromRegion = regionChoices(work, g);
@@ -443,7 +463,14 @@ export const labelChoices = (
     return { base: node?.label ?? m, n: g.members.length - 1, ...markdownOf(node) };
   };
   const fromRange = range === null ? [] : [{ base: range, n: g.members.length - 2 }];
-  return [...fromRegion, ...head.map(label), ...fromRange, ...ranked.filter((m) => !head.includes(m)).map(label)];
+  const whole = [naming.family, naming.lane].flatMap((b) => (b ? [{ base: b, n: g.members.length }] : []));
+  return [
+    ...fromRegion,
+    ...head.map(label),
+    ...whole,
+    ...fromRange,
+    ...ranked.filter((m) => !head.includes(m)).map(label),
+  ];
 };
 
 // A stub stands for one outside overview node: a kept node, a region or an

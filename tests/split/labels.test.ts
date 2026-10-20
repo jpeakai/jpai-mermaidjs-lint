@@ -118,7 +118,7 @@ describe("stubs", () => {
     const plan = await must(TWO, target(4, 14));
     const producers = plan.details.find((d) => d.graph.subgraphs.some((s) => s.id === "P"));
     expect(Object.values(producers?.stubs ?? {}).sort()).toEqual(["q1", "q2"]);
-    expect(producers?.source).toContain('(["q1 (Consumers)"])');
+    expect(producers?.source).toContain('(["q1 (in Consumers (+3))"])');
   });
 
   test("a stub whose text another node shows names the id it stands for", async () => {

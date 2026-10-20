@@ -292,6 +292,7 @@ In the library it is a `selection`.
 The member of a chain-like Group Node that no other member leads into, where a reader enters it.
 A group is chain-like when, in a flowchart or `stateDiagram`, its members form one directed path, or several disjoint ones for twin chains.
 It is named after its Chain Entry, or for twin chains after the entry the flow reaches first, per [MJL-0030](adrs/0030-a-group-is-named-where-a-reader-enters-it.md).
+Twin chains whose stages a Lane Label names take it first.
 
 ## Changelog
 
@@ -382,6 +383,12 @@ The line in a Fixture naming the Rule IDs it must report, or none for a clean fi
 
 What an Edit claims about the reparsed document: same-diagrams or same-tree.
 
+## Family Label
+
+A Group Node label naming a whole dotted Prefix Family, as `gold.* (+5)`, counting every member.
+The group holds three members or more, each label leading with one namespace and a dot.
+No node outside it leads with that namespace, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
+
 ## Fence
 
 The code block that holds a Diagram in markdown.
@@ -464,6 +471,12 @@ A type declared two ways has one keyword, so `graph` is `flowchart`.
 
 The ordered thresholds of one measure.
 A Diagram lands in one Band, so one Rule of the Ladder fires.
+
+## Lane Label
+
+A Group Node label naming twin chains by their stages, as `Extract → bronze (+8)`, counting every member.
+Each place along the chains is named by the namespace every label there leads with, else the first word they all lead with, else an ellipsis.
+At least one place is named, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 
 ## LLM Fix
 
@@ -678,7 +691,7 @@ When edges join two groups both ways, one detail draws the other group as one St
 The detail split again draws the members when the other's detail fits, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
-It adds the node's group label when that differs.
+For a node inside a group, it adds ` (in `, the label the Overview shows for that group and `)`, as `PAYMENT_METHOD (in CUSTOMER (+2))`, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Its text must have exactly one reading.
 When the text could name anything else, it adds the node's id in brackets, as often as it takes.
 

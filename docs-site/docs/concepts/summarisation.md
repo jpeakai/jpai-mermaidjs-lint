@@ -22,7 +22,8 @@ Edges of one kind one way between a group's stub and one member are drawn once, 
 The group's own detail draws each of them to that member, so nothing is lost.
 When edges join two groups both ways, one detail draws the other group whole and the other draws its members.
 The detail split again draws the other's members, when the other's detail fits, per [MJL-0035](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
-A stub in a nested overview then names the member a reader is sent to, as `PAYMENT_METHOD (CUSTOMER)`.
+A stub in a nested overview then names the member a reader is sent to, as `PAYMENT_METHOD (in CUSTOMER (+2))`.
+A stub for a member of a group names that group by the label the overview shows it with, so a reader finds it by its text, per [MJL-0036](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Otherwise the detail needing stubs for fewer of the other's members draws them, so no detail shows a group whole beside its members.
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
@@ -292,10 +293,10 @@ The contract is what this page means by "meaning is preserved".
 - **Sound.** Every original node is in exactly one overview node. A suggested group is connected. Two members are joined by an edge, or by an author region the group folds whole. They are also joined by a neighbour they share, when both name one prefix family or both are leaves. Each overview edge stands for original edges, in the same direction, and none is invented. The one exception is an undirected edge, below.
 - **Sound attributes.** An overview edge keeps a label or an arrow kind only when every edge it stands for agrees.
 - **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds. Each edge between two groups is drawn exactly in its source's detail. Its target's detail draws it once for every edge from the source group into that member that draws alike.
-- **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
+- **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A family label or a lane label, recomputed from the members, counts every member, such as `gold.* (+5)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
 - **Honest ranges.** A range label, such as `DATA-0381 … DATA-0383 (+1)`, is the group's first and last member labels in natural order. Its count is of the members neither names. No member of another group has a label from the first to the last.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
-- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (Delivered)` is the member Refunded inside the group labelled Delivered. `Delivered (in group)` is the member Delivered inside the group named after it. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, and PAYMENT must draw every edge the stub draws. A plan no longer writes it, since no detail draws a group whole beside its members.
+- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (in Delivered (+3))` is the member Refunded inside the group the overview shows as `Delivered (+3)`, and `Delivered (in Delivered (+3))` is the member that group is named after. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, and PAYMENT must draw every edge the stub draws. A plan no longer writes it, since no detail draws a group whole beside its members.
 - **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. That region is an author region, or a decision region that is single-entry single-exit in the original graph, every node of which the group holds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
@@ -335,6 +336,14 @@ So it is refused when a member of another group has a label from its first to it
 A reader would look for that member here.
 An author region's label and a decision region's question still come first.
 An id-led group with no honest range is named by its first label in natural order, so `10002 Backlog (+2)` rather than a side state.
+
+Some groups are named by what every member shares, per [MJL-0036](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
+A group holding a whole dotted family is named by it, as `gold.* (+5)` for five gold tables.
+It holds three members or more, and no node outside it leads with that namespace, so halves of a layer keep a member's name.
+Twin chains are named by their stages, as `Extract → bronze (+8)` for four extracts each feeding the bronze table it lands in.
+Each place along the chains is named by the namespace every label there leads with, else by the first word they all lead with, else shown as an ellipsis.
+So lanes whose sources share no word read `… → bronze (+6)`.
+Both labels count every member, and come after an author region's label and a decision region's question, before a range or a member's label.
 
 In `T6`, a pair within one prefix family goes before any other.
 Under the strict rules, a pair across two families is never proposed.

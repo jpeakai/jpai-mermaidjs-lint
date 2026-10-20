@@ -1,13 +1,14 @@
 // The text a plan draws for a group node and for a stub, always made from the
 // diagram's own labels. A long author label is shown cut, with an ellipsis,
 // and kept whole in the plan data. A stub names the outside node it stands
-// for; a stub for a node inside another group adds that group's label, and a
-// label several stubs could share adds the id it stands for. A stub for a
-// whole group beside a stub for its namesake member names the member its
-// edges leave, as "ORDER (+6) from PAYMENT".
+// for; a stub for a node inside another group adds " (in ", the label that
+// group shows and ")", as "PAYMENT_METHOD (in CUSTOMER (+2))", and a label
+// several stubs could share adds the id it stands for. A stub for a whole
+// group beside a stub for its namesake member names the member its edges
+// leave, as "ORDER (+6) from PAYMENT".
 
 import { byNatural, type WorkGraph } from "./graph.ts";
-import { endpointLabel, isGroupKey, over, type Partition, type Stub } from "./quotient.ts";
+import { chainsOf, endpointLabel, type Group, isGroupKey, over, type Partition, type Stub } from "./quotient.ts";
 
 // The longest label a group node shows, in user-perceived characters.
 export const LABEL_CAP = 40;
@@ -58,6 +59,73 @@ export const rangeLabel = (labels: readonly string[], hidden: readonly string[] 
 // underscore, then two digits or more, ending there or at a separator.
 export const ID_LEAD = /^[A-Za-z]{0,5}[-_]?\d{2,}(?=$|[\s:._-])/;
 
+// The dotted namespace leading a label, as "gold" in gold.daily_revenue:
+// letters, digits and dashes from a letter, then a dot and a word character.
+export const DOTTED = /^([A-Za-z][A-Za-z0-9-]*)\.[A-Za-z0-9_]/;
+
+export const dottedFamily = (label: string): string | null => DOTTED.exec(label.trim())?.[1] ?? null;
+
+// A family label names a group holding a whole dotted family: three members or
+// more, every one's label leading with one namespace, as gold.daily_revenue
+// and gold.customer_ltv, and no node outside the group leading with it. It
+// reads as the namespace and ".*", as "gold.*", and counts every member.
+export const FAMILY_SUFFIX = ".*";
+
+export const familyLabel = (labels: readonly string[], outside: readonly string[]): string | null => {
+  const families = new Set(labels.map(dottedFamily));
+  const [family] = [...families];
+  if (labels.length < 3 || families.size !== 1 || family === undefined || family === null) return null;
+  return outside.some((l) => dottedFamily(l) === family) ? null : `${family}${FAMILY_SUFFIX}`;
+};
+
+// A lane label names twin chains by their stages, as "Extract → bronze" for
+// extracts each feeding the bronze table it lands in. Each chain holds its
+// members' labels in flow order, and every chain is as long as the others,
+// two members or more. A stage is named by the dotted namespace every label
+// at that place leads with, else by the first word every one of them leads
+// with, else shown as an ellipsis. At least one stage is named, and the label
+// counts every member.
+export const LANE_SEPARATOR = " → ";
+
+const FIRST_WORD = /^(\p{L}[\p{L}\p{N}-]*)\s/u;
+
+export const laneLabel = (chains: readonly (readonly string[])[]): string | null => {
+  const length = chains[0]?.length ?? 0;
+  if (chains.length < 2 || length < 2 || chains.some((c) => c.length !== length)) return null;
+  const one = (xs: Array<string | null>): string | null => {
+    const set = new Set(xs);
+    const [x] = [...set];
+    return set.size === 1 && x !== undefined ? x : null;
+  };
+  const stages = Array.from({ length }, (_, i) => {
+    const labels = chains.map((c) => (c[i] ?? "").trim());
+    return one(labels.map(dottedFamily)) ?? one(labels.map((l) => FIRST_WORD.exec(l)?.[1] ?? null));
+  });
+  if (stages.every((s) => s === null)) return null;
+  const base = stages.map((s) => s ?? "…").join(LANE_SEPARATOR);
+  return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
+};
+
+const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.label ?? id;
+
+// The family label and the lane label a group may take , from the
+// diagram's own labels: a family against every node outside the group.
+export const wholeNaming = (
+  work: WorkGraph,
+  g: Pick<Group, "members">,
+): { family: string | null; lane: string | null } => {
+  const inside = new Set(g.members);
+  const outside = [...work.nodes.values()].filter((n) => !inside.has(n.id)).map((n) => n.label);
+  const chains = chainsOf(work, g.members);
+  return {
+    family: familyLabel(
+      g.members.map((m) => labelOf(work, m)),
+      outside,
+    ),
+    lane: chains === null ? null : laneLabel(chains.map((c) => c.map((m) => labelOf(work, m)))),
+  };
+};
+
 // The labels a group may show, preferred first: the label cut, the whole
 // label, then the label cut with the group's id, for when another node or
 // group already shows the others.
@@ -84,8 +152,9 @@ export interface LabelContext {
 const markdownOf = (work: WorkGraph, id: string): { markdown?: true } =>
   work.nodes.get(id)?.markdown || work.regions.get(id)?.markdown ? { markdown: true } : {};
 
-// The text before any id is added: the node's label, then its group's label
-// in brackets when that differs; a whole group by its shown label.
+// The text before any id is added: the node's label, then IN, the label its
+// group shows and a closing bracket when it sits in a group; a whole group by
+// its shown label.
 const plainText = (ctx: LabelContext, endpoint: string): StubText => {
   if (isGroupKey(endpoint)) {
     const g = ctx.groups.get(endpoint);
@@ -93,8 +162,7 @@ const plainText = (ctx: LabelContext, endpoint: string): StubText => {
   }
   const own = endpointLabel(ctx.work, endpoint);
   const g = ctx.groups.get(over(ctx.work, ctx.part, endpoint));
-  const label =
-    g === undefined ? own : g.base === own ? `${own} (in group)` : `${own} (${shorten(g.base, g.markdown)})`;
+  const label = g === undefined ? own : `${own}${IN}${g.label})`;
   return { label, endpoint, ...markdownOf(ctx.work, endpoint) };
 };
 
@@ -119,7 +187,9 @@ export const readerOf = (work: WorkGraph, groups: Reader["groups"], groupOf: Rea
   return { literal, groups, groupOf };
 };
 
-const IN_GROUP = " (in group)";
+// What joins a member's label to the label its group shows, in a stub for
+// that member: the text reads "PAYMENT_METHOD (in CUSTOMER (+2))".
+export const IN = " (in ";
 
 // What joins a whole group's shown label to the member a stub's edges leave.
 export const FROM = " from ";
@@ -134,8 +204,8 @@ export const fromMembers = (r: Reader, text: string, gid: string): string[] => {
 const TAG = /^(.*) \[([^\]]+)\]$/s;
 
 // Every node or group a stub's text can be read as naming, by each form the
-// plan writes: a label as it is, a group's shown label, a label with " (in
-// group)" or the label of the group folding it in brackets, a group's shown
+// plan writes: a label as it is, a group's shown label, a label with IN, the
+// shown label of the group folding it and a closing bracket, a group's shown
 // label with FROM and one of its members' labels, and any of these followed
 // by " [id]" naming one of its readings. A stub is drawn only with a
 // text that has exactly one reading.
@@ -151,12 +221,10 @@ export const readingsOf = (r: Reader, text: string): Set<string> => {
       if (g && fits(g)) out.add(id);
     }
   };
-  if (text.endsWith(IN_GROUP))
-    inGroup(text.slice(0, -IN_GROUP.length), (g) => g.base === text.slice(0, -IN_GROUP.length));
   if (text.endsWith(")")) {
-    for (let at = text.indexOf(" ("); at >= 0; at = text.indexOf(" (", at + 1)) {
-      const shown = text.slice(at + 2, -1);
-      inGroup(text.slice(0, at), (g) => shorten(g.base, g.markdown) === shown);
+    for (let at = text.indexOf(IN); at >= 0; at = text.indexOf(IN, at + 1)) {
+      const shown = text.slice(at + IN.length, -1);
+      inGroup(text.slice(0, at), (g) => g.label === shown);
     }
   }
   return out;
@@ -191,7 +259,7 @@ export const stubTexts = (ctx: LabelContext, stubs: Stub[]): Map<string, StubTex
 
 // A stub for a whole group reads alike another stub when they show one text,
 // or when the other stands for the member the group is named after ("ORDER
-// (in group)" beside "ORDER (+6)"). Each such stub takes FROM and the label of
+// (in ORDER (+6))" beside "ORDER (+6)"). Each such stub takes FROM and the label of
 // the one member its edges leave, when that text has exactly the one reading
 // and that member is not the namesake, which the group's label already names.
 // Null when two stubs would still show one text.
@@ -205,7 +273,7 @@ export const namedStubs = (
   const count = new Map<string, number>();
   for (const t of texts.values()) count.set(t.label, (count.get(t.label) ?? 0) + 1);
   const alike = (endpoint: string, label: string): boolean =>
-    (count.get(label) ?? 0) > 1 || count.has(`${ctx.groups.get(endpoint)?.base}${IN_GROUP}`);
+    (count.get(label) ?? 0) > 1 || count.has(`${ctx.groups.get(endpoint)?.base}${IN}${label})`);
   const out = new Map(texts);
   for (const s of stubs) {
     const t = texts.get(s.id);

@@ -26,6 +26,7 @@ import {
   type StubText,
   shorten,
   stubTexts,
+  wholeNaming,
 } from "./label.ts";
 import {
   chainEntries,
@@ -39,6 +40,7 @@ import {
   type LabelParts,
   labelChoices,
   meets,
+  type Naming,
   over,
   overviewShape,
   type Partition,
@@ -353,19 +355,22 @@ const buildDetail = (a: Assembly, g: SplitGroup): DetailBuilt | string => {
 
 const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.label ?? id;
 
-// How a group may be named beyond its region and head: the range of its
+// How a group may be named beyond its region and head: the dotted family it
+// holds whole, or its twin chains by their stages; the range of its
 // members' labels, for twins and sibling leaves or for members whose labels
 // all lead with an id, when no other group's member falls in it; and, for
 // id-led labels, its members in natural order of their labels, so a group
 // with no honest range is named by its first id.
-const namingOf = (work: WorkGraph, part: Partition, g: Group): { range: string | null; byLabel: boolean } => {
+const namingOf = (work: WorkGraph, part: Partition, g: Group): Naming => {
   const labels = g.members.map((m) => labelOf(work, m));
+  const markdown = g.members.some((m) => work.nodes.get(m)?.markdown);
+  const whole = markdown ? { family: null, lane: null } : wholeNaming(work, g);
   const idLed = labels.every((l) => ID_LEAD.test(l));
   // Twin chains are named by an entry, so a range never spans two stages of them.
   const runs = (g.reason === "twins" || g.reason === "sibling leaves") && chainEntries(work, g.members) === null;
-  if (g.members.some((m) => work.nodes.get(m)?.markdown) || !(runs || idLed)) return { range: null, byLabel: false };
+  if (markdown || !(runs || idLed)) return { range: null, byLabel: false, ...whole };
   const hidden = part.groups.filter((x) => x !== g).flatMap((x) => x.members.map((m) => labelOf(work, m)));
-  return { range: rangeLabel(labels, hidden), byLabel: idLed };
+  return { range: rangeLabel(labels, hidden), byLabel: idLed, ...whole };
 };
 
 // The labels a group may show, preferred first. A region's label qualified

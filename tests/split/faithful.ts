@@ -145,8 +145,8 @@ const fromOf = (r: Reading, literal: Map<string, string[]>, text: string): Map<s
 };
 
 // Every node, region or group a stub's text names, by each form a plan
-// writes: a label as it is, a group's shown label, a label with " (in group)"
-// or the shown label of the group holding it in brackets, a group's shown
+// writes: a label as it is, a group's shown label, a label with " (in ", the
+// label the group holding it shows and ")", a group's shown
 // label with " from " and one of its members' labels, and any of these with
 // " [id]" naming one of its readings.
 const readerOf = (r: Reading): ((text: string) => Set<string>) => {
@@ -164,19 +164,78 @@ const readerOf = (r: Reading): ((text: string) => Set<string>) => {
     for (const id of inGroup(text)) out.add(id);
     return out;
   };
-  // " (in group)", or the group's shown label in brackets at any " (".
+  // " (in ", then the label the group shows, at any " (in ".
   const inGroup = (text: string): string[] => {
-    const own = text.slice(0, -" (in group)".length);
-    const named = text.endsWith(" (in group)") ? held(own, (g) => cutOf(g.base, own)) : [];
-    if (!text.endsWith(")")) return named;
-    const cuts = [...text.matchAll(/ \(/g)].map((m) => m.index ?? 0);
-    return [...named, ...cuts.flatMap((at) => held(text.slice(0, at), (g) => g.base === text.slice(at + 2, -1)))];
+    if (!text.endsWith(")")) return [];
+    const cuts = [...text.matchAll(/ \(in /g)].map((m) => m.index ?? 0);
+    return cuts.flatMap((at) => held(text.slice(0, at), (g) => g.label === text.slice(at + " (in ".length, -1)));
   };
   return readings;
 };
 
+// The labels the docs promise for a group holding a whole dotted family or
+// twin chains, written out. A family label: three members or more, each label
+// leading with one namespace and a dot, as gold.x, no other node's label
+// leading with it, read as the namespace and ".*". A lane label, in a
+// flowchart or stateDiagram: the members' directed edges form two paths or
+// more of one length, two or more, each member on one; each place along them
+// is named by the namespace all its labels lead with, else the first word all
+// of them lead with, else "…", at least one place named, joined by " → ", at
+// most forty characters. Both count every member.
+const wholeNs = (l: string): string | null => /^([A-Za-z][A-Za-z0-9-]*)\.[A-Za-z0-9_]/.exec(l.trim())?.[1] ?? null;
+const wholeWord = (l: string): string | null => /^(\p{L}[\p{L}\p{N}-]*)\s/u.exec(l.trim())?.[1] ?? null;
+const wholeOnly = (xs: Array<string | null>): string | null => (new Set(xs).size === 1 ? (xs[0] ?? null) : null);
+
+// The members' paths by their directed edges, each as labels from its entry,
+// or null when the edges do not form disjoint paths covering every member.
+const wholePaths = (original: DiagramGraph, members: readonly GraphNode[]): string[][] | null => {
+  const inside = new Set(members.map((m) => m.id));
+  const next = new Map<string, string>();
+  const into = new Set<string>();
+  for (const e of original.edges) {
+    if (e.source === e.target || !inside.has(e.source) || !inside.has(e.target)) continue;
+    if (UNDIRECTED.has(e.kind ?? "") || next.has(e.source) || into.has(e.target)) return null;
+    next.set(e.source, e.target);
+    into.add(e.target);
+  }
+  const label = new Map(members.map((m) => [m.id, m.label]));
+  const paths = members
+    .filter((m) => !into.has(m.id))
+    .map((m) => {
+      const p: string[] = [];
+      for (let x: string | undefined = m.id; x !== undefined && p.length <= members.length; x = next.get(x))
+        p.push(label.get(x) ?? x);
+      return p;
+    });
+  return paths.reduce((n, p) => n + p.length, 0) === members.length ? paths : null;
+};
+
+const wholeLane = (paths: string[][]): string | null => {
+  const len = paths[0]?.length ?? 0;
+  if (paths.length < 2 || len < 2 || paths.some((p) => p.length !== len)) return null;
+  const places = Array.from({ length: len }, (_, i) => {
+    const at = paths.map((p) => p[i] ?? "");
+    return wholeOnly(at.map(wholeNs)) ?? wholeOnly(at.map(wholeWord));
+  });
+  const lane = places.map((p) => p ?? "…").join(" → ");
+  const short = [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(lane)].length <= 40;
+  return places.some((p) => p !== null) && short ? lane : null;
+};
+
+const wholeLabels = (original: DiagramGraph, members: readonly GraphNode[]): string[] => {
+  const inside = new Set(members.map((m) => m.id));
+  const family = wholeOnly(members.map((m) => wholeNs(m.label)));
+  const outside = original.nodes.some((n) => !inside.has(n.id) && wholeNs(n.label) === family);
+  const out = members.length >= 3 && family !== null && !outside ? [`${family}.*`] : [];
+  if (!/^(flowchart|graph|state)/.test(original.diagram_type)) return out;
+  const paths = wholePaths(original, members);
+  const lane = paths === null ? null : wholeLane(paths);
+  return lane === null ? out : [...out, lane];
+};
+
 // Each group label is a member's or a folded region's label, cut by the
-// documented rule, and counts the members it does not name. A folded
+// documented rule, and counts the members it does not name, or a family or
+// lane label counting every member. A folded
 // region's label may be qualified by the label of the region it sits in, in
 // the original and as the overview draws the group node, as "Public subnets
 // (us-east-1)", counting every member.
@@ -205,9 +264,10 @@ const labelProblems = (r: Reading): string[] =>
         members.map((m) => m.label),
         hidden,
       ) === g.base && g.n === members.length - 2;
+    const byWhole = wholeLabels(r.original, members).includes(g.base) && g.n === members.length;
     const named = r.original.nodes.some((n) => n.label === g.label);
     return [
-      ...(byMember || byRegion || byQualified || byRange
+      ...(byMember || byRegion || byQualified || byRange || byWhole
         ? []
         : [`group ${d.group} label "${g.label}" is not its members' or region's`]),
       ...(named ? [`group ${d.group} label "${g.label}" is a node's label`] : []),

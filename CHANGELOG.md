@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.14.0] - 2026-10-20
+
 ### Changed
 
 - **Twin chains fold whole.** A pipeline's lanes fold into one group, never cut into runs by label order, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
@@ -506,7 +510,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.10.0...v0.11.0

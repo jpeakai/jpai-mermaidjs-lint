@@ -22,8 +22,8 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 
 ## Relates to
 
-- Scoped exception to [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a stub inside a box shows its member's own label, and the box shows the label the overview shows for the group)
-- Extends [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (the target of edges joining two groups one way draws them when it needs stubs for fewer members, or as many when it meets fewer outside nodes)
+- Scoped exception to [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a stub inside a box shows its member's own label)
+- Extends [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a one-way pair's target draws its edges when it needs fewer stubs)
 - Extends [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (of two leaf folds saving alike, the one leaving groups more even goes first)
 
 ## Decision
@@ -36,11 +36,11 @@ a reader of a detail reads each stub as one outside thing, and finds it in the o
 
 #### We prefer
 
-drawing a flowchart detail's stubs for two or more members of one other group inside one box. The box is a subgraph at the top level, showing the label the overview shows for that group. Each stub inside it shows its member's own label, as "Zuul edge proxy" inside "Edge tier (+2)". A group may stand for one author region whole, when it folds that region and every member sits inside it. Its box then stands for the region, and an edge to the region meets the box. Any other group's box stands for the group and draws no edge. A group is boxed only when every stub for it stands for a member or for that region. Each stub must also show its plain text, and each member's label must name one member of the group. A detail draws its boxes, most stubs first, while it still meets its target, and a detail split again draws none. The contract and both test readers read a box as that group's region, or as the group, and each stub inside it as the one member its label names. Edges may join two groups one way only. The target draws them exactly when it needs stubs for fewer of the source's members than the source needs of the target's. With as many, two or more, the target draws them when its detail meets fewer outside overview nodes than the source's. The target then draws a stub for each source member, and the source draws the target as one stub. That holds only while the target's detail still meets its target, with every group asking so drawn as stubs. Otherwise, or when the source's detail is split again, the source draws them, as before. In T5, of two folds saving as much per node hidden, the one whose largest group holds fewer members goes first
+drawing a flowchart detail's stubs for two or more members of one other group inside one box. The box is a subgraph at the top level, showing the label the overview shows for that group. Each stub inside it shows its member's own label, as "Zuul edge proxy" inside "Edge tier (+2)". A group may stand for one author region whole, when it folds that region and every member sits inside it. Its box then stands for the region, and an edge to the region meets the box. Any other group's box stands for the group and draws no edge. A group is boxed only when every stub for it stands for a member or for that region. Each stub must also show its plain text, and each member's label must name one member of the group. A detail draws its boxes, most stubs first, while it still meets its target, and a detail split again draws none. The contract and both test readers read a box as that group's region, or as the group. They read each stub inside it as the one member its label names. Edges may join two groups one way only. The target draws them exactly when it needs stubs for fewer of the source's members than the source needs of the target's. With as many, two or more, the target draws them when its detail meets fewer outside overview nodes than the source's. The target then draws a stub for each source member, and the source draws the target as one stub. That holds only while the target's detail still meets its target, with every group asking so drawn as stubs. Otherwise, or when the source's detail is split again, the source draws them, as before. In T5, of two folds saving as much per node hidden, the one whose largest group holds fewer members goes first
 
 #### Because
 
-a box shows at a glance that its stubs belong to one group, where repeated brackets read as duplicates. A box standing for a region draws the edges to the region and to its members as the author drew them. Moving the exact edges to the detail that needs as few stubs or fewer, and meets fewer outside nodes, takes stubs from the heaviest detail. A detail's stubs for one group then usually fit one box. Two groups of one size read as two parts of one story, where a group swallowing its neighbour's family is named after one member and hides the rest
+a box shows at a glance that its stubs belong to one group, where repeated brackets read as duplicates. A box standing for a region draws the edges to the region and to its members as the author drew them. Moving the exact edges to the detail that needs as few stubs or fewer, and meets fewer outside nodes, takes stubs from the heaviest detail. A detail's stubs for one group then usually fit one box. Two groups of one size read as two parts of one story. A group swallowing its neighbour's family is named after one member and hides the rest
 
 #### Unless
 
@@ -60,4 +60,5 @@ the diagram is not a flowchart, since a classDiagram namespace and an erDiagram 
 - A box adds a subgraph, which weighs on a detail's score, so a tight detail keeps its bracketed stubs.
 - A stub inside a box no longer reads alone, since the box names its group.
 - A detail drawing a group whole may show two edges into its stub, from the detail's own region and from a member inside it.
-- The contract, the reading and the checker each accept one more stub form, and the checker one more case of a stub for another group's member.
+- The contract, the reading and the checker each accept one more stub form.
+- The checker accepts one more case of a stub for another group's member.

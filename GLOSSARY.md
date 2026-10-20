@@ -697,7 +697,8 @@ For a node inside a group, it adds the label the Overview shows for that group i
 An example is `PAYMENT_METHOD (in CUSTOMER (+2))`, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Its text must have exactly one reading.
 When the text could name anything else, it adds the node's id in brackets, as often as it takes.
-Edges joining two groups one way are drawn as Stubs for the source's members by the target, when it needs fewer, or as many and meets fewer outside nodes, per [MJL-0037](adrs/0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md).
+The target of edges joining two groups one way may draw Stubs for the source's members.
+It does so when it needs fewer, or as many and meets fewer outside nodes, per [MJL-0037](adrs/0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md).
 
 ## Stub Box
 

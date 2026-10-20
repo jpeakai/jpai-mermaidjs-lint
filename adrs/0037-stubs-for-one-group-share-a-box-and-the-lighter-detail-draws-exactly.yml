@@ -30,10 +30,10 @@ enforced_in:
 relates_to:
   - relation: excepts
     target: MJL-0036
-    note: a stub inside a box shows its member's own label, and the box shows the label the overview shows for the group
+    note: a stub inside a box shows its member's own label
   - relation: extends
     target: MJL-0036
-    note: the target of edges joining two groups one way draws them when it needs stubs for fewer members, or as many when it meets fewer outside nodes
+    note: a one-way pair's target draws its edges when it needs fewer stubs
   - relation: extends
     target: MJL-0031
     note: of two leaf folds saving alike, the one leaving groups more even goes first
@@ -50,7 +50,8 @@ decision:
     A group is boxed only when every stub for it stands for a member or for that region.
     Each stub must also show its plain text, and each member's label must name one member of the group.
     A detail draws its boxes, most stubs first, while it still meets its target, and a detail split again draws none.
-    The contract and both test readers read a box as that group's region, or as the group, and each stub inside it as the one member its label names.
+    The contract and both test readers read a box as that group's region, or as the group.
+    They read each stub inside it as the one member its label names.
     Edges may join two groups one way only.
     The target draws them exactly when it needs stubs for fewer of the source's members than the source needs of the target's.
     With as many, two or more, the target draws them when its detail meets fewer outside overview nodes than the source's.
@@ -63,7 +64,8 @@ decision:
     A box standing for a region draws the edges to the region and to its members as the author drew them.
     Moving the exact edges to the detail that needs as few stubs or fewer, and meets fewer outside nodes, takes stubs from the heaviest detail.
     A detail's stubs for one group then usually fit one box.
-    Two groups of one size read as two parts of one story, where a group swallowing its neighbour's family is named after one member and hides the rest
+    Two groups of one size read as two parts of one story.
+    A group swallowing its neighbour's family is named after one member and hides the rest
   unless: >-
     the diagram is not a flowchart, since a classDiagram namespace and an erDiagram take no label to show the group's.
     A box may not fit the target, or a member's label may name two members.
@@ -79,4 +81,5 @@ consequences:
     - A box adds a subgraph, which weighs on a detail's score, so a tight detail keeps its bracketed stubs.
     - A stub inside a box no longer reads alone, since the box names its group.
     - A detail drawing a group whole may show two edges into its stub, from the detail's own region and from a member inside it.
-    - The contract, the reading and the checker each accept one more stub form, and the checker one more case of a stub for another group's member.
+    - The contract, the reading and the checker each accept one more stub form.
+    - The checker accepts one more case of a stub for another group's member.

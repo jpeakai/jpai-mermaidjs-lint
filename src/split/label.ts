@@ -122,9 +122,10 @@ export const laneLabel = (chains: readonly (readonly string[])[]): string | null
 
 // A fan label names a group holding every leaf one overview node leads to,
 // or every leaf leading to it, by that node's name and an ellipsis, as
-// "Checkout domain → …" for the external APIs Checkout calls (MJL-0038). The
-// name holds no markup and the label at most LABEL_CAP characters; it counts
-// every member.
+// "Order service → …" for the external APIs an order service calls
+// (MJL-0038), when their list label does not fit (MJL-0040). The name holds
+// no markup and the label at most LABEL_CAP characters; it counts every
+// member.
 export const fanLabel = (name: string, out: boolean): string | null => {
   if (name.trim() === "" || MARKUP.test(name)) return null;
   const base = out ? `${name}${LANE_SEPARATOR}…` : `…${LANE_SEPARATOR}${name}`;
@@ -171,11 +172,11 @@ export const wholeNaming = (
 // would read as, and the whole label holds at most LABEL_CAP characters.
 const NOT_PAIRED = /[()[\]<&*`#]|^\d+$/;
 
-export const pairLabel = (named: string, other: string): string | null => {
+export const pairLabel = (named: string, other: string, cap = LABEL_CAP): string | null => {
   if (named === other || named.trim() === "" || other.trim() === "") return null;
   if ([named, other].some((l) => NOT_PAIRED.test(l) || l !== l.trim())) return null;
   const label = `${named} (+${other})`;
-  return [...graphemes.segment(label)].length <= LABEL_CAP ? label : null;
+  return [...graphemes.segment(label)].length <= cap ? label : null;
 };
 
 // The most members a group names one by one in place of its count: a group
@@ -186,18 +187,32 @@ export const pairLabel = (named: string, other: string): string | null => {
 export const MAX_LISTED = 3;
 export const LIST_SEPARATOR = ", ";
 
+// How many members a list label may name and how long it may be. A group of
+// leaves hanging from one overview node (quotient.ts fanOf) holds nothing but
+// those leaves, so its list names every member however many, within twice
+// LABEL_CAP, as "Carrier quote API (+ECB rates feed, Payment provider API,
+// SMTP relay)" (MJL-0040).
+export interface ListLimits {
+  most: number;
+  cap: number;
+}
+
+export const LISTED: ListLimits = { most: MAX_LISTED, cap: LABEL_CAP };
+export const FAN_LISTED: ListLimits = { most: Number.POSITIVE_INFINITY, cap: 2 * LABEL_CAP };
+
 // The text a group's label shows in place of its count, naming every member
 // but the one it is named after: the other's label for a pair, the others in
-// natural order joined by LIST_SEPARATOR for a group of three. Null when the
-// group is larger, or a label breaks the pair rules or, in a list, holds a
-// comma.
-export const listedOthers = (named: string, labels: readonly string[]): string | null => {
+// natural order joined by LIST_SEPARATOR for a larger group. Null when the
+// group holds more members than the limits allow, or a label breaks the pair
+// rules or, in a list, holds a comma.
+export const listedOthers = (named: string, labels: readonly string[], limits = LISTED): string | null => {
   const at = labels.indexOf(named);
   const others = labels.filter((_, i) => i !== at);
-  if (at < 0 || labels.length < 2 || labels.length > MAX_LISTED || new Set(labels).size !== labels.length) return null;
+  if (at < 0 || labels.length < 2 || labels.length > limits.most || new Set(labels).size !== labels.length) return null;
   if (others.length > 1 && others.some((l) => l.includes(","))) return null;
   const text = [...others].sort(byNatural).join(LIST_SEPARATOR);
-  return others.every((l) => pairLabel(named, l) !== null) && pairLabel(named, text) !== null ? text : null;
+  const fits = (l: string): boolean => pairLabel(named, l, limits.cap) !== null;
+  return others.every(fits) && fits(text) ? text : null;
 };
 
 // The labels a group may show, preferred first: the label cut, the whole

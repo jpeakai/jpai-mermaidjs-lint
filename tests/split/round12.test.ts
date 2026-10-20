@@ -189,11 +189,12 @@ describe("an erDiagram aggregate", () => {
   );
 
   test(
-    "met by dropping rows folds no aggregate, so it declares no new reachable pair",
+    "met by dropping rows folds only closed aggregates, with no new reachable pair",
     async () => {
       const plan = await planOf(read("er06-university"), "high");
       expect(plan.loss.newReachablePairs).toBe(0);
-      expect(plan.groups).toEqual([]);
+      expect(plan.groups.map((g) => g.reason)).toEqual(["aggregate root", "aggregate root"]);
+      expect(sideBySide(plan)).toEqual([]);
       expect(plan.rowDetails.length).toBeGreaterThan(0);
     },
     SLOW,

@@ -607,6 +607,19 @@
     },
     {
       "data": {
+        "id": "MJL-0040",
+        "label": "0040",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md",
+        "title": "A diagram over its target only for its rows folds its closed aggregates, and a group of leaves is named by every member",
+        "description": "Which aggregates fold once rows dropped meet the target, and how a group of leaves is named",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -1847,6 +1860,16 @@
     },
     {
       "data": {
+        "id": "MJL-0038-excepted_by-MJL-0040",
+        "source": "MJL-0038",
+        "target": "MJL-0040",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a group of leaves whose labels fit a list is named by them, before the node they hang from"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0039-excepts-MJL-0033",
         "source": "MJL-0039",
         "target": "MJL-0033",
@@ -1883,6 +1906,56 @@
         "label": "extends",
         "relation": "extends",
         "note": "a flowchart run is named by where its flow enters and leaves, before a member's name"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0039-superseded_by-MJL-0040",
+        "source": "MJL-0039",
+        "target": "MJL-0040",
+        "label": "superseded by",
+        "relation": "superseded_by",
+        "note": "a schema that meets its target by rows alone folds its closed aggregates, where MJL-0039 folded nothing"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0039-extended_by-MJL-0040",
+        "source": "MJL-0039",
+        "target": "MJL-0040",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a group of leaves lists every member, as a group of three does"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0040-supersedes-MJL-0039",
+        "source": "MJL-0040",
+        "target": "MJL-0039",
+        "label": "supersedes",
+        "relation": "supersedes",
+        "note": "a schema that meets its target by rows alone folds its closed aggregates, where MJL-0039 folded nothing"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0040-extends-MJL-0039",
+        "source": "MJL-0040",
+        "target": "MJL-0039",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a group of leaves lists every member, as a group of three does"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0040-excepts-MJL-0038",
+        "source": "MJL-0040",
+        "target": "MJL-0038",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a group of leaves whose labels fit a list is named by them, before the node they hang from"
       }
     }
   ],

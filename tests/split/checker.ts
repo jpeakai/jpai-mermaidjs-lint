@@ -128,24 +128,27 @@ interface Shown {
 // markup, or a space at either end, the other is not a number, and the whole
 // label holds at most forty characters.
 const PAIR_LABEL = /^(.*) \(\+(.+)\)$/s;
-const pairOk = (a: string, b: string): boolean =>
+const pairOk = (a: string, b: string, cap = 40): boolean =>
   a !== b &&
   [a, b].every((l) => l.trim() !== "" && l === l.trim() && !/[()[\]<&*`#]/.test(l)) &&
   !/^\d+$/.test(b) &&
-  [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(`${a} (+${b})`)].length <= 40;
+  [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(`${a} (+${b})`)].length <= cap;
 
 // A list label, written out: a group of three members shows one member's
 // whole label, " (+", the other two in natural order joined by ", ", and ")".
-// Neither other label holds a comma, and each pairs with the named one.
-const listOk = (base: string, labels: readonly string[], shown: string): boolean => {
+// Neither other label holds a comma, and each pairs with the named one. A
+// group of leaves hanging from one overview node lists every member however
+// many, within eighty characters.
+const listOk = (base: string, labels: readonly string[], shown: string, fan = false): boolean => {
+  const cap = fan ? 80 : 40;
   const others = labels.filter((l, i) => !(l === base && labels.indexOf(base) === i));
   if (others.length !== labels.length - 1 || new Set(labels).size !== labels.length) return false;
-  if (labels.length === 2) return pairOk(base, others[0] ?? "") && shown === others[0];
+  if (labels.length === 2) return pairOk(base, others[0] ?? "", cap) && shown === others[0];
   const text = [...others].sort(natural).join(", ");
   return (
-    labels.length === 3 &&
-    others.every((l) => !l.includes(",") && pairOk(base, l)) &&
-    pairOk(base, text) &&
+    (labels.length === 3 || (fan && labels.length > 3)) &&
+    others.every((l) => !l.includes(",") && pairOk(base, l, cap)) &&
+    pairOk(base, text, cap) &&
     shown === text
   );
 };
@@ -368,12 +371,11 @@ const wholeOf = (original: DiagramGraph, members: readonly GraphNode[]): string[
 // that way. It reads as that node's name (a kept node's label, or a group's
 // base), " → …" when the edges leave it, or "… → " and the name when they
 // enter it, with no markup, at most forty characters, counting every member.
-const fanOfReading = (
+const fanHang = (
   original: DiagramGraph,
   members: readonly GraphNode[],
   overviewOf: (id: string) => string,
-  nameOf: (overviewNode: string) => string | undefined,
-): string | null => {
+): { at: string; out: boolean } | null => {
   if (!/^(flowchart|graph|state)/.test(original.diagram_type) || members.length < 2) return null;
   const marked = new Set((original.pseudo?.edges ?? []).flatMap((e) => [e.source, e.target]));
   const ids = new Set(original.nodes.map((n) => n.id));
@@ -394,7 +396,17 @@ const fanOfReading = (
     return h !== null && h.at === first.at && h.out === first.out;
   });
   const held = original.nodes.filter((n) => overviewOf(n.id) === first.at && n.id !== first.at);
-  if (outside || (held.length > 0 && held.every((n) => hang(n.id) !== null))) return null;
+  return outside || (held.length > 0 && held.every((n) => hang(n.id) !== null)) ? null : first;
+};
+
+const fanOfReading = (
+  original: DiagramGraph,
+  members: readonly GraphNode[],
+  overviewOf: (id: string) => string,
+  nameOf: (overviewNode: string) => string | undefined,
+): string | null => {
+  const first = fanHang(original, members, overviewOf);
+  if (!first) return null;
   const name = nameOf(first.at);
   if (name === undefined || name.trim() === "" || /[<&*_`#]/.test(name)) return null;
   const fan = first.out ? `${name} → …` : `… → ${name}`;
@@ -408,10 +420,12 @@ const fanOfReading = (
 // region's parent in the original, counting every member.
 // A pair or list label names the group's two or three members, by the rule.
 const checkPair = (c: Ctx, d: Det, gs: Shown): void => {
+  const fan = fanHang(c.G, d.members, (id) => c.groupOf.get(id) ?? id) !== null;
   const ok = listOk(
     gs.base,
     d.members.map((m) => m.label),
     gs.pair ?? "",
+    fan,
   );
   if (!ok) c.add("BUG", "glabel", `group ${d.gid} pair label "${gs.label}" does not name its members`);
 };

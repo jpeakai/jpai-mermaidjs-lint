@@ -28,6 +28,8 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Scoped exception to [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a tangled schema that meets its target by rows alone stays at rows dropped, over folding its aggregates into pairs)
 - Extends [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a group of three names every member, as a group of two does)
 - Extends [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a flowchart run is named by where its flow enters and leaves, before a member's name)
+- Superseded by [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) (a schema that meets its target by rows alone folds its closed aggregates, where MJL-0039 folded nothing)
+- Extended by [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) (a group of leaves lists every member, as a group of three does)
 
 ## Decision
 

@@ -14,11 +14,13 @@ import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assembl
 import { flowRegionsOf } from "./flow.ts";
 import { byOverviewEdge, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
 import {
+  FAN_LISTED,
   FROM,
   fanLabel,
   fromMembers,
   groupLabels,
   IN,
+  LISTED,
   listedOthers,
   ownSuffices,
   rangeLabel,
@@ -219,11 +221,12 @@ const groupLabelViolations = (build: Build, g: SplitGroup): Violations => {
 };
 
 // A pair or list label (label.ts listedOthers): a group of two or three
-// members, named after one whole and showing the others' labels, recomputed
-// from the members, in place of the count, N being 0.
+// members, or a group of leaves hanging from one overview node within
+// FAN_LISTED, named after one whole and showing the others' labels,
+// recomputed from the members, in place of the count, N being 0.
 const pairViolations = (build: Build, g: SplitGroup): Violations => {
   const labels = g.members.map((m) => build.work.nodes.get(m)?.label ?? m);
-  const others = listedOthers(g.labelBase, labels);
+  const others = listedOthers(g.labelBase, labels, fanAt(build, g) ? FAN_LISTED : LISTED);
   const markdown = g.markdown || g.members.some((m) => build.work.nodes.get(m)?.markdown);
   const exact = others !== null && others === g.paired && `${g.labelBase} (+${others})` === g.label;
   return exact && g.hidden === 0 && !markdown ? [] : [`4: group ${g.id} pair label "${g.label}" is not its members'`];
@@ -237,12 +240,18 @@ const spanName = (work: WorkGraph, g: SplitGroup): string | null => {
   return a && b && !a.markdown && !b.markdown && !g.markdown ? spanLabel(a.label, b.label) : null;
 };
 
+// The overview node a group of leaves hangs from, recomputed from the plan's
+// groups (quotient.ts fanOf), or null.
+const fanAt = (build: Build, g: SplitGroup): { node: string; out: boolean } | null => {
+  const part = partFromGroups(build.plan.groups);
+  const group = part.groups[part.groupOf.get(g.members[0] ?? "") ?? -1];
+  return group ? fanOf(build.work, part, group) : null;
+};
+
 // The fan label a group of leaves may show (label.ts fanLabel), from the name
 // the node they hang from shows: a kept node's label, or a group's base.
 const fanName = (build: Build, g: SplitGroup): string | null => {
-  const part = partFromGroups(build.plan.groups);
-  const group = part.groups[part.groupOf.get(g.members[0] ?? "") ?? -1];
-  const fan = group ? fanOf(build.work, part, group) : null;
+  const fan = fanAt(build, g);
   if (!fan) return null;
   const other = isGroupKey(fan.node) ? build.plan.groups.find((x) => x.members[0] === fan.node.slice(1)) : undefined;
   const name = isGroupKey(fan.node) ? other?.labelBase : (build.work.nodes.get(fan.node)?.label ?? fan.node);

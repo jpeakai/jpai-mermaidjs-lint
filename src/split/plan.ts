@@ -437,6 +437,37 @@ const loosen = (start: Measure): Measure => {
   return m;
 };
 
+// Whether an aggregate is closed: one member holds every relationship that
+// crosses the group's edge and the others relate to nothing outside it, so
+// folded it draws every relationship it had at the entity that holds it, and
+// hides only the ones inside (MJL-0040).
+const closed = (work: WorkGraph, g: Group): boolean => {
+  const inside = new Set(g.members);
+  const faces = new Set(
+    work.edges
+      .filter((e) => inside.has(e.source) !== inside.has(e.target))
+      .map((e) => (inside.has(e.source) ? e.source : e.target)),
+  );
+  return faces.size === 1;
+};
+
+// An erDiagram that meets the target with rows dropped alone still draws
+// every entity and relationship: it folds its closed aggregates too, evenly,
+// each named by every member, so the overview loses density and no name,
+// and draws every relationship it keeps at its own entity. An aggregate
+// whose other members relate outside it stays in view, as do other
+// diagrams, at T1 (MJL-0040, superseding MJL-0039's rows-dropped stop).
+const closedAggregates = (start: Measure, snapshots: Snapshot[], walk: Walk): Folded => {
+  const { work } = start.ctx;
+  const done: Folded = { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
+  if (work.family !== "er" || !walk.order.includes("T4")) return done;
+  const folded = foldEvenly(start, { tier: "T4", capped: true }, false).ctx.part.groups;
+  const kept = folded.filter((g) => g.tier === "T4" && closed(work, g));
+  if (kept.length === 0) return done;
+  const part = partitionOf(kept);
+  return { work, part, snapshots: [...snapshots, snapshotOf("T4", part)], tier: "T4" };
+};
+
 // How a walk climbs one tier: held to details that fit but for author regions
 // and aggregates on a walk letting them fold whatever their size, and in T3
 // adding no new reachable pair when the walk asks. T2 folds twin chains as the
@@ -453,12 +484,11 @@ const stepOf = (t: Tier, walk: Walk): Step => {
 
 // Folds tier by tier until the overview meets the target, or returns why not.
 // A diagram whose rows alone put it over the target meets it at T1, rows
-// dropped, and folds nothing more: the fewest changes that meet the target
-// (MJL-0039).
+// dropped, and folds only its closed aggregates (MJL-0040).
 export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Walk): Folded | string => {
   let m = measure(work, EMPTY_PARTITION, config, walk.rules);
   const snapshots: Snapshot[] = [snapshotOf("T1", EMPTY_PARTITION)];
-  if (meets(m.nodes, m.score, config)) return { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
+  if (meets(m.nodes, m.score, config)) return closedAggregates(m, snapshots, walk);
   let tier: Tier = "T1";
   for (const t of walk.order) {
     const step = stepOf(t, walk);

@@ -43,6 +43,7 @@
 | [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) | Stubs for one group's members share a box, the lighter detail draws edges joining two groups one way, and a leaf fold saving alike keeps groups even | accepted |
 | [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) | Twin chains fold whole, a group of two names both members, and leaves are named by the node they hang from | accepted |
 | [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) | A diagram over its target only for its rows folds nothing more, a plan says why it was flagged, and a group is named by every member or by where its flow enters and leaves | accepted |
+| [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) | A diagram over its target only for its rows folds its closed aggregates, and a group of leaves is named by every member | accepted |
 # By group
 
 ## cli
@@ -65,6 +66,7 @@
 * [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) - How a detail draws several stubs for one group, and which detail draws edges joining two groups one way
 * [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) - How a split plan folds twin chains and names groups of two and groups of leaves
 * [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) - When a plan stops at rows dropped, why it says it was offered, and how small groups and runs are named
+* [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) - Which aggregates fold once rows dropped meet the target, and how a group of leaves is named
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -243,7 +245,13 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0038 --extends--> MJL-0037
 * MJL-0038 --excepted_by--> MJL-0039
 * MJL-0038 --extended_by--> MJL-0039
+* MJL-0038 --excepted_by--> MJL-0040
 * MJL-0039 --excepts--> MJL-0033
 * MJL-0039 --excepts--> MJL-0038
 * MJL-0039 --extends--> MJL-0038
 * MJL-0039 --extends--> MJL-0036
+* MJL-0039 --superseded_by--> MJL-0040
+* MJL-0039 --extended_by--> MJL-0040
+* MJL-0040 --supersedes--> MJL-0039
+* MJL-0040 --extends--> MJL-0039
+* MJL-0040 --excepts--> MJL-0038

@@ -6,7 +6,7 @@
 import type { GraphEdge, GraphNode } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { byNatural, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { listedOthers, spanLabel } from "./label.ts";
+import { FAN_LISTED, LISTED, listedOthers, spanLabel } from "./label.ts";
 import type { Tier } from "./types.ts";
 
 export interface Group {
@@ -455,6 +455,9 @@ export interface Naming {
   family?: string | null;
   lane?: string | null;
   fan?: string | null;
+  // Whether the group is a group of leaves hanging from one overview node
+  // (fanOf), whose list label may name every member (label.ts FAN_LISTED).
+  fanList?: boolean;
 }
 
 export const labelChoices = (
@@ -483,10 +486,13 @@ export const labelChoices = (
   const whole = [naming.family, naming.lane].flatMap((b) => (b ? [{ base: b, n: g.members.length }] : []));
   // A run a range or a whole family or lane names reads as that run, so a
   // group of three takes a list label only when none applies (MJL-0039).
-  const run = g.members.length > 2 && (range !== null || whole.length > 0);
+  // A group of leaves takes its list first, since it names every member (MJL-0040).
+  const run = g.members.length > 2 && (range !== null || whole.length > 0) && naming.fanList !== true;
   return [
     ...fromRegion,
-    ...(fromRegion.length === 0 && !run ? pairChoices(work, g, [...head, ...ranked]) : []),
+    ...(fromRegion.length === 0 && !run
+      ? pairChoices(work, g, [...head, ...ranked], naming.fanList ? FAN_LISTED : LISTED)
+      : []),
     ...head.map(label),
     ...whole,
     ...fromRange,
@@ -499,8 +505,9 @@ export const labelChoices = (
 // its members in the order given, the other's label in place of the count
 // (label.ts pairLabel). None for any other group or a markdown member.
 // A group of three takes the list label the same way, the other two in
-// natural order (label.ts listedOthers, MJL-0039).
-const pairChoices = (work: WorkGraph, g: Group, order: readonly string[]): LabelParts[] => {
+// natural order (label.ts listedOthers, MJL-0039), and a group of leaves
+// within FAN_LISTED however many it holds (MJL-0040).
+const pairChoices = (work: WorkGraph, g: Group, order: readonly string[], limits = LISTED): LabelParts[] => {
   const [named] = order;
   const nodes = g.members.map((m) => work.nodes.get(m));
   const a = named === undefined ? undefined : work.nodes.get(named);
@@ -508,6 +515,7 @@ const pairChoices = (work: WorkGraph, g: Group, order: readonly string[]): Label
   const pair = listedOthers(
     a.label,
     nodes.map((n) => n?.label ?? ""),
+    limits,
   );
   return pair === null ? [] : [{ base: a.label, n: 0, pair }];
 };

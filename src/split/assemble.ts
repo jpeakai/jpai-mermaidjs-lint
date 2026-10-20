@@ -502,7 +502,10 @@ const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.lab
 const namingOf = (work: WorkGraph, part: Partition, g: Group): Naming => {
   const labels = g.members.map((m) => labelOf(work, m));
   const markdown = g.members.some((m) => work.nodes.get(m)?.markdown);
-  const whole = markdown ? { family: null, lane: null } : wholeNaming(work, g);
+  const whole = {
+    ...(markdown ? { family: null, lane: null } : wholeNaming(work, g)),
+    fanList: fanOf(work, part, g) !== null,
+  };
   const idLed = labels.every((l) => ID_LEAD.test(l));
   // Twin chains are named by an entry, so a range never spans two stages of them.
   const runs = (g.reason === "twins" || g.reason === "sibling leaves") && chainEntries(work, g.members) === null;
@@ -529,7 +532,9 @@ const optionsOf = (choices: LabelParts[], id: string, shared: boolean): Array<La
 
 // Groups of two or three members folded alike, by tier and reason, take pair
 // or list labels only when every one of them can, so groups folded alike read
-// alike (MJL-0038, MJL-0039): the choice is dropped from all of them otherwise.
+// alike (MJL-0038, MJL-0039): the choice is dropped from all of them, and from
+// a larger group of leaves folded alike that could list its members
+// (MJL-0040), otherwise.
 const alikePairs = (part: Partition, choices: LabelParts[][]): LabelParts[][] => {
   const kind = (g: Group): string => `${g.tier}\u0000${g.reason}`;
   const blocked = new Set(

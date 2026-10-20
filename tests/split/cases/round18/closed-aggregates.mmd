@@ -1,0 +1,99 @@
+%% source: authored (round 18: a tangled schema within its node target, one aggregate open and two closed)
+%% kind: erDiagram hotel bookings
+erDiagram
+  GUEST ||--o{ BOOKING : makes
+  HOTEL ||--o{ ROOM : has
+  ROOM_TYPE ||--|{ ROOM : classifies
+  ROOM ||--o{ BOOKING : "booked as"
+  BOOKING ||--o| INVOICE : "billed by"
+  INVOICE ||--|{ INVOICE_LINE : itemises
+  GUEST ||--o{ REVIEW : writes
+  HOTEL ||--o{ REVIEW : receives
+  HOTEL ||--o{ STAFF : employs
+  STAFF ||--o{ BOOKING : handles
+  BOOKING ||--o{ STAY_NOTE : "noted in"
+  STAFF ||--o{ STAY_NOTE : writes
+  GUEST ||--o{ LOYALTY_CARD : holds
+  BOOKING ||--o{ PAYMENT : "paid by"
+  GUEST ||--o{ PAYMENT : makes
+  GUEST {
+    int id PK
+    string name
+    string email UK
+    string phone
+    date joined
+  }
+  HOTEL {
+    int id PK
+    string name
+    string city
+    string country
+    int stars
+  }
+  ROOM_TYPE {
+    int id PK
+    string name
+    int beds
+    decimal base_rate
+  }
+  ROOM {
+    int id PK
+    int hotel_id FK
+    int room_type_id FK
+    string number
+    int floor
+  }
+  BOOKING {
+    int id PK
+    int guest_id FK
+    int room_id FK
+    int staff_id FK
+    date check_in
+    date check_out
+    string status
+  }
+  INVOICE {
+    int id PK
+    int booking_id FK
+    decimal total
+    string currency
+    date issued_on
+  }
+  INVOICE_LINE {
+    int invoice_id PK,FK
+    int line_no PK
+    string item
+    decimal amount
+  }
+  REVIEW {
+    int id PK
+    int guest_id FK
+    int hotel_id FK
+    int rating
+    string body
+  }
+  STAFF {
+    int id PK
+    int hotel_id FK
+    string name
+    string role
+  }
+  STAY_NOTE {
+    int id PK
+    int booking_id FK
+    int staff_id FK
+    string body
+  }
+  LOYALTY_CARD {
+    int id PK
+    int guest_id FK
+    string tier
+    int points
+  }
+  PAYMENT {
+    int id PK
+    int booking_id FK
+    int guest_id FK
+    decimal amount
+    string method
+  }

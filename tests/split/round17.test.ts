@@ -1,6 +1,6 @@
 // What the round-17 blind rating held plans to (MJL-0039): a diagram over its
 // target only for the rows it draws stays at rows dropped and folds nothing
-// more; every plan says why it was flagged; a group of three names every
+// more, until MJL-0040 let its closed aggregates fold; every plan says why it was flagged; a group of three names every
 // member, as "ADDRESS (+CITY, COUNTRY)"; and a flowchart run entered at one
 // member and left from another is named by both, as "git push to main → tsc
 // --noEmit (+4)". The contract and both test readers refuse each form forged.
@@ -70,22 +70,22 @@ const refused = async (source: string, forged: Build, preset: string): Promise<v
 
 describe("a diagram over its target only for its rows", () => {
   test(
-    "stays at rows dropped, and its plan says it was over on its score alone",
+    "folds only closed aggregates past rows dropped, and its plan says it was over on its score alone",
     async () => {
+      // MJL-0039 stopped this schema at rows dropped; MJL-0040 folds its closed aggregates.
       const source = read("round11", "er06-university");
       const out = await splitOutcome(source, configFromPreset("high"));
       const plan = out.plan as SplitPlan;
-      expect(plan.tier).toBe("T1");
-      expect(plan.groups).toEqual([]);
-      expect(plan.overviewNodes).toBe(23);
+      expect(plan.tier).toBe("T4");
+      expect(plan.overviewNodes).toBe(21);
       expect(plan.flagged).toContain("flagged at 23 nodes and a score of 63.75");
       expect(plan.flagged).toContain("over on its score alone");
-      expect(plan.flagged).toContain("so no node folds");
+      expect(plan.flagged).toContain("so only aggregates whose other members relate to nothing else fold");
       // --split-plan prints why under the heading.
       const printed = outcomeLines("er06.mmd:1", out);
       expect(printed.slice(0, 4)).toEqual([
         "",
-        "## er06.mmd:1: split plan (T1)",
+        "## er06.mmd:1: split plan (T4)",
         "",
         `${plan.flagged.charAt(0).toUpperCase()}${plan.flagged.slice(1)}.`,
       ]);

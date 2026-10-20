@@ -57,16 +57,17 @@ describe("an erDiagram overview", () => {
   });
 
   test(
-    "met by dropping rows alone folds nothing, though it is tangled, and says why it was flagged",
+    "met by dropping rows alone folds only closed aggregates, and says why it was flagged",
     async () => {
-      // Since MJL-0039 the fewest changes that meet the target stand.
+      // Since MJL-0040 only aggregates one member faces the rest for fold.
       const plan = await planOf(read("er06-university"), "high");
-      expect(plan.tier).toBe("T1");
-      expect(plan.groups).toEqual([]);
-      expect(plan.overviewNodes).toBe(23);
+      expect(plan.tier).toBe("T4");
+      expect(plan.groups.map((g) => g.label).sort()).toEqual(["ENROLMENT (+GRADE)", "ROOM (+BUILDING)"]);
+      expect(plan.overviewNodes).toBe(21);
       expect(plan.flagged).toBe(
         "flagged at 23 nodes and a score of 63.75, against a split target of 25 nodes and 40: over on its score alone. " +
-          "Its rows move to row diagrams, and the overview without them meets the target at 23 nodes and 38, so no node folds",
+          "Its rows move to row diagrams, and the overview without them meets the target at 23 nodes and 38, " +
+          "so only aggregates whose other members relate to nothing else fold",
       );
     },
     SLOW,

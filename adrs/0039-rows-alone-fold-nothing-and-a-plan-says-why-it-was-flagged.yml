@@ -45,6 +45,12 @@ relates_to:
   - relation: extends
     target: MJL-0036
     note: a flowchart run is named by where its flow enters and leaves, before a member's name
+  - relation: superseded_by
+    target: MJL-0040
+    note: a schema that meets its target by rows alone folds its closed aggregates, where MJL-0039 folded nothing
+  - relation: extended_by
+    target: MJL-0040
+    note: a group of leaves lists every member, as a group of three does
 
 decision:
   given: >-

@@ -35,6 +35,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Extends [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (a target whose detail is split again draws the edges joining two groups one way)
 - Excepted by [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) (a tangled schema that meets its target by rows alone stays at rows dropped)
 - Extended by [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) (a group of three names every member, as a group of two does)
+- Excepted by [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) (a group of leaves whose labels fit a list is named by them, before the node they hang from)
 
 ## Decision
 

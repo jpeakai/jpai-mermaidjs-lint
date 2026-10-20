@@ -1,0 +1,81 @@
+id: MJL-0040
+slug: closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed
+plan_id: null
+title: A diagram over its target only for its rows folds its closed aggregates, and a group of leaves is named by every member
+description: Which aggregates fold once rows dropped meet the target, and how a group of leaves is named
+status: accepted
+accepted_on: 2026-10-20
+last_changed_on: 2026-10-20
+tags: [complexity, split]
+
+provenance: >-
+  Six blind raters scored 24 paired plans in each of two rounds, at a mean of 4.08 out of 5 in both.
+  A university schema folded three aggregates into pairs scored 4, 4, 3, 4, 4 and 4.
+  Left whole at rows dropped, it scored 3, 4, 4, 4, 4 and 3.
+  Two raters of the whole schema wrote "within target but still dense" and "no fold at 23 nodes, still busy".
+  One rater of the folded schema wrote that it "folds pairs it did not need to".
+  Two of the three folds hid an entity that relates to nothing but the one its group is named after, BUILDING and GRADE.
+  The third folded ASSESSMENT into SECTION, so the overview drew ASSESSMENT's relationship to SUBMISSION at SECTION.
+  A boutique's external APIs, four leaves Checkout calls, were named "Checkout domain → … (+4)".
+  That plan fell from 4.00 to 3.67, and raters called the name "opaque" and said it named the group "poorly".
+  The plans raters scored highest name each group by what it holds
+enforced_in:
+  - src/split/plan.ts closedAggregates and closed, which fold only closed aggregates once rows dropped meet the target
+  - src/split/flagged.ts flaggedText, which says that only aggregates whose other members relate to nothing else fold
+  - src/split/label.ts listedOthers, ListLimits, LISTED and FAN_LISTED, which let a group of leaves list every member
+  - src/split/quotient.ts labelChoices and pairChoices, and src/split/assemble.ts namingOf and alikePairs, which offer that list first
+  - src/split/contract.ts pairViolations and fanAt, which accept the list only as recomputed from the members of a group of leaves
+  - tests/split/faithful.ts and tests/split/checker.ts listOk and fanHang, which read the list on their own
+  - tests/split/round18.test.ts, which holds the rated diagrams to these plans and refuses forged labels
+
+relates_to:
+  - relation: supersedes
+    target: MJL-0039
+    note: a schema that meets its target by rows alone folds its closed aggregates, where MJL-0039 folded nothing
+  - relation: extends
+    target: MJL-0039
+    note: a group of leaves lists every member, as a group of three does
+  - relation: excepts
+    target: MJL-0038
+    note: a group of leaves whose labels fit a list is named by them, before the node they hang from
+
+decision:
+  given: >-
+    a reader of an overview reads a group's name as what it holds.
+    A schema over its target only for its rows meets the target with them dropped, and still draws every entity and relationship.
+    A folded aggregate draws each relationship that crosses its edge at the group, named after one member
+  we_prefer: >-
+    folding, once rows dropped meet the target, only the closed aggregates of an erDiagram.
+    An aggregate is closed when one member holds every relationship that crosses the group's edge.
+    Each folds evenly and is named by every member, as "ROOM (+BUILDING)".
+    So the overview draws every relationship it keeps at the entity it joins, and hides no entity's name.
+    An aggregate whose other members relate outside it stays in view.
+    The plan's flagged text then ends "so only aggregates whose other members relate to nothing else fold".
+    A group of leaves hanging from one overview node takes a list label first.
+    It shows one member's label and, in brackets after a plus, every other member's label in natural order, joined by a comma.
+    It lists every member however many, and the whole label holds 80 characters at most.
+    Each label meets the pair rules and, in a list, holds no comma.
+    So a boutique's external APIs read "Carrier quote API (+ECB rates feed, Payment provider API, SMTP relay)".
+    A group of leaves whose list does not fit keeps its fan label.
+    Groups folded alike take list labels only when every one of them that may be listed can.
+    The contract and both test readers accept the list only for a group of leaves, recomputed from its members
+  because: >-
+    raters scored the folded schema above the schema left whole, and called the whole one dense.
+    A fold that moves a relationship to another entity's name is what a reader can misread, and a closed fold moves none.
+    So the fewest folds that cut density without moving a relationship win.
+    A group of leaves holds nothing but its members, so naming every one says exactly what is inside.
+    The node they hang from says only where they are
+  unless: >-
+    the diagram is over its target with its rows dropped, and folds as before.
+    No aggregate may be closed, and the plan then stays at T1, rows dropped.
+    A leaf's label may hold a comma, a bracket or markup, or the list may be longer than 80 characters.
+    The group then keeps its fan label
+consequences:
+  pros:
+    - The university overview folds "ROOM (+BUILDING)" and "ENROLMENT (+GRADE)" and shows every entity's name.
+    - SUBMISSION's relationship stays drawn at ASSESSMENT, which stays in view.
+    - The boutique's external APIs name all four members.
+  cons:
+    - A closed aggregate's fold hides one entity box more than the schema left whole.
+    - A list of leaves is longer than a fan label, and the overview gives it more room.
+    - The contract, the reading and the checker each accept a longer list for a group of leaves.

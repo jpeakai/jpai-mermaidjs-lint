@@ -120,7 +120,7 @@ describe("a whole-group stub beside its namesake member", () => {
     ];
     const texts = stubTexts(ctx, stubs);
     const named = namedStubs(ctx, stubs, texts, () => ["a"]);
-    expect([...(named ?? texts).values()].map((t) => t.label).sort()).toEqual(["A (+2)", "A (in group)"]);
+    expect([...(named ?? texts).values()].map((t) => t.label).sort()).toEqual(["A (+2)", "A (in A (+2))"]);
   });
 });
 

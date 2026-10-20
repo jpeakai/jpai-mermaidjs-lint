@@ -1,0 +1,87 @@
+id: MJL-0036
+slug: a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group
+plan_id: null
+title: A group holding a whole family or twin lanes is named by them, a member stub names its group as the overview shows it, and one member's edges into a group draw in the target
+description: How a split plan names a group no member speaks for, and how its stubs name members of other groups
+status: accepted
+accepted_on: 2026-10-20
+last_changed_on: 2026-10-20
+tags: [complexity, split]
+
+provenance: >-
+  Three blind raters scored 24 paired plans at a mean of 4.03 out of 5, every plan correct.
+  An ETL pipeline scored 3 from all three raters.
+  Its overview named a group of four extract lanes after one of them, "Extract GA4 events (+7)", and named all five gold tables after one, "gold.customer_ltv (+4)".
+  An e-commerce schema scored 3 from one rater, who read "CUSTOMER (in group)" in the nested ORDER overview as odd.
+  Inside the ORDER group, "in group" does not say which group.
+  An earlier rater read "Released (Code Review)" as a confusing stub, since the bracket does not say the member sits in that group.
+  Raters marked details down as stub-heavy.
+  The pipeline's scheduler detail drew eight stubs for one "Start extract" node feeding eight extracts in two groups
+enforced_in:
+  - src/split/label.ts familyLabel, laneLabel and wholeNaming, which name a whole dotted family and twin chains by their stages
+  - src/split/quotient.ts chainsOf and labelChoices, which offer those labels after a region's label and a group's head
+  - src/split/contract.ts check 4, which accepts a family or lane label only as recomputed from the members, counting every member
+  - src/split/label.ts plainText and readingsOf, which write and read a member stub as its label, " (in ", its group's shown label and ")"
+  - tests/split/faithful.ts and tests/split/checker.ts, which derive both labels and read the stub form on their own
+  - src/split/quotient.ts oneWayExact and detailView, which draw one member's edges into several members of a group joined one way in the target's detail, as a plan draws it
+  - tests/split/checker.ts fromOne, which accepts a stub for another group's member only in that case or between groups joined both ways
+  - tests/split/round14.test.ts, which holds the two rated diagrams to these names and the scheduler detail to one stub per lane group
+
+relates_to:
+  - relation: excepts
+    target: MJL-0030
+    note: twin chains whose stages a namespace or a first word names are named by those stages, not by an entry
+  - relation: excepts
+    target: MJL-0031
+    note: a member stub names its group by the label the overview shows
+  - relation: excepts
+    target: MJL-0035
+    note: a nested overview names the member a reader is sent to with the group's shown label, as "PAYMENT_METHOD (in CUSTOMER (+2))"
+  - relation: excepts
+    target: MJL-0032
+    note: one member's edges into a group joined one way draw in the target's detail
+
+decision:
+  given: a reader of an overview reads a group's name as a promise about all its members. A name taken from one member promises that member and some others. A reader of a detail follows a stub to the overview node it names, and finds that node by its text
+  we_prefer: >-
+    naming a group that holds a whole dotted family by the family, as "gold.* (+5)".
+    Such a group holds three members or more, each label leading with one namespace and a dot.
+    No node outside the group has a label leading with that namespace.
+    Naming twin chains by their stages, as "Extract → bronze (+8)".
+    The chains run two or more, each of one length of two members or more.
+    Each place along them is named by the namespace every label there leads with.
+    Failing that, it is named by the first word all of them lead with, and failing that it shows an ellipsis.
+    At least one place must be named, and the label holds at most 40 characters.
+    Both labels count every member, as an author region's label does.
+    They come after an author region's label and a group's head, and before a range or any member's label.
+    A stub for a member of a group takes its label, " (in ", the label the overview shows for that group and ")".
+    That reads "PAYMENT_METHOD (in CUSTOMER (+2))", and for the member the group is named after, "CUSTOMER (in CUSTOMER (+2))".
+    The contract and both test readers accept the two labels only as recomputed from the members.
+    They accept the stub form only when its text has exactly one reading.
+    Edges may join two groups one way only, all leaving one member and reaching two members or more.
+    When the source's detail is not split again, the target's detail draws them exactly, from one stub for that member.
+    The source's detail draws the target as one stub, each edge alike drawn once.
+    Planning still measures each detail with such edges drawn from one stub for the whole source group.
+    So the plan it picks is unchanged, and a drawn detail holds no more stubs than the one measured
+  because: >-
+    a name built from what every member shares promises nothing a member lacks.
+    A namespace held whole is the author's own name for those nodes.
+    A reader of a pipeline reads its lanes as sources flowing into a layer.
+    A stub naming its group by the overview's exact text is found at a glance, wherever it is drawn.
+    A bare bracket or "in group" leaves the reader to guess which group, and inside a nested overview the nearest guess is wrong.
+    A stub per target member repeats one source's fan-out in its own detail, where one stub for the target group says the same.
+    The target's detail draws each edge from the one stub it already needs
+  unless: a group holds only part of a family, or its chains share no namespace or first word at any place. It then keeps its region, head, range or member's name, as before. Another group may already show the label, and the group then takes its next label
+consequences:
+  pros:
+    - The ETL overview reads "Extract → bronze (+8)", "… → bronze (+6)" and "gold.* (+5)", where it read three members' names.
+    - Every member stub names the overview node it sits in by its exact text, in flat and nested details alike.
+    - A family label never claims a node it does not hold, so halves of a layer keep their members' names.
+    - The pipeline's scheduler detail drops from eight stubs to three, and its quality-check detail from eight to five.
+    - A GitOps region's detail drops from seven stubs to five.
+  cons:
+    - A member stub's text grows by its group's count, and a namesake's stub repeats its own label.
+    - A lane label's ellipsis says only that its sources share no word.
+    - The contract, the reading and the checker each accept two more label forms.
+    - The checker accepts one more case of a stub for another group's member.
+    - A source's detail no longer shows which members of the target group each of its edges reaches, only that it reaches the group.

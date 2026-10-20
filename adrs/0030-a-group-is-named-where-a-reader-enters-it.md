@@ -30,6 +30,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Excepted by [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (edges from one group drawing alike are drawn once from one stub, not from a stub each)
 - Extended by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (a star of leaves sorted by nothing is refused, as a dense mesh is)
 - Extended by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a refused dense mesh prints every link as an adjacency matrix)
+- Excepted by [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (twin chains whose stages a namespace or a first word names are named by those stages, not by an entry)
 
 ## Decision
 

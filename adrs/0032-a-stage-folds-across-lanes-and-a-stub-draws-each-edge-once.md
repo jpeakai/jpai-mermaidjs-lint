@@ -26,6 +26,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extended by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (in a ticket graph a whole id family folds before any pair, hubs included)
 - Excepted by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (a group is drawn whole or as its members, never both, and like edges to a member draw once)
 - Extended by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a pair of one family sharing more overview neighbours folds first, so layers fold in step)
+- Excepted by [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (one member's edges into a group joined one way draw in the target's detail)
 
 ## Decision
 

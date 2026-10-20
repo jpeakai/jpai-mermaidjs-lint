@@ -10,6 +10,15 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+### Changed
+
+- **A group is named by what all its members share.** A group holding a whole dotted family reads `gold.* (+5)`, and twin chains read by their stages, as `Extract → bronze (+8)`, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
+  Both count every member, and the contract accepts them only as recomputed from the members.
+- **A stub for a member of a group names the group as the overview shows it.** `PAYMENT_METHOD (in CUSTOMER (+2))` replaces `PAYMENT_METHOD (CUSTOMER)`, and `CUSTOMER (in CUSTOMER (+2))` replaces `CUSTOMER (in group)`.
+- **One member's edges into another group draw in the target's detail.** Edges may run one way from a single member into several members of another group.
+  They now come in from one stub for that member, and the source's detail draws the target as one stub.
+  So a pipeline's scheduler detail draws three stubs where it drew eight.
+
 ### Fixed
 
 - A split plan parses each candidate diagram once, not once per measurement, so a complexity finding with a plan is reported about twice as fast.

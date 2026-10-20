@@ -219,8 +219,69 @@ const checkPartition = (c: Ctx): void => {
   }
 };
 
+// The labels the docs promise for a group holding a whole dotted family or
+// twin chains, written out. A family label: three members or more, each label
+// leading with one namespace and a dot, as gold.x, no other node's label
+// leading with it, read as the namespace and ".*". A lane label, in a
+// flowchart or stateDiagram: the members' directed edges form two paths or
+// more of one length, two or more, each member on one; each place along them
+// is named by the namespace all its labels lead with, else the first word all
+// of them lead with, else "…", at least one place named, joined by " → ", at
+// most forty characters. Both count every member.
+const wholeNs = (l: string): string | null => /^([A-Za-z][A-Za-z0-9-]*)\.[A-Za-z0-9_]/.exec(l.trim())?.[1] ?? null;
+const wholeWord = (l: string): string | null => /^(\p{L}[\p{L}\p{N}-]*)\s/u.exec(l.trim())?.[1] ?? null;
+const wholeOnly = (xs: Array<string | null>): string | null => (new Set(xs).size === 1 ? (xs[0] ?? null) : null);
+
+// The members' paths by their directed edges, each as labels from its entry,
+// or null when the edges do not form disjoint paths covering every member.
+const wholePaths = (original: DiagramGraph, members: readonly GraphNode[]): string[][] | null => {
+  const inside = new Set(members.map((m) => m.id));
+  const next = new Map<string, string>();
+  const into = new Set<string>();
+  for (const e of original.edges) {
+    if (e.source === e.target || !inside.has(e.source) || !inside.has(e.target)) continue;
+    if (UNDIRECTED.has(e.kind ?? "") || next.has(e.source) || into.has(e.target)) return null;
+    next.set(e.source, e.target);
+    into.add(e.target);
+  }
+  const label = new Map(members.map((m) => [m.id, m.label]));
+  const paths = members
+    .filter((m) => !into.has(m.id))
+    .map((m) => {
+      const p: string[] = [];
+      for (let x: string | undefined = m.id; x !== undefined && p.length <= members.length; x = next.get(x))
+        p.push(label.get(x) ?? x);
+      return p;
+    });
+  return paths.reduce((n, p) => n + p.length, 0) === members.length ? paths : null;
+};
+
+const wholeLane = (paths: string[][]): string | null => {
+  const len = paths[0]?.length ?? 0;
+  if (paths.length < 2 || len < 2 || paths.some((p) => p.length !== len)) return null;
+  const places = Array.from({ length: len }, (_, i) => {
+    const at = paths.map((p) => p[i] ?? "");
+    return wholeOnly(at.map(wholeNs)) ?? wholeOnly(at.map(wholeWord));
+  });
+  const lane = places.map((p) => p ?? "…").join(" → ");
+  const short = [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(lane)].length <= 40;
+  return places.some((p) => p !== null) && short ? lane : null;
+};
+
+const wholeOf = (original: DiagramGraph, members: readonly GraphNode[]): string[] => {
+  const inside = new Set(members.map((m) => m.id));
+  const family = wholeOnly(members.map((m) => wholeNs(m.label)));
+  const outside = original.nodes.some((n) => !inside.has(n.id) && wholeNs(n.label) === family);
+  const out = members.length >= 3 && family !== null && !outside ? [`${family}.*`] : [];
+  if (!/^(flowchart|graph|state)/.test(original.diagram_type)) return out;
+  const paths = wholePaths(original, members);
+  const lane = paths === null ? null : wholeLane(paths);
+  return lane === null ? out : [...out, lane];
+};
+
 // A group label is a member's or a folded region's label, cut by rule, and
-// counts the members it does not name. A folded region's label may be
+// counts the members it does not name, or a family or lane label counting
+// every member. A folded region's label may be
 // qualified by the label of the region the group node sits in, which is that
 // region's parent in the original, counting every member.
 const checkGroupLabel = (c: Ctx, d: Det): void => {
@@ -241,12 +302,14 @@ const checkGroupLabel = (c: Ctx, d: Det): void => {
       d.members.map((m) => m.label),
       hidden,
     );
-  if (!(fromMember || fromRegion || fromQualified || fromRange))
+  const fromWhole = wholeOf(c.G, d.members).includes(gs.base);
+  if (!(fromMember || fromRegion || fromQualified || fromRange || fromWhole))
     c.add("BUG", "glabel", `group ${d.gid} base "${gs.base}" names no member, region or honest range`);
   const okN =
     (fromMember && gs.n === d.members.length - 1) ||
     ((fromRegion || fromQualified) && gs.n === d.members.length) ||
-    (fromRange && gs.n === d.members.length - 2);
+    (fromRange && gs.n === d.members.length - 2) ||
+    (fromWhole && gs.n === d.members.length);
   if (!okN) c.add("BUG", "glabel", `group ${d.gid} says +${gs.n} but its detail holds ${d.members.length} members`);
 };
 
@@ -307,8 +370,8 @@ const fromNamed = (c: Ctx, S: string, gid: string): string[] => {
 };
 
 // Every referent a stub's text names, by each form a plan writes: a label as
-// it is, a group's shown label, a label with " (in group)" or with its group's
-// shown label in brackets, a group's shown label with " from " and one of its
+// it is, a group's shown label, a label with " (in ", the label its group
+// shows and ")", a group's shown label with " from " and one of its
 // members' labels, and any of these with " [id]" naming one reading.
 const stubReader = (c: Ctx): ((s: string) => Set<string>) => {
   const byLabel = new Map<string, string[]>();
@@ -318,18 +381,15 @@ const stubReader = (c: Ctx): ((s: string) => Set<string>) => {
     ...[...c.lolLabels].map((l) => [l.slice(2), l]),
   ];
   for (const [label = "", id = ""] of referents) byLabel.set(label, [...(byLabel.get(label) ?? []), id]);
-  const heldBy = (own: string, fits: (base: string) => boolean): string[] =>
+  const heldBy = (own: string, shown: string): string[] =>
     (byLabel.get(own) ?? []).filter((id) => {
       const g = c.ov(id);
-      const base = c.shown.get(g)?.base;
-      return g !== id && base !== undefined && fits(base);
+      return g !== id && c.shown.get(g)?.label === shown;
     });
   const inGroup = (S: string): string[] => {
-    const own = S.slice(0, -" (in group)".length);
-    const named = S.endsWith(" (in group)") ? heldBy(own, (b) => cutOf(b, own)) : [];
-    if (!S.endsWith(")")) return named;
-    const cuts = [...S.matchAll(/ \(/g)].map((m) => m.index ?? 0);
-    return [...named, ...cuts.flatMap((at) => heldBy(S.slice(0, at), (b) => b === S.slice(at + 2, -1)))];
+    if (!S.endsWith(")")) return [];
+    const cuts = [...S.matchAll(/ \(in /g)].map((m) => m.index ?? 0);
+    return cuts.flatMap((at) => heldBy(S.slice(0, at), S.slice(at + " (in ".length, -1)));
   };
   const tagged = (S: string): string[] => {
     const tag = /^(.*) \[([^\]]+)\]$/s.exec(S);
@@ -426,6 +486,20 @@ const bothWays = (c: Ctx, x: string, y: string): boolean => {
   return runs(x, y) && runs(y, x);
 };
 
+// Whether a target group's detail may draw a member A of another group as
+// a stub (MJL-0036): edges run one way only, from A's group into group gid,
+// A is the only member they leave, they reach two members of gid or more,
+// and A's group's detail is not split again.
+const fromOne = (c: Ctx, A: string, gid: string): boolean => {
+  const gEnd = nameEnds(c.G);
+  const from = c.ov(A);
+  const between = c.G.edges.filter((e) => c.ov(gEnd(e.source)) === from && c.ov(gEnd(e.target)) === gid);
+  const sources = new Set(between.map((e) => gEnd(e.source)));
+  const targets = new Set(between.map((e) => gEnd(e.target)));
+  const split = c.plan.details.find((d) => d.group === from)?.split ?? null;
+  return !bothWays(c, from, gid) && sources.size === 1 && sources.has(A) && targets.size > 1 && split === null;
+};
+
 interface Reading {
   c: Ctx;
   gid: string;
@@ -440,7 +514,7 @@ const edgeProblem = (
   if (isStub(a) && isStub(b)) return ["BUG", `edge between stubs ${a}->${b}`];
   if (A.startsWith("group:") && B.startsWith("group:")) return ["BUG", `edge between whole groups ${a}->${b}`];
   if (A.startsWith("group:") || B.startsWith("group:")) return null;
-  if (isStub(a) && c.ov(A) !== A && !bothWays(c, c.ov(A), gid))
+  if (isStub(a) && c.ov(A) !== A && !bothWays(c, c.ov(A), gid) && !fromOne(c, A, gid))
     return ["WARN", `stub ${a} names ${A} of another group`];
   return null;
 };

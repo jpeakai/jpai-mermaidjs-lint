@@ -28,6 +28,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extended by [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (a family is also read from a status stem, and a pair of one family may share a neighbour)
 - Excepted by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (id families fold whole below the share an evened overview keeps, and a family group is never undone)
 - Extended by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (with hubs folded, prefix families are kept apart before they are mixed, chain stages too)
+- Excepted by [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a member stub names its group by the label the overview shows)
 
 ## Decision
 

@@ -1798,7 +1798,7 @@
         "target": "MJL-0041",
         "label": "extended by",
         "relation": "extended_by",
-        "note": "a plan keeps its groups even by opening a decision region far larger than the others, as a leaf fold saving alike does"
+        "note": "an oversized decision region opens, so the groups stay even"
       }
     },
     {
@@ -1978,7 +1978,7 @@
         "target": "MJL-0041",
         "label": "extended by",
         "relation": "extended_by",
-        "note": "a stub for the first or last member a range label names shows its own label, as a stub for a span's end does"
+        "note": "a stub for a range label.s first or last member shows its own label"
       }
     },
     {
@@ -2028,7 +2028,7 @@
         "target": "MJL-0037",
         "label": "extends",
         "relation": "extends",
-        "note": "a plan keeps its groups even by opening a decision region far larger than the others, as a leaf fold saving alike does"
+        "note": "an oversized decision region opens, so the groups stay even"
       }
     },
     {
@@ -2048,7 +2048,7 @@
         "target": "MJL-0039",
         "label": "extends",
         "relation": "extends",
-        "note": "a stub for the first or last member a range label names shows its own label, as a stub for a span's end does"
+        "note": "a stub for a range label.s first or last member shows its own label"
       }
     }
   ],

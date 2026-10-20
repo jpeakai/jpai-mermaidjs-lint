@@ -12,7 +12,8 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ### Changed
 
-- **A decision region folded far larger than the other groups opens.** When a plan of three groups or more folds a decision region into a group holding more than twice the median group's members, it walks again with that region left open, per [MJL-0041](adrs/0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md).
+- **A decision region folded far larger than the other groups opens.** A plan of three groups or more may fold a decision region into a group holding more than twice the median group's members.
+  It then walks again with that region left open, per [MJL-0041](adrs/0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md).
   It keeps that plan when the overview still meets the target and its largest group is smaller.
   So a loan flow at `medium-density` shows its `Thin file?` decision between its two scoring branches, where it folded `Thin file? (+10)`.
 - **A span label holds both its labels whole up to 80 characters.** A group entered at one member and left from another reads `Sanctions list hit? → Pull credit bureau file (+3)`, where it read `Sanctions list hit? (+4)`.

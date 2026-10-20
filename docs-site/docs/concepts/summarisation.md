@@ -263,7 +263,8 @@ A greedy walk can also overshoot below that share, when an early fold leaves a l
 The plan then undoes the group whose undoing gives back the most nodes and still meets every target, until the share is met.
 A `T2` group stays, since undoing one run would leave its pattern half folded.
 In `T2` it folds the remaining decision regions, so every decision reads alike.
-A decision region folded into a group holding more than twice the median group's members, in a plan of three groups or more, opens, per [MJL-0041](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md).
+A plan of three groups or more may fold a decision region into a group holding more than twice the median group's members.
+That region opens, per [MJL-0041](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md).
 The plan walks again with it left open, so its decision shows and the regions inside it fold apart.
 It keeps that plan when the overview still meets the target and its largest group is smaller.
 In `T3` it folds the sibling regions of the ones folded, so sibling regions read alike.

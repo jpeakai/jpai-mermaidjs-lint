@@ -26,7 +26,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Extends [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a one-way pair's target draws its edges when it needs fewer stubs)
 - Extends [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (of two leaf folds saving alike, the one leaving groups more even goes first)
 - Extended by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a target whose detail is split again draws the edges joining two groups one way)
-- Extended by [MJL-0041](0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md) (a plan keeps its groups even by opening a decision region far larger than the others, as a leaf fold saving alike does)
+- Extended by [MJL-0041](0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md) (an oversized decision region opens, so the groups stay even)
 
 ## Decision
 

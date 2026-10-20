@@ -544,7 +544,8 @@ Its colours come from Design Tokens.
 
 ## Oversized Decision Region
 
-A Decision Region a Split Plan folded into a Group Node holding more than twice the median group's members, in a plan of three groups or more.
+A Decision Region a Split Plan folded into a Group Node holding more than twice the median group's members.
+It counts only in a plan of three groups or more.
 The plan walks again with it left open, so its branching node shows in the Overview and the regions inside it fold apart.
 It keeps that plan when the Overview still meets the target and its largest group is smaller, per [MJL-0041](adrs/0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md).
 

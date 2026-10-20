@@ -22,9 +22,9 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 ## Relates to
 
 - Scoped exception to [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) (a decision region folded far larger than the median group opens, and the regions inside it fold apart)
-- Extends [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (a plan keeps its groups even by opening a decision region far larger than the others, as a leaf fold saving alike does)
+- Extends [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (an oversized decision region opens, so the groups stay even)
 - Scoped exception to [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) (a span label holds twice the label cap, both its labels shown uncut, where MJL-0039 held it to 40 characters)
-- Extends [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) (a stub for the first or last member a range label names shows its own label, as a stub for a span's end does)
+- Extends [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) (a stub for a range label.s first or last member shows its own label)
 
 ## Decision
 
@@ -32,19 +32,19 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 
 #### Given
 
-a reader of an overview reads groups of about one size as stages of about one weight. A decision region folds whole once every region inside it has folded, so a region holding the regions inside it can grow far larger than the groups beside it. A reader reads a group named by where its flow enters and leaves as the stage it is. A stub's text names the outside node it stands for, and a range label already names its first and last members
+a reader of an overview reads groups of about one size as stages of about one weight. A decision region folds whole once every region inside it has folded. So a region holding other regions can grow far larger than the groups beside it. A reader reads a group named by where its flow enters and leaves as the stage it is. A stub's text names the outside node it stands for, and a range label already names its first and last members
 
 #### We prefer
 
-opening a decision region the plan folded into a group holding more than twice the median group's members, when the plan has three groups or more. The plan walks again with that region left open, so its decision shows in the overview and the regions inside it fold apart. It keeps the plan walked again when that plan meets the target and its largest group holds fewer members, and opens the next such region the same way. A loan flow at the medium preset then shows "Thin file?" between "Score with open banking data → Alt score above 620? (+1)" and "Bureau score above 680? (+6)", in an overview of 12 nodes. A span label holds at most twice LABEL_CAP characters, as a list of leaves may. It is never cut, since its two labels are what it says. So a sanctions stage reads "Sanctions list hit? → Pull credit bureau file (+3)". A stub for the first or the last member a range label names shows its own label alone, as "REL-0042". The contract and both test readers accept a span label up to the longer cap, only recomputed from the members, and only uncut
+opening a decision region the plan folded into a group holding more than twice the median group's members. This applies when the plan has three groups or more. The plan walks again with that region left open, so its decision shows in the overview and the regions inside it fold apart. It keeps the plan walked again when that plan meets the target and its largest group holds fewer members. It opens the next such region the same way. A loan flow at the medium preset then shows "Thin file?" between "Score with open banking data → Alt score above 620? (+1)" and "Bureau score above 680? (+6)", in an overview of 12 nodes. A span label holds at most twice LABEL_CAP characters, as a list of leaves may. It is never cut, since its two labels are what it says. So a sanctions stage reads "Sanctions list hit? → Pull credit bureau file (+3)". A stub for the first or the last member a range label names shows its own label alone, as "REL-0042". The contract and both test readers accept a span label up to the longer cap, only recomputed from the members, and only uncut
 
 #### Because
 
-the groups raters scored highest held members of about one weight, and the one group they kept naming was the one far larger than the rest. The low preset's plan, which cannot fold that region, already shows the decision and its branches apart. A span names a group by what it holds, and a count beside its first step does not. A label the overview shows whole reads better at 54 characters than a count, as raters found a list of 69 characters did. A stub repeating the range that names it says the same name twice
+the groups raters scored highest held members of about one weight. The one group they kept naming was the one far larger than the rest. The low preset's plan, which cannot fold that region, already shows the decision and its branches apart. A span names a group by what it holds, and a count beside its first step does not. A label the overview shows whole reads better at 54 characters than a count, as raters found a list of 69 characters did. A stub repeating the range that names it says the same name twice
 
 #### Unless
 
-the plan has fewer than three groups, or the large group is no decision region. The plan walked again may not meet the target, or its largest group may hold as many members, and the region then stays folded. The two labels of a span may hold more than twice LABEL_CAP characters, markup, an arrow or an ellipsis, and the group then keeps its count. A member of a range group that the range does not name keeps its group's label in its stub
+the plan has fewer than three groups, or the large group is no decision region. The plan walked again may not meet the target, or its largest group may hold as many members, and the region then stays folded. The two labels of a span may hold more than twice LABEL_CAP characters, markup, an arrow or an ellipsis. The group then keeps its count. A member of a range group that the range does not name keeps its group's label in its stub
 
 ## Consequences
 

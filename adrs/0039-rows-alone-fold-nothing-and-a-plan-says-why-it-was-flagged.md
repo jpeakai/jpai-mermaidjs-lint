@@ -31,7 +31,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Superseded by [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) (a schema that meets its target by rows alone folds its closed aggregates, where MJL-0039 folded nothing)
 - Extended by [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) (a group of leaves lists every member, as a group of three does)
 - Excepted by [MJL-0041](0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md) (a span label holds twice the label cap, both its labels shown uncut, where MJL-0039 held it to 40 characters)
-- Extended by [MJL-0041](0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md) (a stub for the first or last member a range label names shows its own label, as a stub for a span's end does)
+- Extended by [MJL-0041](0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md) (a stub for a range label.s first or last member shows its own label)
 
 ## Decision
 

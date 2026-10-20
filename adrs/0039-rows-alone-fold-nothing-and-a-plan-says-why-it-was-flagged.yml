@@ -56,7 +56,7 @@ relates_to:
     note: a span label holds twice the label cap, both its labels shown uncut, where MJL-0039 held it to 40 characters
   - relation: extended_by
     target: MJL-0041
-    note: a stub for the first or last member a range label names shows its own label, as a stub for a span's end does
+    note: a stub for a range label.s first or last member shows its own label
 
 decision:
   given: >-

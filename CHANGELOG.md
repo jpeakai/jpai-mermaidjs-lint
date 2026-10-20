@@ -10,6 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.16.0] - 2026-10-21
+
 ### Changed
 
 - **A stub for a range's end shows its own label.** A stub for the first or the last member a range label names reads `REL-0042`, where it read `REL-0042 (in REL-0042 … REL-0044 (+1))`, per [MJL-0041](adrs/0041-a-stub-for-a-range-end-shows-its-own-label.md).
@@ -533,7 +537,8 @@ The same code as 0.1.0, published again under the next version number.
 
 The first release: the parse, contrast and complexity rules, `--fix` with verification, the config file, local rules and plugin packages.
 
-[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/jpeakai/jpai-mermaidjs-lint/compare/v0.12.0...v0.13.0

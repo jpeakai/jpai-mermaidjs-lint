@@ -39,6 +39,9 @@ relates_to:
   - relation: excepted_by
     target: MJL-0034
     note: an aggregate draws no relationship twice, and a root's aggregate may fold trimmed
+  - relation: excepted_by
+    target: MJL-0038
+    note: a group of two shows the other member's label in place of the count
 
 decision:
   given: some diagrams are mostly decisions, a flowchart or stateDiagram. In others, an erDiagram overview groups entities by leaves and junctions, not by what owns what

@@ -37,6 +37,9 @@ relates_to:
   - relation: extends
     target: MJL-0031
     note: of two leaf folds saving alike, the one leaving groups more even goes first
+  - relation: extended_by
+    target: MJL-0038
+    note: a target whose detail is split again draws the edges joining two groups one way
 
 decision:
   given: a reader of a detail reads each stub as one outside thing, and finds it in the overview by its text. Several stubs showing one group's label in brackets read as that group drawn several times. A detail is read faster when its stubs are few, and a plan reads evenly when no detail carries most of them

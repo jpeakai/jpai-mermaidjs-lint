@@ -36,6 +36,9 @@ relates_to:
   - relation: excepted_by
     target: MJL-0036
     note: a nested overview names the member a reader is sent to with the group's shown label, as "PAYMENT_METHOD (in CUSTOMER (+2))"
+  - relation: extended_by
+    target: MJL-0038
+    note: twin chains fold whole however many there are, their detail split again into one group per lane, as an author region does
 
 decision:
   given: a reader of a split plan reads an author's namespace as the diagram's own story, and follows a stub to the node it names. A stub in a nested overview standing for a whole group sends the reader two levels back without saying which member it reaches. A pipeline's lanes carry each source to the table it lands in

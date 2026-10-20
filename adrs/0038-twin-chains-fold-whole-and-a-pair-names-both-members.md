@@ -1,0 +1,70 @@
+---
+type: Architecture Decision
+title: Twin chains fold whole, a group of two names both members, and leaves are named by the node they hang from
+description: How a split plan folds twin chains and names groups of two and groups of leaves
+tags: [complexity, split]
+status: accepted
+accepted_on: 2026-10-20
+provenance: Three blind raters scored 24 paired plans at a mean of 4.07 out of 5, every plan correct. An ETL pipeline scored 4, 4 and 3. Its seven extract lanes were cut into "Extract → bronze (+8)" and "… → bronze (+6)". One rater named the cut arbitrary, since nothing in the labels sorts the lanes. At medium density the same lanes were cut six and one, so one lane stood alone as "Extract Zendesk tickets (+1)". A university schema scored 4, 3 and 4. Its rows-dropped overview already met the high target, and it folded three aggregates of two. One rater read that as hiding ASSESSMENT, GRADE and BUILDING. Across four blind rounds, raters gave the folded schema 46 points and the schema shown whole 44. So folding it helps a little, and hiding a name is the cost. All three raters called the boutique's external APIs group "Carrier quote API (+3)" a weak name. It holds a rates feed, a mail relay and two APIs, which Checkout calls
+enforced_in:
+  - src/split/tier2.ts isLanes, wholeLanes and proposeTwins, which fold twin chains whole, never cut into runs
+  - src/split/tier2.ts placeOf and proposeChains, which fold every lane of twin chains in one step
+  - src/split/plan.ts planWork, Lanes and stepOf, which let twin chains fold whole with their detail split again while the depth allows, and cut them into runs only when that gives no plan
+  - src/split/quotient.ts oneWayExact, which lets a target whose detail is split again draw the edges joining two groups one way
+  - src/split/label.ts laneLabel and twoWords, which name a lane's place by the two first words its labels lead with
+  - src/split/label.ts pairLabel and groupLabels, src/split/quotient.ts pairChoices, and src/split/assemble.ts alikePairs, which name a group of two by both members
+  - src/split/label.ts plainText, which names a member of a pair by its own label alone
+  - src/split/label.ts fanLabel, src/split/quotient.ts fanOf, and src/split/assemble.ts groupsOf, which name a group of leaves by the node they hang from
+  - src/split/contract.ts pairViolations and fanName, which accept both labels only as recomputed from the members
+  - tests/split/faithful.ts and tests/split/checker.ts, which read the pair, fan and two-word lane labels on their own
+  - tests/split/round16.test.ts, which holds the rated diagrams to these labels and refuses forged ones
+generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
+---
+
+<!-- GENERATED from MJL-0038 by okf_render.py. Do not edit; edit the .yml and regenerate. -->
+
+## Relates to
+
+- Extends [MJL-0035](0035-a-region-folds-whole-and-a-nested-detail-names-members.md) (twin chains fold whole however many there are, their detail split again into one group per lane, as an author region does)
+- Scoped exception to [MJL-0029](0029-runs-meshes-and-terminals-read-as-they-are.md) (twin chains are never cut into runs, since no label sorts lanes)
+- Extends [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a lane's place may take two first words, and leaves are named by the node they hang from)
+- Scoped exception to [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a stub for a member of a group of two shows its own label alone, since the group's label shows both)
+- Scoped exception to [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) (a group of two shows the other member's label in place of the count)
+- Extends [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (a tangled schema that meets its target by rows alone still folds its aggregates, each pair named by both members)
+- Extends [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (a target whose detail is split again draws the edges joining two groups one way)
+
+## Decision
+
+### The lens
+
+#### Given
+
+a reader of an overview reads a group's name as what it holds. A cut through alike things reads as a claim that they differ. A reader follows a stub to the overview text it names. Lanes carry each source to the table it lands in, and nothing in their labels sorts them
+
+#### We prefer
+
+folding twin chains whole, over cutting them into runs by label order. When their detail does not fit, it is split again while the depth allows, and each lane folds as one group in it. Every lane of twin chains folds in one step, so lanes fold alike. Twin chains are cut into runs only when folding them whole gives no plan. A target whose detail is split again draws the edges joining two groups one way, from stubs for the source's members. A lane's place is named by the namespace its labels lead with. Failing that, it is the first word they all lead with. Failing that, it is the two first words they lead with between them, in natural order, joined by a slash, as "Extract/Ingest → bronze (+14)". A group of two members shows the label it is named after, then " (+", the other's label and ")", as "ROOM (+BUILDING)". Neither label holds a bracket, a less-than sign, an ampersand, an asterisk, a hash or a backtick. The other is not a number, and the whole label holds 40 characters at most. Groups of two folded alike, by tier and reason, take it only when every one of them can. A stub for a member of such a group shows its own label alone. A group may hold every leaf one overview node leads to, or every leaf leading to it, two or more. It is then named by that node's name and an ellipsis, as "Checkout domain → … (+4)", counting every member. That name is a kept node's label or the base label a group shows. It comes after an author region's label, a decision's question, a family, a lane and a range. The contract and both test readers accept each label only as recomputed from the members. A tangled schema that meets its target by rows alone still folds its aggregates, over showing every entity
+
+#### Because
+
+one group of lanes reads as the stage it is, where two runs of it read as two stages. Lanes folded one by one read as interchangeable, which they are. A name showing both members of a pair hides nothing, so the overview keeps its structure and every entity's name. A stub for a member of a pair is found by its own label in the overview. A group of leaves hanging from one node is named by what all of them share, where a member's name promises one of them. Raters across four rounds slightly preferred the folded schema, and the pair label takes away what they disliked about it
+
+#### Unless
+
+the diagram is a classDiagram or erDiagram, whose chains have no direction, so no lane, fan or chain rule applies. A pair's labels may hold a bracket or markup, or be too long, and its group then keeps its count. A group of leaves may share its node with leaves outside it, and then keeps its other names
+
+## Consequences
+
+### Pros
+
+- The ETL overview reads one "Extract/Ingest → bronze (+14)" group, and its detail shows each lane as its own group.
+- The university overview names all 23 entities, as "SECTION (+ASSESSMENT)", "ROOM (+BUILDING)" and "ENROLMENT (+GRADE)".
+- The boutique's external APIs read "Checkout domain → … (+4)".
+- A stub for a member of a pair no longer repeats its group's label, as "CART" where it read "CART (in CART (+1))".
+
+### Cons
+
+- A plan folding twin chains whole adds a level of details, one per lane.
+- A pair label is longer than a count, and the overview gives it more room.
+- The contract, the reading and the checker each accept three more label forms.
+- Twin chains that give no plan whole are planned a second time, as runs.

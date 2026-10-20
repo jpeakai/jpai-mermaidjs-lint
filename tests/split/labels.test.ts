@@ -36,7 +36,7 @@ describe("group labels", () => {
   });
 
   test("the choices run from the cut label to the whole label to the label with its id", () => {
-    expect(groupLabels("Worker", 3, undefined, "g1")).toEqual(["Worker (+3)", "Worker (+3) [g1]"]);
+    expect(groupLabels({ base: "Worker", n: 3 }, "g1")).toEqual(["Worker (+3)", "Worker (+3) [g1]"]);
   });
 
   test("a group never shows a label an original node shows", async () => {

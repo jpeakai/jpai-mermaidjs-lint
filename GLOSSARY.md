@@ -389,6 +389,12 @@ A Group Node label naming a whole dotted Prefix Family, as `gold.* (+5)`, counti
 The group holds three members or more, each label leading with one namespace and a dot.
 No node outside it leads with that namespace, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 
+## Fan Label
+
+A Group Node label naming a group that holds every leaf one overview node leads to, as `Checkout domain → … (+4)`.
+It reads `… → ` and the node's name for leaves leading into it, and counts every member.
+The name is a kept node's label or the base label a group shows, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
+
 ## Fence
 
 The code block that holds a Diagram in markdown.
@@ -478,6 +484,7 @@ A Group Node label naming twin chains by their stages, as `Extract → bronze (+
 Each place along the chains is named by the namespace every label there leads with.
 Failing that, it is the first word they all lead with, and failing that an ellipsis.
 At least one place is named, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
+Two first words, as `Extract` and `Ingest`, name a place joined by a slash, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
 
 ## LLM Fix
 
@@ -520,6 +527,12 @@ A foreground and a background scored together.
 Text is `fill` and `color`, a border is `fill` and `stroke`, and an edge label is a `linkStyle` `color` and the label box.
 Host text is the Host's forced label colour and `fill`.
 A sequence Pair is a Theme Variable and the box or page it is drawn on.
+
+## Pair Label
+
+A Group Node label naming both members of a group of two, as `ROOM (+BUILDING)`, the other member's label in place of the count.
+A stub for either member shows its own label alone, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
+It is not a Pair, which is a colour pairing.
 
 ## Parse Engine
 
@@ -754,6 +767,12 @@ A Diagram that is a Dense Mesh from the start is refused instead.
 
 An Aggregate without each owned part sharing an outside neighbour with the rest, as an address chain without the `STORE` it locates.
 `T4` offers it when the whole Aggregate would add a Folded Parallel, and only where it adds no new reachable pair, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+
+## Twin Chains
+
+Disjoint paths of one length, two members or more, each joining the same nodes before and after.
+Extracts each feeding the bronze table it lands in are twin chains.
+They fold whole, never cut into runs, their detail split again into one group per lane when it does not fit, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
 
 ## Tree Depth
 

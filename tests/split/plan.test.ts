@@ -161,7 +161,7 @@ describe("classDiagram", () => {
 
   test("folds a namespace, splits its detail again, and keeps a lollipop on its class", async () => {
     const plan = await must(src, 3, 8);
-    expect(plan.details[0]?.split?.groups[0]?.label).toBe("Item (+1)");
+    expect(plan.details[0]?.split?.groups[0]?.label).toBe("Item (+Price)");
     expect(plan.groups[0]?.label).toBe("shop (+3)");
     expect(plan.overviewSource).toContain("User --() Login");
     expect(plan.details[0]?.source).toContain("<<stub>>");

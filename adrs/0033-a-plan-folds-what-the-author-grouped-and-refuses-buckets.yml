@@ -57,6 +57,9 @@ relates_to:
   - relation: extended_by
     target: MJL-0035
     note: of two groups joined both ways, the one whose detail is split again draws the other's members
+  - relation: extended_by
+    target: MJL-0038
+    note: a tangled schema that meets its target by rows alone still folds its aggregates, each pair named by both members
 
 decision:
   given: a reader of an overview reads its groups as the diagram's own structure. The reader compares regions drawn from one template side by side, and counts relationships as lines. A ticket key or a template is the author's own grouping, and an alphabetical range is no grouping at all

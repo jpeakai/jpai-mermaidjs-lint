@@ -1,0 +1,33 @@
+%% source: authored (round 16: leaves one author region calls, outside every region)
+%% kind: flowchart service map with external APIs
+flowchart LR
+  shopper["Shopper"] --> cdn["CDN edge"] --> waf["Web firewall"] --> web["Storefront"]
+  admin["Admin console"] --> api
+  subgraph orders["Order service"]
+    api["Order API"] --> pay["Payment worker"]
+    api --> mail["Mail worker"]
+    api --> ship["Shipping worker"]
+    api --> tax["Tax worker"]
+    api --> fraud["Fraud worker"]
+  end
+  subgraph catalog["Catalog service"]
+    search["Search API"] --> index[("Search index")]
+    search --> prices["Price book"]
+  end
+  subgraph ops["Operations"]
+    logs["Log shipper"] --> store[("Log store")]
+  end
+  web --> api
+  web --> search
+  api --> prices
+  api -.-> logs
+  search -.-> logs
+  pay --> stripe["Card processor API"]
+  mail --> relay["Mail relay"]
+  ship --> rates["Carrier rates API"]
+  tax --> vat["VAT lookup"]
+  fraud --> score["Risk scoring API"]
+  mobile["Mobile app"] --> cdn
+  partner["Partner portal"] --> waf
+  store --> dash["Ops dashboard"]
+  dash --> pager["On-call pager"]

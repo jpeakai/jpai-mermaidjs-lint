@@ -581,6 +581,19 @@
     },
     {
       "data": {
+        "id": "MJL-0038",
+        "label": "0038",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0038-twin-chains-fold-whole-and-a-pair-names-both-members.md",
+        "title": "Twin chains fold whole, a group of two names both members, and leaves are named by the node they hang from",
+        "description": "How a split plan folds twin chains and names groups of two and groups of leaves",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -1061,6 +1074,16 @@
     },
     {
       "data": {
+        "id": "MJL-0028-excepted_by-MJL-0038",
+        "source": "MJL-0028",
+        "target": "MJL-0038",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a group of two shows the other member's label in place of the count"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0029-extends-MJL-0028",
         "source": "MJL-0029",
         "target": "MJL-0028",
@@ -1087,6 +1110,16 @@
         "label": "excepted by",
         "relation": "excepted_by",
         "note": "sibling-leaf runs named by range are not offered when they are every group of one star"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0029-excepted_by-MJL-0038",
+        "source": "MJL-0029",
+        "target": "MJL-0038",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "twin chains are never cut into runs, since no label sorts lanes"
       }
     },
     {
@@ -1431,6 +1464,16 @@
     },
     {
       "data": {
+        "id": "MJL-0033-extended_by-MJL-0038",
+        "source": "MJL-0033",
+        "target": "MJL-0038",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a tangled schema that meets its target by rows alone still folds its aggregates, each pair named by both members"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0034-extends-MJL-0033",
         "source": "MJL-0034",
         "target": "MJL-0033",
@@ -1551,6 +1594,16 @@
     },
     {
       "data": {
+        "id": "MJL-0035-extended_by-MJL-0038",
+        "source": "MJL-0035",
+        "target": "MJL-0038",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "twin chains fold whole however many there are, their detail split again into one group per lane, as an author region does"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0036-excepts-MJL-0030",
         "source": "MJL-0036",
         "target": "MJL-0030",
@@ -1611,6 +1664,26 @@
     },
     {
       "data": {
+        "id": "MJL-0036-extended_by-MJL-0038",
+        "source": "MJL-0036",
+        "target": "MJL-0038",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a lane's place may take two first words, and leaves are named by the node they hang from"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0036-excepted_by-MJL-0038",
+        "source": "MJL-0036",
+        "target": "MJL-0038",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a stub for a member of a group of two shows its own label alone, since the group's label shows both"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0037-excepts-MJL-0036",
         "source": "MJL-0037",
         "target": "MJL-0036",
@@ -1637,6 +1710,86 @@
         "label": "extends",
         "relation": "extends",
         "note": "of two leaf folds saving alike, the one leaving groups more even goes first"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0037-extended_by-MJL-0038",
+        "source": "MJL-0037",
+        "target": "MJL-0038",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a target whose detail is split again draws the edges joining two groups one way"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0038-extends-MJL-0035",
+        "source": "MJL-0038",
+        "target": "MJL-0035",
+        "label": "extends",
+        "relation": "extends",
+        "note": "twin chains fold whole however many there are, their detail split again into one group per lane, as an author region does"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0038-excepts-MJL-0029",
+        "source": "MJL-0038",
+        "target": "MJL-0029",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "twin chains are never cut into runs, since no label sorts lanes"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0038-extends-MJL-0036",
+        "source": "MJL-0038",
+        "target": "MJL-0036",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a lane's place may take two first words, and leaves are named by the node they hang from"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0038-excepts-MJL-0036",
+        "source": "MJL-0038",
+        "target": "MJL-0036",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a stub for a member of a group of two shows its own label alone, since the group's label shows both"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0038-excepts-MJL-0028",
+        "source": "MJL-0038",
+        "target": "MJL-0028",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a group of two shows the other member's label in place of the count"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0038-extends-MJL-0033",
+        "source": "MJL-0038",
+        "target": "MJL-0033",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a tangled schema that meets its target by rows alone still folds its aggregates, each pair named by both members"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0038-extends-MJL-0037",
+        "source": "MJL-0038",
+        "target": "MJL-0037",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a target whose detail is split again draws the edges joining two groups one way"
       }
     }
   ],

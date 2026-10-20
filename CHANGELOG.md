@@ -10,7 +10,16 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **Twin chains fold whole.** A pipeline's lanes fold into one group, never cut into runs by label order, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
+  When their detail does not fit, it is split again, and each lane folds as one group in it.
+  A lane's place may be named by two first words, so an ETL pipeline's lanes read `Extract/Ingest → bronze (+14)`.
+- **A group of two names both members.** `ROOM (+BUILDING)` replaces `ROOM (+1)`, so a tangled schema's folded aggregates hide no entity's name.
+  A stub for either member shows its own label alone, as `CART` where it read `CART (in CART (+1))`.
+  Groups of two folded alike take it only when every one of them can.
+- **A group of leaves is named by the node they hang from.** A boutique's external APIs read `Checkout domain → … (+4)`, where they read `Carrier quote API (+3)`.
+- **A target split again draws the edges joining two groups one way.** So a pipeline's scheduler detail draws the lanes as one stub.
 
 ## [0.13.0] - 2026-10-20
 

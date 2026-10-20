@@ -6,6 +6,7 @@
 import type { GraphEdge, GraphNode } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { byNatural, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
+import { pairLabel } from "./label.ts";
 import type { Tier } from "./types.ts";
 
 export interface Group {
@@ -404,6 +405,8 @@ export interface LabelParts {
   // A region's label followed by the label of the region around it, in
   // brackets, which names it apart from a region of the same label elsewhere.
   qualified?: true;
+  // The other member's label a pair label shows in place of the count.
+  pair?: string;
 }
 
 // A region's label qualified by the label of the region around it, as
@@ -448,6 +451,7 @@ export interface Naming {
   byLabel: boolean;
   family?: string | null;
   lane?: string | null;
+  fan?: string | null;
 }
 
 export const labelChoices = (
@@ -469,15 +473,68 @@ export const labelChoices = (
     const node = work.nodes.get(m);
     return { base: node?.label ?? m, n: g.members.length - 1, ...markdownOf(node) };
   };
-  const fromRange = range === null ? [] : [{ base: range, n: g.members.length - 2 }];
+  const fromRange = [range, naming.fan].flatMap((b, i) =>
+    b ? [{ base: b, n: i === 0 ? g.members.length - 2 : g.members.length }] : [],
+  );
   const whole = [naming.family, naming.lane].flatMap((b) => (b ? [{ base: b, n: g.members.length }] : []));
   return [
     ...fromRegion,
+    ...(fromRegion.length === 0 ? pairChoices(work, g, [...head, ...ranked]) : []),
     ...head.map(label),
     ...whole,
     ...fromRange,
     ...ranked.filter((m) => !head.includes(m)).map(label),
   ];
+};
+
+// The pair label a group of two members may take: named after the first of
+// its members in the order given, the other's label in place of the count
+// (label.ts pairLabel). None for any other group or a markdown member.
+const pairChoices = (work: WorkGraph, g: Group, order: readonly string[]): LabelParts[] => {
+  const [named] = order;
+  const other = g.members.find((m) => m !== named);
+  const [a, b] = [named === undefined ? undefined : work.nodes.get(named), other ? work.nodes.get(other) : undefined];
+  if (g.members.length !== 2 || !(a && b) || a.markdown || b.markdown) return [];
+  return pairLabel(a.label, b.label) === null ? [] : [{ base: a.label, n: 0, pair: b.label }];
+};
+
+// The one overview node every member of a group of leaves hangs from, with
+// the way the leaves' edges run (true when out of that node), when the group
+// holds every leaf hanging from it that way: two members or more, each with
+// one directed edge, no start or end transition, in a flowchart or
+// stateDiagram, and that node no group of leaves itself (label.ts fanLabel).
+export const fanOf = (work: WorkGraph, part: Partition, g: Group): { node: string; out: boolean } | null => {
+  if ((work.family !== "flowchart" && work.family !== "state") || g.members.length < 2) return null;
+  const edgesOf = new Map<string, GraphEdge[]>();
+  for (const e of work.edges) {
+    if (e.source === e.target) continue;
+    for (const end of [e.source, e.target]) edgesOf.set(end, [...(edgesOf.get(end) ?? []), e]);
+  }
+  const marked = new Set(work.markerEdges.flatMap((e) => [e.source, e.target]));
+  const leaf = (id: string): GraphEdge | null => {
+    const es = edgesOf.get(id) ?? [];
+    const [e] = es;
+    return es.length === 1 && e && !marked.has(id) && !UNDIRECTED_KINDS.has(e.kind ?? "") && work.nodes.has(id)
+      ? e
+      : null;
+  };
+  const key = keyOf(g);
+  const hangs = (id: string): { node: string; out: boolean } | null => {
+    const e = leaf(id);
+    if (!e) return null;
+    const out = e.target === id;
+    return { node: over(work, part, out ? e.source : e.target), out };
+  };
+  const ends = g.members.map(hangs);
+  const [first] = ends;
+  if (!first || first.node === key || ends.some((x) => !x || x.node !== first.node || x.out !== first.out)) return null;
+  const inside = new Set(g.members);
+  const more = work.ids.some((id) => {
+    const h = inside.has(id) ? null : hangs(id);
+    return h !== null && h.node === first.node && h.out === first.out;
+  });
+  const leaves = groupOfKey(part, first.node)?.members.every((m) => leaf(m) !== null) ?? false;
+  return more || leaves ? null : first;
 };
 
 // A stub stands for one outside overview node: a kept node, a region or an
@@ -689,7 +746,9 @@ const holdsExact = (work: WorkGraph, part: Partition, b: string, drawing: Drawin
 // them from a stub for each source member, and the source draws the target
 // as one stub, each edge alike drawn once.
 export const oneWayExact = (work: WorkGraph, part: Partition, [a, b]: [string, string], drawing: Drawing): string =>
-  asksExact(work, part, [a, b], drawing.nested) && holdsExact(work, part, b, drawing) ? b : a;
+  asksExact(work, part, [a, b], drawing.nested) && (drawing.nested.has(b) || holdsExact(work, part, b, drawing))
+    ? b
+    : a;
 
 // The outside groups edges join to a group one way only, each with the way
 // they run: true when out of the group.

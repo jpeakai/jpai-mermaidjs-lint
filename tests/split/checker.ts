@@ -322,6 +322,34 @@ const wholeLane = (paths: string[][]): string | null => {
   return places.some((p) => p !== null) && short ? lane : null;
 };
 
+// A span label, written out: in a flowchart, a group of three members or
+// more folding no region, whose flow enters at one member and leaves from
+// another. The entry is the one member every edge from outside reaches, else
+// the one member no edge reaches; the exit is the one member every edge to
+// outside leaves, else the one member no edge leaves. It reads as the two
+// labels joined by " → ", neither holding markup, an arrow or an ellipsis,
+// at most forty characters, counting the members neither names.
+const spanOfReading = (original: DiagramGraph, members: readonly GraphNode[], folds: boolean): string | null => {
+  if (!/^(flowchart|graph)/.test(original.diagram_type) || members.length < 3 || folds) return null;
+  const inside = new Set(members.map((m) => m.id));
+  const edges = original.edges.filter((e) => e.source !== e.target);
+  const only = (xs: string[]): string | null => {
+    const set = [...new Set(xs)];
+    return set.length === 1 ? (set[0] ?? null) : null;
+  };
+  const enter = edges.filter((e) => inside.has(e.target) && !inside.has(e.source)).map((e) => e.target);
+  const leave = edges.filter((e) => inside.has(e.source) && !inside.has(e.target)).map((e) => e.source);
+  const entry = only(enter.length > 0 ? enter : [...inside].filter((m) => !edges.some((e) => e.target === m)));
+  const exit = only(leave.length > 0 ? leave : [...inside].filter((m) => !edges.some((e) => e.source === m)));
+  const labelOf = (id: string | null): string => members.find((m) => m.id === id)?.label ?? "";
+  const [a, b] = [labelOf(entry), labelOf(exit)];
+  if (entry === null || exit === null || entry === exit) return null;
+  if ([a, b].some((l) => l.trim() === "" || l !== l.trim() || /[<&*_`#→…]/.test(l))) return null;
+  if (members.some((m) => (m.id === entry || m.id === exit) && m.markdown)) return null;
+  const span = `${a} → ${b}`;
+  return [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(span)].length <= 40 ? span : null;
+};
+
 const wholeOf = (original: DiagramGraph, members: readonly GraphNode[]): string[] => {
   const inside = new Set(members.map((m) => m.id));
   const family = wholeOnly(members.map((m) => wholeNs(m.label)));
@@ -418,12 +446,13 @@ const checkGroupLabel = (c: Ctx, d: Det): void => {
       hidden,
     );
   const fromWhole = wholeOrFan(c, d, gs.base);
-  if (!(fromMember || fromRegion || fromQualified || fromRange || fromWhole))
+  const fromSpan = gs.base === spanOfReading(c.G, d.members, folded.length > 0);
+  if (!(fromMember || fromRegion || fromQualified || fromRange || fromWhole || fromSpan))
     c.add("BUG", "glabel", `group ${d.gid} base "${gs.base}" names no member, region or honest range`);
   const okN =
     (fromMember && gs.n === d.members.length - 1) ||
     ((fromRegion || fromQualified) && gs.n === d.members.length) ||
-    (fromRange && gs.n === d.members.length - 2) ||
+    ((fromRange || fromSpan) && gs.n === d.members.length - 2) ||
     (fromWhole && gs.n === d.members.length);
   if (!okN) c.add("BUG", "glabel", `group ${d.gid} says +${gs.n} but its detail holds ${d.members.length} members`);
 };

@@ -563,7 +563,7 @@ const fanChoices = (
 };
 
 const splitGroupOf = (work: WorkGraph, g: Group, id: string, pick: (LabelParts & { label: string }) | undefined) => {
-  const { base, n, markdown, label, pair } = pick ?? { base: "", n: 0, label: "" };
+  const { base, n, markdown, label, pair, span } = pick ?? { base: "", n: 0, label: "" };
   const shape = agreedShape(work, g);
   return {
     id,
@@ -571,6 +571,7 @@ const splitGroupOf = (work: WorkGraph, g: Group, id: string, pick: (LabelParts &
     labelBase: base,
     hidden: n,
     ...(pair !== undefined ? { paired: pair } : {}),
+    ...(span ? { spanned: span } : {}),
     ...(markdown ? { markdown } : {}),
     members: g.members,
     regions: g.regions,
@@ -630,6 +631,7 @@ const labelContext = (work: WorkGraph, part: Partition, groups: SplitGroup[]): L
           label: s.label,
           ...(s.markdown ? { markdown: s.markdown } : {}),
           ...(s.paired !== undefined ? { paired: true as const } : {}),
+          ...(s.spanned ? { spanned: true as const } : {}),
         },
       ];
     }),

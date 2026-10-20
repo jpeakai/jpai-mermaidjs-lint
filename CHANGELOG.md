@@ -10,7 +10,17 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **A diagram over its target only for its rows folds nothing more.** A plan stops at `T1`, rows dropped, when the overview meets the target without them, per [MJL-0039](adrs/0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md).
+  So a university schema within its node target shows all 23 entities, where it folded three aggregates into pairs.
+- **A plan says why it was offered.** Each plan carries `flagged`: the size the complexity rules measured, the split target and which measure is over.
+  `--split-plan` prints it under the heading.
+  A plan at `T1` adds that its rows move to row diagrams and no node folds.
+- **A group of three names every member.** `ADDRESS (+CITY, COUNTRY)` replaces `ADDRESS (+2)`, the others in natural order, and a stub for any member shows its own label alone.
+  A group a range, family or lane label names keeps that label.
+- **A flowchart run is named by where its flow enters and leaves.** A group entered at one member and left from another reads `git push to main → tsc --noEmit (+4)`, where it read `git push to main (+5)`.
+  A stub for either end shows its own label alone.
 
 ## [0.14.0] - 2026-10-20
 

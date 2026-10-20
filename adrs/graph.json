@@ -594,6 +594,19 @@
     },
     {
       "data": {
+        "id": "MJL-0039",
+        "label": "0039",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md",
+        "title": "A diagram over its target only for its rows folds nothing more, a plan says why it was flagged, and a group is named by every member or by where its flow enters and leaves",
+        "description": "When a plan stops at rows dropped, why it says it was offered, and how small groups and runs are named",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -1474,6 +1487,16 @@
     },
     {
       "data": {
+        "id": "MJL-0033-excepted_by-MJL-0039",
+        "source": "MJL-0033",
+        "target": "MJL-0039",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a tangled schema that meets its target by rows alone folds no aggregate"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0034-extends-MJL-0033",
         "source": "MJL-0034",
         "target": "MJL-0033",
@@ -1684,6 +1707,16 @@
     },
     {
       "data": {
+        "id": "MJL-0036-extended_by-MJL-0039",
+        "source": "MJL-0036",
+        "target": "MJL-0039",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a flowchart run is named by where its flow enters and leaves, before a member's name"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0037-excepts-MJL-0036",
         "source": "MJL-0037",
         "target": "MJL-0036",
@@ -1790,6 +1823,66 @@
         "label": "extends",
         "relation": "extends",
         "note": "a target whose detail is split again draws the edges joining two groups one way"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0038-excepted_by-MJL-0039",
+        "source": "MJL-0038",
+        "target": "MJL-0039",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a tangled schema that meets its target by rows alone stays at rows dropped"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0038-extended_by-MJL-0039",
+        "source": "MJL-0038",
+        "target": "MJL-0039",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a group of three names every member, as a group of two does"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0039-excepts-MJL-0033",
+        "source": "MJL-0039",
+        "target": "MJL-0033",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a tangled schema that meets its target by rows alone folds no aggregate"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0039-excepts-MJL-0038",
+        "source": "MJL-0039",
+        "target": "MJL-0038",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a tangled schema that meets its target by rows alone stays at rows dropped, over folding its aggregates into pairs"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0039-extends-MJL-0038",
+        "source": "MJL-0039",
+        "target": "MJL-0038",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a group of three names every member, as a group of two does"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0039-extends-MJL-0036",
+        "source": "MJL-0039",
+        "target": "MJL-0036",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a flowchart run is named by where its flow enters and leaves, before a member's name"
       }
     }
   ],

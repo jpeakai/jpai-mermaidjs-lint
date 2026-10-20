@@ -52,6 +52,9 @@ relates_to:
   - relation: excepted_by
     target: MJL-0038
     note: a stub for a member of a pair, or for a group's namesake, shows its own label
+  - relation: extended_by
+    target: MJL-0039
+    note: a flowchart run is named by where its flow enters and leaves, before a member's name
 
 decision:
   given: a reader of an overview reads a group's name as a promise about all its members. A name taken from one member promises that member and some others. A reader of a detail follows a stub to the overview node it names, and finds that node by its text

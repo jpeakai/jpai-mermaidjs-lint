@@ -1,0 +1,87 @@
+%% source: authored (round 17: a schema over its target only for the rows it draws)
+%% kind: erDiagram clinic bookings with wide entities
+erDiagram
+  CLINIC ||--o{ ROOM : "has"
+  CLINIC ||--o{ CLINICIAN : "employs"
+  CLINICIAN ||--o{ SLOT : "offers"
+  ROOM ||--o{ SLOT : "hosts"
+  PATIENT ||--o{ BOOKING : "makes"
+  SLOT ||--o| BOOKING : "filled by"
+  BOOKING ||--o{ NOTE : "records"
+  BOOKING ||--o| INVOICE : "billed as"
+  INVOICE ||--o{ PAYMENT : "settled by"
+  PATIENT ||--o{ CONSENT : "signs"
+  CLINIC {
+    string id PK
+    string name
+    string address
+    string phone
+    string timezone
+    string opened_on
+  }
+  ROOM {
+    string id PK
+    string clinic_id FK
+    string label
+    int capacity
+    string equipment
+  }
+  CLINICIAN {
+    string id PK
+    string clinic_id FK
+    string name
+    string speciality
+    string licence_no
+    string email
+  }
+  SLOT {
+    string id PK
+    string clinician_id FK
+    string room_id FK
+    datetime starts_at
+    datetime ends_at
+    string status
+  }
+  PATIENT {
+    string id PK
+    string name
+    date born_on
+    string email
+    string phone
+    string insurer
+  }
+  BOOKING {
+    string id PK
+    string patient_id FK
+    string slot_id FK
+    string reason
+    string status
+    datetime created_at
+  }
+  NOTE {
+    string id PK
+    string booking_id FK
+    string author
+    string body
+    datetime written_at
+  }
+  INVOICE {
+    string id PK
+    string booking_id FK
+    int amount_cents
+    string currency
+    string status
+  }
+  PAYMENT {
+    string id PK
+    string invoice_id FK
+    int amount_cents
+    string method
+    datetime paid_at
+  }
+  CONSENT {
+    string id PK
+    string patient_id FK
+    string form
+    date signed_on
+  }

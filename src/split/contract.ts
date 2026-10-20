@@ -25,6 +25,7 @@ import {
   readerOf,
   readingsOf,
   shorten,
+  spanLabel,
   wholeNaming,
 } from "./label.ts";
 import { floorOf } from "./plan.ts";
@@ -38,6 +39,7 @@ import {
   qualifiedLabel,
   reversible,
   soleRegion,
+  spanOf,
   usedIds,
 } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
@@ -182,23 +184,36 @@ const qualifiedLabels = (work: WorkGraph, g: SplitGroup): string[] =>
 // one rule in label.ts, then " (+N)", N counting the members it does not
 // name, and the group's id when the label is taken. No two groups show one
 // label, and no group shows a node's label.
-const groupLabelViolations = (build: Build, g: SplitGroup): Violations => {
+// Where a group's base label may come from, each recomputed from the data.
+const sourcesOf = (build: Build, g: SplitGroup) => {
   const { plan, work } = build;
-  const out: Violations = [];
   const memberLabels = (x: SplitGroup): string[] => x.members.map((m) => work.nodes.get(m)?.label ?? m);
+  const base = g.labelBase;
+  const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
+  const plain = regionLabels(work, g).includes(base) || memberLabels(g).includes(base);
+  const naming = wholeNaming(work, g);
+  return {
+    range: base === rangeLabel(memberLabels(g), hidden),
+    plain,
+    qualified: !plain && qualifiedLabels(work, g).includes(base) && shorten(base) === base,
+    whole: !plain && (base === naming.family || base === naming.lane || base === fanName(build, g)) && !g.markdown,
+    spanned: base === spanName(work, g),
+  };
+};
+
+const groupLabelViolations = (build: Build, g: SplitGroup): Violations => {
+  const out: Violations = [];
   const [base, n] = [g.labelBase, g.hidden];
   if (!groupLabels({ base, n, markdown: g.markdown, pair: g.paired }, g.id).includes(g.label))
     out.push(`4: group ${g.id} label is not its parts`);
   if (g.paired !== undefined) return [...out, ...pairViolations(build, g)];
-  const hidden = plan.groups.filter((x) => x !== g).flatMap(memberLabels);
-  const range = base === rangeLabel(memberLabels(g), hidden);
-  const plain = regionLabels(work, g).includes(base) || memberLabels(g).includes(base);
-  const qualified = !plain && qualifiedLabels(work, g).includes(base) && shorten(base) === base;
-  const naming = wholeNaming(work, g);
-  const whole = !plain && (base === naming.family || base === naming.lane || base === fanName(build, g)) && !g.markdown;
-  if (!(range || plain || qualified || whole)) out.push(`4: group ${g.id} label "${base}" is not from the data`);
+  const { range, plain, qualified, whole, spanned } = sourcesOf(build, g);
+  if (g.spanned !== undefined && !spanned)
+    out.push(`4: group ${g.id} span label "${base}" is not its members' entry and exit`);
+  if (!(range || plain || qualified || whole || spanned))
+    out.push(`4: group ${g.id} label "${base}" is not from the data`);
   const all = g.members.length;
-  const counts = range ? [all - 2] : qualified || whole ? [all] : [all, all - 1];
+  const counts = range || spanned ? [all - 2] : qualified || whole ? [all] : [all, all - 1];
   if (!counts.includes(n)) out.push(`4: group ${g.id} counts ${n} hidden members`);
   return out;
 };
@@ -212,6 +227,14 @@ const pairViolations = (build: Build, g: SplitGroup): Violations => {
   const markdown = g.markdown || g.members.some((m) => build.work.nodes.get(m)?.markdown);
   const exact = others !== null && others === g.paired && `${g.labelBase} (+${others})` === g.label;
   return exact && g.hidden === 0 && !markdown ? [] : [`4: group ${g.id} pair label "${g.label}" is not its members'`];
+};
+
+// The span label a group may show (label.ts spanLabel), recomputed from the
+// members' entry and exit, for a group with no markdown member.
+const spanName = (work: WorkGraph, g: SplitGroup): string | null => {
+  const ends = spanOf(work, g);
+  const [a, b] = ends ? [work.nodes.get(ends.entry), work.nodes.get(ends.exit)] : [undefined, undefined];
+  return a && b && !a.markdown && !b.markdown && !g.markdown ? spanLabel(a.label, b.label) : null;
 };
 
 // The fan label a group of leaves may show (label.ts fanLabel), from the name

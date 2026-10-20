@@ -33,6 +33,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Excepted by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (a tangled erDiagram folds past the target only aggregates adding no new reachable pair)
 - Extended by [MJL-0035](0035-a-region-folds-whole-and-a-nested-detail-names-members.md) (of two groups joined both ways, the one whose detail is split again draws the other's members)
 - Extended by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a tangled schema that meets its target by rows alone still folds its aggregates, each pair named by both members)
+- Excepted by [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) (a tangled schema that meets its target by rows alone folds no aggregate)
 
 ## Decision
 

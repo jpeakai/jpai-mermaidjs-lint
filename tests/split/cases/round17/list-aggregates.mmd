@@ -1,0 +1,20 @@
+%% source: authored (round 17: aggregates of three a schema folds, each named by every member)
+%% kind: erDiagram warehouse fulfilment
+erDiagram
+  COUNTRY ||--o{ REGION : "contains"
+  REGION ||--o{ SITE : "contains"
+  SITE ||--o{ WAREHOUSE : "hosts"
+  WAREHOUSE ||--o{ BIN : "holds"
+  BIN ||--o{ STOCK : "stores"
+  SKU ||--o{ STOCK : "stocked as"
+  SKU }o--|| VENDOR : "supplied by"
+  VENDOR ||--o{ VENDOR_CONTACT : "reached at"
+  CUSTOMER ||--o{ SALES_ORDER : "places"
+  SALES_ORDER ||--|{ ORDER_LINE : "contains"
+  ORDER_LINE }o--|| SKU : "for"
+  SALES_ORDER ||--o{ PICK_LIST : "picked by"
+  PICK_LIST ||--|{ PICK_TASK : "splits into"
+  PICK_TASK }o--|| BIN : "from"
+  SALES_ORDER ||--o{ PARCEL : "ships as"
+  PARCEL }o--|| CARRIER : "carried by"
+  PARCEL ||--o{ TRACKING_EVENT : "tracked by"

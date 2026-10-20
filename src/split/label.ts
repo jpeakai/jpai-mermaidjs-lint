@@ -131,6 +131,19 @@ export const fanLabel = (name: string, out: boolean): string | null => {
   return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
 };
 
+// A span label names a flowchart group the flow enters at one member and
+// leaves at another by those two members' labels, joined by LANE_SEPARATOR,
+// as "git push to main → tsc --noEmit" for a run of setup steps (MJL-0039).
+// Neither label holds markup, an arrow or an ellipsis, and the label holds at
+// most LABEL_CAP characters. It counts the members it does not name, two
+// fewer than the group holds.
+export const spanLabel = (entry: string, exit: string): string | null => {
+  if (entry === exit) return null;
+  if ([entry, exit].some((l) => l.trim() === "" || l !== l.trim() || MARKUP.test(l) || /[→…]/.test(l))) return null;
+  const base = `${entry}${LANE_SEPARATOR}${exit}`;
+  return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
+};
+
 const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.label ?? id;
 
 // The family label and the lane label a group may take , from the
@@ -211,22 +224,31 @@ export interface LabelContext {
   part: Partition;
   // Each group by its key in the partition: its id, its whole author label,
   // the label it shows, and whether that is a pair label.
-  groups: Map<string, { id: string; base: string; label: string; markdown?: true; paired?: true }>;
+  groups: Map<string, { id: string; base: string; label: string; markdown?: true; paired?: true; spanned?: true }>;
 }
 
 const markdownOf = (work: WorkGraph, id: string): { markdown?: true } =>
   work.nodes.get(id)?.markdown || work.regions.get(id)?.markdown ? { markdown: true } : {};
 
 // Whether a stub for a member of a group shows its own label alone: the
-// group shows both members' labels in a pair label, or the member is the one
-// the group is named after, so the group's shown label leads with the
+// group shows every member's label in a pair or list label, the member is
+// the entry or the exit a span label names (MJL-0039), or the member is the
+// one the group is named after, so the group's shown label leads with the
 // member's own label, uncut (MJL-0038).
 export const ownSuffices = (
-  g: { label: string; base: string; markdown?: true; paired?: unknown },
+  g: { label: string; base: string; markdown?: true; paired?: unknown; spanned?: unknown },
   own: string,
   markdown: boolean,
 ): boolean =>
-  g.paired !== undefined || (!(markdown || g.markdown) && g.base === own && g.label.startsWith(`${own} (+`));
+  g.paired !== undefined ||
+  (g.spanned !== undefined && !markdown && spanEnds(g.base).includes(own)) ||
+  (!(markdown || g.markdown) && g.base === own && g.label.startsWith(`${own} (+`));
+
+// The two labels a span label's base names, the entry's then the exit's.
+export const spanEnds = (base: string): string[] => {
+  const at = base.indexOf(LANE_SEPARATOR);
+  return at < 0 ? [] : [base.slice(0, at), base.slice(at + LANE_SEPARATOR.length)];
+};
 
 // The text before any id is added: the node's label, then IN, the label its
 // group shows and a closing bracket when it sits in a group; a whole group by

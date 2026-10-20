@@ -13,6 +13,11 @@
 //   direction, carry exactly the label they all agree on (none when they
 //   differ), be drawn once, and every transition beyond the first counts in
 //   loss.mergedMarkers.
+// - A detail's subgraph with no original id is a box of stubs (MJL-0037). It
+//   shows the label exactly one group shows, sits at the top level, and reads
+//   as the one region that group folds whole holding every member, else as the
+//   group, and then draws no edge. A stub inside it shows the label of exactly
+//   one member of that group, and reads as that member.
 // - An erDiagram overview never merges two labels or two cardinalities, so an
 //   overview edge with a group at an end stands for the edges of one pair, one
 //   label and one cardinality, and each such class is drawn exactly once. Any
@@ -107,6 +112,7 @@ interface Det {
   D: DiagramGraph;
   members: GraphNode[];
   stubs: GraphNode[];
+  boxes: GraphNode[];
 }
 
 interface Shown {
@@ -171,7 +177,13 @@ const readDetail = async (c: Reader, d: SplitPlan["details"][number], nested: Fi
     c.add("BUG", "detail", `detail ${d.group} draws region ${n.id}`);
   if (d.split) nested.push(...(await checkPlan(d.source, d.split, c.cfg, `${c.path}/${d.group}`)));
   const members = D.nodes.filter((n) => c.nodeById.has(n.id));
-  return { gid: d.group, D, members, stubs: D.nodes.filter((n) => !c.isOrig(n.id)) };
+  return {
+    gid: d.group,
+    D,
+    members,
+    stubs: D.nodes.filter((n) => !c.isOrig(n.id)),
+    boxes: D.subgraphs.filter((x) => !c.isOrig(x.id)),
+  };
 };
 
 const readDetails = async (c: Reader, plan: SplitPlan, nested: Finding[]): Promise<Det[]> => {
@@ -190,7 +202,7 @@ const readDetails = async (c: Reader, plan: SplitPlan, nested: Finding[]): Promi
 
 // Membership from text: a detail's members are its original-id nodes, and its
 // folded regions are the subgraphs the overview does not draw.
-const membership = (c: Pick<Ctx, "add" | "dets" | "ovSubs">) => {
+const membership = (c: Pick<Ctx, "add" | "dets" | "ovSubs" | "isOrig">) => {
   const groupOf = new Map<string, string>();
   const regionGroup = new Map<string, string>();
   for (const d of c.dets) {
@@ -199,7 +211,7 @@ const membership = (c: Pick<Ctx, "add" | "dets" | "ovSubs">) => {
       if (was) c.add("BUG", "partition", `node ${m.id} is a member of ${was} and ${d.gid}`);
       groupOf.set(m.id, d.gid);
     }
-    for (const s of d.D.subgraphs.filter((x) => !c.ovSubs.has(x.id))) {
+    for (const s of d.D.subgraphs.filter((x) => !c.ovSubs.has(x.id) && c.isOrig(x.id))) {
       const was = regionGroup.get(s.id);
       if (was && was !== d.gid) c.add("WARN", "region", `region ${s.id} drawn as folded in ${was} and ${d.gid}`);
       regionGroup.set(s.id, d.gid);
@@ -328,7 +340,7 @@ const checkNodes = (c: Ctx): void => {
 // drawn elsewhere, so a classDiagram counts a region once.
 const checkRegions = (c: Ctx): void => {
   const want = c.G.subgraphs.map(rk);
-  const all = [...c.O.subgraphs, ...c.dets.flatMap((d) => d.D.subgraphs)].map(rk);
+  const all = [...c.O.subgraphs, ...c.dets.flatMap((d) => d.D.subgraphs.filter((s) => c.isOrig(s.id)))].map(rk);
   const got = c.G.diagram_type.startsWith("class") ? [...new Set(all)] : all;
   const { missing, extra } = multisetDiff(want, got);
   for (const k of missing) c.add("BUG", "region", `region not recovered: ${k}`);
@@ -436,12 +448,79 @@ const checkFrom = (c: Ctx, d: Det, s: GraphNode, named: string[]): void => {
   }
 };
 
+// The one original region group gid folds whole holding every member: of the
+// regions folded into it, the one none of the others holds, when every member
+// sits inside it. Null for any other group.
+const regionOf = (c: Ctx, gid: string): string | null => {
+  const folded = c.G.subgraphs.filter((s) => c.regionGroup.get(s.id) === gid);
+  const roots = folded.filter((s) => c.regionGroup.get(s.parent ?? "") !== gid);
+  const root = roots.length === 1 ? roots[0]?.id : undefined;
+  if (root === undefined) return null;
+  const inside = (p: string | null): boolean => {
+    for (let x = p; x; x = c.subById.get(x)?.parent ?? null) if (x === root) return true;
+    return false;
+  };
+  return c.G.nodes.filter((n) => c.groupOf.get(n.id) === gid).every((n) => inside(n.parent)) ? root : null;
+};
+
+// A box of stubs read as its region or its whole group, by the one group
+// whose label it shows; undefined when it shows no one group's label.
+const readBox = (c: Ctx, d: Det, b: GraphNode, m: Map<string, string>): string | undefined => {
+  const gids = [...c.shown].filter(([, gs]) => gs.label === b.label).map(([gid]) => gid);
+  const gid = gids[0];
+  if (gid === undefined || gids.length > 1) {
+    c.add(
+      gid === undefined ? "BUG" : "AMBIG",
+      "box",
+      `detail ${d.gid} box ${b.id} "${b.label}" shows no one group's label`,
+    );
+    return undefined;
+  }
+  if (b.parent !== null) c.add("BUG", "box", `detail ${d.gid} box ${b.id} sits inside ${b.parent}`);
+  const region = regionOf(c, gid);
+  const claimed = c.plan.details.find((x) => x.group === d.gid)?.stubs[b.id];
+  if (claimed !== undefined && claimed !== (region ?? gid))
+    c.add("BUG", "box", `detail ${d.gid} box ${b.id} reads as ${region ?? gid}, not its endpoint ${claimed}`);
+  if (region === null && d.D.edges.some((e) => e.source === b.id || e.target === b.id))
+    c.add("BUG", "box", `detail ${d.gid} box ${b.id} draws an edge for a whole group`);
+  m.set(b.id, region ?? `group:${gid}`);
+  return gid;
+};
+
+// A stub inside a box read as the one member of the box's group its label names.
+const readInBox = (
+  c: Ctx,
+  d: Det,
+  s: GraphNode,
+  { gid, m }: { gid: string | undefined; m: Map<string, string> },
+): void => {
+  const named = c.G.nodes.filter((n) => n.label === s.label && c.groupOf.get(n.id) === gid).map((n) => n.id);
+  if (gid === undefined || named.length !== 1) {
+    c.add("BUG", "box", `detail ${d.gid} stub ${s.id} "${s.label}" in box ${s.parent} names ${named.length} members`);
+    return;
+  }
+  const claimed = c.plan.details.find((x) => x.group === d.gid)?.stubs[s.id];
+  if (claimed !== undefined && claimed !== named[0])
+    c.add("BUG", "box", `detail ${d.gid} stub ${s.id} "${s.label}" does not name its endpoint ${claimed}`);
+  m.set(s.id, named[0] ?? "");
+};
+
+// Each box of stubs read as its region or its whole group, and each stub
+// inside it as the one member of that group its label names.
+const readBoxes = (c: Ctx, d: Det, m: Map<string, string>): Set<string> => {
+  const groupOfBox = new Map(d.boxes.map((b) => [b.id, readBox(c, d, b, m)]));
+  const inside = d.stubs.filter((x) => x.parent !== null && !c.isOrig(x.parent));
+  for (const s of inside) readInBox(c, d, s, { gid: groupOfBox.get(s.parent ?? ""), m });
+  return new Set(inside.map((s) => s.id));
+};
+
 const readStubs = (c: Ctx): Map<string, Map<string, string>> => {
   const read = stubReader(c);
   const out = new Map<string, Map<string, string>>();
   for (const d of c.dets) {
     const m = new Map<string, string>();
-    for (const s of d.stubs) {
+    const boxed = readBoxes(c, d, m);
+    for (const s of d.stubs.filter((x) => !boxed.has(x.id))) {
       const r = readStub(c, d, s, read);
       if (r !== null) m.set(s.id, r);
       if (r?.startsWith("group:")) checkFrom(c, d, s, fromNamed(c, s.label, r.slice(6)));
@@ -486,10 +565,22 @@ const bothWays = (c: Ctx, x: string, y: string): boolean => {
   return runs(x, y) && runs(y, x);
 };
 
+// The outside overview nodes a group's detail meets: the far end, as the
+// overview draws it, of every original edge with one end in the group.
+const outsideOf = (c: Ctx, gid: string): number => {
+  const gEnd = nameEnds(c.G);
+  const far = c.G.edges.flatMap((e) => {
+    const [s, t] = [c.ov(gEnd(e.source)), c.ov(gEnd(e.target))];
+    return s === gid && t !== gid ? [t] : t === gid && s !== gid ? [s] : [];
+  });
+  return new Set(far).size;
+};
+
 // Whether a target group's detail may draw a member A of another group as
-// a stub (MJL-0036): edges run one way only, from A's group into group gid,
-// A is the only member they leave, they reach two members of gid or more,
-// and A's group's detail is not split again.
+// a stub (MJL-0036, MJL-0037): edges run one way only, from A's group into
+// group gid, A is a member they leave, A's group's detail is not split again,
+// and they leave fewer members than they reach, or as many, two or more,
+// when gid's detail meets fewer outside nodes than A's group's.
 const fromOne = (c: Ctx, A: string, gid: string): boolean => {
   const gEnd = nameEnds(c.G);
   const from = c.ov(A);
@@ -497,7 +588,10 @@ const fromOne = (c: Ctx, A: string, gid: string): boolean => {
   const sources = new Set(between.map((e) => gEnd(e.source)));
   const targets = new Set(between.map((e) => gEnd(e.target)));
   const split = c.plan.details.find((d) => d.group === from)?.split ?? null;
-  return !bothWays(c, from, gid) && sources.size === 1 && sources.has(A) && targets.size > 1 && split === null;
+  const fewer =
+    sources.size < targets.size ||
+    (sources.size === targets.size && sources.size > 1 && outsideOf(c, gid) < outsideOf(c, from));
+  return !bothWays(c, from, gid) && sources.has(A) && fewer && split === null;
 };
 
 interface Reading {
@@ -780,7 +874,7 @@ export const checkPlan = async (
   const nested: Finding[] = [];
   const dets = await readDetails({ ...base, cfg, path }, plan, nested);
   const ovSubs = new Set(O.subgraphs.map((s) => s.id));
-  const { groupOf, regionGroup } = membership({ add, dets, ovSubs });
+  const { groupOf, regionGroup } = membership({ add, dets, ovSubs, isOrig });
   const lolLabels = new Set((G.pseudo?.nodes ?? []).filter((p) => p.shape === "lollipop").map((p) => `()${p.label}`));
   const ov = (x: string): string => groupOf.get(x) ?? regionGroup.get(x) ?? x;
   const keptNodes = O.nodes.filter((n) => isOrig(n.id));

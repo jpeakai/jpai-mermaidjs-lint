@@ -1,0 +1,46 @@
+%% source: authored (streaming platform where edges target whole subgraphs)
+%% kind: flowchart subgraph-as-edge-endpoint
+flowchart LR
+  client["Smart TV client"] --> edge
+  phone["Phone client"] --> edge
+  subgraph edge["Edge tier"]
+    zuul["Zuul edge proxy"]
+    oca["Open Connect appliance"]
+  end
+  subgraph playback["Playback domain"]
+    lic["License server"]
+    manifest["Manifest service"]
+    steer["CDN steering"]
+  end
+  subgraph discovery["Discovery domain"]
+    rows["Row ranking"]
+    artwork["Artwork personalisation"]
+    searchsvc["Search"]
+  end
+  subgraph member["Member domain"]
+    profile["Profiles"]
+    billingm["Billing"]
+    plans["Plans"]
+  end
+  subgraph data["Data platform"]
+    kafka["Keystone Kafka"]
+    flink["Flink jobs"]
+    iceberg[("Iceberg tables")]
+  end
+  edge --> playback
+  edge --> discovery
+  edge --> member
+  zuul --> manifest
+  zuul --> rows
+  zuul --> profile
+  manifest --> steer --> oca
+  manifest --> lic
+  rows --> artwork
+  rows --> searchsvc
+  profile --> plans --> billingm
+  playback --> data
+  discovery --> data
+  member --> data
+  kafka --> flink --> iceberg
+  data --> ml["Recommendation training"]
+  ml --> discovery

@@ -26,6 +26,8 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Scoped exception to [MJL-0031](0031-a-plan-keeps-groups-even-and-names-each-stub-once.md) (a member stub names its group by the label the overview shows)
 - Scoped exception to [MJL-0035](0035-a-region-folds-whole-and-a-nested-detail-names-members.md) (a nested overview names the member a reader is sent to with the group's shown label, as "PAYMENT_METHOD (in CUSTOMER (+2))")
 - Scoped exception to [MJL-0032](0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md) (one member's edges into a group joined one way draw in the target's detail)
+- Excepted by [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (a stub inside a box shows its member's own label, and the box shows the label the overview shows for the group)
+- Extended by [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (the target of edges joining two groups one way draws them when it needs stubs for fewer members, or as many when it meets fewer outside nodes)
 
 ## Decision
 

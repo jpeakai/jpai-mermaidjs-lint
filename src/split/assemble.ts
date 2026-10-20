@@ -20,6 +20,7 @@ import {
 import {
   groupLabels,
   ID_LEAD,
+  IN,
   type LabelContext,
   namedStubs,
   rangeLabel,
@@ -33,7 +34,9 @@ import {
   type DetailView,
   detailShape,
   detailView,
+  endpointLabel,
   type Group,
+  groupOfKey,
   idMaker,
   isGroupKey,
   keyOf,
@@ -49,7 +52,10 @@ import {
   quotientEdges,
   remainingRegions,
   reversedEdges,
+  type Shape,
+  type Stub,
   scoreOf,
+  soleRegion,
   usedIds,
 } from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
@@ -228,10 +234,118 @@ const detailPseudo = (work: WorkGraph, view: DetailView): DiagramGraph["pseudo"]
   return { nodes, edges: [] };
 };
 
-const detailGraph = (work: WorkGraph, view: DetailView, texts: Map<string, StubText>, rows: boolean): DiagramGraph => {
+// A box of stubs (MJL-0037): in a flowchart detail, the stubs for two or more
+// members of one other group, drawn inside one subgraph showing the label
+// that group shows, each stub showing its member's own label. A group standing
+// for one author region whole (soleRegion) is boxed as that region, so an
+// edge to the region meets the box; any other group's box draws no edge.
+export interface Box {
+  id: string;
+  // The region the box stands for, or the id of the group it stands for.
+  endpoint: string;
+  label: string;
+  markdown?: true;
+  // The stubs it holds, each standing for a member of its group.
+  inner: string[];
+}
+
+// A detail's stubs by the group each stands in: for a member or a region
+// of that group, or for the group whole.
+const stubsByGroup = (work: WorkGraph, part: Partition, view: DetailView): Map<string, Stub[]> => {
+  const byGroup = new Map<string, Stub[]>();
+  for (const s of view.stubs) {
+    const k = isGroupKey(s.endpoint) ? s.endpoint : over(work, part, s.endpoint);
+    if (isGroupKey(k)) byGroup.set(k, [...(byGroup.get(k) ?? []), s]);
+  }
+  return byGroup;
+};
+
+// The box for one group's stubs, or null. A group is boxed only when every
+// stub for it stands for a member or for the region it stands for whole,
+// one member at least, each shows its plain text, and each member's label
+// names one member.
+const boxFor = (
+  a: Assembly,
+  k: string,
+  stubs: Stub[],
+  texts: Map<string, StubText>,
+): (Omit<Box, "id"> & { on?: string }) | null => {
+  const { work, part } = a.folded;
+  const g = groupOfKey(part, k);
+  const shown = a.labels.groups.get(k);
+  if (!(g && shown) || stubs.length < 2) return null;
+  const region = soleRegion(work, g);
+  const inner = stubs.filter((s) => work.nodes.has(s.endpoint));
+  const onRegion = stubs.filter((s) => s.endpoint === region);
+  const plain = stubs.every((s) => texts.get(s.id)?.label === `${endpointLabel(work, s.endpoint)}${IN}${shown.label})`);
+  const labels = g.members.map((m) => labelOf(work, m));
+  const named = inner.every((s) => labels.filter((l) => l === labelOf(work, s.endpoint)).length === 1);
+  if (inner.length + onRegion.length !== stubs.length || inner.length === 0 || !(plain && named)) return null;
+  return {
+    endpoint: region ?? shown.id,
+    label: shown.label,
+    ...(shown.markdown ? { markdown: shown.markdown } : {}),
+    inner: inner.map((s) => s.id),
+    ...(onRegion[0] ? { on: onRegion[0].id } : {}),
+  };
+};
+
+// The boxes a detail may draw, most stubs first, each taking the id of the
+// stub for its region when it has one.
+const boxChoices = (a: Assembly, view: DetailView, texts: Map<string, StubText>): Box[] => {
+  const { work, part } = a.folded;
+  if (work.family !== "flowchart") return [];
+  const next = idMaker(new Set([...usedIds(work), ...view.stubs.map((s) => s.id)]), "s");
+  return [...stubsByGroup(work, part, view)]
+    .sort((x, y) => byText(x[0], y[0]))
+    .flatMap(([k, stubs]) => {
+      const box = boxFor(a, k, stubs, texts);
+      if (!box) return [];
+      const { on, ...rest } = box;
+      return [{ id: on ?? next(), ...rest }];
+    })
+    .sort((x, y) => y.inner.length - x.inner.length);
+};
+
+// A detail's shape with its boxes: a box standing for a region's stub is a
+// subgraph instead of a node, and every box is a subgraph at the top level.
+const boxedShape = (work: WorkGraph, view: DetailView, boxes: readonly Box[]): Shape => {
+  const shape = detailShape(work, view);
+  const stubIds = new Set(view.stubs.map((s) => s.id));
+  return {
+    nodes: shape.nodes - boxes.filter((b) => stubIds.has(b.id)).length,
+    edges: shape.edges,
+    subgraphs: shape.subgraphs + boxes.length,
+    depth: boxes.length > 0 ? Math.max(shape.depth, 1) : shape.depth,
+  };
+};
+
+// The boxes a detail draws: each, most stubs first, while the detail still
+// meets the target with it.
+const boxesOf = (a: Assembly, view: DetailView, texts: Map<string, StubText>): Box[] => {
+  const kept: Box[] = [];
+  for (const b of boxChoices(a, view, texts)) {
+    const shape = boxedShape(a.folded.work, view, [...kept, b]);
+    if (meets(shape.nodes, scoreOf(shape, 0, a.config), a.config)) kept.push(b);
+  }
+  return kept;
+};
+
+// What a detail draws beside its view: each stub's text, whether members
+// draw their rows, and its boxes of stubs.
+interface Drawn {
+  texts: Map<string, StubText>;
+  rows: boolean;
+  boxes: readonly Box[];
+}
+
+const detailGraph = (work: WorkGraph, view: DetailView, { texts, rows, boxes }: Drawn): DiagramGraph => {
   const drawn = new Set(view.regions);
   const inDrawn = (p: string | null | undefined): string | null => (p && drawn.has(p) ? p : null);
   const pseudo = detailPseudo(work, view);
+  const boxOf = new Map(boxes.flatMap((b) => b.inner.map((id) => [id, b.id] as const)));
+  const boxIds = new Set(boxes.map((b) => b.id));
+  const endOf = new Map(view.stubs.map((s) => [s.id, s.endpoint]));
   return {
     diagram_type: work.type,
     nodes: [
@@ -239,19 +353,31 @@ const detailGraph = (work: WorkGraph, view: DetailView, texts: Map<string, StubT
         const n = work.nodes.get(id) as WNode;
         return graphNode(n, inDrawn(n.owns ?? n.parent), rows);
       }),
-      ...view.stubs.map((s) => {
-        const text = texts.get(s.id);
-        return {
-          id: s.id,
-          label: text?.label ?? s.id,
-          parent: null,
-          ...(work.family === "flowchart" ? { shape: "stadium" } : {}),
-          ...(text?.markdown ? { markdown: true as const } : {}),
-        };
-      }),
+      ...view.stubs
+        .filter((s) => !boxIds.has(s.id))
+        .map((s) => {
+          const text = texts.get(s.id);
+          const box = boxOf.get(s.id);
+          const end = endOf.get(s.id) ?? s.id;
+          return {
+            id: s.id,
+            label: box === undefined ? (text?.label ?? s.id) : endpointLabel(work, end),
+            parent: box ?? null,
+            ...(work.family === "flowchart" ? { shape: "stadium" } : {}),
+            ...(text?.markdown ? { markdown: true as const } : {}),
+          };
+        }),
     ],
     edges: sortEdges(view.edges),
-    subgraphs: view.regions.map((r) => regionNode(work, r, inDrawn(work.regions.get(r)?.parent))),
+    subgraphs: [
+      ...view.regions.map((r) => regionNode(work, r, inDrawn(work.regions.get(r)?.parent))),
+      ...boxes.map((b) => ({
+        id: b.id,
+        label: b.label,
+        parent: null,
+        ...(b.markdown ? { markdown: b.markdown } : {}),
+      })),
+    ],
     ...(pseudo ? { pseudo } : {}),
   };
 };
@@ -317,7 +443,7 @@ interface Assembly {
 // including those whose edges it draws once for several.
 const viewOf = (a: Assembly, group: Group): { view: DetailView; texts: Map<string, StubText> } => {
   const { work, part } = a.folded;
-  const view = detailView(work, part, group, a.nested);
+  const view = detailView(work, part, group, { nested: a.nested, config: a.config });
   const endOf = new Map(view.stubs.map((s) => [s.id, s.endpoint]));
   const here = keyOf(group);
   const sourcesOf = (stub: string): string[] => {
@@ -339,12 +465,17 @@ const buildDetail = (a: Assembly, g: SplitGroup): DetailBuilt | string => {
   const { work, part } = a.folded;
   const group = part.groups[part.groupOf.get(g.members[0] ?? "") ?? -1] as Group;
   const { view, texts } = viewOf(a, group);
-  const shape = detailShape(work, view);
+  const plain = detailShape(work, view);
+  const boxes = meets(plain.nodes, scoreOf(plain, 0, a.config), a.config) ? boxesOf(a, view, texts) : [];
+  const shape = boxedShape(work, view, boxes);
   const rowsHere = rowCount(work, view.members);
   const rows = rowsHere > 0 && meets(shape.nodes, scoreOf(shape, rowsHere, a.config), a.config);
   const score = scoreOf(shape, rows ? rowsHere : 0, a.config);
-  const graph = detailGraph(work, view, texts, rows);
-  const stubs = Object.fromEntries(view.stubs.map((s) => [s.id, texts.get(s.id)?.endpoint ?? s.endpoint]));
+  const graph = detailGraph(work, view, { texts, rows, boxes });
+  const stubs = Object.fromEntries([
+    ...view.stubs.map((s) => [s.id, texts.get(s.id)?.endpoint ?? s.endpoint]),
+    ...boxes.map((b) => [b.id, b.endpoint]),
+  ]);
   const source = emitSource(work, { graph, stubs: new Set(Object.keys(stubs)) });
   const detail = { group: g.id, graph, stubs, rows, source, nodes: shape.nodes, score, split: null };
   if (meets(shape.nodes, score, a.config)) return { detail, nested: null };

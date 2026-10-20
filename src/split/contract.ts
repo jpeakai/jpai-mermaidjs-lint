@@ -13,9 +13,19 @@ import { extractStats } from "../parse/stats.ts";
 import { type Build, ladderOf, overviewMarkers, partFromGroups } from "./assemble.ts";
 import { flowRegionsOf } from "./flow.ts";
 import { byOverviewEdge, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { FROM, fromMembers, groupLabels, rangeLabel, readerOf, readingsOf, shorten, wholeNaming } from "./label.ts";
+import { FROM, fromMembers, groupLabels, IN, rangeLabel, readerOf, readingsOf, shorten, wholeNaming } from "./label.ts";
 import { floorOf } from "./plan.ts";
-import { idMaker, isGroupKey, over, type Partition, qualifiedLabel, reversible, usedIds } from "./quotient.ts";
+import {
+  endpointLabel,
+  idMaker,
+  isGroupKey,
+  over,
+  type Partition,
+  qualifiedLabel,
+  reversible,
+  soleRegion,
+  usedIds,
+} from "./quotient.ts";
 import { newReachablePairs } from "./reach.ts";
 import { joined } from "./tier.ts";
 
@@ -282,11 +292,15 @@ const detailNodes = (build: Build): Violations => {
   return out;
 };
 
-// A group is drawn whole or as stubs for its members, never both.
+// A group is drawn whole or as stubs for its members, never both. A box of
+// stubs for a group holds its members' stubs, so it does not draw it whole.
 const drawnBothWays = (build: Build, d: SplitPlan["details"][number]): Violations => {
   const overId = overOf(build);
   const groups = groupIds(build.plan);
-  const ends = Object.values(d.stubs);
+  const boxes = new Set(d.graph.subgraphs.map((b) => b.id));
+  const ends = Object.entries(d.stubs)
+    .filter(([id]) => !boxes.has(id))
+    .map(([, end]) => end);
   return ends
     .filter((x) => groups.has(x) && ends.some((y) => !groups.has(y) && overId(y) === x))
     .map((end) => `5: detail ${d.group} draws ${end} whole beside a stub for one of its members`);
@@ -305,11 +319,90 @@ const fromHolds = (build: Build, d: SplitPlan["details"][number], stub: string, 
   return drawn.length > 0 && held ? [] : [`5: stub ${stub} of ${d.group} names a member that does not draw its edges`];
 };
 
+type Detail = SplitPlan["details"][number];
+
+// A box of stubs (MJL-0037) and the stubs inside it, read by their form. A
+// box shows the label exactly one group shows, sits at the top level, and
+// stands for the region that group stands for whole, else for the group,
+// when it draws no edge. A stub inside it shows the own label of exactly one
+// member of that group, and stands for that member. Each is given the text
+// the plan writes for its endpoint outside a box, so stubs for one endpoint
+// read alike across details.
+interface Boxed {
+  bases: Map<string, string>;
+  groupOf: Map<string, SplitGroup>;
+  out: Violations;
+}
+
+const readBox = (build: Build, d: Detail, b: DiagramGraph["subgraphs"][number], into: Boxed): void => {
+  const { plan, work } = build;
+  const [g, ...more] = plan.groups.filter((x) => x.label === b.label);
+  if (!g || more.length > 0) {
+    into.out.push(`5: box ${b.id} of ${d.group}, "${b.label}", shows no one group's label`);
+    return;
+  }
+  const region = soleRegion(work, g);
+  const end = d.stubs[b.id] ?? "";
+  if (end !== (region ?? g.id)) into.out.push(`5: box ${b.id} of ${d.group} reads as ${region ?? g.id}, not ${end}`);
+  if (b.parent !== null) into.out.push(`5: box ${b.id} of ${d.group} sits inside ${b.parent}`);
+  if (region === null && d.graph.edges.some((e) => e.source === b.id || e.target === b.id))
+    into.out.push(`5: box ${b.id} of ${d.group} draws an edge for a whole group`);
+  into.groupOf.set(b.id, g);
+  into.bases.set(b.id, region === null ? g.label : `${endpointLabel(work, region)}${IN}${g.label})`);
+};
+
+const readInBox = (build: Build, d: Detail, n: DiagramGraph["nodes"][number], into: Boxed): void => {
+  const g = into.groupOf.get(n.parent ?? "");
+  if (!g) return;
+  const named = g.members.filter((m) => build.work.nodes.get(m)?.label === n.label);
+  if (named.length !== 1 || named[0] !== d.stubs[n.id]) {
+    const read = named.join(" or ") || "nothing";
+    into.out.push(
+      `5: stub ${n.id} in box ${n.parent} of ${d.group}, "${n.label}", reads as ${read}, not ${d.stubs[n.id]}`,
+    );
+  }
+  into.bases.set(n.id, `${n.label}${IN}${g.label})`);
+};
+
+const boxNames = (build: Build, d: Detail): Boxed => {
+  const into: Boxed = { bases: new Map(), groupOf: new Map(), out: [] };
+  for (const b of d.graph.subgraphs.filter((x) => d.stubs[x.id] !== undefined)) readBox(build, d, b, into);
+  for (const n of d.graph.nodes.filter((x) => x.parent !== null)) readInBox(build, d, n, into);
+  return into;
+};
+
 // A stub's text names one thing: read by every form a plan writes, against
 // every label the diagram and the plan's groups show, it has exactly one
 // reading, the endpoint it stands for. One endpoint always reads one text,
 // but for the member FROM names on a whole group's stub drawn apart, and
 // that member draws every edge the stub draws.
+// One detail's stubs read, each base text handed to seen with its endpoint.
+const detailNames = (
+  build: Build,
+  reader: ReturnType<typeof readerOf>,
+  d: Detail,
+  seen: (end: string, base: string) => void,
+): Violations => {
+  const labelOf = new Map(d.graph.nodes.map((n) => [n.id, n.label]));
+  const boxed = boxNames(build, d);
+  const out = [...boxed.out];
+  for (const [stub, end] of Object.entries(d.stubs)) {
+    const inBox = boxed.bases.get(stub);
+    if (inBox !== undefined) {
+      seen(end, inBox);
+      continue;
+    }
+    const label = labelOf.get(stub) ?? "";
+    const from = fromMembers(reader, label, end);
+    seen(end, from.length > 0 ? label.slice(0, label.length - fromSuffix(build.work, from).length) : label);
+    const read = sorted(readingsOf(reader, label));
+    if (read.join("\u0000") !== end)
+      out.push(`5: stub ${stub} of ${d.group}, "${label}", reads as ${read.join(" or ") || "nothing"}, not ${end}`);
+    out.push(...fromHolds(build, d, stub, from));
+  }
+  return out;
+};
+
 const stubNames = (build: Build): Violations => {
   const { plan, work } = build;
   const groupOf = new Map(plan.groups.flatMap((g) => [...g.members, ...g.regions].map((m) => [m, g.id] as const)));
@@ -324,20 +417,10 @@ const stubNames = (build: Build): Violations => {
     (id) => groupOf.get(id),
   );
   const byEnd = new Map<string, Set<string>>();
-  const out: Violations = [];
-  for (const d of plan.details) {
-    const labelOf = new Map(d.graph.nodes.map((n) => [n.id, n.label]));
-    for (const [stub, end] of Object.entries(d.stubs)) {
-      const label = labelOf.get(stub) ?? "";
-      const from = fromMembers(reader, label, end);
-      const base = from.length > 0 ? label.slice(0, label.length - fromSuffix(work, from).length) : label;
-      byEnd.set(end, new Set([...(byEnd.get(end) ?? []), base]));
-      const read = sorted(readingsOf(reader, label));
-      if (read.join("\u0000") !== end)
-        out.push(`5: stub ${stub} of ${d.group}, "${label}", reads as ${read.join(" or ") || "nothing"}, not ${end}`);
-      out.push(...fromHolds(build, d, stub, from));
-    }
-  }
+  const seen = (end: string, base: string): void => {
+    byEnd.set(end, new Set([...(byEnd.get(end) ?? []), base]));
+  };
+  const out = plan.details.flatMap((d) => detailNames(build, reader, d, seen));
   for (const [end, labels] of byEnd) if (labels.size > 1) out.push(`5: the stubs for ${end} read differently`);
   return out;
 };

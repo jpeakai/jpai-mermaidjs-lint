@@ -122,11 +122,11 @@ describe("a pipeline of prefix families", () => {
       expect(lanes).toHaveLength(8);
       const home = (id: string): string | undefined => plan.groups.find((g) => g.members.includes(id))?.id;
       for (const e of lanes) expect(home(e.source)).toBe(home(e.target));
-      // The lanes fold whole, their detail split again into one group per lane (MJL-0038).
+      // The lanes fold whole, their detail split again into runs of lanes (MJL-0038, MJL-0042).
       const laneGroups = plan.groups.filter((g) => g.members.some((m) => m.startsWith("ex_")));
       expect(laneGroups).toHaveLength(1);
       const nested = plan.details.find((d) => d.group === laneGroups[0]?.id)?.split;
-      expect(nested?.groups.map((g) => g.members.length)).toEqual([2, 2, 2, 2, 2, 2, 2]);
+      expect(nested?.groups.map((g) => g.members.length)).toEqual([8, 6]);
       // No detail names one end twice, and no overview pair is drawn twice.
       for (const d of plan.details) {
         const ends = Object.values(d.stubs);

@@ -630,6 +630,7 @@ A Group Node label made of its first and last member labels in natural order, jo
 A count of the rest follows, such as `DATA-0381 … DATA-0383 (+1)`.
 A Split Plan offers it for twins, sibling leaves and members whose labels all lead with an id.
 It is refused when a member of another group has a label from the first to the last, per [MJL-0029](adrs/0029-runs-meshes-and-terminals-read-as-they-are.md).
+A stub for the first or the last member shows its own label alone, per [MJL-0041](adrs/0041-a-stub-for-a-range-end-shows-its-own-label.md).
 
 ## Raw Diagram File
 
@@ -676,6 +677,13 @@ One deterministic check with a Rule ID, and optionally a Fixer.
 
 The name of a Rule, written category-short-name, such as contrast-text-below-aa.
 
+## Run of Lanes
+
+A group of two or more lanes of Twin Chains, in a detail split again, named by its Lane Label.
+Lanes too many for one detail fold by their Stage Words when each set fits.
+Else they fold in natural order of their entries' labels, as many as fit, cut evenly, per [MJL-0042](adrs/0042-twin-chains-in-a-nested-detail-fold-in-runs-of-lanes.md).
+A lane in no run folds alone.
+
 ## Set Aside
 
 What happens to a config Canvas on a file that `auto` scores under mkdocs-material.
@@ -715,6 +723,12 @@ Both are built from the parsed graph alone and draw every node and edge.
 A recommendation for a Diagram over a node count or score threshold: one Overview and one Detail Diagram per Group Node.
 It is offered only when a contract parses the emitted text and finds every node and edge kept.
 It ends the Remediation, and `--split-plan` prints it, but nothing applies it, per [MJL-0025](adrs/0025-a-fold-is-offered-as-a-split.md).
+
+## Stage Word
+
+The word one label gives its place in a lane of Twin Chains: its dotted namespace, else its first word.
+`Extract Postgres orders` gives `Extract`, and `bronze.orders` gives `bronze`.
+Lanes whose labels give the same words at every place form one set, which a detail split again folds as one group, per [MJL-0042](adrs/0042-twin-chains-in-a-nested-detail-fold-in-runs-of-lanes.md).
 
 ## Star
 
@@ -805,7 +819,9 @@ An Aggregate without each owned part sharing an outside neighbour with the rest,
 
 Disjoint paths of one length, two members or more, each joining the same nodes before and after.
 Extracts each feeding the bronze table it lands in are twin chains.
-They fold whole, never cut into runs, their detail split again into one group per lane when it does not fit, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
+They fold whole, never cut into runs, their detail split again when it does not fit, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
+In that detail, lanes too many to fold whole fold by their Stage Words when each set fits.
+Else they fold in Runs of Lanes, per [MJL-0042](adrs/0042-twin-chains-in-a-nested-detail-fold-in-runs-of-lanes.md).
 
 ## Tree Depth
 

@@ -30,6 +30,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Extends [MJL-0036](0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md) (a flowchart run is named by where its flow enters and leaves, before a member's name)
 - Superseded by [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) (a schema that meets its target by rows alone folds its closed aggregates, where MJL-0039 folded nothing)
 - Extended by [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) (a group of leaves lists every member, as a group of three does)
+- Extended by [MJL-0041](0041-a-stub-for-a-range-end-shows-its-own-label.md) (a stub for a range label's first or last member shows its own label)
 
 ## Decision
 

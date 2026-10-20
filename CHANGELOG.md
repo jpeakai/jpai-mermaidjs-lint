@@ -10,7 +10,12 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **A stub for a range's end shows its own label.** A stub for the first or the last member a range label names reads `REL-0042`, where it read `REL-0042 (in REL-0042 … REL-0044 (+1))`, per [MJL-0041](adrs/0041-a-stub-for-a-range-end-shows-its-own-label.md).
+- **Twin chains in a detail split again fold in runs of lanes.** Lanes too many for one detail fold by the word their labels lead with, when each such set fits.
+  Else they fold in label order, cut evenly, per [MJL-0042](adrs/0042-twin-chains-in-a-nested-detail-fold-in-runs-of-lanes.md).
+  So an ETL pipeline's `Extract/Ingest → bronze (+14)` detail reads `Extract → bronze (+8)` and `Extract/Ingest → bronze (+6)` at `low-density`, where it read seven groups of one lane each.
 
 ## [0.15.0] - 2026-10-20
 

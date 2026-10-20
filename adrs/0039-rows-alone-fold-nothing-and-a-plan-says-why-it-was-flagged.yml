@@ -51,6 +51,9 @@ relates_to:
   - relation: extended_by
     target: MJL-0040
     note: a group of leaves lists every member, as a group of three does
+  - relation: extended_by
+    target: MJL-0041
+    note: a stub for a range label's first or last member shows its own label
 
 decision:
   given: >-

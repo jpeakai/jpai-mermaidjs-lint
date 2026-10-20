@@ -102,6 +102,11 @@ const twoWords = (words: Array<string | null>): string | null => {
   return (set as string[]).sort(byNatural).join(WORD_SEPARATOR);
 };
 
+// The word one label gives its place in a lane: its dotted namespace, else
+// its first word, else null.
+export const stageWord = (label: string): string | null =>
+  dottedFamily(label) ?? FIRST_WORD.exec(label.trim())?.[1] ?? null;
+
 export const laneLabel = (chains: readonly (readonly string[])[]): string | null => {
   const length = chains[0]?.length ?? 0;
   if (chains.length < 2 || length < 2 || chains.some((c) => c.length !== length)) return null;
@@ -247,9 +252,10 @@ const markdownOf = (work: WorkGraph, id: string): { markdown?: true } =>
 
 // Whether a stub for a member of a group shows its own label alone: the
 // group shows every member's label in a pair or list label, the member is
-// the entry or the exit a span label names (MJL-0039), or the member is the
-// one the group is named after, so the group's shown label leads with the
-// member's own label, uncut (MJL-0038).
+// the entry or the exit a span label names (MJL-0039), or the first or the
+// last a range label names (MJL-0041), or the member is the one the group is
+// named after, so the group's shown label leads with the member's own label,
+// uncut (MJL-0038).
 export const ownSuffices = (
   g: { label: string; base: string; markdown?: true; paired?: unknown; spanned?: unknown },
   own: string,
@@ -257,7 +263,14 @@ export const ownSuffices = (
 ): boolean =>
   g.paired !== undefined ||
   (g.spanned !== undefined && !markdown && spanEnds(g.base).includes(own)) ||
+  (!(markdown || g.markdown) && rangeEnds(g.base).includes(own) && g.label.startsWith(`${g.base} (+`)) ||
   (!(markdown || g.markdown) && g.base === own && g.label.startsWith(`${own} (+`));
+
+// The two labels a range label's base names, the first's then the last's.
+export const rangeEnds = (base: string): string[] => {
+  const parts = base.split(RANGE_SEPARATOR);
+  return parts.length === 2 ? parts : [];
+};
 
 // The two labels a span label's base names, the entry's then the exit's.
 export const spanEnds = (base: string): string[] => {

@@ -1,0 +1,34 @@
+%% source: authored (round 20: twin chains too many for one nested detail, led by three verbs)
+%% kind: flowchart replication pipeline with lanes
+flowchart LR
+  cron["Nightly trigger"] --> fan["Dispatch copies"]
+  fan --> a1["Sync ledger tables"]
+  fan --> a2["Sync budget tables"]
+  fan --> a3["Sync payroll tables"]
+  fan --> b1["Pull clickstream logs"]
+  fan --> b2["Pull search logs"]
+  fan --> b3["Pull audit logs"]
+  fan --> c1["Copy vendor files"]
+  fan --> c2["Copy invoice files"]
+  fan --> c3["Copy contract files"]
+  a1 --> s1["staging.ledger"]
+  a2 --> s2["staging.budget"]
+  a3 --> s3["staging.payroll"]
+  b1 --> s4["staging.clicks"]
+  b2 --> s5["staging.search"]
+  b3 --> s6["staging.audit"]
+  c1 --> s7["staging.vendors"]
+  c2 --> s8["staging.invoices"]
+  c3 --> s9["staging.contracts"]
+  s1 --> check["Row count checks"]
+  s2 --> check
+  s3 --> check
+  s4 --> check
+  s5 --> check
+  s6 --> check
+  s7 --> check
+  s8 --> check
+  s9 --> check
+  check --> merge["Merge to warehouse"]
+  merge --> mart["Finance mart"]
+  merge --> board["Ops dashboard"]

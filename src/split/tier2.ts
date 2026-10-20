@@ -6,7 +6,8 @@
 // extract and the bronze table it lands in fold as one lane (MJL-0035).
 
 import { type FlowRegion, flowRegionsOf } from "./flow.ts";
-import { byNatural, byText, type WorkGraph } from "./graph.ts";
+import { byNatural, byNaturalTuple, byText, type WorkGraph } from "./graph.ts";
+import { stageWord } from "./label.ts";
 import {
   chainsOf,
   groupOfKey,
@@ -209,7 +210,8 @@ const placeOf = (ctx: TierContext, adj: Adjacency, run: string[]): string =>
 
 // Every stage of one chain folds in one step, so the chain is cut evenly. On
 // a walk folding twin chains whole, every stage of twin chains folds in one
-// step, so each lane folds alike (MJL-0038).
+// step, so each lane folds alike (MJL-0038). In a detail split again, twin
+// chains too many to fold whole fold in runs of lanes instead (laneRuns).
 export const proposeChains = (ctx: TierContext): Candidate[] => {
   const adj = adjacencyOf(ctx.qedges);
   const runs = chainRuns(ctx, adj);
@@ -218,7 +220,72 @@ export const proposeChains = (ctx: TierContext): Candidate[] => {
     const k = ctx.wholeLanes ? placeOf(ctx, adj, run) : JSON.stringify(run);
     places.set(k, [...(places.get(k) ?? []), run]);
   }
-  return [...places.values()].flatMap((alike) => together(alike.flatMap((run) => stagesOf(ctx, run))));
+  return [...places.values()].flatMap(
+    (alike) => laneRuns(ctx, alike) ?? together(alike.flatMap((run) => stagesOf(ctx, run))),
+  );
+};
+
+// The fewest lanes a run of twin chains holds.
+export const MIN_LANES = 2;
+
+// Twin chains in a detail split again, whose detail is split no further, that
+// do not fit whole: they fold by the stages their labels name, each lane's
+// stage words (stageWord) alike, when every such set of lanes fits whole and
+// one holds two lanes or more. Else they fold in runs of lanes in natural
+// order of their entries' labels, each run as many lanes as fit, cut evenly.
+// A reader then opens a few details, each named by its lanes' stages
+// (laneLabel), rather than one per lane. A lane left over, in no run, folds
+// alone. Null on any other walk, for lanes that fit whole (wholeLanes then
+// folds them as one group), or when no two lanes fit together (MJL-0042).
+const laneRuns = (ctx: TierContext, lanes: string[][]): Candidate[] | null => {
+  if (!ctx.wholeLanes || ctx.nestLanes || lanes.length < MIN_LANES) return null;
+  if (lanes.some((l) => stages(ctx, l).length !== 1)) return null;
+  const parent = parentOfKey(ctx.work, ctx.part, lanes[0]?.[0] ?? "");
+  const base = { parent, tier: "T2" as const, reason: "twins" };
+  const fits = (ls: readonly string[][]): boolean => mergeFits(ctx, { ...base, keys: ls.flat() });
+  if (fits(lanes)) return null;
+  const labelOf = (id: string): string => ctx.work.nodes.get(id)?.label ?? "";
+  const order = [...lanes].sort((a, b) => byNatural(labelOf(a[0] ?? ""), labelOf(b[0] ?? "")) || byNaturalTuple(a, b));
+  const runs = byStage(order, (l) => JSON.stringify(l.map((id) => stageWord(labelOf(id)))), fits) ?? byFit(order, fits);
+  if (!runs.some((r) => r.length >= MIN_LANES)) return null;
+  return together(
+    runs.flatMap((r) =>
+      r.length >= MIN_LANES ? [{ ...base, keys: r.flat().sort(byText) }] : r.flatMap((l) => stagesOf(ctx, l)),
+    ),
+  );
+};
+
+type Fits = (ls: readonly string[][]) => boolean;
+
+// The lanes by their stage words, in order: null unless there are two sets
+// or more, every set fits whole, and one holds MIN_LANES lanes.
+const byStage = (lanes: string[][], key: (l: string[]) => string, fits: Fits): string[][][] | null => {
+  const sets = new Map<string, string[][]>();
+  for (const l of lanes) sets.set(key(l), [...(sets.get(key(l)) ?? []), l]);
+  const runs = [...sets.values()];
+  return runs.length >= 2 && runs.every(fits) && runs.some((r) => r.length >= MIN_LANES) ? runs : null;
+};
+
+// The lanes, in order, in runs of as many as fit, cut evenly (evenLanes).
+const byFit = (lanes: string[][], fits: Fits): string[][][] => {
+  const chunks: string[][][] = [];
+  for (const lane of lanes) {
+    const last = chunks.at(-1);
+    if (last && fits([...last, lane])) last.push(lane);
+    else chunks.push([lane]);
+  }
+  return evenLanes(chunks, fits);
+};
+
+// The runs cut again to as many lanes each, one apart at most, when every run
+// still fits and holds MIN_LANES lanes; else the runs as they were.
+const evenLanes = (chunks: string[][][], fits: Fits): string[][][] => {
+  const lanes = chunks.flat();
+  const n = chunks.length;
+  const even = chunks.map((_, i) =>
+    lanes.slice(Math.round((i * lanes.length) / n), Math.round(((i + 1) * lanes.length) / n)),
+  );
+  return even.every((r) => r.length >= MIN_LANES && fits(r)) ? even : chunks;
 };
 
 const stagesOf = (ctx: TierContext, run: string[]): Candidate[] =>

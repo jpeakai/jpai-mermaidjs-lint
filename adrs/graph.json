@@ -620,6 +620,32 @@
     },
     {
       "data": {
+        "id": "MJL-0041",
+        "label": "0041",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0041-a-stub-for-a-range-end-shows-its-own-label.md",
+        "title": "A stub for a range's first or last member shows its own label",
+        "description": "How a stub names a member a range label names",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0042",
+        "label": "0042",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0042-twin-chains-in-a-nested-detail-fold-in-runs-of-lanes.md",
+        "title": "Twin chains in a detail split again fold in runs of lanes, by their stages where they can",
+        "description": "How a detail split again folds twin chains too many to fold whole",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -1870,6 +1896,16 @@
     },
     {
       "data": {
+        "id": "MJL-0038-excepted_by-MJL-0042",
+        "source": "MJL-0038",
+        "target": "MJL-0042",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "twin chains in a detail split again fold in runs of lanes, not one group per lane"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0039-excepts-MJL-0033",
         "source": "MJL-0039",
         "target": "MJL-0033",
@@ -1930,6 +1966,16 @@
     },
     {
       "data": {
+        "id": "MJL-0039-extended_by-MJL-0041",
+        "source": "MJL-0039",
+        "target": "MJL-0041",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a stub for a range label's first or last member shows its own label"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0040-supersedes-MJL-0039",
         "source": "MJL-0040",
         "target": "MJL-0039",
@@ -1956,6 +2002,26 @@
         "label": "excepts",
         "relation": "excepts",
         "note": "a group of leaves whose labels fit a list is named by them, before the node they hang from"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0041-extends-MJL-0039",
+        "source": "MJL-0041",
+        "target": "MJL-0039",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a stub for a range label's first or last member shows its own label"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0042-excepts-MJL-0038",
+        "source": "MJL-0042",
+        "target": "MJL-0038",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "twin chains in a detail split again fold in runs of lanes, not one group per lane"
       }
     }
   ],

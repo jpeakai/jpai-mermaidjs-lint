@@ -133,7 +133,8 @@ describe("a stub for a member of a group", () => {
       const plan = await planOf(read("er01-ecommerce"), "low");
       const texts = stubTexts(plan);
       expect(texts.filter((t) => t.endsWith(" (in group)"))).toEqual([]);
-      expect(texts).toContain("CUSTOMER (in CUSTOMER (+2))");
+      // The member a group is named after shows its own label alone (MJL-0038).
+      expect(texts).toContain("CUSTOMER");
       expect(texts).toContain("PAYMENT_METHOD (in CUSTOMER (+2))");
     },
     SLOW,

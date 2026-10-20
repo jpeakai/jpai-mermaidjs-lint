@@ -195,10 +195,21 @@ export interface LabelContext {
 const markdownOf = (work: WorkGraph, id: string): { markdown?: true } =>
   work.nodes.get(id)?.markdown || work.regions.get(id)?.markdown ? { markdown: true } : {};
 
+// Whether a stub for a member of a group shows its own label alone: the
+// group shows both members' labels in a pair label, or the member is the one
+// the group is named after, so the group's shown label leads with the
+// member's own label, uncut (MJL-0038).
+export const ownSuffices = (
+  g: { label: string; base: string; markdown?: true; paired?: unknown },
+  own: string,
+  markdown: boolean,
+): boolean =>
+  g.paired !== undefined || (!(markdown || g.markdown) && g.base === own && g.label.startsWith(`${own} (+`));
+
 // The text before any id is added: the node's label, then IN, the label its
 // group shows and a closing bracket when it sits in a group; a whole group by
-// its shown label. A member of a group with a pair label, which shows both
-// members' labels, is named by its own label alone (MJL-0038).
+// its shown label. A member whose own label suffices (ownSuffices) is named
+// by its own label alone.
 const plainText = (ctx: LabelContext, endpoint: string): StubText => {
   if (isGroupKey(endpoint)) {
     const g = ctx.groups.get(endpoint);
@@ -206,9 +217,13 @@ const plainText = (ctx: LabelContext, endpoint: string): StubText => {
   }
   const own = endpointLabel(ctx.work, endpoint);
   const g = ctx.groups.get(over(ctx.work, ctx.part, endpoint));
-  const label = g === undefined || g.paired ? own : `${own}${IN}${g.label})`;
-  return { label, endpoint, ...markdownOf(ctx.work, endpoint) };
+  const md = markdownOf(ctx.work, endpoint);
+  const label = g === undefined || ownSuffices(g, own, md.markdown === true) ? own : `${own}${IN}${g.label})`;
+  return { label, endpoint, ...md };
 };
+
+// A stub's text before any id is added (plainText).
+export const memberText = (ctx: LabelContext, endpoint: string): string => plainText(ctx, endpoint).label;
 
 // What a reader of a plan has to go on when a stub's text names a node: every
 // label the diagram's own nodes, regions and interfaces show, each group's
@@ -302,8 +317,8 @@ export const stubTexts = (ctx: LabelContext, stubs: Stub[]): Map<string, StubTex
 };
 
 // A stub for a whole group reads alike another stub when they show one text,
-// or when the other stands for the member the group is named after ("ORDER
-// (in ORDER (+6))" beside "ORDER (+6)"). Each such stub takes FROM and the label of
+// or when the other stands for the member the group is named after ("ORDER"
+// beside "ORDER (+6)"). Each such stub takes FROM and the label of
 // the one member its edges leave, when that text has exactly the one reading
 // and that member is not the namesake, which the group's label already names.
 // Null when two stubs would still show one text.
@@ -316,8 +331,10 @@ export const namedStubs = (
   const reader = contextReader(ctx);
   const count = new Map<string, number>();
   for (const t of texts.values()) count.set(t.label, (count.get(t.label) ?? 0) + 1);
-  const alike = (endpoint: string, label: string): boolean =>
-    (count.get(label) ?? 0) > 1 || count.has(`${ctx.groups.get(endpoint)?.base}${IN}${label})`);
+  const alike = (endpoint: string, label: string): boolean => {
+    const base = ctx.groups.get(endpoint)?.base;
+    return (count.get(label) ?? 0) > 1 || count.has(`${base}${IN}${label})`) || (base !== undefined && count.has(base));
+  };
   const out = new Map(texts);
   for (const s of stubs) {
     const t = texts.get(s.id);

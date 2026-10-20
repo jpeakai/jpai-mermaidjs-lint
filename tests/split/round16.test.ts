@@ -195,3 +195,26 @@ describe("a fan label", () => {
     SLOW,
   );
 });
+
+describe("a stub for the member a group is named after", () => {
+  test(
+    "shows its own label alone, which leads the group's, and is refused when it names another node",
+    async () => {
+      const source = read("round9", "state08-jira-workflow-ids");
+      const built = await buildOf(source, "low");
+      const labels = built.plan.details.flatMap(stubLabels);
+      expect(labels.filter((l) => /^(.*) \(in \1 \(\+\d+\)\)$/s.test(l))).toEqual([]);
+      expect(labels).toContain("10010 Closed");
+      expect(await serious(source, built.plan)).toEqual([]);
+      const broken = structuredClone(built);
+      const d = broken.plan.details.find((x) => x.graph.nodes.some((n) => n.label === "10010 Closed"));
+      const stub = d?.graph.nodes.find((n) => n.label === "10010 Closed");
+      if (!(d && stub)) throw new Error("no namesake stub");
+      d.source = d.source.replace('"10010 Closed"', '"10012 Duplicate"');
+      stub.label = "10012 Duplicate";
+      expect((await checkContract(broken, LOW)).some((v) => v.startsWith("5:"))).toBe(true);
+      expect((await serious(source, broken.plan)).length).toBeGreaterThan(0);
+    },
+    SLOW,
+  );
+});

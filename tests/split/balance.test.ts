@@ -117,7 +117,11 @@ describe("a whole-group stub beside a stub for the member it is named after", ()
       const plan = await planOf(source, "low-density");
       for (const d of plan.details) {
         const stubs = d.graph.nodes.filter((n) => d.stubs[n.id] !== undefined);
-        for (const g of plan.groups.filter((x) => stubs.some((n) => n.label === `${x.labelBase} (in ${x.label})`))) {
+        const namesake = (x: (typeof plan.groups)[number]): boolean =>
+          stubs.some(
+            (n) => d.stubs[n.id] !== x.id && [x.labelBase, `${x.labelBase} (in ${x.label})`].includes(n.label),
+          );
+        for (const g of plan.groups.filter(namesake)) {
           const whole = stubs.filter((n) => d.stubs[n.id] === g.id);
           expect(whole.filter((n) => !n.label.startsWith(`${g.label} from `)).map((n) => n.label)).toEqual([]);
         }

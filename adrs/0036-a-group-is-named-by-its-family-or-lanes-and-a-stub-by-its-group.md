@@ -29,7 +29,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Excepted by [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (a stub inside a box shows its member's own label)
 - Extended by [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (a one-way pair's target draws its edges when it needs fewer stubs)
 - Extended by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a lane's place may take two first words, and leaves are named by the node they hang from)
-- Excepted by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a stub for a member of a group of two shows its own label alone, since the group's label shows both)
+- Excepted by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a stub for a member of a pair, or for a group's namesake, shows its own label)
 
 ## Decision
 

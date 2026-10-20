@@ -1679,7 +1679,7 @@
         "target": "MJL-0038",
         "label": "excepted by",
         "relation": "excepted_by",
-        "note": "a stub for a member of a group of two shows its own label alone, since the group's label shows both"
+        "note": "a stub for a member of a pair, or for a group's namesake, shows its own label"
       }
     },
     {
@@ -1759,7 +1759,7 @@
         "target": "MJL-0036",
         "label": "excepts",
         "relation": "excepts",
-        "note": "a stub for a member of a group of two shows its own label alone, since the group's label shows both"
+        "note": "a stub for a member of a pair, or for a group's namesake, shows its own label"
       }
     },
     {

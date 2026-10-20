@@ -21,8 +21,8 @@ import {
   fanLabel,
   groupLabels,
   ID_LEAD,
-  IN,
   type LabelContext,
+  memberText,
   namedStubs,
   rangeLabel,
   type StubText,
@@ -279,7 +279,7 @@ const boxFor = (
   const region = soleRegion(work, g);
   const inner = stubs.filter((s) => work.nodes.has(s.endpoint));
   const onRegion = stubs.filter((s) => s.endpoint === region);
-  const plain = stubs.every((s) => texts.get(s.id)?.label === `${endpointLabel(work, s.endpoint)}${IN}${shown.label})`);
+  const plain = stubs.every((s) => texts.get(s.id)?.label === memberText(a.labels, s.endpoint));
   const labels = g.members.map((m) => labelOf(work, m));
   const named = inner.every((s) => labels.filter((l) => l === labelOf(work, s.endpoint)).length === 1);
   if (inner.length + onRegion.length !== stubs.length || inner.length === 0 || !(plain && named)) return null;

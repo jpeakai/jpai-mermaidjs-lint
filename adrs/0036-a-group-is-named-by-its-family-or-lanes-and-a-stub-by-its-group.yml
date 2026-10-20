@@ -51,7 +51,7 @@ relates_to:
     note: a lane's place may take two first words, and leaves are named by the node they hang from
   - relation: excepted_by
     target: MJL-0038
-    note: a stub for a member of a group of two shows its own label alone, since the group's label shows both
+    note: a stub for a member of a pair, or for a group's namesake, shows its own label
 
 decision:
   given: a reader of an overview reads a group's name as a promise about all its members. A name taken from one member promises that member and some others. A reader of a detail follows a stub to the overview node it names, and finds that node by its text

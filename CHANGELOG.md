@@ -17,6 +17,7 @@ Anything under `Unreleased` is on `main` but not yet released.
   A lane's place may be named by two first words, so an ETL pipeline's lanes read `Extract/Ingest → bronze (+14)`.
 - **A group of two names both members.** `ROOM (+BUILDING)` replaces `ROOM (+1)`, so a tangled schema's folded aggregates hide no entity's name.
   A stub for either member shows its own label alone, as `CART` where it read `CART (in CART (+1))`.
+  So does a stub for the member any group is named after, as `Fraud model flags?` where it read `Fraud model flags? (in Fraud model flags? (+4))`.
   Groups of two folded alike take it only when every one of them can.
 - **A group of leaves is named by the node they hang from.** A boutique's external APIs read `Checkout domain → … (+4)`, where they read `Carrier quote API (+3)`.
 - **A target split again draws the edges joining two groups one way.** So a pipeline's scheduler detail draws the lanes as one stub.

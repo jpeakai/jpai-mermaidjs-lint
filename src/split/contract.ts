@@ -19,6 +19,7 @@ import {
   fromMembers,
   groupLabels,
   IN,
+  ownSuffices,
   pairLabel,
   rangeLabel,
   readerOf,
@@ -397,7 +398,8 @@ const readInBox = (build: Build, d: Detail, n: DiagramGraph["nodes"][number], in
       `5: stub ${n.id} in box ${n.parent} of ${d.group}, "${n.label}", reads as ${read}, not ${d.stubs[n.id]}`,
     );
   }
-  into.bases.set(n.id, `${n.label}${IN}${g.label})`);
+  const own = ownSuffices({ ...g, base: g.labelBase }, n.label, n.markdown === true);
+  into.bases.set(n.id, own ? n.label : `${n.label}${IN}${g.label})`);
 };
 
 const boxNames = (build: Build, d: Detail): Boxed => {

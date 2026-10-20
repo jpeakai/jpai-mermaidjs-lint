@@ -1,7 +1,9 @@
 // What the round-14 blind rating held plans to (MJL-0036): a group holding a
 // whole dotted family is named by it, twin chains are named by their stages,
-// and a stub for a member of a group names the group by the label the overview
-// shows it with, so no stub reads "(in group)".
+// a stub for a member of a group names the group by the label the overview
+// shows it with, so no stub reads "(in group)", and edges one member sends
+// into several members of another group are drawn exactly in the target's
+// detail, from one stub for that member.
 
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -91,7 +93,14 @@ describe("an ETL pipeline at low density", () => {
       const silver = plan.groups.filter((g) => g.members.some((m) => m.startsWith("sv_")));
       for (const g of silver) expect(g.labelBase.endsWith(".*")).toBe(false);
       // A member stub names the group by the label the overview shows.
-      expect(stubTexts(plan)).toContain("silver.payments (in silver.customers_resolved (+1))");
+      expect(stubTexts(plan)).toContain("Start extract (in Airflow daily 02:00 (+1))");
+      // Start extract alone feeds every lane, so each lane's detail draws it
+      // exactly and the scheduler's detail draws each lane group as one stub.
+      const sched = plan.details.find((d) => d.graph.nodes.some((n) => n.id === "extract_start"));
+      const laneIds = new Set(plan.groups.filter((g) => g.members.some((m) => m.startsWith("ex_"))).map((g) => g.id));
+      const ends = Object.values(sched?.stubs ?? {});
+      expect(ends.filter((e) => laneIds.has(e))).toHaveLength(laneIds.size);
+      expect(ends.filter((e) => e.startsWith("ex_") && e !== "ex_mysql")).toEqual([]);
 
       // A family label on a half of silver is caught by both readers.
       const half = silver[0];

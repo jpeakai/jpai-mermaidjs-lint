@@ -614,6 +614,40 @@ export const exactSide = (
   return na !== nb ? (na < nb ? a : b) : byText(a, b) <= 0 ? a : b;
 };
 
+// The group whose detail draws exactly the edges from group a into group b,
+// joined one way only, as a plan draws it. The source draws them, unless the
+// target needs a stub for only one of the source's members while the source
+// needs stubs for more of the target's, and the source's detail is not split
+// again (MJL-0035). Then the target draws them from that one member, and the
+// source draws the target as one stub, so the source's detail sheds stubs
+// and the target's keeps as many.
+export const oneWayExact = (
+  work: WorkGraph,
+  part: Partition,
+  [a, b]: [string, string],
+  nested: ReadonlySet<string> = new Set(),
+): string => {
+  const between = work.edges.filter((e) => over(work, part, e.source) === a && over(work, part, e.target) === b);
+  const sources = new Set(between.map((e) => e.source));
+  const targets = new Set(between.map((e) => e.target));
+  return sources.size === 1 && targets.size > 1 && !nested.has(a) ? b : a;
+};
+
+// The outside groups edges join to a group one way only, each with the way
+// they run: true when out of the group.
+const oneWay = (work: WorkGraph, part: Partition, key: string, touching: GraphEdge[]): Map<string, boolean> => {
+  const [into, from] = [new Set<string>(), new Set<string>()];
+  for (const e of touching) {
+    const [s, t] = [over(work, part, e.source), over(work, part, e.target)];
+    if (s === key && t !== key && isGroupKey(t)) into.add(t);
+    if (t === key && s !== key && isGroupKey(s)) from.add(s);
+  }
+  return new Map([
+    ...[...into].filter((x) => !from.has(x)).map((x) => [x, true] as const),
+    ...[...from].filter((x) => !into.has(x)).map((x) => [x, false] as const),
+  ]);
+};
+
 // The outside groups edges join to a group both ways.
 const bothWays = (work: WorkGraph, part: Partition, key: string, touching: GraphEdge[]): Set<string> => {
   const [into, from] = [new Set<string>(), new Set<string>()];
@@ -628,18 +662,30 @@ const bothWays = (work: WorkGraph, part: Partition, key: string, touching: Graph
 // One stub per outside end, and each edge from a whole group drawn alike
 // another drawn once. A group that edges join to this one both ways is drawn
 // whole, or as stubs for its members, never both, as exactSide decides from
-// the groups whose details are split again.
+// the groups whose details are split again, given only as a plan draws the
+// detail. As a plan draws it, a group joined one way may be drawn as
+// oneWayExact decides; planning, which gives none, measures each
+// detail with edges from a group drawn from one stub, so a drawn detail never
+// holds more stubs than the one measured.
 export const detailView = (
   work: WorkGraph,
   part: Partition,
   g: Group,
-  nested: ReadonlySet<string> = new Set(),
+  drawing: ReadonlySet<string> | null = null,
 ): DetailView => {
+  const nested = drawing ?? new Set<string>();
   const key = keyOf(g);
   const inside = (id: string): boolean => over(work, part, id) === key;
   const touching = work.edges.filter((e) => inside(e.source) || inside(e.target));
-  const pairs = bothWays(work, part, key, touching);
-  const whole = new Set([...pairs].filter((h) => exactSide(work, part, [key, h], nested) !== key));
+  const both = bothWays(work, part, key, touching);
+  const ways = drawing === null ? new Map<string, boolean>() : oneWay(work, part, key, touching);
+  const pairs = new Set([...both, ...ways.keys()]);
+  const exact = (h: string): string => {
+    const out = ways.get(h);
+    if (out === undefined) return exactSide(work, part, [key, h], nested);
+    return out ? oneWayExact(work, part, [key, h], nested) : oneWayExact(work, part, [h, key], nested);
+  };
+  const whole = new Set([...pairs].filter((h) => exact(h) !== key));
   const endOf = (e: GraphEdge): string | null => {
     const end = outsideEnd(work, part, e, inside);
     if (end === null) return null;

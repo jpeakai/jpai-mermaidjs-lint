@@ -23,8 +23,12 @@ The group's own detail draws each of them to that member, so nothing is lost.
 When edges join two groups both ways, one detail draws the other group whole and the other draws its members.
 The detail split again draws the other's members, when the other's detail fits, per [MJL-0035](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
 A stub in a nested overview then names the member a reader is sent to, as `PAYMENT_METHOD (in CUSTOMER (+2))`.
-A stub for a member of a group names that group by the label the overview shows it with, so a reader finds it by its text, per [MJL-0036](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
+A stub for a member of a group names that group by the label the overview shows it with.
+So a reader finds the group by its text, per [MJL-0036](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Otherwise the detail needing stubs for fewer of the other's members draws them, so no detail shows a group whole beside its members.
+Edges may run one way only from a single member into several members of another group.
+The target's detail then draws them from one stub for that member, unless the source's detail is split again.
+The source's detail draws the target as one stub, per [MJL-0036](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
@@ -341,7 +345,8 @@ Some groups are named by what every member shares, per [MJL-0036](https://github
 A group holding a whole dotted family is named by it, as `gold.* (+5)` for five gold tables.
 It holds three members or more, and no node outside it leads with that namespace, so halves of a layer keep a member's name.
 Twin chains are named by their stages, as `Extract → bronze (+8)` for four extracts each feeding the bronze table it lands in.
-Each place along the chains is named by the namespace every label there leads with, else by the first word they all lead with, else shown as an ellipsis.
+Each place along the chains is named by the namespace every label there leads with.
+Failing that, it is named by the first word they all lead with, and failing that it shows an ellipsis.
 So lanes whose sources share no word read `… → bronze (+6)`.
 Both labels count every member, and come after an author region's label and a decision region's question, before a range or a member's label.
 

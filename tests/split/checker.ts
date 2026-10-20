@@ -486,6 +486,20 @@ const bothWays = (c: Ctx, x: string, y: string): boolean => {
   return runs(x, y) && runs(y, x);
 };
 
+// Whether a target group's detail may draw a member A of another group as
+// a stub (MJL-0036): edges run one way only, from A's group into group gid,
+// A is the only member they leave, they reach two members of gid or more,
+// and A's group's detail is not split again.
+const fromOne = (c: Ctx, A: string, gid: string): boolean => {
+  const gEnd = nameEnds(c.G);
+  const from = c.ov(A);
+  const between = c.G.edges.filter((e) => c.ov(gEnd(e.source)) === from && c.ov(gEnd(e.target)) === gid);
+  const sources = new Set(between.map((e) => gEnd(e.source)));
+  const targets = new Set(between.map((e) => gEnd(e.target)));
+  const split = c.plan.details.find((d) => d.group === from)?.split ?? null;
+  return !bothWays(c, from, gid) && sources.size === 1 && sources.has(A) && targets.size > 1 && split === null;
+};
+
 interface Reading {
   c: Ctx;
   gid: string;
@@ -500,7 +514,7 @@ const edgeProblem = (
   if (isStub(a) && isStub(b)) return ["BUG", `edge between stubs ${a}->${b}`];
   if (A.startsWith("group:") && B.startsWith("group:")) return ["BUG", `edge between whole groups ${a}->${b}`];
   if (A.startsWith("group:") || B.startsWith("group:")) return null;
-  if (isStub(a) && c.ov(A) !== A && !bothWays(c, c.ov(A), gid))
+  if (isStub(a) && c.ov(A) !== A && !bothWays(c, c.ov(A), gid) && !fromOne(c, A, gid))
     return ["WARN", `stub ${a} names ${A} of another group`];
   return null;
 };

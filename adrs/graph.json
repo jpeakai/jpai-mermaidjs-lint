@@ -560,8 +560,8 @@
         "parent": "group-complexity",
         "colour": "#0891b2",
         "file": "0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md",
-        "title": "A group holding a whole family or twin lanes is named by them, and a member stub names its group as the overview shows it",
-        "description": "How a split plan names a group no single member speaks for, and how a stub says which group its member sits in",
+        "title": "A group holding a whole family or twin lanes is named by them, a member stub names its group as the overview shows it, and one member's edges into a group draw in the target",
+        "description": "How a split plan names a group no member speaks for, and how its stubs name members of other groups",
         "status": "accepted",
         "tags": "complexity, split"
       }
@@ -1233,7 +1233,7 @@
         "target": "MJL-0036",
         "label": "excepted by",
         "relation": "excepted_by",
-        "note": "a stub for a member of a group names the group by its shown label, never as \"(in group)\" or by the bare label in brackets"
+        "note": "a member stub names its group by the label the overview shows"
       }
     },
     {
@@ -1294,6 +1294,16 @@
         "label": "extended by",
         "relation": "extended_by",
         "note": "a pair of one family sharing more overview neighbours folds first, so layers fold in step"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0032-excepted_by-MJL-0036",
+        "source": "MJL-0032",
+        "target": "MJL-0036",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "one member's edges into a group joined one way draw in the target's detail"
       }
     },
     {
@@ -1533,7 +1543,7 @@
         "target": "MJL-0031",
         "label": "excepts",
         "relation": "excepts",
-        "note": "a stub for a member of a group names the group by its shown label, never as \"(in group)\" or by the bare label in brackets"
+        "note": "a member stub names its group by the label the overview shows"
       }
     },
     {
@@ -1544,6 +1554,16 @@
         "label": "excepts",
         "relation": "excepts",
         "note": "a nested overview names the member a reader is sent to with the group's shown label, as \"PAYMENT_METHOD (in CUSTOMER (+2))\""
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0036-excepts-MJL-0032",
+        "source": "MJL-0036",
+        "target": "MJL-0032",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "one member's edges into a group joined one way draw in the target's detail"
       }
     }
   ],

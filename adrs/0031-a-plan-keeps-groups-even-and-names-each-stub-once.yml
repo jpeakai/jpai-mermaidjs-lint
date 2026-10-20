@@ -49,7 +49,7 @@ relates_to:
     note: with hubs folded, prefix families are kept apart before they are mixed, chain stages too
   - relation: excepted_by
     target: MJL-0036
-    note: a stub for a member of a group names the group by its shown label, never as "(in group)" or by the bare label in brackets
+    note: a member stub names its group by the label the overview shows
 
 decision:
   given: a reader of an overview counts its nodes against the target and compares its groups' sizes. A group's name reads as a promise about its members, and parallel lines read as separate relationships. A detail's stubs are read by their text alone

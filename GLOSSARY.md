@@ -475,7 +475,8 @@ A Diagram lands in one Band, so one Rule of the Ladder fires.
 ## Lane Label
 
 A Group Node label naming twin chains by their stages, as `Extract → bronze (+8)`, counting every member.
-Each place along the chains is named by the namespace every label there leads with, else the first word they all lead with, else an ellipsis.
+Each place along the chains is named by the namespace every label there leads with.
+Failing that, it is the first word they all lead with, and failing that an ellipsis.
 At least one place is named, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 
 ## LLM Fix
@@ -689,9 +690,11 @@ An edge in from another group starts at one Stub for that whole group.
 Edges of one kind one way between that Stub and one member are drawn once, with only the label they share, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
 When edges join two groups both ways, one detail draws the other group as one Stub, and the other draws Stubs for its members.
 The detail split again draws the members when the other's detail fits, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
+Edges running one way from a single member into several members of another group come in from one Stub for that member, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
-For a node inside a group, it adds ` (in `, the label the Overview shows for that group and `)`, as `PAYMENT_METHOD (in CUSTOMER (+2))`, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
+For a node inside a group, it adds the label the Overview shows for that group in brackets after "in".
+An example is `PAYMENT_METHOD (in CUSTOMER (+2))`, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Its text must have exactly one reading.
 When the text could name anything else, it adds the node's id in brackets, as often as it takes.
 

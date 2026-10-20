@@ -49,11 +49,13 @@ test: build
 # Bun's own threshold is per file, so the aggregate gate is enforced here from
 # the "All files" row: both the function and the line column must reach 90.
 # Each test may take 30s, since splitting and coverage make a CI runner slow.
-# A failure repeats its failing lines last, as a CI log can drop a long print.
+# The full log stays in tmp/coverage.txt. Only the summary and any failing
+# lines are printed, since a CI runner's stdout fails a long print.
 test-cov-ts: build
 	@mkdir -p tmp
-	@bun test --coverage --timeout 30000 ./tests/ > tmp/coverage.txt 2>&1; status=$$?; cat tmp/coverage.txt || true; \
-	if [ "$$status" -ne 0 ]; then grep -E '\(fail\)|^error:| fail$$' tmp/coverage.txt >&2; exit "$$status"; fi; \
+	@bun test --coverage --timeout 30000 ./tests/ > tmp/coverage.txt 2>&1; status=$$?; \
+	grep -E '^All files|^ *[0-9]+ (pass|fail)$$|^Ran ' tmp/coverage.txt; \
+	if [ "$$status" -ne 0 ]; then grep -E '\(fail\)|^error:' tmp/coverage.txt >&2; exit "$$status"; fi; \
 	awk -F'|' '/^All files/ { if ($$2 + 0 < 90 || $$3 + 0 < 90) { print "ERROR: coverage below 90%"; exit 1 } found = 1 } \
 		END { if (!found) { print "ERROR: no coverage summary"; exit 1 } }' tmp/coverage.txt
 

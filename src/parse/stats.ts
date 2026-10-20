@@ -8,6 +8,7 @@ import { parse as langiumParse } from "@mermaid-js/parser";
 import Color from "colorjs.io";
 import { Window } from "happy-dom";
 import { repairNodeGetters } from "./dom.ts";
+import { memoBySource } from "./memo.ts";
 
 // mermaid core registers DOMPurify hooks while its grammars run, and DOMPurify
 // needs a DOM. This runs before the first mermaid import, so mermaid is
@@ -185,7 +186,9 @@ export function detectKeyword(content: string): string | null {
 // The diagram_type of a diagram whose type mermaid does not detect.
 export const UNKNOWN_TYPE = "unknown";
 
-export async function extractStats(content: string): Promise<MermaidStats> {
+export const extractStats = memoBySource((content) => readStats(content));
+
+async function readStats(content: string): Promise<MermaidStats> {
   const type = detectType(content);
   const keyword = keywordOf(type) ?? UNKNOWN_TYPE;
 

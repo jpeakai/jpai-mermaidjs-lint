@@ -624,9 +624,22 @@
         "label": "0041",
         "parent": "group-complexity",
         "colour": "#0891b2",
-        "file": "0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md",
-        "title": "A decision region folded far larger than the other groups opens, a span label shows both its labels whole, and a stub for a range's end shows its own label",
-        "description": "When a plan opens a decision region, how long a span label is, and how a stub names a range end",
+        "file": "0041-a-stub-for-a-range-end-shows-its-own-label.md",
+        "title": "A stub for a range's first or last member shows its own label",
+        "description": "How a stub names a member a range label names",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0042",
+        "label": "0042",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0042-twin-chains-in-a-nested-detail-fold-in-runs-of-lanes.md",
+        "title": "Twin chains in a detail split again fold in runs of lanes, by their stages where they can",
+        "description": "How a detail split again folds twin chains too many to fold whole",
         "status": "accepted",
         "tags": "complexity, split"
       }
@@ -1119,16 +1132,6 @@
         "label": "excepted by",
         "relation": "excepted_by",
         "note": "a group of two shows the other member's label in place of the count"
-      }
-    },
-    {
-      "data": {
-        "id": "MJL-0028-excepted_by-MJL-0041",
-        "source": "MJL-0028",
-        "target": "MJL-0041",
-        "label": "excepted by",
-        "relation": "excepted_by",
-        "note": "a decision region folded far larger than the median group opens, and the regions inside it fold apart"
       }
     },
     {
@@ -1793,16 +1796,6 @@
     },
     {
       "data": {
-        "id": "MJL-0037-extended_by-MJL-0041",
-        "source": "MJL-0037",
-        "target": "MJL-0041",
-        "label": "extended by",
-        "relation": "extended_by",
-        "note": "an oversized decision region opens, so the groups stay even"
-      }
-    },
-    {
-      "data": {
         "id": "MJL-0038-extends-MJL-0035",
         "source": "MJL-0038",
         "target": "MJL-0035",
@@ -1903,6 +1896,16 @@
     },
     {
       "data": {
+        "id": "MJL-0038-excepted_by-MJL-0042",
+        "source": "MJL-0038",
+        "target": "MJL-0042",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "twin chains in a detail split again fold in runs of lanes, not one group per lane"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0039-excepts-MJL-0033",
         "source": "MJL-0039",
         "target": "MJL-0033",
@@ -1963,22 +1966,12 @@
     },
     {
       "data": {
-        "id": "MJL-0039-excepted_by-MJL-0041",
-        "source": "MJL-0039",
-        "target": "MJL-0041",
-        "label": "excepted by",
-        "relation": "excepted_by",
-        "note": "a span label holds twice the label cap, both its labels shown uncut, where MJL-0039 held it to 40 characters"
-      }
-    },
-    {
-      "data": {
         "id": "MJL-0039-extended_by-MJL-0041",
         "source": "MJL-0039",
         "target": "MJL-0041",
         "label": "extended by",
         "relation": "extended_by",
-        "note": "a stub for a range label.s first or last member shows its own label"
+        "note": "a stub for a range label's first or last member shows its own label"
       }
     },
     {
@@ -2013,42 +2006,22 @@
     },
     {
       "data": {
-        "id": "MJL-0041-excepts-MJL-0028",
-        "source": "MJL-0041",
-        "target": "MJL-0028",
-        "label": "excepts",
-        "relation": "excepts",
-        "note": "a decision region folded far larger than the median group opens, and the regions inside it fold apart"
-      }
-    },
-    {
-      "data": {
-        "id": "MJL-0041-extends-MJL-0037",
-        "source": "MJL-0041",
-        "target": "MJL-0037",
-        "label": "extends",
-        "relation": "extends",
-        "note": "an oversized decision region opens, so the groups stay even"
-      }
-    },
-    {
-      "data": {
-        "id": "MJL-0041-excepts-MJL-0039",
-        "source": "MJL-0041",
-        "target": "MJL-0039",
-        "label": "excepts",
-        "relation": "excepts",
-        "note": "a span label holds twice the label cap, both its labels shown uncut, where MJL-0039 held it to 40 characters"
-      }
-    },
-    {
-      "data": {
         "id": "MJL-0041-extends-MJL-0039",
         "source": "MJL-0041",
         "target": "MJL-0039",
         "label": "extends",
         "relation": "extends",
-        "note": "a stub for a range label.s first or last member shows its own label"
+        "note": "a stub for a range label's first or last member shows its own label"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0042-excepts-MJL-0038",
+        "source": "MJL-0042",
+        "target": "MJL-0038",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "twin chains in a detail split again fold in runs of lanes, not one group per lane"
       }
     }
   ],

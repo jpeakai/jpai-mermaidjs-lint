@@ -482,45 +482,10 @@ const stepOf = (t: Tier, walk: Walk): Step => {
   };
 };
 
-// How many times the median group's members a decision region may hold
-// before the plan opens it (MJL-0041).
-export const OVERSIZED = 2;
-
-const median = (xs: readonly number[]): number => {
-  const s = [...xs].sort((a, b) => a - b);
-  const mid = Math.floor(s.length / 2);
-  return s.length % 2 === 1 ? (s[mid] ?? 0) : ((s[mid - 1] ?? 0) + (s[mid] ?? 0)) / 2;
-};
-
-const largestOf = (part: Partition): number => Math.max(0, ...part.groups.map((g) => g.members.length));
-
-// The decision region a plan folded into a group holding more than OVERSIZED
-// times the median group's members, three groups or more, the largest first.
-export const oversized = (part: Partition): Group | undefined => {
-  if (part.groups.length < 3) return undefined;
-  const mid = median(part.groups.map((g) => g.members.length));
-  return part.groups
-    .filter((g) => g.reason === "decision region" && g.head !== undefined && g.members.length > OVERSIZED * mid)
-    .sort((a, b) => b.members.length - a.members.length || byNaturalTuple(a.members, b.members))[0];
-};
-
 // Folds tier by tier until the overview meets the target, or returns why not.
 // A diagram whose rows alone put it over the target meets it at T1, rows
-// dropped, and folds only its closed aggregates (MJL-0040). A decision region
-// folded far larger than the other groups opens, its head kept in view and
-// the regions inside it folded apart, when the overview still meets the
-// target and its largest group is then smaller (MJL-0041).
+// dropped, and folds only its closed aggregates (MJL-0040).
 export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Walk): Folded | string => {
-  const folded = foldOnce(work, config, walk);
-  if (typeof folded === "string") return folded;
-  const head = oversized(folded.part)?.head;
-  if (head === undefined) return folded;
-  const open = new Set([...(walk.rules.open ?? []), head]);
-  const opened = foldToTarget(work, config, { ...walk, rules: { ...walk.rules, open } });
-  return typeof opened !== "string" && largestOf(opened.part) < largestOf(folded.part) ? opened : folded;
-};
-
-const foldOnce = (work: WorkGraph, config: ThresholdConfig, walk: Walk): Folded | string => {
   let m = measure(work, EMPTY_PARTITION, config, walk.rules);
   const snapshots: Snapshot[] = [snapshotOf("T1", EMPTY_PARTITION)];
   if (meets(m.nodes, m.score, config)) return closedAggregates(m, snapshots, walk);

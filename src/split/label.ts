@@ -102,6 +102,11 @@ const twoWords = (words: Array<string | null>): string | null => {
   return (set as string[]).sort(byNatural).join(WORD_SEPARATOR);
 };
 
+// The word one label gives its place in a lane: its dotted namespace, else
+// its first word, else null.
+export const stageWord = (label: string): string | null =>
+  dottedFamily(label) ?? FIRST_WORD.exec(label.trim())?.[1] ?? null;
+
 export const laneLabel = (chains: readonly (readonly string[])[]): string | null => {
   const length = chains[0]?.length ?? 0;
   if (chains.length < 2 || length < 2 || chains.some((c) => c.length !== length)) return null;
@@ -136,16 +141,13 @@ export const fanLabel = (name: string, out: boolean): string | null => {
 // leaves at another by those two members' labels, joined by LANE_SEPARATOR,
 // as "git push to main → tsc --noEmit" for a run of setup steps (MJL-0039).
 // Neither label holds markup, an arrow or an ellipsis, and the label holds at
-// most SPAN_CAP characters, twice LABEL_CAP, as a list of leaves may, since
-// both labels are shown whole (MJL-0041). It counts the members it does not
-// name, two fewer than the group holds.
-export const SPAN_CAP = 2 * LABEL_CAP;
-
+// most LABEL_CAP characters. It counts the members it does not name, two
+// fewer than the group holds.
 export const spanLabel = (entry: string, exit: string): string | null => {
   if (entry === exit) return null;
   if ([entry, exit].some((l) => l.trim() === "" || l !== l.trim() || MARKUP.test(l) || /[→…]/.test(l))) return null;
   const base = `${entry}${LANE_SEPARATOR}${exit}`;
-  return [...graphemes.segment(base)].length <= SPAN_CAP ? base : null;
+  return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
 };
 
 const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.label ?? id;
@@ -220,20 +222,12 @@ export const listedOthers = (named: string, labels: readonly string[], limits = 
 
 // The labels a group may show, preferred first: the label cut, the whole
 // label, then the label cut with the group's id, for when another node or
-// group already shows the others. A pair label is shown only whole, and a
-// span label is never cut, since its two labels are what it says (MJL-0041).
+// group already shows the others. A pair label is shown only whole.
 export const groupLabels = (
-  {
-    base,
-    n,
-    markdown,
-    pair,
-    span,
-  }: { base: string; n: number; markdown?: true | undefined; pair?: string | undefined; span?: unknown },
+  { base, n, markdown, pair }: { base: string; n: number; markdown?: true | undefined; pair?: string | undefined },
   id: string,
 ): string[] => {
   if (pair !== undefined) return [`${base} (+${pair})`];
-  if (span !== undefined) return [`${base} (+${n})`, `${base} (+${n}) [${id}]`];
   const cut = `${shorten(base, markdown)} (+${n})`;
   return [...new Set([cut, `${base} (+${n})`, `${cut} [${id}]`])];
 };

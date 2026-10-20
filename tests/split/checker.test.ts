@@ -33,6 +33,7 @@ const SETS = [
   "round17",
   "round18",
   "round19",
+  "round20",
 ];
 
 const serious = async (source: string, plan: SplitPlan, cfg: ThresholdConfig): Promise<string[]> =>

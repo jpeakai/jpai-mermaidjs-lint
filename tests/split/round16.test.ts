@@ -1,6 +1,6 @@
 // What the round-16 blind rating held plans to (MJL-0038): twin chains fold
 // whole, never cut into runs, their detail split again into one group per
-// lane; a lane's place may be named by the two words its labels lead with; a
+// lane, until MJL-0042 folded them there in runs of lanes; a lane's place may be named by the two words its labels lead with; a
 // group of two members names both, as "ROOM (+BUILDING)", and a stub for
 // either shows its own label; a group holding every leaf one overview node
 // leads to is named by that node, as "Checkout domain → …", until MJL-0040
@@ -69,16 +69,15 @@ const FLOW05 = read("round9", "flow05-etl-fanout-fanin");
 
 describe("twin chains", () => {
   test(
-    "fold whole, named by the two words their extracts lead with, their detail split into one group per lane",
+    "fold whole, named by the two words their extracts lead with, their detail split into runs of lanes",
     async () => {
       const { plan } = await buildOf(FLOW05, "low");
       const lanes = plan.groups.filter((g) => g.members.some((m) => m.startsWith("ex_")) && g.members.length > 2);
       expect(lanes.map((g) => g.label)).toEqual(["Extract/Ingest → bronze (+14)"]);
+      // Split again into runs of lanes, each named by its lanes' stages (MJL-0042).
       const nested = detailOf(plan, "ex_pg").split;
-      expect(nested?.groups.map((g) => g.members.length)).toEqual([2, 2, 2, 2, 2, 2, 2]);
+      expect(nested?.groups.map((g) => g.label)).toEqual(["Extract → bronze (+8)", "Extract/Ingest → bronze (+6)"]);
       expect(nested?.loss.newReachablePairs).toBe(0);
-      // Lanes folded alike read alike: none takes a pair label unless all can.
-      expect(nested?.groups.every((g) => g.label.endsWith(" (+1)"))).toBe(true);
       // The lanes' detail is split again, so it draws the scheduler's edges into
       // them exactly, and the scheduler's detail draws the lanes as one stub.
       expect(stubLabels(detailOf(plan, "sched"))).toEqual(["Extract/Ingest → bronze (+14)", "Extract MySQL inventory"]);
@@ -94,7 +93,11 @@ describe("twin chains", () => {
       const built = await buildOf(source, "low");
       const lanes = built.plan.groups.find((g) => g.members.includes("p1"));
       expect(lanes?.label).toBe("Fetch/Pull → raw (+16)");
-      expect(detailOf(built.plan, "p1").split?.groups).toHaveLength(8);
+      // Split again by the verb each lane leads with (MJL-0042).
+      expect(detailOf(built.plan, "p1").split?.groups.map((g) => g.label)).toEqual([
+        "Pull → raw (+8)",
+        "Fetch → raw (+8)",
+      ]);
       const forged = relabel(built, "p1", "Pull → raw (+16)", { labelBase: "Pull → raw" });
       expect((await checkContract(forged, LOW)).some((v) => v.startsWith("4:"))).toBe(true);
       expect((await serious(source, forged.plan)).length).toBeGreaterThan(0);

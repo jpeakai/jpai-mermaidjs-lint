@@ -330,7 +330,7 @@ const spanOfReading = (original: DiagramGraph, members: readonly GraphNode[], fo
   if ([a, b].some((l) => l.trim() === "" || l !== l.trim() || /[<&*_`#→…]/.test(l))) return null;
   if (members.some((m) => (m.id === entry || m.id === exit) && m.markdown)) return null;
   const span = `${a} → ${b}`;
-  return [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(span)].length <= 80 ? span : null;
+  return [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(span)].length <= 40 ? span : null;
 };
 
 // A fan label, written out: in a flowchart or stateDiagram, a group of two

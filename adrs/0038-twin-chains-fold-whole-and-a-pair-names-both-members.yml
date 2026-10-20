@@ -57,6 +57,15 @@ relates_to:
   - relation: extends
     target: MJL-0037
     note: a target whose detail is split again draws the edges joining two groups one way
+  - relation: excepted_by
+    target: MJL-0039
+    note: a tangled schema that meets its target by rows alone stays at rows dropped
+  - relation: extended_by
+    target: MJL-0039
+    note: a group of three names every member, as a group of two does
+  - relation: excepted_by
+    target: MJL-0040
+    note: a group of leaves whose labels fit a list is named by them, before the node they hang from
 
 decision:
   given: a reader of an overview reads a group's name as what it holds. A cut through alike things reads as a claim that they differ. A reader follows a stub to the overview text it names. Lanes carry each source to the table it lands in, and nothing in their labels sorts them

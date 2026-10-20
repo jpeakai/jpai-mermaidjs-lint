@@ -1,0 +1,32 @@
+%% source: authored (round 18: leaves two author regions call, one set short enough to list and one too long)
+%% kind: flowchart service map with external APIs
+flowchart LR
+  user["Customer"] --> cdn["CDN edge"] --> gw["API gateway"]
+  gw --> api
+  gw --> hub
+  subgraph billing["Billing service"]
+    api["Billing API"] --> tax["Tax worker"]
+    api --> pay["Payment worker"]
+    api --> mail["Mail worker"]
+    api --> fx["FX worker"]
+  end
+  subgraph data["Data platform"]
+    hub["Event hub"] --> etl["ETL runner"]
+    hub --> ml["Model trainer"]
+    hub --> rep["Report builder"]
+    hub --> arch["Archiver"]
+  end
+  subgraph ops["Operations"]
+    mon["Monitor"] --> alert["Alert router"] --> page["On-call pager"]
+  end
+  gw -.-> mon
+  api -.-> mon
+  api -.-> hub
+  tax --> vat["VAT API"]
+  pay --> psp["Card gateway"]
+  mail --> smtp["SMTP relay"]
+  fx --> ecb["ECB feed"]
+  etl --> wh["Analytics warehouse in the primary region"]
+  ml --> reg["Model registry for every production team"]
+  rep --> bi["Business intelligence dashboards"]
+  arch --> cold["Cold storage archive bucket"]

@@ -5,10 +5,10 @@
 
 import { type DiagramGraph, extractGraph } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
-import { extractStats, getMermaidCore } from "../parse/stats.ts";
+import { type DiagramStats, extractStats, getMermaidCore } from "../parse/stats.ts";
 import { meshMatrix, starList } from "./alternative.ts";
 import { checkContract } from "./contract.ts";
-import { buildWorkGraph, familyOf, type WorkGraph } from "./graph.ts";
+import { buildWorkGraph, familyOf, type Measured, type WorkGraph } from "./graph.ts";
 import { RANGE_SEPARATOR } from "./label.ts";
 import { laddersOf, planWork } from "./plan.ts";
 import { meets } from "./quotient.ts";
@@ -83,12 +83,24 @@ export const splitOutcome = async (source: string, config: ThresholdConfig): Pro
   // emitted text cannot tell apart, so no plan is offered.
   if (graph.subgraphs.some((s) => (s.regions ?? 0) > 1)) return refuse("concurrent state regions are not split");
   if (isDenseMesh(graph)) return refuseFor(graph, DENSE_MESH);
-  const work = buildWorkGraph(graph, { direction: await directionOf(source), rows: stats.rows });
+  const work = buildWorkGraph(graph, {
+    direction: await directionOf(source),
+    rows: stats.rows,
+    measured: measuredOf(stats),
+  });
   const outcome = await firstPassing(work, config);
   return outcome.plan === null && (outcome.reason === STAR || outcome.reason === DENSE_MESH)
     ? refuseFor(graph, outcome.reason)
     : outcome;
 };
+
+// The size the complexity rules measured a diagram at, rows aside.
+export const measuredOf = (stats: DiagramStats): Measured => ({
+  nodes: stats.nodes,
+  edges: stats.edges,
+  subgraphs: stats.subgraphs,
+  depth: Math.max(stats.max_subgraph_depth, stats.max_tree_depth),
+});
 
 export const STAR = "a star of leaves around one node, which no label, shape or neighbour sorts: a list reads better";
 

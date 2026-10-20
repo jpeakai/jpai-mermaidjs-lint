@@ -33,6 +33,9 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 - Scoped exception to [MJL-0028](0028-decision-regions-and-aggregates-fold-whole.md) (a group of two shows the other member's label in place of the count)
 - Extends [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (a tangled schema that meets its target by rows alone still folds its aggregates, each pair named by both members)
 - Extends [MJL-0037](0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md) (a target whose detail is split again draws the edges joining two groups one way)
+- Excepted by [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) (a tangled schema that meets its target by rows alone stays at rows dropped)
+- Extended by [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) (a group of three names every member, as a group of two does)
+- Excepted by [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) (a group of leaves whose labels fit a list is named by them, before the node they hang from)
 
 ## Decision
 

@@ -6,7 +6,7 @@
 import type { GraphEdge, GraphNode } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { byNatural, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { pairLabel } from "./label.ts";
+import { FAN_LISTED, LISTED, listedOthers, spanLabel } from "./label.ts";
 import type { Tier } from "./types.ts";
 
 export interface Group {
@@ -407,6 +407,9 @@ export interface LabelParts {
   qualified?: true;
   // The other member's label a pair label shows in place of the count.
   pair?: string;
+  // Whether the label names the member a flowchart group's flow enters at and
+  // the one it leaves from (label.ts spanLabel).
+  span?: true;
 }
 
 // A region's label qualified by the label of the region around it, as
@@ -452,6 +455,9 @@ export interface Naming {
   family?: string | null;
   lane?: string | null;
   fan?: string | null;
+  // Whether the group is a group of leaves hanging from one overview node
+  // (fanOf), whose list label may name every member (label.ts FAN_LISTED).
+  fanList?: boolean;
 }
 
 export const labelChoices = (
@@ -473,16 +479,24 @@ export const labelChoices = (
     const node = work.nodes.get(m);
     return { base: node?.label ?? m, n: g.members.length - 1, ...markdownOf(node) };
   };
+  const spanned = spanChoice(work, g);
   const fromRange = [range, naming.fan].flatMap((b, i) =>
     b ? [{ base: b, n: i === 0 ? g.members.length - 2 : g.members.length }] : [],
   );
   const whole = [naming.family, naming.lane].flatMap((b) => (b ? [{ base: b, n: g.members.length }] : []));
+  // A run a range or a whole family or lane names reads as that run, so a
+  // group of three takes a list label only when none applies (MJL-0039).
+  // A group of leaves takes its list first, since it names every member (MJL-0040).
+  const run = g.members.length > 2 && (range !== null || whole.length > 0) && naming.fanList !== true;
   return [
     ...fromRegion,
-    ...(fromRegion.length === 0 ? pairChoices(work, g, [...head, ...ranked]) : []),
+    ...(fromRegion.length === 0 && !run
+      ? pairChoices(work, g, [...head, ...ranked], naming.fanList ? FAN_LISTED : LISTED)
+      : []),
     ...head.map(label),
     ...whole,
     ...fromRange,
+    ...spanned,
     ...ranked.filter((m) => !head.includes(m)).map(label),
   ];
 };
@@ -490,12 +504,57 @@ export const labelChoices = (
 // The pair label a group of two members may take: named after the first of
 // its members in the order given, the other's label in place of the count
 // (label.ts pairLabel). None for any other group or a markdown member.
-const pairChoices = (work: WorkGraph, g: Group, order: readonly string[]): LabelParts[] => {
+// A group of three takes the list label the same way, the other two in
+// natural order (label.ts listedOthers, MJL-0039), and a group of leaves
+// within FAN_LISTED however many it holds (MJL-0040).
+const pairChoices = (work: WorkGraph, g: Group, order: readonly string[], limits = LISTED): LabelParts[] => {
   const [named] = order;
-  const other = g.members.find((m) => m !== named);
-  const [a, b] = [named === undefined ? undefined : work.nodes.get(named), other ? work.nodes.get(other) : undefined];
-  if (g.members.length !== 2 || !(a && b) || a.markdown || b.markdown) return [];
-  return pairLabel(a.label, b.label) === null ? [] : [{ base: a.label, n: 0, pair: b.label }];
+  const nodes = g.members.map((m) => work.nodes.get(m));
+  const a = named === undefined ? undefined : work.nodes.get(named);
+  if (!a || nodes.some((n) => n === undefined || n.markdown)) return [];
+  const pair = listedOthers(
+    a.label,
+    nodes.map((n) => n?.label ?? ""),
+    limits,
+  );
+  return pair === null ? [] : [{ base: a.label, n: 0, pair }];
+};
+
+// The one member a flowchart group's flow enters at and the one it leaves
+// from, by directed edges: the member every edge from outside the group
+// reaches, else its one member no edge reaches; and the member every edge to
+// outside the group leaves, else its one member no edge leaves. Null for
+// fewer than three members, a group folding a region, or when either is not
+// one member, or both are one (MJL-0039).
+export const spanOf = (
+  work: WorkGraph,
+  g: Pick<Group, "members" | "regions">,
+): { entry: string; exit: string } | null => {
+  if (work.family !== "flowchart" || g.members.length < 3 || g.regions.length > 0) return null;
+  const inside = new Set(g.members);
+  const edges = work.edges.filter((e) => e.source !== e.target);
+  const one = (crossing: string[], open: () => string[]): string | null => {
+    const set = [...new Set(crossing.length > 0 ? crossing : open())];
+    return set.length === 1 ? (set[0] ?? null) : null;
+  };
+  const entry = one(
+    edges.filter((e) => inside.has(e.target) && !inside.has(e.source)).map((e) => e.target),
+    () => g.members.filter((m) => !edges.some((e) => e.target === m)),
+  );
+  const exit = one(
+    edges.filter((e) => inside.has(e.source) && !inside.has(e.target)).map((e) => e.source),
+    () => g.members.filter((m) => !edges.some((e) => e.source === m)),
+  );
+  return entry !== null && exit !== null && entry !== exit ? { entry, exit } : null;
+};
+
+// The span label a group with no head may take (label.ts spanLabel),
+// counting the members it does not name.
+const spanChoice = (work: WorkGraph, g: Group): LabelParts[] => {
+  const ends = g.head === undefined ? spanOf(work, g) : null;
+  const [a, b] = ends ? [work.nodes.get(ends.entry), work.nodes.get(ends.exit)] : [undefined, undefined];
+  const base = a && b && !a.markdown && !b.markdown ? spanLabel(a.label, b.label) : null;
+  return base === null ? [] : [{ base, n: g.members.length - 2, span: true }];
 };
 
 // The one overview node every member of a group of leaves hangs from, with

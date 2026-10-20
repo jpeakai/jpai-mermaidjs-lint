@@ -27,7 +27,7 @@ Edges of one kind one way between a group's stub and one member are drawn once, 
 The group's own detail draws each of them to that member, so nothing is lost.
 When edges join two groups both ways, one detail draws the other group whole and the other draws its members.
 The detail split again draws the other's members, when the other's detail fits, per [MJL-0035](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
-A stub in a nested overview then names the member a reader is sent to, as `PAYMENT_METHOD (in CUSTOMER (+2))`.
+A stub in a nested overview then names the member a reader is sent to, as `INVOICE_LINE (in INVOICE (+5))`.
 A stub for a member of a group names that group by the label the overview shows it with.
 A stub for the member the group is named after shows its own label alone, since the group's label leads with it.
 So a reader finds the group by its text, per [MJL-0036](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
@@ -43,6 +43,11 @@ It does so only while its detail still meets the target, per [MJL-0037](https://
 Together the overview and the details recover every original node and edge.
 The plan is still a recommendation that a human applies, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0025-a-fold-is-offered-as-a-split.md).
 `--split-plan` prints it, the node count and score rules end their remediation with it, and nothing writes it to a file.
+Each plan first says why it was offered, per [MJL-0039](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md).
+It names the size the rules measured, rows counted, the split target, and which measure is over.
+A diagram over only for the rows it draws, which meets the target with its rows dropped from the overview, folds little more.
+An `erDiagram` folds only its closed aggregates, whose other members relate to nothing outside them, per [MJL-0040](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md).
+Its plan says so, and its rows move to row diagrams.
 
 The shape follows Shneiderman's mantra: [overview first, zoom and filter, then details on demand](https://doi.org/10.1109/VL.1996.545307).
 It also follows the limits of working memory.
@@ -261,7 +266,10 @@ In `T2` it folds the remaining decision regions, so every decision reads alike.
 In `T3` it folds the sibling regions of the ones folded, so sibling regions read alike.
 In `T4` it folds more aggregates when the `erDiagram` overview is tangled, meeting a cycle for every four nodes.
 Each such fold takes away an overview edge per entity it hides and adds no new reachable pair, so only tight aggregates fold.
-A tangled overview folds so even when dropping rows alone meets the target, while a tree-like one stays as it is.
+A diagram that meets the target by dropping rows alone folds only its closed aggregates, tangled or not, per [MJL-0040](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md).
+In a closed aggregate one entity holds every relationship that crosses its edge, as ROOM with BUILDING.
+So the overview still draws each relationship at the entity it joins.
+An aggregate whose other members relate outside it stays in view, so a university schema keeps ASSESSMENT beside SECTION.
 In `T5` and `T6` it gathers what is left open into groups of three or more, no larger than the largest.
 When every label leads with an id naming a family, such as `PLAT-1201`, `T6` first folds each family whole, hubs included.
 A family too large for one detail folds as even contiguous runs, each connected.
@@ -313,10 +321,10 @@ The contract is what this page means by "meaning is preserved".
 - **Sound.** Every original node is in exactly one overview node. A suggested group is connected. Two members are joined by an edge, or by an author region the group folds whole. They are also joined by a neighbour they share, when both name one prefix family or both are leaves. Each overview edge stands for original edges, in the same direction, and none is invented. The one exception is an undirected edge, below.
 - **Sound attributes.** An overview edge keeps a label or an arrow kind only when every edge it stands for agrees.
 - **Recoverable.** The overview and the details give back exactly the original nodes and edges, with their labels and kinds. Each edge between two groups is drawn exactly in one of the two groups' details. The other detail draws it once for every edge between the other group and that member that draws alike.
-- **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A family, lane or fan label, recomputed from the members, counts every member, such as `gold.* (+5)`. A pair label, recomputed from a group's two members, shows the other's label in place of the count, such as `ROOM (+BUILDING)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
+- **Labels from data.** A group's label is an author label or a member's label, followed by a count of the rest, such as `Web (+3)`. A family, lane or fan label, recomputed from the members, counts every member, such as `gold.* (+5)`. A pair label, recomputed from a group's two members, shows the other's label in place of the count, such as `ROOM (+BUILDING)`. A list label does so for a group of three, the other two in natural order, such as `ADDRESS (+CITY, COUNTRY)`. A group of leaves takes one of any size within 80 characters. A range, family or lane label still comes first. A span label names a flowchart group by the member its flow enters at and the one it leaves from. It counts the members neither names, such as `git push to main → tsc --noEmit (+4)`. A long label is cut in its middle with an ellipsis, and a label another node shows adds the group's id.
 - **Honest ranges.** A range label, such as `DATA-0381 … DATA-0383 (+1)`, is the group's first and last member labels in natural order. Its count is of the members neither names. No member of another group has a label from the first to the last.
 - **One reading per stub.** A stub's text is read by every form a plan writes, against every label the diagram and its groups show, and has exactly one reading. A text that could name two things adds the id it stands for, as often as it takes.
-- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (in Delivered (+3))` is the member Refunded inside the group the overview shows as `Delivered (+3)`. `Delivered` is the member that group is named after, and the group's label leads with it. A stub for a member of a group with a pair label shows its own label alone. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, and PAYMENT must draw every edge the stub draws. A plan no longer writes it, since no detail draws a group whole beside its members. A box showing `Edge tier (+2)` stands for the region that group folds whole. A group folding no one region holding every member is boxed as the group, and its box draws no edge. A stub inside it showing `Zuul edge proxy` is the one member of that group with that label.
+- **Stub forms.** A stub for a kept node shows that node's label. `Refunded (in Delivered (+3))` is the member Refunded inside the group the overview shows as `Delivered (+3)`. `Delivered` is the member that group is named after, and the group's label leads with it. A stub for a member of a group with a pair or list label shows its own label alone. So does a stub for either end a span label names. `ORDER (+6) from PAYMENT` is the whole group, drawn from its member PAYMENT, and PAYMENT must draw every edge the stub draws. A plan no longer writes it, since no detail draws a group whole beside its members. A box showing `Edge tier (+2)` stands for the region that group folds whole. A group folding no one region holding every member is boxed as the group, and its box draws no edge. A stub inside it showing `Zuul edge proxy` is the one member of that group with that label.
 - **Undirected edges written both ways.** Take a link with no arrowhead or end marker, written both ways between two overview nodes, at least one a group. When both ways agree on kind and label, the overview draws it once. Each detail draws each one as written, and the plan declares how many the overview draws the other way.
 - **Merged start and end transitions.** The overview draws a start or end marker's transitions into one group as one transition onto the group, labelled only when they all agree. The group's detail draws each as written, and the plan declares how many were merged.
 - **Protected nodes.** A decision node, a fork, a join, a choice and a composite state stay visible, unless a whole region around them folds. That region is an author region, or a decision region that is single-entry single-exit in the original graph, every node of which the group holds. So does a state a composite's start or end marker reaches, unless that composite folds whole.
@@ -365,12 +373,20 @@ Each place along the chains is named by the namespace every label there leads wi
 Failing that, it is named by the first word they all lead with, and failing that it shows an ellipsis.
 Failing both, two first words name the place, joined by a slash, per [MJL-0038](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
 So lanes led by extracts and an ingest read `Extract/Ingest → bronze (+14)`, and lanes whose sources share no word read `… → bronze (+6)`.
-A group holding every leaf one overview node leads to is named by that node, as `Checkout domain → … (+4)` for the APIs Checkout calls.
-Leaves leading into one node read `… → ` and its name.
+A group holding every leaf one overview node leads to is named by every member when the list fits 80 characters, per [MJL-0040](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md).
+So the APIs Checkout calls read `Carrier quote API (+ECB rates feed, Payment provider API, SMTP relay)`.
+Otherwise it is named by that node, as `Order service → … (+5)`, and leaves leading into one node read `… → ` and its name.
 A group of two members names both, as `ROOM (+BUILDING)`, the other's label in place of the count.
 Neither label may hold a bracket or markup, and the label holds 40 characters at most.
 Groups of two folded alike take it only when every one of them can, and a stub for either member shows its own label.
 Both labels count every member, and come after an author region's label and a decision region's question, before a range or a member's label.
+A group of three names every member the same way, the other two in natural order, as `ADDRESS (+CITY, COUNTRY)`, per [MJL-0039](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/adrs/0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md).
+Neither other label may hold a comma, and a group a range, family or lane label names keeps that label.
+A flowchart group of three or more may be entered at one member and left from another.
+It folds no region and has no decision or aggregate head.
+The entry is the one member every edge from outside reaches, else the one member no edge reaches, and the exit likewise.
+Such a group is named by both, as `git push to main → tsc --noEmit (+4)` for a run of setup steps, counting the members neither names.
+That name comes after a range and a fan, before a member's label, and a stub for either end shows its own label.
 
 In `T6`, a pair within one prefix family goes before any other.
 Under the strict rules, a pair across two families is never proposed.

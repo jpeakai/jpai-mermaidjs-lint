@@ -3,8 +3,10 @@
 // lane; a lane's place may be named by the two words its labels lead with; a
 // group of two members names both, as "ROOM (+BUILDING)", and a stub for
 // either shows its own label; a group holding every leaf one overview node
-// leads to is named by that node, as "Checkout domain → …"; and a tangled
-// schema that meets its target by rows alone still folds its aggregates.
+// leads to is named by that node, as "Checkout domain → …", until MJL-0040
+// listed every member where the list fits. A tangled
+// schema that meets its target by rows alone folded its aggregates, until
+// MJL-0039 left it at rows dropped.
 
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -119,37 +121,35 @@ describe("twin chains", () => {
 
 describe("a pair label", () => {
   test(
-    "names both members of each aggregate a tangled schema folds within its target",
+    "names both members of each aggregate of two a schema folds",
     async () => {
-      const source = read("round11", "er06-university");
-      const built = await buildOf(source, "high");
+      const source = read("round16", "pair-aggregates");
+      const built = await buildOf(source, "low");
       const { plan } = built;
-      expect(plan.groups.map((g) => g.label).sort()).toEqual([
-        "ENROLMENT (+GRADE)",
-        "ROOM (+BUILDING)",
-        "SECTION (+ASSESSMENT)",
-      ]);
+      const labels = plan.groups.map((g) => g.label);
+      expect(labels).toContain("BOOK (+PUBLISHER)");
+      expect(labels).toContain("LOAN (+RENEWAL)");
       // No entity's name is hidden from the overview.
       const shown = plan.overview.nodes.map((n) => n.label).join("\n");
-      for (const name of ["ASSESSMENT", "GRADE", "BUILDING"]) expect(shown).toContain(name);
+      for (const name of ["PUBLISHER", "RENEWAL"]) expect(shown).toContain(name);
       // A stub for a member of a pair shows its own label.
-      expect(stubLabels(detailOf(plan, "SECTION"))).toContain("ENROLMENT");
-      expect(await serious(source, plan, "high")).toEqual([]);
-      const forged = relabel(built, "SECTION", "SECTION (+GRADE)", { paired: "GRADE" });
+      expect(plan.details.flatMap(stubLabels)).toContain("LOAN");
+      expect(await serious(source, plan, "low")).toEqual([]);
+      const forged = relabel(built, "BOOK", "BOOK (+RENEWAL)", { paired: "RENEWAL" });
       expect((await checkContract(forged, LOW)).some((v) => v.includes("pair label"))).toBe(true);
-      expect((await serious(source, forged.plan, "high")).some((m) => m.includes("pair label"))).toBe(true);
+      expect((await serious(source, forged.plan, "low")).some((m) => m.includes("pair label"))).toBe(true);
     },
     SLOW,
   );
 
   test(
-    "names a library schema's aggregates, which fold though rows alone meet the target",
+    "folds a library schema's closed aggregates where rows alone meet the target",
     async () => {
+      // MJL-0039 folded none; since MJL-0040 the closed ones fold.
       const source = read("round16", "pair-aggregates");
       const { plan } = await buildOf(source, "medium");
       expect(plan.ladder.map((s) => s.tier)).toEqual(["T1", "T4"]);
-      expect(plan.groups.map((g) => g.label)).toContain("BOOK (+PUBLISHER)");
-      expect(plan.groups.map((g) => g.label)).toContain("LOAN (+RENEWAL)");
+      expect(plan.groups.map((g) => g.label).sort()).toEqual(["BOOK (+PUBLISHER)", "LOAN (+RENEWAL)"]);
       expect(await serious(source, plan, "medium")).toEqual([]);
     },
     SLOW,
@@ -168,12 +168,12 @@ describe("a pair label", () => {
 
 describe("a fan label", () => {
   test(
-    "names the external APIs a domain calls by that domain",
+    "names the external APIs a domain calls by every member since MJL-0040, and refuses a forged fan label",
     async () => {
       const source = read("round9", "flow01-online-boutique");
       const built = await buildOf(source, "medium");
       const apis = built.plan.groups.find((g) => g.members.includes("carrier"));
-      expect(apis?.label).toBe("Checkout domain → … (+4)");
+      expect(apis?.label).toBe("Carrier quote API (+ECB rates feed, Payment provider API, SMTP relay)");
       expect(await serious(source, built.plan, "medium")).toEqual([]);
       const forged = relabel(built, "carrier", "Catalog domain → … (+4)", { labelBase: "Catalog domain → …" });
       expect((await checkContract(forged, LOW)).some((v) => v.startsWith("4:"))).toBe(true);

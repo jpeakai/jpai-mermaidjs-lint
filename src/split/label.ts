@@ -122,12 +122,26 @@ export const laneLabel = (chains: readonly (readonly string[])[]): string | null
 
 // A fan label names a group holding every leaf one overview node leads to,
 // or every leaf leading to it, by that node's name and an ellipsis, as
-// "Checkout domain → …" for the external APIs Checkout calls (MJL-0038). The
-// name holds no markup and the label at most LABEL_CAP characters; it counts
-// every member.
+// "Order service → …" for the external APIs an order service calls
+// (MJL-0038), when their list label does not fit (MJL-0040). The name holds
+// no markup and the label at most LABEL_CAP characters; it counts every
+// member.
 export const fanLabel = (name: string, out: boolean): string | null => {
   if (name.trim() === "" || MARKUP.test(name)) return null;
   const base = out ? `${name}${LANE_SEPARATOR}…` : `…${LANE_SEPARATOR}${name}`;
+  return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
+};
+
+// A span label names a flowchart group the flow enters at one member and
+// leaves at another by those two members' labels, joined by LANE_SEPARATOR,
+// as "git push to main → tsc --noEmit" for a run of setup steps (MJL-0039).
+// Neither label holds markup, an arrow or an ellipsis, and the label holds at
+// most LABEL_CAP characters. It counts the members it does not name, two
+// fewer than the group holds.
+export const spanLabel = (entry: string, exit: string): string | null => {
+  if (entry === exit) return null;
+  if ([entry, exit].some((l) => l.trim() === "" || l !== l.trim() || MARKUP.test(l) || /[→…]/.test(l))) return null;
+  const base = `${entry}${LANE_SEPARATOR}${exit}`;
   return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
 };
 
@@ -158,11 +172,47 @@ export const wholeNaming = (
 // would read as, and the whole label holds at most LABEL_CAP characters.
 const NOT_PAIRED = /[()[\]<&*`#]|^\d+$/;
 
-export const pairLabel = (named: string, other: string): string | null => {
+export const pairLabel = (named: string, other: string, cap = LABEL_CAP): string | null => {
   if (named === other || named.trim() === "" || other.trim() === "") return null;
   if ([named, other].some((l) => NOT_PAIRED.test(l) || l !== l.trim())) return null;
   const label = `${named} (+${other})`;
-  return [...graphemes.segment(label)].length <= LABEL_CAP ? label : null;
+  return [...graphemes.segment(label)].length <= cap ? label : null;
+};
+
+// The most members a group names one by one in place of its count: a group
+// of three shows the label it is named after, then " (+", the other two
+// labels in natural order joined by LIST_SEPARATOR, and ")", as
+// "ADDRESS (+CITY, COUNTRY)" (MJL-0039). Neither other label holds a comma,
+// which would read as two names, and each meets the pair rules.
+export const MAX_LISTED = 3;
+export const LIST_SEPARATOR = ", ";
+
+// How many members a list label may name and how long it may be. A group of
+// leaves hanging from one overview node (quotient.ts fanOf) holds nothing but
+// those leaves, so its list names every member however many, within twice
+// LABEL_CAP, as "Carrier quote API (+ECB rates feed, Payment provider API,
+// SMTP relay)" (MJL-0040).
+export interface ListLimits {
+  most: number;
+  cap: number;
+}
+
+export const LISTED: ListLimits = { most: MAX_LISTED, cap: LABEL_CAP };
+export const FAN_LISTED: ListLimits = { most: Number.POSITIVE_INFINITY, cap: 2 * LABEL_CAP };
+
+// The text a group's label shows in place of its count, naming every member
+// but the one it is named after: the other's label for a pair, the others in
+// natural order joined by LIST_SEPARATOR for a larger group. Null when the
+// group holds more members than the limits allow, or a label breaks the pair
+// rules or, in a list, holds a comma.
+export const listedOthers = (named: string, labels: readonly string[], limits = LISTED): string | null => {
+  const at = labels.indexOf(named);
+  const others = labels.filter((_, i) => i !== at);
+  if (at < 0 || labels.length < 2 || labels.length > limits.most || new Set(labels).size !== labels.length) return null;
+  if (others.length > 1 && others.some((l) => l.includes(","))) return null;
+  const text = [...others].sort(byNatural).join(LIST_SEPARATOR);
+  const fits = (l: string): boolean => pairLabel(named, l, limits.cap) !== null;
+  return others.every(fits) && fits(text) ? text : null;
 };
 
 // The labels a group may show, preferred first: the label cut, the whole
@@ -189,22 +239,31 @@ export interface LabelContext {
   part: Partition;
   // Each group by its key in the partition: its id, its whole author label,
   // the label it shows, and whether that is a pair label.
-  groups: Map<string, { id: string; base: string; label: string; markdown?: true; paired?: true }>;
+  groups: Map<string, { id: string; base: string; label: string; markdown?: true; paired?: true; spanned?: true }>;
 }
 
 const markdownOf = (work: WorkGraph, id: string): { markdown?: true } =>
   work.nodes.get(id)?.markdown || work.regions.get(id)?.markdown ? { markdown: true } : {};
 
 // Whether a stub for a member of a group shows its own label alone: the
-// group shows both members' labels in a pair label, or the member is the one
-// the group is named after, so the group's shown label leads with the
+// group shows every member's label in a pair or list label, the member is
+// the entry or the exit a span label names (MJL-0039), or the member is the
+// one the group is named after, so the group's shown label leads with the
 // member's own label, uncut (MJL-0038).
 export const ownSuffices = (
-  g: { label: string; base: string; markdown?: true; paired?: unknown },
+  g: { label: string; base: string; markdown?: true; paired?: unknown; spanned?: unknown },
   own: string,
   markdown: boolean,
 ): boolean =>
-  g.paired !== undefined || (!(markdown || g.markdown) && g.base === own && g.label.startsWith(`${own} (+`));
+  g.paired !== undefined ||
+  (g.spanned !== undefined && !markdown && spanEnds(g.base).includes(own)) ||
+  (!(markdown || g.markdown) && g.base === own && g.label.startsWith(`${own} (+`));
+
+// The two labels a span label's base names, the entry's then the exit's.
+export const spanEnds = (base: string): string[] => {
+  const at = base.indexOf(LANE_SEPARATOR);
+  return at < 0 ? [] : [base.slice(0, at), base.slice(at + LANE_SEPARATOR.length)];
+};
 
 // The text before any id is added: the node's label, then IN, the label its
 // group shows and a closing bracket when it sits in a group; a whole group by

@@ -7,6 +7,7 @@
 import type { DiagramGraph, GraphEdge, GraphNode } from "../parse/graph.ts";
 import type { ThresholdConfig } from "../parse/metrics.ts";
 import { emitSource } from "./emit.ts";
+import { flaggedText } from "./flagged.ts";
 import {
   buildWorkGraph,
   byNatural,
@@ -22,6 +23,7 @@ import {
   groupLabels,
   ID_LEAD,
   type LabelContext,
+  MAX_LISTED,
   memberText,
   namedStubs,
   rangeLabel,
@@ -481,7 +483,10 @@ const buildDetail = (a: Assembly, g: SplitGroup): DetailBuilt | string => {
   const source = emitSource(work, { graph, stubs: new Set(Object.keys(stubs)) });
   const detail = { group: g.id, graph, stubs, rows, source, nodes: shape.nodes, score, split: null };
   if (meets(shape.nodes, score, a.config)) return { detail, nested: null };
-  const nested = a.split(buildWorkGraph(graph, { direction: work.direction, rows: 0, stubs: Object.keys(stubs) }));
+  const measured = { nodes: shape.nodes, edges: shape.edges, subgraphs: shape.subgraphs, depth: shape.depth };
+  const nested = a.split(
+    buildWorkGraph(graph, { direction: work.direction, rows: 0, stubs: Object.keys(stubs), measured }),
+  );
   if (typeof nested === "string") return `the detail of ${g.label} exceeds the target and does not split: ${nested}`;
   return { detail: { ...detail, split: nested.plan }, nested };
 };
@@ -497,7 +502,10 @@ const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.lab
 const namingOf = (work: WorkGraph, part: Partition, g: Group): Naming => {
   const labels = g.members.map((m) => labelOf(work, m));
   const markdown = g.members.some((m) => work.nodes.get(m)?.markdown);
-  const whole = markdown ? { family: null, lane: null } : wholeNaming(work, g);
+  const whole = {
+    ...(markdown ? { family: null, lane: null } : wholeNaming(work, g)),
+    fanList: fanOf(work, part, g) !== null,
+  };
   const idLed = labels.every((l) => ID_LEAD.test(l));
   // Twin chains are named by an entry, so a range never spans two stages of them.
   const runs = (g.reason === "twins" || g.reason === "sibling leaves") && chainEntries(work, g.members) === null;
@@ -522,14 +530,16 @@ const optionsOf = (choices: LabelParts[], id: string, shared: boolean): Array<La
   return shared ? [...qualified, ...plain, ...others] : [...plain, ...qualified, ...others];
 };
 
-// Groups of two members folded alike, by tier and reason, take pair labels
-// only when every one of them can, so groups folded alike read alike
-// (MJL-0038): a pair choice is dropped from all of them otherwise.
+// Groups of two or three members folded alike, by tier and reason, take pair
+// or list labels only when every one of them can, so groups folded alike read
+// alike (MJL-0038, MJL-0039): the choice is dropped from all of them, and from
+// a larger group of leaves folded alike that could list its members
+// (MJL-0040), otherwise.
 const alikePairs = (part: Partition, choices: LabelParts[][]): LabelParts[][] => {
   const kind = (g: Group): string => `${g.tier}\u0000${g.reason}`;
   const blocked = new Set(
     part.groups
-      .filter((g, i) => g.members.length === 2 && !(choices[i] ?? []).some((c) => c.pair !== undefined))
+      .filter((g, i) => g.members.length <= MAX_LISTED && !(choices[i] ?? []).some((c) => c.pair !== undefined))
       .map(kind),
   );
   return choices.map((cs, i) => {
@@ -558,7 +568,7 @@ const fanChoices = (
 };
 
 const splitGroupOf = (work: WorkGraph, g: Group, id: string, pick: (LabelParts & { label: string }) | undefined) => {
-  const { base, n, markdown, label, pair } = pick ?? { base: "", n: 0, label: "" };
+  const { base, n, markdown, label, pair, span } = pick ?? { base: "", n: 0, label: "" };
   const shape = agreedShape(work, g);
   return {
     id,
@@ -566,6 +576,7 @@ const splitGroupOf = (work: WorkGraph, g: Group, id: string, pick: (LabelParts &
     labelBase: base,
     hidden: n,
     ...(pair !== undefined ? { paired: pair } : {}),
+    ...(span ? { spanned: span } : {}),
     ...(markdown ? { markdown } : {}),
     members: g.members,
     regions: g.regions,
@@ -625,6 +636,7 @@ const labelContext = (work: WorkGraph, part: Partition, groups: SplitGroup[]): L
           label: s.label,
           ...(s.markdown ? { markdown: s.markdown } : {}),
           ...(s.paired !== undefined ? { paired: true as const } : {}),
+          ...(s.spanned ? { spanned: true as const } : {}),
         },
       ];
     }),
@@ -688,10 +700,12 @@ export const assemble = (folded: Folded, config: ThresholdConfig, split: SplitDe
   }
   const rowDetails = rowDetailsOf(work, part, config);
   const shape = overviewShape(work, part, quotientEdges(work, part));
+  const ladder = ladderOf(work, folded.snapshots, config);
   const stubs = new Set(overview.nodes.filter((n) => work.stubs.has(n.id)).map((n) => n.id));
   const plan: SplitPlan = {
     diagram_type: work.type,
     tier: folded.tier,
+    flagged: flaggedText(work, config, ladder, folded.tier),
     groups,
     overview,
     overviewSource: emitSource(work, { graph: overview, stubs, groups: new Set(groups.map((g) => g.id)) }),
@@ -700,7 +714,7 @@ export const assemble = (folded: Folded, config: ThresholdConfig, split: SplitDe
     details,
     rowDetails,
     loss: lossOf(work, folded, drawnRows(work, details, rowDetails)),
-    ladder: ladderOf(work, folded.snapshots, config),
+    ladder,
   };
   return { plan, work, covers, snapshots: folded.snapshots, nested: builds };
 };

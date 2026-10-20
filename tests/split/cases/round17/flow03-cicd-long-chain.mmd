@@ -1,0 +1,18 @@
+%% source: authored (GitHub Actions monorepo release pipeline)
+%% kind: flowchart CI/CD long chain
+flowchart LR
+  push["git push to main"] --> checkout["actions/checkout"] --> cache["Restore bun cache"] --> install["bun install --frozen-lockfile"]
+  install --> lint["biome check"] --> typecheck["tsc --noEmit"] --> unit["bun test unit"] --> coverage["Coverage gate 90%"]
+  coverage --> build["Bundle dist for Node"] --> sbom["Generate SBOM"] --> scan["Trivy vulnerability scan"] --> sign["cosign sign image"]
+  sign --> pushimg["Push to GHCR"] --> deploydev["Deploy to dev"] --> smokedev["Smoke tests dev"] --> e2e["Playwright e2e"]
+  e2e --> perf["k6 load test"] --> deploystg["Deploy to staging"] --> smokestg["Smoke tests staging"] --> approval{"Manual approval"}
+  approval -->|approved| canary["Canary 5% prod"] --> metrics["Watch SLO burn rate 15 min"] --> canary50["Canary 50% prod"] --> metrics2["Watch SLO burn rate 30 min"]
+  metrics2 --> full["Promote 100% prod"] --> tag["Create git tag"] --> release["Publish GitHub release"] --> npm["npm publish"] --> notify["Notify Slack #releases"]
+  approval -->|rejected| abort["Abort release"] --> notifyfail["Notify on-call"]
+  metrics -->|burn too high| rollback["Rollback canary"] --> notifyfail
+  metrics2 -->|burn too high| rollback
+  scan -->|critical CVE| blockrel["Block release"] --> notifyfail
+  unit -->|failure| annotate["Annotate PR with failures"]
+  e2e -->|flaky| retry["Retry once"] --> e2e
+  notify --> docs["Deploy docs site"] --> changelog["Update changelog index"] --> homebrew["Bump Homebrew tap"] --> container["Tag latest container"]
+  container --> sbomup["Attach SBOM to release"] --> provenance["SLSA provenance attestation"]

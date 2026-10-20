@@ -135,7 +135,9 @@ describe("a stub for a member of a group", () => {
       expect(texts.filter((t) => t.endsWith(" (in group)"))).toEqual([]);
       // The member a group is named after shows its own label alone (MJL-0038).
       expect(texts).toContain("CUSTOMER");
-      expect(texts).toContain("PAYMENT_METHOD (in CUSTOMER (+2))");
+      // A member of a group of three named by every member shows its own label alone (MJL-0039).
+      expect(texts).toContain("PAYMENT_METHOD");
+      expect(texts.some((t) => t.startsWith("PAYMENT_METHOD (in "))).toBe(false);
     },
     SLOW,
   );

@@ -31,10 +31,10 @@ describe("flowchart", () => {
     const plan = await must(src, 5, 12);
     expect(plan.groups.map((g) => [g.tier, g.reason, g.label])).toEqual([
       ["T3", "author region", "Ops ﬂ°quot¶ßboxﬂ°quot¶ß (+3)"],
-      ["T2", "twins", "Orders (+2)"],
+      ["T2", "twins", "Orders (+Billing, Search)"],
     ]);
     expect(plan.overviewSource.split("\n")[0]).toBe("flowchart TB");
-    expect(plan.overviewSource).toContain('g2[["Orders (+2)"]]');
+    expect(plan.overviewSource).toContain('g2[["Orders (+Billing, Search)"]]');
     expect(plan.overviewSource).toContain('g1[["Ops #quot;box#quot; (+3)"]]');
     expect(plan.details[0]?.source).toContain('subgraph obs["Ops #quot;box#quot;"]');
     expect(plan.details[1]?.source).toContain('s4(["API gateway"])');
@@ -75,7 +75,7 @@ describe("flowchart split twice", () => {
     const plan = await must(big, 6, 10);
     expect(plan.groups.map((g) => g.label)).toEqual(["One (+3)", "Two (+3)"]);
     expect(plan.details[0]?.source).toContain('subgraph R1["One"]');
-    expect(plan.details.map((d) => d.split?.groups.map((g) => g.label))).toEqual([["a1 (+2)"], ["b1 (+2)"]]);
+    expect(plan.details.map((d) => d.split?.groups.map((g) => g.label))).toEqual([["a1 (+a2, a3)"], ["b1 (+b2, b3)"]]);
   });
 });
 

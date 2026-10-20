@@ -60,6 +60,9 @@ relates_to:
   - relation: extended_by
     target: MJL-0038
     note: a tangled schema that meets its target by rows alone still folds its aggregates, each pair named by both members
+  - relation: excepted_by
+    target: MJL-0039
+    note: a tangled schema that meets its target by rows alone folds no aggregate
 
 decision:
   given: a reader of an overview reads its groups as the diagram's own structure. The reader compares regions drawn from one template side by side, and counts relationships as lines. A ticket key or a template is the author's own grouping, and an alphabetical range is no grouping at all

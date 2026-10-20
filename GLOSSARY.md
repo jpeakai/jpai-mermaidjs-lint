@@ -299,6 +299,13 @@ Twin chains whose stages a Lane Label names take it first.
 `CHANGELOG.md`, the curated list of user-visible changes per Release.
 Its Unreleased section holds what is on main but not yet released.
 
+## Closed Aggregate
+
+An Aggregate one member of which holds every relationship that crosses its edge, as ROOM with BUILDING.
+Its other members relate to nothing outside it.
+Folded, it draws every relationship it keeps at the entity that holds it.
+A diagram that meets the target by dropping Rows alone folds only its Closed Aggregates, each named by every member, per [MJL-0040](adrs/0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md).
+
 ## Config File
 
 The optional `mermaidjs-lint.config.json` or `.mjs` that switches Rules off and sets their options.
@@ -391,9 +398,18 @@ No node outside it leads with that namespace, per [MJL-0036](adrs/0036-a-group-i
 
 ## Fan Label
 
-A Group Node label naming a group that holds every leaf one overview node leads to, as `Checkout domain → … (+4)`.
+A Group Node label naming a group that holds every leaf one overview node leads to, as `Order service → … (+5)`.
 It reads `… → ` and the node's name for leaves leading into it, and counts every member.
 The name is a kept node's label or the base label a group shows, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
+Such a group takes a List Label first when its members' labels fit one, per [MJL-0040](adrs/0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md).
+
+## Flagged Text
+
+The sentence a Split Plan carries saying why it was offered, as `flagged at 23 nodes and a score of 63.75, against a split target of 25 nodes and 40: over on its score alone`.
+The size is the one the complexity rules measured, Rows counted, and a Detail Diagram split again reports its own.
+A plan at `T1` adds that its Rows move to Row Diagrams and no node folds, per [MJL-0039](adrs/0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md).
+A plan that folds Closed Aggregates once Rows are dropped says that only those fold, per [MJL-0040](adrs/0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md).
+
 
 ## Fence
 
@@ -485,6 +501,15 @@ Each place along the chains is named by the namespace every label there leads wi
 Failing that, it is the first word they all lead with, and failing that an ellipsis.
 At least one place is named, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Two first words, as `Extract` and `Ingest`, name a place joined by a slash, per [MJL-0038](adrs/0038-twin-chains-fold-whole-and-a-pair-names-both-members.md).
+
+## List Label
+
+A Group Node label naming every member of a group of three, as `ADDRESS (+CITY, COUNTRY)`.
+The other two labels stand in natural order in place of the count.
+Neither other label holds a comma, and a stub for any member shows its own label alone, per [MJL-0039](adrs/0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md).
+A group a Range Label, Family Label or Lane Label names keeps that label.
+A group of leaves a Fan Label may name lists every member however many, within 80 characters, as `Carrier quote API (+ECB rates feed, Payment provider API, SMTP relay)`, per [MJL-0040](adrs/0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md).
+
 
 ## LLM Fix
 
@@ -670,6 +695,13 @@ Where a Plugin came from, shown in `--list-rules` and `--json`.
 It is local for a file in `.mermaidjs-lint/rules`, and package for a declared `mermaidjs-lint-plugin-*` dependency.
 It is config for an entry in the Config File's `plugins` list.
 
+## Span Label
+
+A Group Node label naming a flowchart group by the member its flow enters at and the one it leaves from.
+It reads as `git push to main → tsc --noEmit (+4)`, counting the members neither names.
+The entry is the one member every edge from outside reaches, else the one no edge reaches, and the exit likewise, per [MJL-0039](adrs/0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md).
+A stub for either end shows its own label alone.
+
 ## Split Alternative
 
 What a refused Split Plan prints in its place when its reason says a list or table reads better, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
@@ -736,7 +768,8 @@ A node's directive includes what it inherits from its classes.
 ## Tangled Overview
 
 An `erDiagram` Overview whose independent cycles, edges less nodes plus one, number at least a quarter of its nodes.
-Once the target is met, even by dropping rows alone, it folds Aggregates evenly, down to 60% of `nodeTarget`, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+Once the target is met by folding, it folds Aggregates evenly, down to 60% of `nodeTarget`, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
+One that meets the target by dropping rows alone folds only its Closed Aggregates, per [MJL-0040](adrs/0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md), where [MJL-0039](adrs/0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) folded nothing.
 Each fold takes away an overview edge per entity it hides and adds no new reachable pair, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 
 ## Tenet

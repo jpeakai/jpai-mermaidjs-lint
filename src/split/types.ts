@@ -24,6 +24,10 @@ export interface SplitGroup {
   // For a pair label, the other member's label it shows in place of " (+N)",
   // as "ROOM (+BUILDING)", N then 0 (MJL-0038).
   paired?: string;
+  // Whether the label is a span label, naming the member a flowchart group's
+  // flow enters at and the one it leaves from, as "git push to main → tsc
+  // --noEmit (+4)" (MJL-0039).
+  spanned?: true;
   // Whether the label is a markdown string, as the label it is taken from.
   markdown?: true;
   members: string[];
@@ -91,6 +95,9 @@ export interface SplitPlan {
   diagram_type: string;
   // The last tier that changed the plan.
   tier: Tier;
+  // Why the plan was offered: the size the diagram was measured at, the
+  // split target, and which measure is over (MJL-0039).
+  flagged: string;
   groups: SplitGroup[];
   overview: DiagramGraph;
   overviewSource: string;

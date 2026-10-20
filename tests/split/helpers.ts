@@ -6,7 +6,7 @@ import { configFromPreset, type ThresholdConfig } from "../../src/parse/metrics.
 import { extractStats } from "../../src/parse/stats.ts";
 import type { Build } from "../../src/split/assemble.ts";
 import { buildWorkGraph, type WorkGraph } from "../../src/split/graph.ts";
-import { directionOf } from "../../src/split/index.ts";
+import { directionOf, measuredOf } from "../../src/split/index.ts";
 import { planWork } from "../../src/split/plan.ts";
 import { EMPTY_PARTITION, type Partition, quotientEdges } from "../../src/split/quotient.ts";
 import { type FoldRules, STRICT } from "../../src/split/rules.ts";
@@ -26,7 +26,7 @@ export const workOf = async (source: string): Promise<WorkGraph> => {
     extractStats(source),
     directionOf(source),
   ]);
-  return buildWorkGraph(graph, { direction, rows: stats.rows });
+  return buildWorkGraph(graph, { direction, rows: stats.rows, measured: measuredOf(stats) });
 };
 
 export const ctxOf = (

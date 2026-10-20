@@ -1,5 +1,6 @@
-// The strict text-only checker (checker.ts) over five evaluation case sets,
-// every preset: no plan may carry a BUG or AMBIG finding. Then mutations of
+// The strict text-only checker (checker.ts) over every evaluation case set,
+// every preset: no plan may carry a BUG or AMBIG finding, and every refused
+// star or mesh prints a faithful list or matrix. Then mutations of
 // real plans, each a change a faithful plan never shows, which the checker
 // must catch: the declared merged marker transitions and the erDiagram
 // overview's exact edges are accepted only as declared.
@@ -7,15 +8,17 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { extractGraph } from "../../src/parse/graph.ts";
 import { configFromPreset, PRESET_NAMES, type ThresholdConfig } from "../../src/parse/metrics.ts";
-import { splitOutcome } from "../../src/split/index.ts";
+import { DENSE_MESH, STAR, splitOutcome } from "../../src/split/index.ts";
 import type { SplitPlan } from "../../src/split/types.ts";
+import { unfaithful } from "./alternatives.ts";
 import { checkPlan } from "./checker.ts";
 import { lines, target } from "./helpers.ts";
 
 const SLOW = 30_000;
 const CASES = join(import.meta.dir, "cases");
-const SETS = ["round3", "adversarial", "semantic", "blind", "round9"];
+const SETS = ["round3", "adversarial", "semantic", "blind", "round9", "round11", "round12", "round13", "round14"];
 
 const serious = async (source: string, plan: SplitPlan, cfg: ThresholdConfig): Promise<string[]> =>
   (await checkPlan(source, plan, cfg, "")).filter((f) => f.sev === "BUG" || f.sev === "AMBIG").map((f) => f.msg);
@@ -33,6 +36,12 @@ describe.each(SETS)("the %s case set reads back with no BUG finding", (set) => {
         const cfg = configFromPreset(preset);
         const out = await splitOutcome(source, cfg);
         if (out.plan) found.push(...(await serious(source, out.plan, cfg)).map((m) => `${preset}${m}`));
+        // A star or mesh refused prints a list or matrix in its place, read
+        // back here against the graph, so each case is planned only once.
+        if ((out.reason === STAR || out.reason === DENSE_MESH) && !out.alternative)
+          found.push(`${preset} no alternative`);
+        if (out.alternative)
+          found.push(...unfaithful(await extractGraph(source), out.alternative).map((m) => `${preset} ${m}`));
       }
       expect(found).toEqual([]);
     },

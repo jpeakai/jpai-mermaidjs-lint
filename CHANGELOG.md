@@ -19,6 +19,10 @@ Anything under `Unreleased` is on `main` but not yet released.
   They now come in from one stub for that member, and the source's detail draws the target as one stub.
   So a pipeline's scheduler detail draws three stubs where it drew eight.
 
+### Fixed
+
+- A split plan parses each candidate diagram once, not once per measurement, so a complexity finding with a plan is reported about twice as fast.
+
 ## [0.11.0] - 2026-10-19
 
 ### Added

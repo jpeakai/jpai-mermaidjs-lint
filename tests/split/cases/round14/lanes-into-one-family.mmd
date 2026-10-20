@@ -1,0 +1,21 @@
+flowchart LR
+  cron["Nightly cron"] --> kick["Kick off loads"]
+  kick --> l1["Load ads clicks"]
+  kick --> l2["Load app installs"]
+  kick --> l3["Load web visits"]
+  kick --> l4["Load store sales"]
+  l1 --> r1["raw.clicks"]
+  l2 --> r2["raw.installs"]
+  l3 --> r3["raw.visits"]
+  l4 --> r4["raw.sales"]
+  r1 --> qa["Row count checks"]
+  r2 --> qa
+  r3 --> qa
+  r4 --> qa
+  qa --> m1["mart.attribution"]
+  qa --> m2["mart.retention"]
+  qa --> m3["mart.revenue"]
+  m1 --> bi["Dashboards"]
+  m2 --> bi
+  m3 --> bi
+  qa -->|failed| pager["Page on-call"]

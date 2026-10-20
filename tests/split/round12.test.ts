@@ -6,7 +6,7 @@
 // region whole however much of the diagram it holds: round13.test.ts.
 
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { checkMarkdown } from "../../src/index.ts";
 import { extractGraph } from "../../src/parse/graph.ts";
@@ -138,31 +138,9 @@ describe("a list or matrix read back through mdast", () => {
   });
 });
 
-describe("every refused star or mesh", () => {
-  test(
-    "every refused star or mesh among the test cases prints a faithful alternative",
-    async () => {
-      const files = (dir: string): string[] =>
-        readdirSync(dir).flatMap((f) => {
-          const path = join(dir, f);
-          return statSync(path).isDirectory() ? files(path) : f.endsWith(".mmd") ? [path] : [];
-        });
-      let seen = 0;
-      for (const file of files(CASES)) {
-        const source = readFileSync(file, "utf8");
-        for (const preset of PRESET_NAMES) {
-          const out = await splitOutcome(source, configFromPreset(preset));
-          if (out.reason === STAR || out.reason === DENSE_MESH) expect(out.alternative).toBeDefined();
-          if (!out.alternative) continue;
-          seen++;
-          expect(unfaithful(await extractGraph(source), out.alternative)).toEqual([]);
-        }
-      }
-      expect(seen).toBeGreaterThan(3);
-    },
-    SLOW * 4,
-  );
-
+// Every refused star or mesh among the case sets is read back against its
+// graph in checker.test.ts, which plans each case once.
+describe("a refused star or mesh on the command line", () => {
   test(
     "--split-plan prints the list or matrix after the reason, and the remediation points to it",
     async () => {

@@ -17,7 +17,7 @@ import { faithful } from "./faithful.ts";
 
 const SLOW = 60_000;
 const CASES = join(import.meta.dir, "cases");
-const read = (name: string): string => readFileSync(join(CASES, "round14", `${name}.mmd`), "utf8");
+const read = (name: string): string => readFileSync(join(CASES, "round13", `${name}.mmd`), "utf8");
 
 const planOf = async (source: string, preset: string): Promise<SplitPlan> => {
   const cfg = configFromPreset(preset);

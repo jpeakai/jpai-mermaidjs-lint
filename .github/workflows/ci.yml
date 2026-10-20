@@ -16,7 +16,9 @@ jobs:
   check:
     runs-on: ubuntu-latest
     name: Check (Node ${{ matrix.node }})
-    timeout-minutes: 10
+    # The split-plan suite reads every emitted plan back through the parsers,
+    # so the gate runs 7 to 10 minutes; 20 leaves room for slow runners.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:

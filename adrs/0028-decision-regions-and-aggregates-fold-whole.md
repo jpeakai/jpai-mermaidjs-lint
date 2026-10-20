@@ -27,6 +27,7 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 - Extended by [MJL-0033](0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md) (a tangled erDiagram folds aggregates past the target, down to the share an evened overview keeps)
 - Excepted by [MJL-0034](0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md) (an aggregate draws no relationship twice, and a root's aggregate may fold trimmed)
 - Excepted by [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) (a group of two shows the other member's label in place of the count)
+- Excepted by [MJL-0041](0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md) (a decision region folded far larger than the median group opens, and the regions inside it fold apart)
 
 ## Decision
 

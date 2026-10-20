@@ -244,9 +244,10 @@ const within = (inner: FlowRegion, outer: FlowRegion): boolean =>
   inner.members.length < outer.members.length && inner.members.every((m) => outer.members.includes(m));
 
 // Decision regions, innermost first: a region is offered once every region
-// inside it has folded or cannot fold.
+// inside it has folded or cannot fold. A region the plan opened is never
+// offered, so the regions inside it fold apart (MJL-0041).
 export const proposeRegions = (ctx: TierContext): Candidate[] => {
-  const regions = flowRegionsOf(ctx.work);
+  const regions = flowRegionsOf(ctx.work).filter((r) => !ctx.rules.open?.has(r.head));
   const open = new Map(regions.map((r) => [r, regionCandidate(ctx, r)]));
   return regions.flatMap((r) => {
     const c = open.get(r);

@@ -10,7 +10,14 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **A decision region folded far larger than the other groups opens.** When a plan of three groups or more folds a decision region into a group holding more than twice the median group's members, it walks again with that region left open, per [MJL-0041](adrs/0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md).
+  It keeps that plan when the overview still meets the target and its largest group is smaller.
+  So a loan flow at `medium-density` shows its `Thin file?` decision between its two scoring branches, where it folded `Thin file? (+10)`.
+- **A span label holds both its labels whole up to 80 characters.** A group entered at one member and left from another reads `Sanctions list hit? → Pull credit bureau file (+3)`, where it read `Sanctions list hit? (+4)`.
+  A span label is never cut.
+- **A stub for a range's end shows its own label.** A stub for the first or the last member a range label names reads `REL-0042`, where it read `REL-0042 (in REL-0042 … REL-0044 (+1))`.
 
 ## [0.15.0] - 2026-10-20
 

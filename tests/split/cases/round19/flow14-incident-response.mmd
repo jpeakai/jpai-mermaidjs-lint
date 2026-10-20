@@ -1,0 +1,33 @@
+%% source: https://response.pagerduty.com/ (incident response process, paraphrased)
+%% kind: flowchart decision-heavy incident triage
+flowchart TD
+  alert(["Alert fires"]) --> ack{"Acknowledged in 5 min?"}
+  ack -->|No| escalate["Escalate to secondary"] --> ack2{"Acknowledged in 5 min?"}
+  ack2 -->|No| mgr["Page engineering manager"] --> triage
+  ack2 -->|Yes| triage
+  ack -->|Yes| triage["Triage impact"]
+  triage --> customer{"Customer impact?"}
+  customer -->|No| ticket["Open low-priority ticket"] --> done(["Close alert"])
+  customer -->|Yes| sev{"More than 10% of users?"}
+  sev -->|Yes| sev1["Declare SEV-1"]
+  sev -->|No| data{"Data loss risk?"}
+  data -->|Yes| sev1
+  data -->|No| sev2["Declare SEV-2"]
+  sev1 --> ic["Assign incident commander"]
+  sev2 --> ic
+  ic --> roles["Assign scribe and comms lead"] --> bridge["Open incident bridge"]
+  bridge --> status["Post status page update"]
+  bridge --> diagnose["Diagnose"]
+  diagnose --> recent{"Recent deploy?"}
+  recent -->|Yes| rollback["Roll back deploy"] --> fixed{"Recovered?"}
+  recent -->|No| infra{"Infra provider incident?"}
+  infra -->|Yes| failover["Fail over region"] --> fixed
+  infra -->|No| dep{"Dependency degraded?"}
+  dep -->|Yes| shed["Enable load shedding"] --> fixed
+  dep -->|No| hotfix["Develop hotfix"] --> fixed
+  fixed -->|No| expand["Pull in more responders"] --> diagnose
+  fixed -->|Yes| monitor["Monitor 30 min"] --> stable{"Stable?"}
+  stable -->|No| diagnose
+  stable -->|Yes| resolve["Resolve incident"]
+  resolve --> statusfinal["Final status update"]
+  resolve --> pm["Schedule postmortem"] --> actions["Track action items"] --> done2(["Incident closed"])

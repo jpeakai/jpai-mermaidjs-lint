@@ -19,6 +19,9 @@ export interface FoldRules {
   minHidden: number;
   // A T5 or T6 group never holds nodes of two prefix families (stageOf).
   keepFamilies: boolean;
+  // The decisions whose regions stay open, each one a region a plan folded
+  // into a group far larger than the others (plan.ts oversized, MJL-0041).
+  open?: ReadonlySet<string>;
 }
 
 export const STRICT: FoldRules = {

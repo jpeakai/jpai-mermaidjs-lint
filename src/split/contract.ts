@@ -206,7 +206,7 @@ const sourcesOf = (build: Build, g: SplitGroup) => {
 const groupLabelViolations = (build: Build, g: SplitGroup): Violations => {
   const out: Violations = [];
   const [base, n] = [g.labelBase, g.hidden];
-  if (!groupLabels({ base, n, markdown: g.markdown, pair: g.paired }, g.id).includes(g.label))
+  if (!groupLabels({ base, n, markdown: g.markdown, pair: g.paired, span: g.spanned }, g.id).includes(g.label))
     out.push(`4: group ${g.id} label is not its parts`);
   if (g.paired !== undefined) return [...out, ...pairViolations(build, g)];
   const { range, plain, qualified, whole, spanned } = sourcesOf(build, g);

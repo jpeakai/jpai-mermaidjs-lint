@@ -211,6 +211,6 @@ describe("a span label", () => {
     expect(spanLabel("a → b", "c")).toBeNull();
     expect(spanLabel("a", "c …")).toBeNull();
     expect(spanLabel("<b>a</b>", "c")).toBeNull();
-    expect(spanLabel("Watch SLO burn rate 15 min", "Watch SLO burn rate 30 min")).toBeNull();
+    expect(spanLabel("a".repeat(41), "b".repeat(41))).toBeNull();
   });
 });

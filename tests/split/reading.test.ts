@@ -319,7 +319,11 @@ describe("a decision region hiding one node", () => {
       const plan = await planOf(DECISIONS.source, configFromPreset("high-density"));
       const thin = plan.groups.filter((g) => g.reason === "decision region" && g.members.length < 3);
       expect(thin).toEqual([]);
-      expect(plan.overview.nodes.map((n) => n.id)).toContain("signed");
+      // The sign-off decision shows, or folds with the whole large-loan region (MJL-0041).
+      const signed = plan.groups.find((g) => g.members.includes("signed"));
+      expect(
+        signed === undefined ? plan.overview.nodes.some((n) => n.id === "signed") : signed.members.length >= 3,
+      ).toBe(true);
     },
     SLOW,
   );

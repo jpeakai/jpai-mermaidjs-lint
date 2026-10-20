@@ -44,6 +44,7 @@
 | [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) | Twin chains fold whole, a group of two names both members, and leaves are named by the node they hang from | accepted |
 | [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) | A diagram over its target only for its rows folds nothing more, a plan says why it was flagged, and a group is named by every member or by where its flow enters and leaves | accepted |
 | [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) | A diagram over its target only for its rows folds its closed aggregates, and a group of leaves is named by every member | accepted |
+| [MJL-0041](0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md) | A decision region folded far larger than the other groups opens, a span label shows both its labels whole, and a stub for a range's end shows its own label | accepted |
 # By group
 
 ## cli
@@ -67,6 +68,7 @@
 * [MJL-0038](0038-twin-chains-fold-whole-and-a-pair-names-both-members.md) - How a split plan folds twin chains and names groups of two and groups of leaves
 * [MJL-0039](0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md) - When a plan stops at rows dropped, why it says it was offered, and how small groups and runs are named
 * [MJL-0040](0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md) - Which aggregates fold once rows dropped meet the target, and how a group of leaves is named
+* [MJL-0041](0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md) - When a plan opens a decision region, how long a span label is, and how a stub names a range end
 ## config
 
 * [MJL-0010](0010-thresholds-are-options-not-environment.md) - A preset and numeric overrides come from the config or a flag
@@ -168,6 +170,7 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0028 --extended_by--> MJL-0033
 * MJL-0028 --excepted_by--> MJL-0034
 * MJL-0028 --excepted_by--> MJL-0038
+* MJL-0028 --excepted_by--> MJL-0041
 * MJL-0029 --extends--> MJL-0028
 * MJL-0029 --extended_by--> MJL-0030
 * MJL-0029 --excepted_by--> MJL-0033
@@ -236,6 +239,7 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0037 --extends--> MJL-0036
 * MJL-0037 --extends--> MJL-0031
 * MJL-0037 --extended_by--> MJL-0038
+* MJL-0037 --extended_by--> MJL-0041
 * MJL-0038 --extends--> MJL-0035
 * MJL-0038 --excepts--> MJL-0029
 * MJL-0038 --extends--> MJL-0036
@@ -252,6 +256,12 @@ The same edge set is rendered as prose in [graph.md](graph.md), and as data in [
 * MJL-0039 --extends--> MJL-0036
 * MJL-0039 --superseded_by--> MJL-0040
 * MJL-0039 --extended_by--> MJL-0040
+* MJL-0039 --excepted_by--> MJL-0041
+* MJL-0039 --extended_by--> MJL-0041
 * MJL-0040 --supersedes--> MJL-0039
 * MJL-0040 --extends--> MJL-0039
 * MJL-0040 --excepts--> MJL-0038
+* MJL-0041 --excepts--> MJL-0028
+* MJL-0041 --extends--> MJL-0037
+* MJL-0041 --excepts--> MJL-0039
+* MJL-0041 --extends--> MJL-0039

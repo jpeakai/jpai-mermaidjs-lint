@@ -42,6 +42,9 @@ relates_to:
   - relation: excepted_by
     target: MJL-0038
     note: a group of two shows the other member's label in place of the count
+  - relation: excepted_by
+    target: MJL-0041
+    note: a decision region folded far larger than the median group opens, and the regions inside it fold apart
 
 decision:
   given: some diagrams are mostly decisions, a flowchart or stateDiagram. In others, an erDiagram overview groups entities by leaves and junctions, not by what owns what

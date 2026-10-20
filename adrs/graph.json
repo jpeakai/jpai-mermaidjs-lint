@@ -620,6 +620,19 @@
     },
     {
       "data": {
+        "id": "MJL-0041",
+        "label": "0041",
+        "parent": "group-complexity",
+        "colour": "#0891b2",
+        "file": "0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md",
+        "title": "A decision region folded far larger than the other groups opens, a span label shows both its labels whole, and a stub for a range's end shows its own label",
+        "description": "When a plan opens a decision region, how long a span label is, and how a stub names a range end",
+        "status": "accepted",
+        "tags": "complexity, split"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0001-depended_on_by-MJL-0002",
         "source": "MJL-0001",
         "target": "MJL-0002",
@@ -1106,6 +1119,16 @@
         "label": "excepted by",
         "relation": "excepted_by",
         "note": "a group of two shows the other member's label in place of the count"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0028-excepted_by-MJL-0041",
+        "source": "MJL-0028",
+        "target": "MJL-0041",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a decision region folded far larger than the median group opens, and the regions inside it fold apart"
       }
     },
     {
@@ -1770,6 +1793,16 @@
     },
     {
       "data": {
+        "id": "MJL-0037-extended_by-MJL-0041",
+        "source": "MJL-0037",
+        "target": "MJL-0041",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a plan keeps its groups even by opening a decision region far larger than the others, as a leaf fold saving alike does"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0038-extends-MJL-0035",
         "source": "MJL-0038",
         "target": "MJL-0035",
@@ -1930,6 +1963,26 @@
     },
     {
       "data": {
+        "id": "MJL-0039-excepted_by-MJL-0041",
+        "source": "MJL-0039",
+        "target": "MJL-0041",
+        "label": "excepted by",
+        "relation": "excepted_by",
+        "note": "a span label holds twice the label cap, both its labels shown uncut, where MJL-0039 held it to 40 characters"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0039-extended_by-MJL-0041",
+        "source": "MJL-0039",
+        "target": "MJL-0041",
+        "label": "extended by",
+        "relation": "extended_by",
+        "note": "a stub for the first or last member a range label names shows its own label, as a stub for a span's end does"
+      }
+    },
+    {
+      "data": {
         "id": "MJL-0040-supersedes-MJL-0039",
         "source": "MJL-0040",
         "target": "MJL-0039",
@@ -1956,6 +2009,46 @@
         "label": "excepts",
         "relation": "excepts",
         "note": "a group of leaves whose labels fit a list is named by them, before the node they hang from"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0041-excepts-MJL-0028",
+        "source": "MJL-0041",
+        "target": "MJL-0028",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a decision region folded far larger than the median group opens, and the regions inside it fold apart"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0041-extends-MJL-0037",
+        "source": "MJL-0041",
+        "target": "MJL-0037",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a plan keeps its groups even by opening a decision region far larger than the others, as a leaf fold saving alike does"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0041-excepts-MJL-0039",
+        "source": "MJL-0041",
+        "target": "MJL-0039",
+        "label": "excepts",
+        "relation": "excepts",
+        "note": "a span label holds twice the label cap, both its labels shown uncut, where MJL-0039 held it to 40 characters"
+      }
+    },
+    {
+      "data": {
+        "id": "MJL-0041-extends-MJL-0039",
+        "source": "MJL-0041",
+        "target": "MJL-0039",
+        "label": "extends",
+        "relation": "extends",
+        "note": "a stub for the first or last member a range label names shows its own label, as a stub for a span's end does"
       }
     }
   ],

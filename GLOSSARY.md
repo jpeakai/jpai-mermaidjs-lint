@@ -324,6 +324,7 @@ Every edge into it enters the branching node, and every edge out of it reaches t
 A branch that ends the flow is folded inside it.
 A Split Plan's `T2` folds it whole, innermost first, into a Group Node named after the branching node.
 One hiding a single node is undone when the Overview and every Detail Diagram still meet the target without it.
+One folded far larger than the other groups is an Oversized Decision Region, and opens.
 
 ## Dense Mesh
 
@@ -541,6 +542,12 @@ A core Rule ID has none.
 The Docs Site's theme, in `docs-site/theme/osakanights/`, which another MkDocs Material site can adopt.
 Its colours come from Design Tokens.
 
+## Oversized Decision Region
+
+A Decision Region a Split Plan folded into a Group Node holding more than twice the median group's members, in a plan of three groups or more.
+The plan walks again with it left open, so its branching node shows in the Overview and the regions inside it fold apart.
+It keeps that plan when the Overview still meets the target and its largest group is smaller, per [MJL-0041](adrs/0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md).
+
 ## Overview
 
 The half of a Split Plan that keeps the whole Diagram's shape, with each group of nodes folded into one Group Node.
@@ -630,6 +637,7 @@ A Group Node label made of its first and last member labels in natural order, jo
 A count of the rest follows, such as `DATA-0381 … DATA-0383 (+1)`.
 A Split Plan offers it for twins, sibling leaves and members whose labels all lead with an id.
 It is refused when a member of another group has a label from the first to the last, per [MJL-0029](adrs/0029-runs-meshes-and-terminals-read-as-they-are.md).
+A stub for the first or the last member shows its own label alone, per [MJL-0041](adrs/0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md).
 
 ## Raw Diagram File
 
@@ -701,6 +709,7 @@ A Group Node label naming a flowchart group by the member its flow enters at and
 It reads as `git push to main → tsc --noEmit (+4)`, counting the members neither names.
 The entry is the one member every edge from outside reaches, else the one no edge reaches, and the exit likewise, per [MJL-0039](adrs/0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md).
 A stub for either end shows its own label alone.
+Its two labels hold at most 80 characters, twice the cap on other labels, and are never cut, per [MJL-0041](adrs/0041-an-oversized-decision-region-opens-and-a-span-label-shows-whole.md).
 
 ## Split Alternative
 

@@ -51,6 +51,12 @@ relates_to:
   - relation: extended_by
     target: MJL-0040
     note: a group of leaves lists every member, as a group of three does
+  - relation: excepted_by
+    target: MJL-0041
+    note: a span label holds twice the label cap, both its labels shown uncut, where MJL-0039 held it to 40 characters
+  - relation: extended_by
+    target: MJL-0041
+    note: a stub for the first or last member a range label names shows its own label, as a stub for a span's end does
 
 decision:
   given: >-

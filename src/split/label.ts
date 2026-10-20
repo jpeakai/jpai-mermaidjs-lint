@@ -136,13 +136,16 @@ export const fanLabel = (name: string, out: boolean): string | null => {
 // leaves at another by those two members' labels, joined by LANE_SEPARATOR,
 // as "git push to main → tsc --noEmit" for a run of setup steps (MJL-0039).
 // Neither label holds markup, an arrow or an ellipsis, and the label holds at
-// most LABEL_CAP characters. It counts the members it does not name, two
-// fewer than the group holds.
+// most SPAN_CAP characters, twice LABEL_CAP, as a list of leaves may, since
+// both labels are shown whole (MJL-0041). It counts the members it does not
+// name, two fewer than the group holds.
+export const SPAN_CAP = 2 * LABEL_CAP;
+
 export const spanLabel = (entry: string, exit: string): string | null => {
   if (entry === exit) return null;
   if ([entry, exit].some((l) => l.trim() === "" || l !== l.trim() || MARKUP.test(l) || /[→…]/.test(l))) return null;
   const base = `${entry}${LANE_SEPARATOR}${exit}`;
-  return [...graphemes.segment(base)].length <= LABEL_CAP ? base : null;
+  return [...graphemes.segment(base)].length <= SPAN_CAP ? base : null;
 };
 
 const labelOf = (work: WorkGraph, id: string): string => work.nodes.get(id)?.label ?? id;
@@ -217,12 +220,20 @@ export const listedOthers = (named: string, labels: readonly string[], limits = 
 
 // The labels a group may show, preferred first: the label cut, the whole
 // label, then the label cut with the group's id, for when another node or
-// group already shows the others. A pair label is shown only whole.
+// group already shows the others. A pair label is shown only whole, and a
+// span label is never cut, since its two labels are what it says (MJL-0041).
 export const groupLabels = (
-  { base, n, markdown, pair }: { base: string; n: number; markdown?: true | undefined; pair?: string | undefined },
+  {
+    base,
+    n,
+    markdown,
+    pair,
+    span,
+  }: { base: string; n: number; markdown?: true | undefined; pair?: string | undefined; span?: unknown },
   id: string,
 ): string[] => {
   if (pair !== undefined) return [`${base} (+${pair})`];
+  if (span !== undefined) return [`${base} (+${n})`, `${base} (+${n}) [${id}]`];
   const cut = `${shorten(base, markdown)} (+${n})`;
   return [...new Set([cut, `${base} (+${n})`, `${cut} [${id}]`])];
 };
@@ -247,9 +258,10 @@ const markdownOf = (work: WorkGraph, id: string): { markdown?: true } =>
 
 // Whether a stub for a member of a group shows its own label alone: the
 // group shows every member's label in a pair or list label, the member is
-// the entry or the exit a span label names (MJL-0039), or the member is the
-// one the group is named after, so the group's shown label leads with the
-// member's own label, uncut (MJL-0038).
+// the entry or the exit a span label names (MJL-0039), or the first or the
+// last a range label names (MJL-0041), or the member is the one the group is
+// named after, so the group's shown label leads with the member's own label,
+// uncut (MJL-0038).
 export const ownSuffices = (
   g: { label: string; base: string; markdown?: true; paired?: unknown; spanned?: unknown },
   own: string,
@@ -257,7 +269,14 @@ export const ownSuffices = (
 ): boolean =>
   g.paired !== undefined ||
   (g.spanned !== undefined && !markdown && spanEnds(g.base).includes(own)) ||
+  (!(markdown || g.markdown) && rangeEnds(g.base).includes(own) && g.label.startsWith(`${g.base} (+`)) ||
   (!(markdown || g.markdown) && g.base === own && g.label.startsWith(`${own} (+`));
+
+// The two labels a range label's base names, the first's then the last's.
+export const rangeEnds = (base: string): string[] => {
+  const parts = base.split(RANGE_SEPARATOR);
+  return parts.length === 2 ? parts : [];
+};
 
 // The two labels a span label's base names, the entry's then the exit's.
 export const spanEnds = (base: string): string[] => {

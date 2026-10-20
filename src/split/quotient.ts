@@ -6,7 +6,7 @@
 import type { GraphEdge, GraphNode } from "../parse/graph.ts";
 import { calculateComplexity, type ThresholdConfig } from "../parse/metrics.ts";
 import { byNatural, byText, byTuple, edgeKey, homeOf, regionWithin, sorted, type WorkGraph } from "./graph.ts";
-import { pairLabel } from "./label.ts";
+import { listedOthers } from "./label.ts";
 import type { Tier } from "./types.ts";
 
 export interface Group {
@@ -477,9 +477,12 @@ export const labelChoices = (
     b ? [{ base: b, n: i === 0 ? g.members.length - 2 : g.members.length }] : [],
   );
   const whole = [naming.family, naming.lane].flatMap((b) => (b ? [{ base: b, n: g.members.length }] : []));
+  // A run a range or a whole family or lane names reads as that run, so a
+  // group of three takes a list label only when none applies (MJL-0039).
+  const run = g.members.length > 2 && (range !== null || whole.length > 0);
   return [
     ...fromRegion,
-    ...(fromRegion.length === 0 ? pairChoices(work, g, [...head, ...ranked]) : []),
+    ...(fromRegion.length === 0 && !run ? pairChoices(work, g, [...head, ...ranked]) : []),
     ...head.map(label),
     ...whole,
     ...fromRange,
@@ -490,12 +493,18 @@ export const labelChoices = (
 // The pair label a group of two members may take: named after the first of
 // its members in the order given, the other's label in place of the count
 // (label.ts pairLabel). None for any other group or a markdown member.
+// A group of three takes the list label the same way, the other two in
+// natural order (label.ts listedOthers, MJL-0039).
 const pairChoices = (work: WorkGraph, g: Group, order: readonly string[]): LabelParts[] => {
   const [named] = order;
-  const other = g.members.find((m) => m !== named);
-  const [a, b] = [named === undefined ? undefined : work.nodes.get(named), other ? work.nodes.get(other) : undefined];
-  if (g.members.length !== 2 || !(a && b) || a.markdown || b.markdown) return [];
-  return pairLabel(a.label, b.label) === null ? [] : [{ base: a.label, n: 0, pair: b.label }];
+  const nodes = g.members.map((m) => work.nodes.get(m));
+  const a = named === undefined ? undefined : work.nodes.get(named);
+  if (!a || nodes.some((n) => n === undefined || n.markdown)) return [];
+  const pair = listedOthers(
+    a.label,
+    nodes.map((n) => n?.label ?? ""),
+  );
+  return pair === null ? [] : [{ base: a.label, n: 0, pair }];
 };
 
 // The one overview node every member of a group of leaves hangs from, with

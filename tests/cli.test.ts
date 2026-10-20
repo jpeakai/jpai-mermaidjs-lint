@@ -342,7 +342,9 @@ describe("--split-plan", () => {
     const r = await runCli(root, ["a.md", "--split-plan"]);
     expect(r.code).toBe(1);
     expect(r.stdout).toContain("complexity-node-count-cognitive-limit");
-    expect(r.stdout).toMatch(/\n## a\.md:1: split plan \(T[2-6]\)\n\n### Overview\n\n```mermaid\nflowchart LR\n/);
+    expect(r.stdout).toMatch(
+      /\n## a\.md:1: split plan \(T[2-6]\)\n\nFlagged at 60 nodes and a score of [\d.]+, against a split target of \d+ nodes and \d+: over on both\.\n\n### Overview\n\n```mermaid\nflowchart LR\n/,
+    );
     const details = r.stdout.match(/^### Detail g\d+: /gm) ?? [];
     expect(details.length).toBeGreaterThan(0);
     expect(r.stdout.match(/^```mermaid$/gm)?.length).toBe(details.length + 1);

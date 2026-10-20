@@ -71,6 +71,17 @@ export interface WorkGraph {
   pins: Map<string, string | null>;
   // The stubs of a detail diagram that is split again: never folded.
   stubs: Set<string>;
+  // The size the complexity rules measured the diagram at, rows aside, which
+  // the plan's flagged text reports (MJL-0039).
+  measured: Measured;
+}
+
+// A diagram's size as the visual complexity score counts it, rows aside.
+export interface Measured {
+  nodes: number;
+  edges: number;
+  subgraphs: number;
+  depth: number;
 }
 
 export const byText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
@@ -198,6 +209,7 @@ export interface WorkOptions {
   direction: string;
   rows: number;
   stubs?: Iterable<string>;
+  measured: Measured;
 }
 
 export const buildWorkGraph = (graph: DiagramGraph, options: WorkOptions): WorkGraph => {
@@ -230,6 +242,7 @@ export const buildWorkGraph = (graph: DiagramGraph, options: WorkOptions): WorkG
     protectedIds,
     pins,
     stubs,
+    measured: options.measured,
   };
 };
 

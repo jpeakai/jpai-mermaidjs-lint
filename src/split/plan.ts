@@ -437,21 +437,6 @@ const loosen = (start: Measure): Measure => {
   return m;
 };
 
-// An erDiagram that meets the target with rows dropped alone still draws
-// every entity and relationship: it folds aggregates evenly too, each fold
-// taking away an overview edge for every entity it hides and adding no new
-// reachable pair, so the overview gains the structure its aggregates give it
-// and only tight aggregates fold. Any other diagram stays at T1.
-const aggregatesToo = (start: Measure, snapshots: Snapshot[], walk: Walk): Folded => {
-  const { work } = start.ctx;
-  const done: Folded = { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
-  if (work.family !== "er" || !walk.order.includes("T4")) return done;
-  const m = foldEvenly(start, { tier: "T4", capped: true }, false);
-  return m.ctx.part.groups.length === 0
-    ? done
-    : { work, part: m.ctx.part, snapshots: [...snapshots, snapshotOf("T4", m.ctx.part)], tier: "T4" };
-};
-
 // How a walk climbs one tier: held to details that fit but for author regions
 // and aggregates on a walk letting them fold whatever their size, and in T3
 // adding no new reachable pair when the walk asks. T2 folds twin chains as the
@@ -467,10 +452,13 @@ const stepOf = (t: Tier, walk: Walk): Step => {
 };
 
 // Folds tier by tier until the overview meets the target, or returns why not.
+// A diagram whose rows alone put it over the target meets it at T1, rows
+// dropped, and folds nothing more: the fewest changes that meet the target
+// (MJL-0039).
 export const foldToTarget = (work: WorkGraph, config: ThresholdConfig, walk: Walk): Folded | string => {
   let m = measure(work, EMPTY_PARTITION, config, walk.rules);
   const snapshots: Snapshot[] = [snapshotOf("T1", EMPTY_PARTITION)];
-  if (meets(m.nodes, m.score, config)) return aggregatesToo(m, snapshots, walk);
+  if (meets(m.nodes, m.score, config)) return { work, part: EMPTY_PARTITION, snapshots, tier: "T1" };
   let tier: Tier = "T1";
   for (const t of walk.order) {
     const step = stepOf(t, walk);

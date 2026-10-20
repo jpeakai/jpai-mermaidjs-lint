@@ -134,6 +134,22 @@ const pairOk = (a: string, b: string): boolean =>
   !/^\d+$/.test(b) &&
   [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(`${a} (+${b})`)].length <= 40;
 
+// A list label, written out: a group of three members shows one member's
+// whole label, " (+", the other two in natural order joined by ", ", and ")".
+// Neither other label holds a comma, and each pairs with the named one.
+const listOk = (base: string, labels: readonly string[], shown: string): boolean => {
+  const others = labels.filter((l, i) => !(l === base && labels.indexOf(base) === i));
+  if (others.length !== labels.length - 1 || new Set(labels).size !== labels.length) return false;
+  if (labels.length === 2) return pairOk(base, others[0] ?? "") && shown === others[0];
+  const text = [...others].sort(natural).join(", ");
+  return (
+    labels.length === 3 &&
+    others.every((l) => !l.includes(",") && pairOk(base, l)) &&
+    pairOk(base, text) &&
+    shown === text
+  );
+};
+
 interface Ctx {
   G: DiagramGraph;
   O: DiagramGraph;
@@ -362,14 +378,14 @@ const fanOfReading = (
 // every member. A folded region's label may be
 // qualified by the label of the region the group node sits in, which is that
 // region's parent in the original, counting every member.
-// A pair label names the group's two members, by the rule.
+// A pair or list label names the group's two or three members, by the rule.
 const checkPair = (c: Ctx, d: Det, gs: Shown): void => {
-  const labels = d.members.map((m) => m.label).sort();
-  const ok =
-    d.members.length === 2 &&
-    pairOk(gs.base, gs.pair ?? "") &&
-    labels.join("\u0000") === [gs.base, gs.pair ?? ""].sort().join("\u0000");
-  if (!ok) c.add("BUG", "glabel", `group ${d.gid} pair label "${gs.label}" does not name its two members`);
+  const ok = listOk(
+    gs.base,
+    d.members.map((m) => m.label),
+    gs.pair ?? "",
+  );
+  if (!ok) c.add("BUG", "glabel", `group ${d.gid} pair label "${gs.label}" does not name its members`);
 };
 
 // Whether a base is a family, lane or fan label of the members.

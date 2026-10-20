@@ -19,8 +19,8 @@ import {
   fromMembers,
   groupLabels,
   IN,
+  listedOthers,
   ownSuffices,
-  pairLabel,
   rangeLabel,
   readerOf,
   readingsOf,
@@ -203,13 +203,15 @@ const groupLabelViolations = (build: Build, g: SplitGroup): Violations => {
   return out;
 };
 
-// A pair label (label.ts pairLabel): a group of two members, named after one
-// whole and showing the other's label in place of the count, N being 0.
+// A pair or list label (label.ts listedOthers): a group of two or three
+// members, named after one whole and showing the others' labels, recomputed
+// from the members, in place of the count, N being 0.
 const pairViolations = (build: Build, g: SplitGroup): Violations => {
   const labels = g.members.map((m) => build.work.nodes.get(m)?.label ?? m);
-  const named = labels.length === 2 && labels.includes(g.labelBase) && labels.includes(g.paired ?? "");
-  const exact = pairLabel(g.labelBase, g.paired ?? "") === g.label && g.hidden === 0 && !g.markdown;
-  return named && exact ? [] : [`4: group ${g.id} pair label "${g.label}" is not its two members'`];
+  const others = listedOthers(g.labelBase, labels);
+  const markdown = g.markdown || g.members.some((m) => build.work.nodes.get(m)?.markdown);
+  const exact = others !== null && others === g.paired && `${g.labelBase} (+${others})` === g.label;
+  return exact && g.hidden === 0 && !markdown ? [] : [`4: group ${g.id} pair label "${g.label}" is not its members'`];
 };
 
 // The fan label a group of leaves may show (label.ts fanLabel), from the name

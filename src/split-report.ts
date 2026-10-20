@@ -34,6 +34,7 @@ export const planLines = (plan: SplitPlan, level: number, parent: string | null 
     lines.push("", `${hashes} Detail ${name}: ${group?.label ?? detail.group}`, "");
     if (detail.split) {
       lines.push(`Detail ${name} is over the target, so it is split once more (${detail.split.tier}).`);
+      lines.push("", sentence(detail.split.flagged));
       lines.push(...planLines(detail.split, level + 1, name));
     } else {
       lines.push(mermaidFence(detail.source));
@@ -69,7 +70,7 @@ export const outcomeLines = (where: string, outcome: SplitOutcome): string[] => 
       ...(alternative ? ["", ALTERNATIVE_LEAD[alternative.kind], "", alternative.markdown] : []),
     ];
   }
-  return ["", `## ${where}: split plan (${plan.tier})`, ...planLines(plan, 3)];
+  return ["", `## ${where}: split plan (${plan.tier})`, "", sentence(plan.flagged), ...planLines(plan, 3)];
 };
 
 interface Flagged {

@@ -165,6 +165,28 @@ export const pairLabel = (named: string, other: string): string | null => {
   return [...graphemes.segment(label)].length <= LABEL_CAP ? label : null;
 };
 
+// The most members a group names one by one in place of its count: a group
+// of three shows the label it is named after, then " (+", the other two
+// labels in natural order joined by LIST_SEPARATOR, and ")", as
+// "ADDRESS (+CITY, COUNTRY)" (MJL-0039). Neither other label holds a comma,
+// which would read as two names, and each meets the pair rules.
+export const MAX_LISTED = 3;
+export const LIST_SEPARATOR = ", ";
+
+// The text a group's label shows in place of its count, naming every member
+// but the one it is named after: the other's label for a pair, the others in
+// natural order joined by LIST_SEPARATOR for a group of three. Null when the
+// group is larger, or a label breaks the pair rules or, in a list, holds a
+// comma.
+export const listedOthers = (named: string, labels: readonly string[]): string | null => {
+  const at = labels.indexOf(named);
+  const others = labels.filter((_, i) => i !== at);
+  if (at < 0 || labels.length < 2 || labels.length > MAX_LISTED || new Set(labels).size !== labels.length) return null;
+  if (others.length > 1 && others.some((l) => l.includes(","))) return null;
+  const text = [...others].sort(byNatural).join(LIST_SEPARATOR);
+  return others.every((l) => pairLabel(named, l) !== null) && pairLabel(named, text) !== null ? text : null;
+};
+
 // The labels a group may show, preferred first: the label cut, the whole
 // label, then the label cut with the group's id, for when another node or
 // group already shows the others. A pair label is shown only whole.

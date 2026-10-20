@@ -99,6 +99,22 @@ const pairOk = (a: string, b: string): boolean =>
   !/^\d+$/.test(b) &&
   [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(`${a} (+${b})`)].length <= 40;
 
+// A list label, written out: a group of three members shows one member's
+// whole label, " (+", the other two in natural order joined by ", ", and ")".
+// Neither other label holds a comma, and each pairs with the named one.
+const listOk = (base: string, labels: readonly string[], shown: string): boolean => {
+  const others = labels.filter((l, i) => !(l === base && labels.indexOf(base) === i));
+  if (others.length !== labels.length - 1 || new Set(labels).size !== labels.length) return false;
+  if (labels.length === 2) return pairOk(base, others[0] ?? "") && shown === others[0];
+  const text = [...others].sort(byNatural).join(", ");
+  return (
+    labels.length === 3 &&
+    others.every((l) => !l.includes(",") && pairOk(base, l)) &&
+    pairOk(base, text) &&
+    shown === text
+  );
+};
+
 interface Reading {
   original: DiagramGraph;
   overview: DiagramGraph;
@@ -121,13 +137,13 @@ const shownOf = (n: GraphNode): Shown | string => {
 
 // A pair label's problems: it names the group's two members, by the rule.
 const pairProblems = (r: Reading, gid: string, g: Shown, members: readonly GraphNode[]): string[] => {
-  const labels = members.map((m) => m.label).sort();
-  const byPair =
-    members.length === 2 &&
-    pairOk(g.base, g.pair ?? "") &&
-    labels.join("\u0000") === [g.base, g.pair ?? ""].sort().join("\u0000");
+  const byPair = listOk(
+    g.base,
+    members.map((m) => m.label),
+    g.pair ?? "",
+  );
   const clash = r.original.nodes.some((n) => n.label === g.label);
-  return byPair && !clash ? [] : [`group ${gid} pair label "${g.label}" is not its two members'`];
+  return byPair && !clash ? [] : [`group ${gid} pair label "${g.label}" is not its members'`];
 };
 
 // Whether a base is a family, lane or fan label of the members.

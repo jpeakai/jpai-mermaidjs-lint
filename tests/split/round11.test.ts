@@ -57,15 +57,17 @@ describe("an erDiagram overview", () => {
   });
 
   test(
-    "met by dropping rows alone still folds aggregates when it is tangled",
+    "met by dropping rows alone folds nothing, though it is tangled, and says why it was flagged",
     async () => {
+      // Since MJL-0039 the fewest changes that meet the target stand.
       const plan = await planOf(read("er06-university"), "high");
-      expect(plan.tier).toBe("T4");
-      expect(plan.overviewNodes).toBeLessThan(23);
-      expect(plan.overviewNodes).toBeGreaterThanOrEqual(15);
-      expect(plan.groups.every((g) => g.reason === "aggregate root")).toBe(true);
-      // Only tight aggregates fold since MJL-0034: none adds a new reachable pair.
-      expect(plan.loss.newReachablePairs).toBe(0);
+      expect(plan.tier).toBe("T1");
+      expect(plan.groups).toEqual([]);
+      expect(plan.overviewNodes).toBe(23);
+      expect(plan.flagged).toBe(
+        "flagged at 23 nodes and a score of 63.75, against a split target of 25 nodes and 40: over on its score alone. " +
+          "Its rows move to row diagrams, and the overview without them meets the target at 23 nodes and 38, so no node folds",
+      );
     },
     SLOW,
   );

@@ -358,8 +358,7 @@ erDiagram
 <details>
 <summary>Rule and finding model, every field (9 entities)</summary>
 
-Sources: `src/rules/types.ts` for every entity here, and `src/rules/registry.ts` for the built-in category descriptions.
-`CheckContext` and `FixContext` are both aliases of `RuleContext`.
+Sources: `src/rules/types.ts` for every entity here, and `src/rules/registry.ts` for the built-in category descriptions. `CheckContext` and `FixContext` are both aliases of `RuleContext`.
 
 A remediation is not an entity of its own.
 It is the optional `remediation` field of a finding, shown in `--json` output.
@@ -580,10 +579,7 @@ Sources:
 - `src/fix/verify.ts` for `Verdict` and the comparisons.
 
 
-Three entities here are values inside a function, not exported types.
-`Verification` is one call of `verify(edit, before, after)`.
-`ComparedShape` is the tuple `sameDiagrams` builds for each diagram.
-`RefusalKey` is an entry in the engine's `refusedKeys` set.
+Three entities here are values inside a function, not exported types. `Verification` is one call of `verify(edit, before, after)`. `ComparedShape` is the tuple `sameDiagrams` builds for each diagram. `RefusalKey` is an entry in the engine's `refusedKeys` set.
 
 ```mermaid
 erDiagram

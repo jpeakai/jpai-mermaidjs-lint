@@ -45,6 +45,7 @@ A canvas colour that will not parse, or is translucent, is `error[flag]` with ex
 A canvas flag beside `--profile mkdocs-material` is `error[flag]`.
 A file that `auto` or the config scores under `mkdocs-material` refuses a canvas flag with `error[canvas-profile]`.
 So does a config canvas run with `--profile mkdocs-material`.
+
 A canvas from the config is set aside, not refused, for a file that `auto` scores under `mkdocs-material`.
 One stderr line names those files.
 [A host with its own page sets a canvas](../concepts/contrast.md#a-host-with-its-own-page-sets-a-canvas) explains what the canvas changes.
@@ -86,8 +87,7 @@ The rules a run uses are settled in three steps:
 3. The category flags have the last word for this run. `--category` turns a category's rules back on, and `--disable-category` turns them off.
 
 A rule that `--category` turns back on runs with the options the config gives it, such as `["off", { "preset": "low" }]`.
-A category is one of `parse`, `complexity` and `contrast`, or a category a loaded plugin declares.
-`--list-rules` takes the same flags, so it shows which rules a run would use.
+A category is one of `parse`, `complexity` and `contrast`, or a category a loaded plugin declares. `--list-rules` takes the same flags, so it shows which rules a run would use.
 
 | Run | Rules used |
 |---|---|
@@ -107,10 +107,12 @@ Each of these is a usage error with exit code 2, as `error[flag]`:
 When the config it would read is a `.mjs` file, the run stops with `error[config-code]` and exit code 2.
 Pass `--config` with a `.json` config of your own to run anyway.
 A `.json` config is read as usual, because it is data and runs no code.
+
 So the linter itself imports none of the repository's code.
 That does not make the repository safe.
 Installing its dependencies may already have run their code.
 A package runner started inside the checkout reads its `bunfig.toml` or `.npmrc`, which can run code before the linter starts.
+
 Run an installed linter from a folder you control, and name the checkout's files by path.
 [SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) states the full trust model.
 
@@ -127,8 +129,7 @@ When the paths match no file at all, the run stops with `error[flag]: no matchin
 
 A directory walk never follows a symbolic link, to a file or to a folder.
 It names each link it skipped on standard error, as `mermaidjs-lint: skipped symbolic link <path>; name it as a path to check it`, so a gate never passes a file in silence.
-A link named as a path is followed and checked.
-`--fix` refuses to write through a named link whose target is outside the project root, with `error[fix-outside-root]` and exit code 2.
+A link named as a path is followed and checked. `--fix` refuses to write through a named link whose target is outside the project root, with `error[fix-outside-root]` and exit code 2.
 It refuses before it writes any file.
 
 Every path must exist.
@@ -186,6 +187,7 @@ A finding that spans a diagram prints its first and last line, as `file:3-7`.
 The heading names the diagram's `file:line` and the tier of the plan.
 An overview follows, where each group of nodes is folded into one group node.
 Then one detail diagram per group shows its members, with a stub for each node outside the group that an edge reaches.
+
 An edge in from another group starts at one stub for that whole group, since that group's own detail draws it to the exact node.
 For an `erDiagram` or `classDiagram`, a `### Rows` diagram follows for the attributes or members of nodes the overview keeps.
 Each diagram is a mermaid fence, so the output can be pasted into a markdown file and checked:
@@ -255,5 +257,4 @@ Standard error carries these lines, each when it applies:
 | `skippedPlugins` | Each plugin a lenient run left out: `source`, `kind`, `code` and `message` |
 | `canvasSetAside` | Each file whose config canvas was set aside because `auto` scores it under `mkdocs-material`, as a path relative to the working directory, or absolute when the file is outside it |
 
-Under `--no-plugins`, `skippedPlugins` is empty, and the skipped plugins appear only on standard error.
-`--validate-plugins --json` prints `{ valid, plugins, failures }` instead, where `failures` has the shape of `skippedPlugins`.
+Under `--no-plugins`, `skippedPlugins` is empty, and the skipped plugins appear only on standard error. `--validate-plugins --json` prints `{ valid, plugins, failures }` instead, where `failures` has the shape of `skippedPlugins`.

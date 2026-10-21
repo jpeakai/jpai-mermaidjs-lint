@@ -53,9 +53,7 @@ Both runners below pass only the staged files to the linter.
 
 With npm, use `npm install --save-dev` and `npx` in place of `bun add --dev` and `bunx`.
 
-Both runners call the linter installed in the project, and never download it.
-lint-staged finds `mermaidjs-lint` in `node_modules/.bin`.
-`--no-install` stops `npx` fetching the unscoped name `mermaidjs-lint`, which this project does not own, on a clone that has not run `npm install` yet.
+Both runners call the linter installed in the project, and never download it. lint-staged finds `mermaidjs-lint` in `node_modules/.bin`. `--no-install` stops `npx` fetching the unscoped name `mermaidjs-lint`, which this project does not own, on a clone that has not run `npm install` yet.
 The filters cover every extension the linter reads: `.md`, `.markdown`, `.mmd` and `.mermaid`.
 
 ## See a commit stopped
@@ -77,7 +75,8 @@ A hook that runs `--fix` repairs this finding instead, and the commit goes ahead
 ## Fix or only report
 
 - **With `--fix`,** as in the lint-staged example, the hook applies every fix it can prove safe. lint-staged stages the fixed file, so the commit carries the fix.
-- **Without `--fix`,** as in the pre-commit example, the hook only reports. You run `--fix` yourself and stage the result.
+- **Without `--fix`,** as in the pre-commit example, the hook only reports.
+  You run `--fix` yourself and stage the result.
 
 Either way, a finding that no fixer clears stops the commit until you fix it by hand.
 

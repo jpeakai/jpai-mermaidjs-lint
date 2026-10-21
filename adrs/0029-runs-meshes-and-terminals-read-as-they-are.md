@@ -31,19 +31,39 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 
 #### Given
 
-some groups hold interchangeable members, twins, sibling leaves or id-labelled states, where no single member names the group. A dense mesh joins nearly every pair, so a pair says little, and a node many paths end at is no one branch's end
+some groups hold interchangeable members, twins, sibling leaves or id-labelled states, where no single member names the group.
+A dense mesh joins nearly every pair, so a pair says little, and a node many paths end at is no one branch's end
 
 #### We prefer
 
-naming such a group by range: its first and last member labels in natural order, joined by a spaced ellipsis. N counts the members neither end names. A range is offered for twins and sibling leaves, or when every member's label leads with an id. It needs three members or more, forty characters at most and no markup. It is refused when a member of another group has a label from the first to the last. A reader would look for that member there. An id-led group with no honest range is named by its first label in natural order. Twins are ordered by label before they are cut into runs, so runs read as alphabetical volumes. In a mesh whose overview joins at least half of all pairs, T6 also proposes maximal cliques of ungrouped nodes. These come from Bron and Kerbosch's algorithm with Tomita's pivot, taken in natural order and capped at 256. Each clique is cut into runs whose detail fits and ranked by the summed modularity gain of its pairs. A shared terminal is a flowchart or state node at least three nodes lead into and that leads nowhere. It keeps its own node under the strict rules, and under a second rule set that folds hubs and branches. Only the loose rules after those fold it
+naming such a group by range: its first and last member labels in natural order, joined by a spaced ellipsis.
+N counts the members neither end names.
+A range is offered for twins and sibling leaves, or when every member's label leads with an id.
+It needs three members or more, forty characters at most and no markup.
+
+It is refused when a member of another group has a label from the first to the last.
+A reader would look for that member there.
+An id-led group with no honest range is named by its first label in natural order.
+Twins are ordered by label before they are cut into runs, so runs read as alphabetical volumes.
+
+In a mesh whose overview joins at least half of all pairs, T6 also proposes maximal cliques of ungrouped nodes.
+These come from Bron and Kerbosch's algorithm with Tomita's pivot, taken in natural order and capped at 256.
+Each clique is cut into runs whose detail fits and ranked by the summed modularity gain of its pairs.
+A shared terminal is a flowchart or state node at least three nodes lead into and that leads nowhere.
+
+It keeps its own node under the strict rules, and under a second rule set that folds hubs and branches.
+Only the loose rules after those fold it
 
 #### Because
 
-a range names exactly what a group holds and where its neighbours begin. A clique is a group whose members all talk to each other. A terminal folded into one branch tells the reader the other branches end somewhere else
+a range names exactly what a group holds and where its neighbours begin.
+A clique is a group whose members all talk to each other.
+A terminal folded into one branch tells the reader the other branches end somewhere else
 
 #### Unless
 
-a group has an author region or a head, whose label still comes first. A terminal folds when no rule set short of the loose ones meets the target
+a group has an author region or a head, whose label still comes first.
+A terminal folds when no rule set short of the loose ones meets the target
 
 ## Consequences
 

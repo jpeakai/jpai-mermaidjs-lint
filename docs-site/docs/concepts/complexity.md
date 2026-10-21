@@ -25,6 +25,7 @@ The steps below build the score from a single idea upwards.
 Each step shows a small diagram's source, then the structure mermaid's parser returned for it.
 That graph is not drawn from the source text.
 The site build runs the linter's own parse engine over each example, and draws the nodes, edges and subgraphs it read.
+
 A subgraph is drawn as a dashed box around its members.
 The worked score under each graph is also computed in that build, with the default weights.
 
@@ -107,8 +108,7 @@ Only the rule for that band fires, so one diagram never gets three findings for 
 | Score | above `vcsAcceptable`, up to `vcsComplex` | `complexity-visual-score-acceptable-exceeded` |
 | Score | above `vcsComplex` | `complexity-visual-score-critical` |
 
-`nodeComplex`, `nodeHardLimit` and `vcsComplex` each bound two neighbouring bands, so two rules read each of them.
-`nodeAcceptable` and `vcsAcceptable` bound only the lowest band, so one rule reads each.
+`nodeComplex`, `nodeHardLimit` and `vcsComplex` each bound two neighbouring bands, so two rules read each of them. `nodeAcceptable` and `vcsAcceptable` bound only the lowest band, so one rule reads each.
 
 The shop architecture from [The full score](#the-full-score) lands in a different band under each preset.
 Each row below is a real run of the complexity rules over that diagram.
@@ -133,8 +133,7 @@ That can leave a gap between bands, or an overlap where two rules report the sam
 
 ## What counts as a node
 
-Each diagram type has its own unit, read from mermaid's parser result.
-`src/parse/stats.ts` holds one adapter per type, and it is the authority when this table and the code disagree.
+Each diagram type has its own unit, read from mermaid's parser result. `src/parse/stats.ts` holds one adapter per type, and it is the authority when this table and the code disagree.
 
 | Diagram type | A node is | A subgraph is |
 |---|---|---|
@@ -177,6 +176,7 @@ A participant is a node, and each message from one participant to another is an 
 A `box` around participants is a subgraph, and so is each block, such as `loop`, `alt`, `opt` or `par`.
 A block inside another block adds a level of nesting.
 An `else` divides its block rather than opening a new one.
+
 A note, an activation and `autonumber` add nothing.
 Neither does a `rect`, which tints the background behind its messages rather than drawing a boundary.
 This checkout has three participants, six messages, a box and an `alt` block, so it scores 13.2.
@@ -200,6 +200,7 @@ A state is a node, and a transition between two states is an edge.
 A composite state is a node and also a subgraph around the states inside it.
 A `--` line splits a composite state into concurrency regions, drawn as dashed-off areas of its box.
 A region is not a state or a subgraph, and the states in it count inside the composite.
+
 A start or end marker, `[*]`, only marks where a path begins or ends.
 It is not a state, and its transition is not an edge.
 A fork and a choice are nodes, because each is a point where the path divides.

@@ -33,10 +33,10 @@ npm view @jpeakai/mermaidjs-lint version --prefer-online   # confirm the new ver
 ```
 
 Check (Node 24) also builds the docs site, so a broken site fails that check.
-Main is not protected, so nothing stops a merge while a check is red: wait for both to pass.
-npm can take a few minutes to serve a new version, so re-run `npm view` until it shows.
+Main is not protected, so nothing stops a merge while a check is red: wait for both to pass. npm can take a few minutes to serve a new version, so re-run `npm view` until it shows.
 Once Publish succeeds, the Docs workflow builds the released commit and deploys the site.
 The site therefore never describes a version npm does not have yet.
+
 A merge to main only builds the site as a check.
 
 The workflow creates the tag and the GitHub release itself, so never tag by hand.
@@ -47,11 +47,14 @@ A version containing `alpha`, `beta` or `rc` publishes under that npm dist-tag a
 
 1. `prepare` refuses a run not started from `main`, then reads the version from `package.json` on `main` and pins that commit.
 2. It stops if the tag, the GitHub release or the npm version already exists.
-3. It reads the version's section from `CHANGELOG.md`, under its `## [X.Y.Z]` heading, and stops when there is none. That section becomes the notes of a draft GitHub release.
+3. It reads the version's section from `CHANGELOG.md`, under its `## [X.Y.Z]` heading, and stops when there is none.
+   That section becomes the notes of a draft GitHub release.
 4. `publish-npm` runs in the `npm` environment, checks out the pinned commit and runs `npm publish --provenance`.
 5. npm runs `prepublishOnly`, which is `make check`, then `prepack`, which is `make build`.
 6. `finalize-release` flips the draft to published once npm has accepted the package.
-7. The Docs workflow starts when Publish completes. On success it builds the commit Publish released and deploys it to GitHub Pages. A failed Publish deploys nothing.
+7. The Docs workflow starts when Publish completes.
+   On success it builds the commit Publish released and deploys it to GitHub Pages.
+   A failed Publish deploys nothing.
 
 ## One-time setup
 

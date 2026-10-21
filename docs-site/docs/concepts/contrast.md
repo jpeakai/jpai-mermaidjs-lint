@@ -70,10 +70,12 @@ The canvas changes the page only.
 Scoring still assumes the host draws Mermaid's `default` theme in light and its `dark` theme in dark.
 That assumption sets the edge label box, the `erDiagram` rows and every sequence theme variable.
 A host that draws another theme, or the same theme in both modes, is not modelled, so its scores are approximate.
+
 For a sequence diagram on a host that draws one theme in both modes, pin that theme, so both modes are scored with it.
 On the host's canvas that pin can pass, though a pinned theme fails on GitHub's own page, as [the sequence section](#a-sequence-diagram-is-scored-by-its-theme-colours) explains.
 Run the check with `--canvas-light` and `--canvas-dark` set to the host's page to confirm it.
 A host that draws a different theme in each mode has no single theme to pin.
+
 For a sequence diagram on that host, and for any other diagram, check the scores against the host by eye in both modes.
 
 A canvas applies under `github` only.
@@ -150,19 +152,20 @@ A row is scored when the diagram uses that kind of element.
 Two rows are scored more widely.
 The participant label row is scored even when every participant is a human `actor`.
 Frame text inside a `rect` is scored whenever the diagram has a frame, even one outside the `rect`.
+
 A translucent background is composited over the page first.
 With no theme pinned, Mermaid's `default` and `dark` themes pass, except notes in dark.
 The `dark` theme draws note text at 4.49 to 1, so a note with no colours set fails in dark.
 A note draws its own box, so setting `noteBkgColor` and `noteTextColor` to one readable pair fixes it in both themes.
 
-On GitHub's own page, a pinned theme draws both light and dark, so its page-backed text fails on one of the two pages.
-`theme: default` puts its dark message text on GitHub's dark page, and `theme: dark` puts its light message text on the white page.
+On GitHub's own page, a pinned theme draws both light and dark, so its page-backed text fails on one of the two pages. `theme: default` puts its dark message text on GitHub's dark page, and `theme: dark` puts its light message text on the white page.
 Setting the page-backed colours yourself does not help there: no text colour reaches 4.5 to 1 on both `#ffffff` and `#0d1117`.
 So with GitHub's canvas, leave the theme unpinned and let Mermaid draw `default` in light and `dark` in dark.
 A host with its own canvas that draws one theme in both modes is the exception: pin that theme, as [the canvas section](#a-host-with-its-own-page-sets-a-canvas) says.
 
 Under `mkdocs-material`, Material draws Mermaid's `default` theme in both of its schemes.
-Its own CSS replaces every sequence label, box, note, frame, `rect` and number colour. So no sequence text pair is the author's, and none is scored.
+Its own CSS replaces every sequence label, box, note, frame, `rect` and number colour.
+So no sequence text pair is the author's, and none is scored.
 Three surfaces keep the diagram's colours: lifelines, arrowheads and activation bars.
 They are scored as borders, so they are advisory, as every border under this profile is.
 
@@ -170,7 +173,8 @@ A config the tool cannot model is reported as `contrast-directive-unauditable`:
 
 - **`themeCSS`.** CSS can restyle anything, and under Material it replaces the host's own CSS.
 - **A theme other than `base`, `default`, `dark`, `forest` or `neutral`.** The other themes colour each actor from palettes of their own.
-- **A colour Mermaid cannot read.** A bad colour that others derive from, such as `primaryColor`, stops the whole theme. Any other bad colour, such as `signalTextColor`, is reported for each pair it is in, and the rest of the diagram is still scored.
+- **A colour Mermaid cannot read.** A bad colour that others derive from, such as `primaryColor`, stops the whole theme.
+  Any other bad colour, such as `signalTextColor`, is reported for each pair it is in, and the rest of the diagram is still scored.
 
 The colours change between Mermaid releases, so the package pins the exact Mermaid version it resolves them with.
 
@@ -182,7 +186,8 @@ None of these is scored, and none of them produces a finding:
 - **A node with no style.** It takes the renderer's theme colours, which cannot be known without drawing it.
 - **A node's `color:` with no `fill:` beside it, outside an `erDiagram`.** A `classDef` or `style` line that sets only `color:` has no declared background to score it against.
 - **A node's `stroke:` with no `fill:` beside it.** A border on an unfilled node has no declared background to score it against, under either profile.
-- **A fully transparent fill.** A `fill:transparent` or a fill with zero alpha, such as `#ffffff00`, draws no box, so its `color:` and `stroke:` are not scored. White text on that fill passes, even on a white page.
+- **A fully transparent fill.** A `fill:transparent` or a fill with zero alpha, such as `#ffffff00`, draws no box, so its `color:` and `stroke:` are not scored.
+  White text on that fill passes, even on a white page.
 - **A `linkStyle` line's `stroke:`.** An edge line is not scored against the page.
 - **A border pair under `mkdocs-material` or in an `erDiagram`.** It is scored but advisory, as [The three profiles](#the-three-profiles) explains.
 - **Theme settings outside a `sequenceDiagram`.** An `%%{init}%%` directive or frontmatter that sets `theme` or `themeVariables` is read only for a sequence diagram.
@@ -203,7 +208,9 @@ It does so only when that choice reaches 4.5 to 1 on every background the direct
 - A border has no fixer, because changing a stroke changes how a category looks.
 - Under `mkdocs-material` there is no `color:` to rewrite, so the fill itself must change, and choosing a fill is a design decision.
 - In an `erDiagram`, a class colours alternating rows on different backgrounds, so no single label colour may pass them all.
-- In a `sequenceDiagram`, a colour is a theme variable that other variables derive from. Changing one can move pairs it was not scored in. Text on the page also needs a colour that flips with the theme.
+- In a `sequenceDiagram`, a colour is a theme variable that other variables derive from.
+  Changing one can move pairs it was not scored in.
+  Text on the page also needs a colour that flips with the theme.
 
 ## Choosing a profile
 

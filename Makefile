@@ -67,11 +67,9 @@ ci: fix typecheck test-cov-ts docs-ci
 # the diagrams in them, using this repo's source and never a published copy.
 # The site's authored pages are scored under mkdocs-material, which the linter
 # reads from docs-site/mkdocs.yml.
-SITE_GENERATED := docs-site/docs/reference/rules.md docs-site/docs/gallery/fixtures.md docs-site/docs/gallery/examples.md
-SITE_DOCS := $(filter-out $(SITE_GENERATED),$(wildcard docs-site/docs/*.md docs-site/docs/*/*.md)) $(wildcard docs-site/diagrams/*.md docs-site/includes/*.md)
-SKILL_DOCS := $(wildcard skills/*/*.md skills/*/evals/*.md)
-THEME_DOCS := $(wildcard docs-site/theme/*/*.md)
-DOCS := $(wildcard *.md) $(wildcard docs/*.md) $(wildcard adrs/*.md) $(SITE_DOCS) $(THEME_DOCS) $(SKILL_DOCS) tests/fixtures/README.md
+# Discover tracked and new documentation recursively, including nested pages.
+# Deliberately failing inputs and captured agent outputs are test data.
+DOCS := $(shell git ls-files --cached --others --exclude-standard -- '*.md' ':!:examples/**' ':!:tests/fixtures/**' ':!:skills/*/evals/fixtures/**' ':!:docs-site/eval-outputs/**' | sort -u) tests/fixtures/README.md
 
 # The docs site. The generator re-checks every example as it writes the
 # reference pages, then mkdocs builds in strict mode, so a drifted example or a
@@ -85,7 +83,7 @@ site-serve:
 	uv run mkdocs serve --config-file docs-site/mkdocs.yml
 
 docs-ci:
-	bunx --bun @jpeakai/prose-gates $(DOCS)
+	bun run --bun prose-gates $(DOCS)
 	bun run src/bin.ts $(DOCS)
 
 # The agent eval suite for the mermaidjs-lint skill, run by pytest-xharness-eval.

@@ -31,8 +31,7 @@ There is no warning level: a rule is either on and failing the run, or off.
 
 ## Switch a category on or off for one run
 
-Pass a category flag to change which rules run without editing the config.
-`--disable-category` turns a category off, and `--category` turns one on even where the config turns it off:
+Pass a category flag to change which rules run without editing the config. `--disable-category` turns a category off, and `--category` turns one on even where the config turns it off:
 
 ```sh
 bunx mermaidjs-lint docs/ --disable-category parse,complexity
@@ -78,8 +77,8 @@ Each rule declares the options it accepts and their types, and a config that bre
 [Config file](../reference/configuration.md) lists every option.
 
 A threshold is the boundary between two bands, so the two rules either side of it both read it.
-Set it on both rules that read it, or a diagram between the old and new values reports two bands at once, or none.
-`nodeHardLimit` is read by the cognitive-limit and hard-limit rules, as in the example. There, of the node-count rules, only the hard limit fires on a diagram of 90 nodes.
+Set it on both rules that read it, or a diagram between the old and new values reports two bands at once, or none. `nodeHardLimit` is read by the cognitive-limit and hard-limit rules, as in the example.
+There, of the node-count rules, only the hard limit fires on a diagram of 90 nodes.
 [Each measure is a ladder](../concepts/complexity.md#each-measure-is-a-ladder) names the rules that read each threshold.
 
 ## Know which setting wins

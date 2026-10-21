@@ -41,7 +41,8 @@ List what remains with its remediation, which only `--json` prints:
 bunx @jpeakai/mermaidjs-lint --json <file>
 ```
 
-Edit the file in place. Read each finding's `rule` and `remediation`, then follow the table below.
+Edit the file in place.
+Read each finding's `rule` and `remediation`, then follow the table below.
 Where a finding's `remediation` says more than its row, follow the `remediation`.
 
 | Rule | Fix |
@@ -60,8 +61,10 @@ Where a finding's `remediation` says more than its row, follow the `remediation`
 
 Two cases need more care:
 
-- **`erDiagram` entities.** An entity draws its attribute rows on both light and dark backgrounds, so no single label colour reads on every row. Drop the `fill:` and `color:` and mark the entity with a `stroke:` instead.
-- **Splitting a diagram.** Every original node id must appear in at least one of the new diagrams. Every edge survives too, inside a part or as an edge between parts in the overview.
+- **`erDiagram` entities.** An entity draws its attribute rows on both light and dark backgrounds, so no single label colour reads on every row.
+  Drop the `fill:` and `color:` and mark the entity with a `stroke:` instead.
+- **Splitting a diagram.** Every original node id must appear in at least one of the new diagrams.
+  Every edge survives too, inside a part or as an edge between parts in the overview.
 
 ## 4. Re-run until clean
 

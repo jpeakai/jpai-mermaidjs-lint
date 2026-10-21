@@ -41,19 +41,61 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 
 #### Given
 
-a reader of an overview reads its groups as the diagram's own structure. The reader compares regions drawn from one template side by side, and counts relationships as lines. A ticket key or a template is the author's own grouping, and an alphabetical range is no grouping at all
+a reader of an overview reads its groups as the diagram's own structure.
+The reader compares regions drawn from one template side by side, and counts relationships as lines.
+A ticket key or a template is the author's own grouping, and an alphabetical range is no grouping at all
 
 #### We prefer
 
-refusing a plan whose every group is a run of sibling leaves of one twin class, named only by a range. Such groups must hold more than half the diagram. The reason given is "a star of leaves around one node, which no label, shape or neighbour sorts: a list reads better". An erDiagram overview is tangled when its independent cycles, edges less nodes plus one, number at least a quarter of its nodes. A tangled one folds aggregates once the target is met, even by dropping rows alone. Each fold must take away an overview edge per entity it hides and add no more new reachable pairs than it hides. It stops at 60% of node_target. When every label leads with an id naming a prefix family, as PLAT-1201, T6 first offers each family whole, hubs included. A family whose detail does not fit is offered as even contiguous runs in natural order, each connected, in one step. Once one family folds, the evening takes only families, down to the fewest nodes a fold may leave. Loosening never undoes a family's group. Two regions echo when they are siblings of one shape holding regions of their own, or children of echoing regions with one label and shape. A region's shape is its own node count and each child region's label and shape. T3 folds a region with all its echoes in one step, and waits for an echo not yet ready. Another group may be named after a region of the same label. A region's group then takes the label of the region around it in brackets, as "Public subnets (us-east-1) (+2)". It sits in that region in the overview and counts every member. A plan whose details split again with new reachable pairs is walked again, holding regions to details that fit. That walk first folds only regions adding no new reachable pair. It is offered when it declares fewer new reachable pairs in all. When edges join two groups both ways, one detail draws every edge between them exactly, with stubs for the other's members. That is the detail needing stubs for fewer members, then the first group by key. The other detail draws the group as one stub, with each edge into it from a member read as a half edge. No detail draws a group whole beside a stub for one of its members. The edges of one kind one way between a group's stub and one member draw once. They keep only the label and cardinality they all share, and an erDiagram keeps one per label and cardinality, as the overview does
+refusing a plan whose every group is a run of sibling leaves of one twin class, named only by a range.
+Such groups must hold more than half the diagram.
+The reason given is "a star of leaves around one node, which no label, shape or neighbour sorts: a list reads better".
+An erDiagram overview is tangled when its independent cycles, edges less nodes plus one, number at least a quarter of its nodes.
+
+A tangled one folds aggregates once the target is met, even by dropping rows alone.
+Each fold must take away an overview edge per entity it hides and add no more new reachable pairs than it hides.
+It stops at 60% of node_target.
+When every label leads with an id naming a prefix family, as PLAT-1201, T6 first offers each family whole, hubs included.
+
+A family whose detail does not fit is offered as even contiguous runs in natural order, each connected, in one step.
+Once one family folds, the evening takes only families, down to the fewest nodes a fold may leave.
+Loosening never undoes a family's group.
+Two regions echo when they are siblings of one shape holding regions of their own, or children of echoing regions with one label and shape.
+
+A region's shape is its own node count and each child region's label and shape.
+T3 folds a region with all its echoes in one step, and waits for an echo not yet ready.
+Another group may be named after a region of the same label.
+A region's group then takes the label of the region around it in brackets, as "Public subnets (us-east-1) (+2)".
+
+It sits in that region in the overview and counts every member.
+A plan whose details split again with new reachable pairs is walked again, holding regions to details that fit.
+That walk first folds only regions adding no new reachable pair.
+It is offered when it declares fewer new reachable pairs in all.
+
+When edges join two groups both ways, one detail draws every edge between them exactly, with stubs for the other's members.
+That is the detail needing stubs for fewer members, then the first group by key.
+The other detail draws the group as one stub, with each edge into it from a member read as a half edge.
+No detail draws a group whole beside a stub for one of its members.
+
+The edges of one kind one way between a group's stub and one member draw once.
+They keep only the label and cardinality they all share, and an erDiagram keeps one per label and cardinality, as the overview does
 
 #### Because
 
-alphabetical buckets give a reader nothing to find, while a list of the leaves gives the same in reading order. An overview of every entity and relationship is the original with its rows hidden, and aggregates are the structure an erDiagram carries. A tree-like overview already reads, so it stays as it is. A ticket family scattered across groups and loose hubs reads as noise, while one group per family reads as the author's plan. Two regions drawn from one template folded to different depths read as different things. Their groups need names a reader can tell apart without an id. One outside group drawn twice in one detail reads as two things, and three lines from one stub into one member read as three sources
+alphabetical buckets give a reader nothing to find, while a list of the leaves gives the same in reading order.
+An overview of every entity and relationship is the original with its rows hidden, and aggregates are the structure an erDiagram carries.
+A tree-like overview already reads, so it stays as it is.
+A ticket family scattered across groups and loose hubs reads as noise, while one group per family reads as the author's plan.
+
+Two regions drawn from one template folded to different depths read as different things.
+Their groups need names a reader can tell apart without an id.
+One outside group drawn twice in one detail reads as two things, and three lines from one stub into one member read as three sources
 
 #### Unless
 
-a plan has no star, or a diagram has no aggregate that takes an edge away per entity. Labels may name no id family, or regions echo none. The plan then stands as before
+a plan has no star, or a diagram has no aggregate that takes an edge away per entity.
+Labels may name no id family, or regions echo none.
+The plan then stands as before
 
 ## Consequences
 

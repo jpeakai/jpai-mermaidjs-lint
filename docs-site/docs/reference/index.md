@@ -50,7 +50,8 @@ The public surface is:
 - The rule ids, and the category each rule belongs to.
 - The `--json` output shape.
 - The exit codes and error codes.
-- The plugin contract, versioned by `meta.apiVersion`. A contract change that breaks a plugin raises it, and a plugin built for the old version fails to load with both numbers.
+- The plugin contract, versioned by `meta.apiVersion`.
+  A contract change that breaks a plugin raises it, and a plugin built for the old version fails to load with both numbers.
 - The types and functions the package exports.
 
 Finding message text is not part of it, so match on the rule id, not the message.
@@ -59,5 +60,4 @@ Finding message text is not part of it, so match on the rule id, not the message
 
 [CHANGELOG.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/CHANGELOG.md) lists the user-visible changes in each release.
 These pages are published with each release, so they describe the latest release on npm.
-A change on `main` that is not yet released is listed under `Unreleased` in the changelog.
-`mermaidjs-lint --version` prints the version you run, and releases up to 0.1.1 lack the flag.
+A change on `main` that is not yet released is listed under `Unreleased` in the changelog. `mermaidjs-lint --version` prints the version you run, and releases up to 0.1.1 lack the flag.

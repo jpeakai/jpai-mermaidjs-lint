@@ -33,11 +33,13 @@ setting the canvas aside for that file, scoring it under mkdocs-material, and pr
 
 #### Because
 
-the config cannot scope a canvas to a path, and the auto profile already decides which page each file is drawn on. The note keeps the set-aside visible, so it never reads as a silent pass.
+the config cannot scope a canvas to a path, and the auto profile already decides which page each file is drawn on.
+The note keeps the set-aside visible, so it never reads as a silent pass.
 
 #### Unless
 
-the canvas comes from --canvas-light or --canvas-dark, or the profile is set to mkdocs-material by flag or rule option. Each of those is an explicit setting for this run, so it is still refused with a usage error.
+the canvas comes from --canvas-light or --canvas-dark, or the profile is set to mkdocs-material by flag or rule option.
+Each of those is an explicit setting for this run, so it is still refused with a usage error.
 
 ## Consequences
 

@@ -27,19 +27,23 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 
 #### Given
 
-a feature needs a markdown structure, such as a fence, its language, its position, a heading or frontmatter. Or it needs something an installed dependency already provides
+a feature needs a markdown structure, such as a fence, its language, its position, a heading or frontmatter.
+Or it needs something an installed dependency already provides
 
 #### We prefer
 
-reading markdown only from the mdast tree, and calling the dependency that already does the job. That is preferred over a custom markdown parser, and over reimplementing any part of a library this package depends on
+reading markdown only from the mdast tree, and calling the dependency that already does the job.
+That is preferred over a custom markdown parser, and over reimplementing any part of a library this package depends on
 
 #### Because
 
-the dependency is already tested, maintained and shipped, so a second version only adds code that can drift from it. Duplicated logic is treated as non-compliance and refactored onto the dependency
+the dependency is already tested, maintained and shipped, so a second version only adds code that can drift from it.
+Duplicated logic is treated as non-compliance and refactored onto the dependency
 
 #### Unless
 
-never. When a dependency lacks a feature, the gap is recorded and solved with another maintained library, not a hand-written parser
+never.
+When a dependency lacks a feature, the gap is recorded and solved with another maintained library, not a hand-written parser
 
 ## Consequences
 

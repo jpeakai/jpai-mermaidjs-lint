@@ -38,19 +38,52 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 
 #### Given
 
-a reader of an overview reads a group's name as a promise about all its members. A name taken from one member promises that member and some others. A reader of a detail follows a stub to the overview node it names, and finds that node by its text
+a reader of an overview reads a group's name as a promise about all its members.
+A name taken from one member promises that member and some others.
+A reader of a detail follows a stub to the overview node it names, and finds that node by its text
 
 #### We prefer
 
-naming a group that holds a whole dotted family by the family, as "gold.* (+5)". Such a group holds three members or more, each label leading with one namespace and a dot. No node outside the group has a label leading with that namespace. Naming twin chains by their stages, as "Extract → bronze (+8)". The chains run two or more, each of one length of two members or more. Each place along them is named by the namespace every label there leads with. Failing that, it is named by the first word all of them lead with, and failing that it shows an ellipsis. At least one place must be named, and the label holds at most 40 characters. Both labels count every member, as an author region's label does. They come after an author region's label and a group's head, and before a range or any member's label. A stub for a member of a group takes its label, " (in ", the label the overview shows for that group and ")". That reads "PAYMENT_METHOD (in CUSTOMER (+2))", and for the member the group is named after, "CUSTOMER (in CUSTOMER (+2))". The contract and both test readers accept the two labels only as recomputed from the members. They accept the stub form only when its text has exactly one reading. Edges may join two groups one way only, all leaving one member and reaching two members or more. When the source's detail is not split again, the target's detail draws them exactly, from one stub for that member. The source's detail draws the target as one stub, each edge alike drawn once. Planning still measures each detail with such edges drawn from one stub for the whole source group. So the plan it picks is unchanged, and a drawn detail holds no more stubs than the one measured
+naming a group that holds a whole dotted family by the family, as "gold.* (+5)".
+Such a group holds three members or more, each label leading with one namespace and a dot.
+No node outside the group has a label leading with that namespace.
+Naming twin chains by their stages, as "Extract → bronze (+8)".
+
+The chains run two or more, each of one length of two members or more.
+Each place along them is named by the namespace every label there leads with.
+Failing that, it is named by the first word all of them lead with, and failing that it shows an ellipsis.
+At least one place must be named, and the label holds at most 40 characters.
+
+Both labels count every member, as an author region's label does.
+They come after an author region's label and a group's head, and before a range or any member's label.
+A stub for a member of a group takes its label, " (in ", the label the overview shows for that group and ")".
+That reads "PAYMENT_METHOD (in CUSTOMER (+2))", and for the member the group is named after, "CUSTOMER (in CUSTOMER (+2))".
+
+The contract and both test readers accept the two labels only as recomputed from the members.
+They accept the stub form only when its text has exactly one reading.
+Edges may join two groups one way only, all leaving one member and reaching two members or more.
+When the source's detail is not split again, the target's detail draws them exactly, from one stub for that member.
+
+The source's detail draws the target as one stub, each edge alike drawn once.
+Planning still measures each detail with such edges drawn from one stub for the whole source group.
+So the plan it picks is unchanged, and a drawn detail holds no more stubs than the one measured
 
 #### Because
 
-a name built from what every member shares promises nothing a member lacks. A namespace held whole is the author's own name for those nodes. A reader of a pipeline reads its lanes as sources flowing into a layer. A stub naming its group by the overview's exact text is found at a glance, wherever it is drawn. A bare bracket or "in group" leaves the reader to guess which group, and inside a nested overview the nearest guess is wrong. A stub per target member repeats one source's fan-out in its own detail, where one stub for the target group says the same. The target's detail draws each edge from the one stub it already needs
+a name built from what every member shares promises nothing a member lacks.
+A namespace held whole is the author's own name for those nodes.
+A reader of a pipeline reads its lanes as sources flowing into a layer.
+A stub naming its group by the overview's exact text is found at a glance, wherever it is drawn.
+
+A bare bracket or "in group" leaves the reader to guess which group, and inside a nested overview the nearest guess is wrong.
+A stub per target member repeats one source's fan-out in its own detail, where one stub for the target group says the same.
+The target's detail draws each edge from the one stub it already needs
 
 #### Unless
 
-a group holds only part of a family, or its chains share no namespace or first word at any place. It then keeps its region, head, range or member's name, as before. Another group may already show the label, and the group then takes its next label
+a group holds only part of a family, or its chains share no namespace or first word at any place.
+It then keeps its region, head, range or member's name, as before.
+Another group may already show the label, and the group then takes its next label
 
 ## Consequences
 

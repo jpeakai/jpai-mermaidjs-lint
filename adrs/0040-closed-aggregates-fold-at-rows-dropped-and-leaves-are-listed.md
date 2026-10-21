@@ -31,19 +31,44 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 
 #### Given
 
-a reader of an overview reads a group's name as what it holds. A schema over its target only for its rows meets the target with them dropped, and still draws every entity and relationship. A folded aggregate draws each relationship that crosses its edge at the group, named after one member
+a reader of an overview reads a group's name as what it holds.
+A schema over its target only for its rows meets the target with them dropped, and still draws every entity and relationship.
+A folded aggregate draws each relationship that crosses its edge at the group, named after one member
 
 #### We prefer
 
-folding, once rows dropped meet the target, only the closed aggregates of an erDiagram. An aggregate is closed when one member holds every relationship that crosses the group's edge. Each folds evenly and is named by every member, as "ROOM (+BUILDING)". So the overview draws every relationship it keeps at the entity it joins, and hides no entity's name. An aggregate whose other members relate outside it stays in view. The plan's flagged text then ends "so only aggregates whose other members relate to nothing else fold". A group of leaves hanging from one overview node takes a list label first. It shows one member's label and, in brackets after a plus, every other member's label in natural order, joined by a comma. It lists every member however many, and the whole label holds 80 characters at most. Each label meets the pair rules and, in a list, holds no comma. So a boutique's external APIs read "Carrier quote API (+ECB rates feed, Payment provider API, SMTP relay)". A group of leaves whose list does not fit keeps its fan label. Groups folded alike take list labels only when every one of them that may be listed can. The contract and both test readers accept the list only for a group of leaves, recomputed from its members
+folding, once rows dropped meet the target, only the closed aggregates of an erDiagram.
+An aggregate is closed when one member holds every relationship that crosses the group's edge.
+Each folds evenly and is named by every member, as "ROOM (+BUILDING)".
+So the overview draws every relationship it keeps at the entity it joins, and hides no entity's name.
+
+An aggregate whose other members relate outside it stays in view.
+The plan's flagged text then ends "so only aggregates whose other members relate to nothing else fold".
+A group of leaves hanging from one overview node takes a list label first.
+It shows one member's label and, in brackets after a plus, every other member's label in natural order, joined by a comma.
+
+It lists every member however many, and the whole label holds 80 characters at most.
+Each label meets the pair rules and, in a list, holds no comma.
+So a boutique's external APIs read "Carrier quote API (+ECB rates feed, Payment provider API, SMTP relay)".
+A group of leaves whose list does not fit keeps its fan label.
+
+Groups folded alike take list labels only when every one of them that may be listed can.
+The contract and both test readers accept the list only for a group of leaves, recomputed from its members
 
 #### Because
 
-raters scored the folded schema above the schema left whole, and called the whole one dense. A fold that moves a relationship to another entity's name is what a reader can misread, and a closed fold moves none. So the fewest folds that cut density without moving a relationship win. A group of leaves holds nothing but its members, so naming every one says exactly what is inside. The node they hang from says only where they are
+raters scored the folded schema above the schema left whole, and called the whole one dense.
+A fold that moves a relationship to another entity's name is what a reader can misread, and a closed fold moves none.
+So the fewest folds that cut density without moving a relationship win.
+A group of leaves holds nothing but its members, so naming every one says exactly what is inside.
+The node they hang from says only where they are
 
 #### Unless
 
-the diagram is over its target with its rows dropped, and folds as before. No aggregate may be closed, and the plan then stays at T1, rows dropped. A leaf's label may hold a comma, a bracket or markup, or the list may be longer than 80 characters. The group then keeps its fan label
+the diagram is over its target with its rows dropped, and folds as before.
+No aggregate may be closed, and the plan then stays at T1, rows dropped.
+A leaf's label may hold a comma, a bracket or markup, or the list may be longer than 80 characters.
+The group then keeps its fan label
 
 ## Consequences
 

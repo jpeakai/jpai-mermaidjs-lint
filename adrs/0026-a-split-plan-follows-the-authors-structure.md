@@ -33,11 +33,15 @@ a diagram over a threshold can be folded many ways, and some folds change what i
 
 #### We prefer
 
-folding the author's own regions first and folding repeated patterns evenly. A state a composite's marker reaches stays in that composite, and each edge between kept nodes is drawn as often as it was written. Edges from another group start at one stub for that group. A composite with concurrent regions gets no plan
+folding the author's own regions first and folding repeated patterns evenly.
+A state a composite's marker reaches stays in that composite, and each edge between kept nodes is drawn as often as it was written.
+Edges from another group start at one stub for that group.
+A composite with concurrent regions gets no plan
 
 #### Because
 
-a reader trusts the author's boundaries first. A plan that moves a marker, merges an edge or joins concurrent regions says something the original does not
+a reader trusts the author's boundaries first.
+A plan that moves a marker, merges an edge or joins concurrent regions says something the original does not
 
 #### Unless
 

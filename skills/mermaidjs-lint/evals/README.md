@@ -23,8 +23,10 @@ Every case runs the same steps, in this order:
 
 1. **Evidence.** The run is real and priced (`check_rollout`).
 2. **Scope.** The fixture file was edited in place, and nothing else was added beyond a tool cache.
-3. **Fixed, not deleted.** The fence count did not drop, and every node id the fixture declares is still drawn. For the split case that is the union across fences.
-4. **Structure against a golden.** Each fixture is seeded from a rule fixture in `tests/fixtures/rules/`, and its committed `.llm.md` sibling is the golden. Only structure is compared, because the colours and split points are the agent's to choose.
+3. **Fixed, not deleted.** The fence count did not drop, and every node id the fixture declares is still drawn.
+   For the split case that is the union across fences.
+4. **Structure against a golden.** Each fixture is seeded from a rule fixture in `tests/fixtures/rules/`, and its committed `.llm.md` sibling is the golden.
+   Only structure is compared, because the colours and split points are the agent's to choose.
 5. **The linter is clean.** The agent's file is linted with this repository's `src/bin.ts`, never a published copy, and must report 0 findings.
 
 Zero findings alone is not the verdict.
@@ -41,7 +43,8 @@ Deleting the fence also reaches zero, which is why step 3 comes first.
 Run from the repository root.
 A bare `pytest` never collects these, so the path is required.
 
-Preview the matrix first. Nothing is invoked and nothing is billed:
+Preview the matrix first.
+Nothing is invoked and nothing is billed:
 
 ```sh
 make evals-dry

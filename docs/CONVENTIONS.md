@@ -6,19 +6,34 @@ Agents and humans: consult this before creating, moving or renaming any doc.
 ## Dialect
 
 - **Flavour:** minimal, with an ADR surface promoted to `okf-yaml`, inherited from `jpai-library`
-- **Docs taxonomy:** user docs live on the docs site, in `docs-site/docs/`. It holds a tutorial (`get-started.md`), then `guides/`, `concepts/`, `reference/` and `gallery/`. `docs/` holds maintainer runbooks and contributor references, `ARCHITECTURE.md` and `DATA_MODEL.md`, with one declared exception: `docs/plugins.md`, a redirect kept so old links resolve.
+- **Docs taxonomy:** user docs live on the docs site, in `docs-site/docs/`.
+  It holds a tutorial (`get-started.md`), then `guides/`, `concepts/`, `reference/` and `gallery/`. `docs/` holds maintainer runbooks and contributor references, `ARCHITECTURE.md` and `DATA_MODEL.md`, with one declared exception: `docs/plugins.md`, a redirect kept so old links resolve.
 - **Glossary:** `GLOSSARY.md` at root, one canonical term per concept, new domain terms added in the change that introduces them
 - **ADR layout:** `okf-yaml`, with records authored in `adrs/NNNN-slug.yml` and markdown generated from them
 - **Record ids:** prefixed `MJL-` in this repo, so a citation is unambiguous across bundles
-- **Generated paths:** `adrs/*.md`, `adrs/index.md`, `adrs/graph.md`, `adrs/graph.json`, `adrs/graph.html`, and, ignored by git, `docs-site/docs/reference/rules.md`, `docs-site/docs/gallery/fixtures.md`, `docs-site/docs/gallery/examples.md`, `docs-site/snippets/`. So is the token block in the site theme's `osakanights.css`, written from its `design-tokens.json`.
+- **Generated paths:** `adrs/*.md`, `adrs/index.md`, `adrs/graph.md`, `adrs/graph.json`, `adrs/graph.html`, and, ignored by git, `docs-site/docs/reference/rules.md`, `docs-site/docs/gallery/fixtures.md`, `docs-site/docs/gallery/examples.md`, `docs-site/snippets/`.
+  So is the token block in the site theme's `osakanights.css`, written from its `design-tokens.json`.
 - **Regenerate:** `make adrs` for the decision bundle and `make theme` for the theme's tokens, which `make fix` both runs, and `make site` for the docs site
 - **Diagrams on the site:** each lives once in `docs-site/diagrams/` and is included into pages, so it is linted on its own
-- **Shared text:** text that both the site and the root markdown carry, such as the four tenets, lives once in `docs-site/includes/`. The site includes it, and a test holds each root copy to it verbatim.
-- **Home mirrors the README:** the site home page opens with the README's sections, in the same order. Sections only the site has come after them. `tests/readme-site.test.ts` holds the order and the shared includes.
+- **Shared text:** text that both the site and the root markdown carry, such as the four tenets, lives once in `docs-site/includes/`.
+  The site includes it, and a test holds each root copy to it verbatim.
+- **Home mirrors the README:** the site home page opens with the README's sections, in the same order.
+  Sections only the site has come after them. `tests/readme-site.test.ts` holds the order and the shared includes.
 - **Agent files:** `CLAUDE.md` at root, with no nested agent files
-- **Prose gates:** `make docs-ci` gates every authored markdown file and its diagrams. That is the root files, `docs/`, `adrs/`, the site's authored pages, diagrams, includes and theme README, the skill's markdown and `tests/fixtures/README.md`. Inputs under test are outside it: the fixtures, `examples/` and the skill's eval fixtures in `skills/mermaidjs-lint/evals/fixtures/`. The site's generated pages are checked by `make site` instead.
-- **Changelog:** `CHANGELOG.md` at root, in Keep a Changelog style, curated by hand. A user-visible change adds a line under `Unreleased` in the same change, and a release renames that section to its version. The Publish workflow copies that section into the GitHub release notes.
-- **Documented version:** the docs site describes the latest release. The Docs workflow deploys it only after a Publish run succeeds, or when run by hand. The README on GitHub describes `main`. Anything on `main` but not yet released is listed under `Unreleased` in `CHANGELOG.md`.
+- **Prose gates:** `make docs-ci` gates every authored markdown file and its diagrams.
+  Discovery includes tracked and new files recursively, so a nested page cannot bypass either gate.
+  That is the root files, `docs/`, `adrs/`, the site's authored pages, diagrams, includes and theme README, the skill's markdown and `tests/fixtures/README.md`.
+  Inputs under test are outside it: the fixtures, `examples/` and the skill's eval fixtures in `skills/mermaidjs-lint/evals/fixtures/`.
+  The site's generated pages are checked by `make site` instead.
+- **ADR presentation:** the renderer runs prose-gates over each record's reading surface, preserving every non-whitespace character.
+  Paragraph boundaries live in `adrs/templates/prose-breaks.json`, leaving accepted YAML records immutable.
+- **Changelog:** `CHANGELOG.md` at root, in Keep a Changelog style, curated by hand.
+  A user-visible change adds a line under `Unreleased` in the same change, and a release renames that section to its version.
+  The Publish workflow copies that section into the GitHub release notes.
+- **Documented version:** the docs site describes the latest release.
+  The Docs workflow deploys it only after a Publish run succeeds, or when run by hand.
+  The README on GitHub describes `main`.
+  Anything on `main` but not yet released is listed under `Unreleased` in `CHANGELOG.md`.
 - **Proposals and RFCs:** not used
 
 ## Layout map

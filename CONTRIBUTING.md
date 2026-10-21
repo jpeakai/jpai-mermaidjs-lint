@@ -61,9 +61,11 @@ A change to a type or a stage they draw updates the diagram in the same change.
 
 1. Write one module in `src/rules` exporting a `Rule`, named for its id.
 2. Add its id to `RULE` in `src/rules/types.ts`, and register it in `RULES` in `src/rules/index.ts`.
-3. If it has a fixer, also add it to `FIX_ORDER` in `src/rules/index.ts`, at the position its edits must apply. A fixer missing from `FIX_ORDER` never runs under `--fix`.
+3. If it has a fixer, also add it to `FIX_ORDER` in `src/rules/index.ts`, at the position its edits must apply.
+   A fixer missing from `FIX_ORDER` never runs under `--fix`.
 4. Add its section and examples to `RULES.md`, and its id to the Categories table there. `tests/rules-doc.test.ts` holds both to the code.
-5. Add a fixture under `tests/fixtures/rules/`, named for what it shows, with an expect comment naming the rule. `tests/fixtures.test.ts` fails until some fixture expects every core rule. If `--fix` cannot clear it, add the `.llm.md` sibling that [Adding a fixture](#adding-a-fixture) describes.
+5. Add a fixture under `tests/fixtures/rules/`, named for what it shows, with an expect comment naming the rule. `tests/fixtures.test.ts` fails until some fixture expects every core rule.
+   If `--fix` cannot clear it, add the `.llm.md` sibling that [Adding a fixture](#adding-a-fixture) describes.
 6. Add tests that run the real parser over real strings.
 7. Add a row for the rule to the remediation table in `skills/mermaidjs-lint/SKILL.md`, unless an existing row already covers it.
 8. Add a line under `Unreleased` in `CHANGELOG.md`.
@@ -77,6 +79,7 @@ A diagram that misbehaves in the wild becomes a fixture.
 That is one file in a folder under `tests/fixtures`, with an expect comment naming the rules it must report.
 [tests/fixtures/README.md](tests/fixtures/README.md) has the format.
 The test suite and the docs site both pick it up, with no test code to write.
+
 The site needs a description for every fixture folder.
 So never put a file directly in `tests/fixtures`, and describe a new folder as that README says.
 Run `make site` after adding a fixture, an example or a folder, because `make check` does not build the site.
@@ -86,8 +89,7 @@ That sibling must lint clean and carry an `llm:` comment with its reason, as [Sh
 
 ## Adding an example
 
-An example is one `.mmd` file in `examples/`, run as a fixture and drawn on the docs site from a committed PNG.
-`make site` fails with "has no rendered image" until `docs-site/docs/assets/examples/<name>.png` exists.
+An example is one `.mmd` file in `examples/`, run as a fixture and drawn on the docs site from a committed PNG. `make site` fails with "has no rendered image" until `docs-site/docs/assets/examples/<name>.png` exists.
 Draw it with the mermaid CLI, at four times scale, on the default theme and a white background.
 Pin a mermaid CLI on the same mermaid major as the linter, so the image comes from the parser that checked it.
 When the linter moves to a new mermaid major, move this pin with it.
@@ -116,8 +118,7 @@ Run it when the skill or a fixture it seeds from changes, then update [the Agent
 
 ## Reporting a bug
 
-Open an issue at [GitHub issues](https://github.com/jpeakai/jpai-mermaidjs-lint/issues) with the version, the command, the diagram, and the `--json` output.
-`mermaidjs-lint --version` prints the version, and on 0.1.x `npm ls @jpeakai/mermaidjs-lint` does.
+Open an issue at [GitHub issues](https://github.com/jpeakai/jpai-mermaidjs-lint/issues) with the version, the command, the diagram, and the `--json` output. `mermaidjs-lint --version` prints the version, and on 0.1.x `npm ls @jpeakai/mermaidjs-lint` does.
 Report a vulnerability privately, as [SECURITY.md](SECURITY.md) describes.
 
 ## Landing a change
@@ -142,6 +143,7 @@ A binding decision is recorded as a new `.yml` record in `adrs/` in the same cha
 Copy the shape of an existing record, give it the next number, and keep the `MJL-` prefix.
 Every typed relation needs its back-edge in the target record.
 Appending that back-edge is the one edit an accepted record allows, per [MJL-0016](adrs/0016-a-back-edge-may-be-appended-to-an-accepted-record.md).
+
 Run `make fix` to regenerate the bundle, then read its output.
 It reports a one-way relation as `one-way: ...`, but still exits 0.
 

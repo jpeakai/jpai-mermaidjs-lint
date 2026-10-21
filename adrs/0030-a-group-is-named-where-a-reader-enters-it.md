@@ -38,19 +38,45 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 
 #### Given
 
-a group's name is the first thing a reader reads of it, and the overview's edges are read between those names. Some diagrams cannot be summarised by folding at all, and some states end every failure path without being sinks themselves
+a group's name is the first thing a reader reads of it, and the overview's edges are read between those names.
+Some diagrams cannot be summarised by folding at all, and some states end every failure path without being sinks themselves
 
 #### We prefer
 
-naming a chain-like group in a flowchart or stateDiagram after its entry, the member no member leads into. A chain-like group's members form one directed path, or several disjoint ones for twin chains. Twin chains are named after the entry the flow reaches first, then the first by label, and never by a range spanning two stages. An aggregate whose root is a lookup is named after the member with the most edges crossing the group's boundary. A lookup root is one every edge of which joins one other member. A pair that would mix two pipeline stages, read from a dotted label prefix such as bronze. or an id prefix such as br_, loses a tie between equal modularity gains, and only a tie. A dense mesh is refused with the reason "dense mesh: a matrix or table reads better than a diagram". A graph is a dense mesh when it joins at least half of all its node pairs and more pairs than twice its nodes. Its nodes then average more than four links. The check runs on the diagram before planning and on each plan's overview after it. A shared terminal also covers a node at least three nodes lead into whose every successor leads nowhere. An example is Cancelled, leading only to Refunded and Voided. Two edges from different members of one outside group can draw one edge twice in a detail. Each then gets a stub of its own, when the detail still meets its target, as its rows are drawn. An overview's edges are ordered by the pair of nodes they join, whichever way each is written, so parallel edges sit side by side. Of two aggregates that save as much score per node hidden, the one leaving fewer edges between overview nodes goes first. A decision region hiding one node is undone when the overview and every detail still meet the target without it. That is how a suggested group hiding one node is undone, but a region is never merged into a neighbour
+naming a chain-like group in a flowchart or stateDiagram after its entry, the member no member leads into.
+A chain-like group's members form one directed path, or several disjoint ones for twin chains.
+Twin chains are named after the entry the flow reaches first, then the first by label, and never by a range spanning two stages.
+An aggregate whose root is a lookup is named after the member with the most edges crossing the group's boundary.
+
+A lookup root is one every edge of which joins one other member.
+A pair that would mix two pipeline stages, read from a dotted label prefix such as bronze. or an id prefix such as br_, loses a tie between equal modularity gains, and only a tie.
+A dense mesh is refused with the reason "dense mesh: a matrix or table reads better than a diagram".
+A graph is a dense mesh when it joins at least half of all its node pairs and more pairs than twice its nodes.
+
+Its nodes then average more than four links.
+The check runs on the diagram before planning and on each plan's overview after it.
+A shared terminal also covers a node at least three nodes lead into whose every successor leads nowhere.
+An example is Cancelled, leading only to Refunded and Voided.
+
+Two edges from different members of one outside group can draw one edge twice in a detail.
+Each then gets a stub of its own, when the detail still meets its target, as its rows are drawn.
+An overview's edges are ordered by the pair of nodes they join, whichever way each is written, so parallel edges sit side by side.
+Of two aggregates that save as much score per node hidden, the one leaving fewer edges between overview nodes goes first.
+
+A decision region hiding one node is undone when the overview and every detail still meet the target without it.
+That is how a suggested group hiding one node is undone, but a region is never merged into a neighbour
 
 #### Because
 
-a reader enters a chain where it starts, and a lookup's name says nothing of the aggregate whose edges all leave from another member. Folding a dense mesh leaves a dense mesh, since its groups are joined to each other too, so no fold makes it readable. A state every failure ends at reads as one branch's end when folded into that branch. One edge drawn twice from one stub reads as a duplicate, not as two sources
+a reader enters a chain where it starts, and a lookup's name says nothing of the aggregate whose edges all leave from another member.
+Folding a dense mesh leaves a dense mesh, since its groups are joined to each other too, so no fold makes it readable.
+A state every failure ends at reads as one branch's end when folded into that branch.
+One edge drawn twice from one stub reads as a duplicate, not as two sources
 
 #### Unless
 
-a group has an author region or a decision region's head, whose label still comes first. An erDiagram keeps every parallel edge, since cardinalities and labels are never merged
+a group has an author region or a decision region's head, whose label still comes first.
+An erDiagram keeps every parallel edge, since cardinalities and labels are never merged
 
 ## Consequences
 

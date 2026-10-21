@@ -6,9 +6,12 @@
 |---|---|---|---|---|---|---|
 | npm | [![npm](https://img.shields.io/npm/v/@jpeakai/mermaidjs-lint.svg)](https://www.npmjs.com/package/@jpeakai/mermaidjs-lint) | [![npm Downloads](https://img.shields.io/npm/dm/@jpeakai/mermaidjs-lint.svg)](https://www.npmjs.com/package/@jpeakai/mermaidjs-lint) | [![Node](https://img.shields.io/node/v/@jpeakai/mermaidjs-lint.svg)](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/package.json) | [![CI](https://github.com/jpeakai/jpai-mermaidjs-lint/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jpeakai/jpai-mermaidjs-lint/actions/workflows/ci.yml) | [![Docs](https://github.com/jpeakai/jpai-mermaidjs-lint/actions/workflows/docs.yml/badge.svg)](https://jpeakai.github.io/jpai-mermaidjs-lint/) | [![License](https://img.shields.io/npm/l/@jpeakai/mermaidjs-lint.svg)](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/LICENSE) |
 
-I hate walls of text. I do _**love**_ a good diagram though. mermaidjs is brilliant for separating the _**semantic structure**_ of a diagram from _**the pixel pushing**_.
+I hate walls of text.
+I do _**love**_ a good diagram though. mermaidjs is brilliant for separating the _**semantic structure**_ of a diagram from _**the pixel pushing**_.
 
-AI Agents love this separation too. And yet AI Agents kind of suck at diagrams though. So here is a linting and autofixer engine built on top of:
+AI Agents love this separation too.
+And yet AI Agents kind of suck at diagrams though.
+So here is a linting and autofixer engine built on top of:
 - [`mermaid`](https://www.npmjs.com/package/mermaid) parsing libraries
 - [`colorjs.io`](https://www.npmjs.com/package/colorjs.io) for official [WCAG 2.1](https://colorjs.io/docs/contrast#wcag-21) colour contrast readability scoring.
 

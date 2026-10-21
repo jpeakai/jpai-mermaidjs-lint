@@ -61,7 +61,8 @@ It is the nearest folder upwards holding a `package.json`, a config file or a `.
 
 - **Run from the package's folder** to use that package's config and plugins.
 - **Pass `--config`** to read a config from anywhere.
-- **Pass `--profile github`** for packages GitHub draws, when a `mkdocs.yml` sits above them. The `auto` profile climbs past the package to find it, as [Lint a MkDocs Material site](mkdocs.md#run-it-on-the-docs-folder) explains.
+- **Pass `--profile github`** for packages GitHub draws, when a `mkdocs.yml` sits above them.
+  The `auto` profile climbs past the package to find it, as [Lint a MkDocs Material site](mkdocs.md#run-it-on-the-docs-folder) explains.
 
 Plugins are discovered from the project root's `package.json` and `.mermaidjs-lint/rules`, so they follow the working directory too.
 
@@ -71,7 +72,8 @@ Plugins are discovered from the project root's `package.json` and `.mermaidjs-li
 
 - **Check the plugin is declared.** Its package must be in the project's `dependencies`, `devDependencies` or `optionalDependencies`, and installed.
 - **Check the id.** `mermaidjs-lint --list-rules` prints every loaded rule under its real id.
-- **Expect it under `--no-plugins`.** That run sets aside settings for plugin rules, and standard error says so, so it never fails on them. Version 0.1.1 fails on them instead.
+- **Expect it under `--no-plugins`.** That run sets aside settings for plugin rules, and standard error says so, so it never fails on them.
+  Version 0.1.1 fails on them instead.
 
 ## A TypeScript local rule fails to load
 

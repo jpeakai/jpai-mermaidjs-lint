@@ -31,19 +31,32 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 
 #### Given
 
-a reader of a split plan reads an author's namespace as the diagram's own story, and follows a stub to the node it names. A stub in a nested overview standing for a whole group sends the reader two levels back without saying which member it reaches. A pipeline's lanes carry each source to the table it lands in
+a reader of a split plan reads an author's namespace as the diagram's own story, and follows a stub to the node it names.
+A stub in a nested overview standing for a whole group sends the reader two levels back without saying which member it reaches.
+A pipeline's lanes carry each source to the table it lands in
 
 #### We prefer
 
-folding an author region whole however much of a diagram it holds, its detail split again when it does not fit. A chain stage may join two prefix families, so each extract folds with the bronze table it lands in, and lanes alike fold as twins. Edges may join two groups both ways, and one group's detail may exceed the target and be split again while the other's fits. The group split again then draws every edge between them exactly, with stubs for the other's members. Otherwise the group needing stubs for fewer of the other's members draws them, as before. The other group's detail draws it whole, and still no detail draws a group whole beside a stub for one of its members
+folding an author region whole however much of a diagram it holds, its detail split again when it does not fit.
+A chain stage may join two prefix families, so each extract folds with the bronze table it lands in, and lanes alike fold as twins.
+Edges may join two groups both ways, and one group's detail may exceed the target and be split again while the other's fits.
+The group split again then draws every edge between them exactly, with stubs for the other's members.
+
+Otherwise the group needing stubs for fewer of the other's members draws them, as before.
+The other group's detail draws it whole, and still no detail draws a group whole beside a stub for one of its members
 
 #### Because
 
-raters preferred the whole namespace with its nested split to its parts, which read as tangled and lost more. A member stub in a nested overview names where the reader goes. A whole-group stub in a flat detail names a group the top overview already draws. Lanes read as sources flowing into their tables, where halves of a layer read as arbitrary cuts
+raters preferred the whole namespace with its nested split to its parts, which read as tangled and lost more.
+A member stub in a nested overview names where the reader goes.
+A whole-group stub in a flat detail names a group the top overview already draws.
+Lanes read as sources flowing into their tables, where halves of a layer read as arbitrary cuts
 
 #### Unless
 
-two groups joined both ways may both, or neither, have details split again. A diagram may have no chain across prefix families, or no region holding most of it. The plan then stands as before
+two groups joined both ways may both, or neither, have details split again.
+A diagram may have no chain across prefix families, or no region holding most of it.
+The plan then stands as before
 
 ## Consequences
 

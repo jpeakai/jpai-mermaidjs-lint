@@ -34,19 +34,35 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 
 #### Given
 
-some diagrams are mostly decisions, a flowchart or stateDiagram. In others, an erDiagram overview groups entities by leaves and junctions, not by what owns what
+some diagrams are mostly decisions, a flowchart or stateDiagram.
+In others, an erDiagram overview groups entities by leaves and junctions, not by what owns what
 
 #### We prefer
 
-folding a decision with its region, from the decision to its immediate post-dominator, where its branches rejoin. Dominators and post-dominators come from the algorithm of Cooper, Harvey and Kennedy (2001), with a virtual entry and exit. A branch ending at a terminal node is an outcome folded inside the region, not an exit from it. Every edge into the region enters the decision, and every edge out reaches the rejoin node. These are the regions of the program structure tree of Johnson, Pearson and Pingali (1994). Such a fold invents no path, so it belongs to T2, the lossless tier. Regions fold innermost first, are named after their decision, and keep their branch labels in the detail. A chain stage may pass through a folded region. In an erDiagram an entity is owned by its single identifying parent, or as a leaf by the one entity it depends on. T4 folds the largest aggregate whose detail fits, named after its root, or each root's aggregate split again when none fits. A junction identified by two roots folds into neither side, and T5 and T6 keep it in view
+folding a decision with its region, from the decision to its immediate post-dominator, where its branches rejoin.
+Dominators and post-dominators come from the algorithm of Cooper, Harvey and Kennedy (2001), with a virtual entry and exit.
+A branch ending at a terminal node is an outcome folded inside the region, not an exit from it.
+Every edge into the region enters the decision, and every edge out reaches the rejoin node.
+
+These are the regions of the program structure tree of Johnson, Pearson and Pingali (1994).
+Such a fold invents no path, so it belongs to T2, the lossless tier.
+Regions fold innermost first, are named after their decision, and keep their branch labels in the detail.
+A chain stage may pass through a folded region.
+
+In an erDiagram an entity is owned by its single identifying parent, or as a leaf by the one entity it depends on.
+T4 folds the largest aggregate whose detail fits, named after its root, or each root's aggregate split again when none fits.
+A junction identified by two roots folds into neither side, and T5 and T6 keep it in view
 
 #### Because
 
-a decision's branches only make sense together, and a region folded whole keeps them together without adding reachability. Identifying relationships are the author's statement of ownership, so an overview whose edges run between aggregate roots reads as the author's model
+a decision's branches only make sense together, and a region folded whole keeps them together without adding reachability.
+Identifying relationships are the author's statement of ownership, so an overview whose edges run between aggregate roots reads as the author's model
 
 #### Unless
 
-a region has a second entry or a second exit. Then the decision stays protected. An erDiagram with no identifying relationship is folded by T5 and T6 as before
+a region has a second entry or a second exit.
+Then the decision stays protected.
+An erDiagram with no identifying relationship is folded by T5 and T6 as before
 
 ## Consequences
 

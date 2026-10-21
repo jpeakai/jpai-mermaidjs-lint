@@ -27,6 +27,7 @@ The file name is the rule key, and it must start with the rule's category, as `c
 Each key comes from exactly one file, so two files such as `house-x.js` and `house-x.mjs` fail the load with `error[plugin-contract]`, naming both.
 The `categories` export declares `house` as a new category, because a TODO is a house-style choice.
 Keep the built-in categories, `parse`, `complexity` and `contrast`, for what those words mean.
+
 The rule loads on its own, with the id `local/house-no-todo`.
 The `.mjs` extension makes the file an ES module in any project, as [Choose the file extension](#choose-the-file-extension) explains.
 
@@ -103,8 +104,13 @@ Either route reports one passing test.
 
 ## Go further
 
-- **Add a fixer** by returning edits from a `fix` function. Each edit must declare what stays the same, and the engine refuses any edit that breaks it. See [Plugin API](../reference/plugin-api.md#edits).
-- **Write it in TypeScript** as `.mts`. The command starts on Node even under `bunx`, so run `bunx --bun mermaidjs-lint docs/` to use Bun. On Node, use 22.18 or newer (23.6 or newer on Node 23). Anything else fails with `error[plugin-source]`.
+- **Add a fixer** by returning edits from a `fix` function.
+  Each edit must declare what stays the same, and the engine refuses any edit that breaks it.
+  See [Plugin API](../reference/plugin-api.md#edits).
+- **Write it in TypeScript** as `.mts`.
+  The command starts on Node even under `bunx`, so run `bunx --bun mermaidjs-lint docs/` to use Bun.
+  On Node, use 22.18 or newer (23.6 or newer on Node 23).
+  Anything else fails with `error[plugin-source]`.
 - **Check every rule loads** with `bunx mermaidjs-lint --validate-plugins`.
 
 ## Choose the file extension
@@ -121,7 +127,6 @@ Under Node, a `.js` or `.ts` rule loads only as the `"type"` field in the projec
 A `.ts` rule also needs Node 22.18 or newer (23.6 or newer on Node 23), as `.mts` does, whatever the `"type"` field says.
 On older Node it fails with `error[plugin-source]` before it is imported.
 
-`npm init -y` writes `"type": "commonjs"` in npm 11, so the npm route in [Get started](../get-started.md) makes a project where a `.js` rule fails.
-`bun init -y` writes `"type": "module"`.
+`npm init -y` writes `"type": "commonjs"` in npm 11, so the npm route in [Get started](../get-started.md) makes a project where a `.js` rule fails. `bun init -y` writes `"type": "module"`.
 To keep a `.js` or `.ts` name, set `"type": "module"` in `package.json`, or rename the file to `.mjs` or `.mts`.
 Under Bun, through `bunx --bun`, each extension loads whatever the `"type"` field says.

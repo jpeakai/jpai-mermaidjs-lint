@@ -24,19 +24,23 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-21T00:00:00Z }
 
 #### Given
 
-a stub's text names the outside node it stands for. A range label already names its first and last members
+a stub's text names the outside node it stands for.
+A range label already names its first and last members
 
 #### We prefer
 
-a stub for the first or the last member a range label names shows its own label alone, as "REL-0042". It does so only when the group shows its range uncut, and neither the member nor the group holds markup
+a stub for the first or the last member a range label names shows its own label alone, as "REL-0042".
+It does so only when the group shows its range uncut, and neither the member nor the group holds markup
 
 #### Because
 
-a stub repeating the range that names it says the same name twice. The reader finds the member's own label in the overview, at one end of the range
+a stub repeating the range that names it says the same name twice.
+The reader finds the member's own label in the overview, at one end of the range
 
 #### Unless
 
-the group shows its range cut, or a label holds markup. A member of a range group that the range does not name keeps its group's label in its stub
+the group shows its range cut, or a label holds markup.
+A member of a range group that the range does not name keeps its group's label in its stub
 
 ## Consequences
 

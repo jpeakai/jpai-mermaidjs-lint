@@ -21,8 +21,7 @@ Every other file is scored as GitHub renders it.
 
 ## Keep README.md scored as GitHub renders it
 
-With `mkdocs.yml` at the repository root, every markdown file in the repository has it as a parent.
-`README.md` is then scored as Material, although GitHub is where it is read.
+With `mkdocs.yml` at the repository root, every markdown file in the repository has it as a parent. `README.md` is then scored as Material, although GitHub is where it is read.
 
 Choose one of two fixes:
 

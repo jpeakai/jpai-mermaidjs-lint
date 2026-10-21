@@ -34,15 +34,18 @@ a diagram over a node count or score threshold
 
 #### We prefer
 
-offering a fold only as the overview half of a split, with one detail diagram per group, checked by a contract on the emitted text. That is preferred over a replacement diagram, and over a fixer
+offering a fold only as the overview half of a split, with one detail diagram per group, checked by a contract on the emitted text.
+That is preferred over a replacement diagram, and over a fixer
 
 #### Because
 
-the boundary of a split is a design decision, so the plan is a recommendation a human applies (MJL-0004). A split also stays recoverable, since the overview and the details together keep every node and edge
+the boundary of a split is a design decision, so the plan is a recommendation a human applies (MJL-0004).
+A split also stays recoverable, since the overview and the details together keep every node and edge
 
 #### Unless
 
-no plan meets the contract. Then no plan is offered, and the finding keeps its subgraph hint
+no plan meets the contract.
+Then no plan is offered, and the finding keeps its subgraph hint
 
 ## Consequences
 

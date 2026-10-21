@@ -36,6 +36,7 @@ A `file` ending in `.mmd` or `.mermaid` is read as one diagram, and any other na
 The `file` also decides the `auto` contrast profile, so pass the real path when the profile matters.
 A relative `file` resolves against `process.cwd()`, not the folder of the source you read.
 So `checkMarkdown(src, "README.md")` looks for a `mkdocs.yml` above the working directory.
+
 Pass `{ profile: "github" }` or `{ profile: "mkdocs-material" }` as the flags to fix the profile instead.
 A check or a fix rejects an unknown `preset` or `profile` with a `FlagError`, whose `flag` is `preset` or `profile`.
 
@@ -49,6 +50,7 @@ A canvas side that will not parse, or is translucent, is a `FlagError` whose `fl
 So is a canvas in `flags` beside `profile: "mkdocs-material"` in `flags`.
 A file that `auto` or the config scores under `mkdocs-material` rejects a canvas from `flags` with a `CanvasProfileError`.
 A canvas from the registry's config beside `profile: "mkdocs-material"` in `flags` is a `CanvasProfileError` too.
+
 A canvas from the registry's config is set aside for a file that `auto` scores under `mkdocs-material`, with no error and no note.
 Call `canvasSetAside(file, flags, registry)` to learn when that happens, since the library gives no other signal.
 
@@ -84,9 +86,7 @@ The `setUp` options mirror the flags:
 | `lenient` | `--lenient-plugins` |
 | `collect` | `--validate-plugins` |
 
-`root` is the project root the config and plugins were found from.
-`skipped` names the plugins discovered but not loaded under `noPlugins`, or under `"plugins": false` in the config.
-`failures` holds the plugins a lenient or collecting run left out, each a `PluginFailure` of `{ source, kind, error }`.
+`root` is the project root the config and plugins were found from. `skipped` names the plugins discovered but not loaded under `noPlugins`, or under `"plugins": false` in the config. `failures` holds the plugins a lenient or collecting run left out, each a `PluginFailure` of `{ source, kind, error }`.
 
 ## Running the command
 
@@ -96,10 +96,8 @@ The `setUp` options mirror the flags:
 | `collectFiles` | `(paths: string[])` | `Collected`, which is `{ files: string[]; unreadable: string[]; symlinks: string[] }`, walking directories as the command does |
 
 `main` prints to standard output and standard error as the command does.
-It returns 2 on a usage error and throws on a runtime failure, which the command turns into exit code 1.
-`cwd` sets the folder relative paths resolve from, and the project root.
-The `auto` profile is then found from each file's own folder, so `main` scores files the same from any working directory.
-`collectFiles` lists, in `symlinks`, every symbolic link a directory walk passed over.
+It returns 2 on a usage error and throws on a runtime failure, which the command turns into exit code 1. `cwd` sets the folder relative paths resolve from, and the project root.
+The `auto` profile is then found from each file's own folder, so `main` scores files the same from any working directory. `collectFiles` lists, in `symlinks`, every symbolic link a directory walk passed over.
 
 ## Reading diagrams
 
@@ -143,8 +141,7 @@ Nothing is applied, per [MJL-0025](https://github.com/jpeakai/jpai-mermaidjs-lin
 | `Tier` | `"T1"` to `"T6"` | The tiers, least lossy first |
 
 `splitPlan` returns `null` for a diagram already within the target, and for one where no plan meets the contract.
-It also returns `null` for a type it does not split, such as a sequence diagram.
-`splitOutcome` names which:
+It also returns `null` for a type it does not split, such as a sequence diagram. `splitOutcome` names which:
 
 ```ts
 import { splitOutcome, thresholdsFrom } from "@jpeakai/mermaidjs-lint";
@@ -193,8 +190,7 @@ Every class extends `MermaidLintError`, which carries `code` and `message`.
 
 The command exits 2 on a `UsageError` and 1 on every other class.
 The base classes' own codes, `usage` on `UsageError` and `plugin` on `PluginLoadError`, are defaults, and the command never prints either one alone.
-Branch on a subclass code from the table, or on `instanceof` the parent class.
-`src/errors.ts` is the authority when this table and the code disagree.
+Branch on a subclass code from the table, or on `instanceof` the parent class. `src/errors.ts` is the authority when this table and the code disagree.
 
 ## Types
 

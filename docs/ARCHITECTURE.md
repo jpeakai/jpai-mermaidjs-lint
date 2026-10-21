@@ -57,8 +57,7 @@ flowchart LR
 <details>
 <summary>Entry points, setup and the plugin loader, by file (15 nodes)</summary>
 
-Each arrow is an import.
-`bin.ts` is the command, `index.ts` the library and `testing.ts` the plugin test helper, the three bundles `make build` writes.
+Each arrow is an import. `bin.ts` is the command, `index.ts` the library and `testing.ts` the plugin test helper, the three bundles `make build` writes.
 Most modules also import `errors.ts`, which holds every named failure and its stable code.
 
 ```mermaid
@@ -122,9 +121,7 @@ flowchart LR
 <summary>Check, fix, rules and the parse engine, by file (19 nodes)</summary>
 
 Each arrow is an import.
-The parse engine reads structure from mermaid's own parsers, per [MJL-0001](../adrs/0001-parse-with-mermaids-own-parsers.md).
-`stats.ts` uses `@mermaid-js/parser` for the Langium grammars and mermaid core, under `happy-dom`, for the rest.
-`styles.ts` reads style directives from the same parsed DB, and places each statement by its lexer token.
+The parse engine reads structure from mermaid's own parsers, per [MJL-0001](../adrs/0001-parse-with-mermaids-own-parsers.md). `stats.ts` uses `@mermaid-js/parser` for the Langium grammars and mermaid core, under `happy-dom`, for the rest. `styles.ts` reads style directives from the same parsed DB, and places each statement by its lexer token.
 
 ```mermaid
 flowchart LR
@@ -679,8 +676,7 @@ erDiagram
 <details>
 <summary>Core data shapes, with the run's inputs and its JSON report (12 entities)</summary>
 
-Sources: `src/project.ts`, `src/check.ts`, `src/files.ts`, `src/rules/registry.ts`, `src/rules/types.ts`, `src/fix/engine.ts` and `src/plugins/index.ts`.
-`JsonReport` is not an exported type: it is the object `run` in `src/cli.ts` prints under `--json`.
+Sources: `src/project.ts`, `src/check.ts`, `src/files.ts`, `src/rules/registry.ts`, `src/rules/types.ts`, `src/fix/engine.ts` and `src/plugins/index.ts`. `JsonReport` is not an exported type: it is the object `run` in `src/cli.ts` prints under `--json`.
 [DATA_MODEL.md](DATA_MODEL.md) has every field of the document, rule, fix and plugin models.
 
 ```mermaid

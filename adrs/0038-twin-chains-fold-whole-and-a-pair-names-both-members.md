@@ -44,19 +44,55 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 
 #### Given
 
-a reader of an overview reads a group's name as what it holds. A cut through alike things reads as a claim that they differ. A reader follows a stub to the overview text it names. Lanes carry each source to the table it lands in, and nothing in their labels sorts them
+a reader of an overview reads a group's name as what it holds.
+A cut through alike things reads as a claim that they differ.
+A reader follows a stub to the overview text it names.
+Lanes carry each source to the table it lands in, and nothing in their labels sorts them
 
 #### We prefer
 
-folding twin chains whole, over cutting them into runs by label order. When their detail does not fit, it is split again while the depth allows, and each lane folds as one group in it. Every lane of twin chains folds in one step, so lanes fold alike. Twin chains are cut into runs only when folding them whole gives no plan. A target whose detail is split again draws the edges joining two groups one way, from stubs for the source's members. A lane's place is named by the namespace its labels lead with. Failing that, it is the first word they all lead with. Failing that, it is the two first words they lead with between them, in natural order, joined by a slash, as "Extract/Ingest → bronze (+14)". A group of two members shows the label it is named after, then " (+", the other's label and ")", as "ROOM (+BUILDING)". Neither label holds a bracket, a less-than sign, an ampersand, an asterisk, a hash or a backtick. The other is not a number, and the whole label holds 40 characters at most. Groups of two folded alike, by tier and reason, take it only when every one of them can. A stub for a member of such a group shows its own label alone. So does a stub for the member any group is named after, since the group's label leads with that label uncut. A group may hold every leaf one overview node leads to, or every leaf leading to it, two or more. It is then named by that node's name and an ellipsis, as "Checkout domain → … (+4)", counting every member. That name is a kept node's label or the base label a group shows. It comes after an author region's label, a decision's question, a family, a lane and a range. The contract and both test readers accept each label only as recomputed from the members. A tangled schema that meets its target by rows alone still folds its aggregates, over showing every entity
+folding twin chains whole, over cutting them into runs by label order.
+When their detail does not fit, it is split again while the depth allows, and each lane folds as one group in it.
+Every lane of twin chains folds in one step, so lanes fold alike.
+Twin chains are cut into runs only when folding them whole gives no plan.
+
+A target whose detail is split again draws the edges joining two groups one way, from stubs for the source's members.
+A lane's place is named by the namespace its labels lead with.
+Failing that, it is the first word they all lead with.
+Failing that, it is the two first words they lead with between them, in natural order, joined by a slash, as "Extract/Ingest → bronze (+14)".
+
+A group of two members shows the label it is named after, then " (+", the other's label and ")", as "ROOM (+BUILDING)".
+Neither label holds a bracket, a less-than sign, an ampersand, an asterisk, a hash or a backtick.
+The other is not a number, and the whole label holds 40 characters at most.
+Groups of two folded alike, by tier and reason, take it only when every one of them can.
+
+A stub for a member of such a group shows its own label alone.
+So does a stub for the member any group is named after, since the group's label leads with that label uncut.
+A group may hold every leaf one overview node leads to, or every leaf leading to it, two or more.
+It is then named by that node's name and an ellipsis, as "Checkout domain → … (+4)", counting every member.
+
+That name is a kept node's label or the base label a group shows.
+It comes after an author region's label, a decision's question, a family, a lane and a range.
+The contract and both test readers accept each label only as recomputed from the members.
+A tangled schema that meets its target by rows alone still folds its aggregates, over showing every entity
 
 #### Because
 
-one group of lanes reads as the stage it is, where two runs of it read as two stages. Lanes folded one by one read as interchangeable, which they are. A name showing both members of a pair hides nothing, so the overview keeps its structure and every entity's name. A stub for a member of a pair is found by its own label in the overview. So is a stub for the member a group is named after. Raters read "Statement (in Statement (+3))" as a repeat. A group of leaves hanging from one node is named by what all of them share, where a member's name promises one of them. Raters across four rounds slightly preferred the folded schema, and the pair label takes away what they disliked about it
+one group of lanes reads as the stage it is, where two runs of it read as two stages.
+Lanes folded one by one read as interchangeable, which they are.
+A name showing both members of a pair hides nothing, so the overview keeps its structure and every entity's name.
+A stub for a member of a pair is found by its own label in the overview.
+
+So is a stub for the member a group is named after.
+Raters read "Statement (in Statement (+3))" as a repeat.
+A group of leaves hanging from one node is named by what all of them share, where a member's name promises one of them.
+Raters across four rounds slightly preferred the folded schema, and the pair label takes away what they disliked about it
 
 #### Unless
 
-the diagram is a classDiagram or erDiagram, whose chains have no direction, so no lane, fan or chain rule applies. A pair's labels may hold a bracket or markup, or be too long, and its group then keeps its count. A group of leaves may share its node with leaves outside it, and then keeps its other names
+the diagram is a classDiagram or erDiagram, whose chains have no direction, so no lane, fan or chain rule applies.
+A pair's labels may hold a bracket or markup, or be too long, and its group then keeps its count.
+A group of leaves may share its node with leaves outside it, and then keeps its other names
 
 ## Consequences
 
@@ -66,7 +102,9 @@ the diagram is a classDiagram or erDiagram, whose chains have no direction, so n
 - The university overview names all 23 entities, as "SECTION (+ASSESSMENT)", "ROOM (+BUILDING)" and "ENROLMENT (+GRADE)".
 - The boutique's external APIs read "Checkout domain → … (+4)".
 - A stub for a member of a pair no longer repeats its group's label, as "CART" where it read "CART (in CART (+1))".
-- A stub for the member a group is named after reads "Fraud model flags?" where it read "Fraud model flags? (in Fraud model flags? (+4))".
+- A stub for the member a group is named after reads "Fraud model flags?" where it read "Fraud model flags?
+  (in Fraud model flags?
+  (+4))".
 
 ### Cons
 

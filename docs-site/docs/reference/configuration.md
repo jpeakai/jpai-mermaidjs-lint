@@ -12,8 +12,7 @@ To learn the workflow, see [Configure the rules](../guides/configure.md).
 
 The file is read from the project root.
 That is the first folder, searching upwards from the working directory, that holds a `package.json`, a config file or a `.mermaidjs-lint` folder.
-With no such folder, the project root is the working directory.
-`--config FILE` reads another file instead.
+With no such folder, the project root is the working directory. `--config FILE` reads another file instead.
 Two config files at the root is an error.
 
 A `.mjs` config is code, and reading it runs that code.
@@ -62,8 +61,7 @@ Set on one rule alone, it opens a gap or an overlap, and an overlap makes two ru
 
 Plugin rules are set the same way, by their `namespace/key` id.
 Outside strict mode, a setting for a plugin rule that did not load is set aside.
-Under `--no-plugins`, `"plugins": false` or a lenient run, standard error says so.
-`--validate-plugins` runs no check, so it prints no such line.
+Under `--no-plugins`, `"plugins": false` or a lenient run, standard error says so. `--validate-plugins` runs no check, so it prints no such line.
 A built-in id that does not exist always fails with `error[unknown-rule]`.
 
 ## Rule options
@@ -109,8 +107,7 @@ A `--canvas-light` or `--canvas-dark` flag overrides its own side of the `canvas
 
 ### Complexity rules
 
-Every complexity rule accepts the same options.
-`complexity-subgraph-nesting-too-deep` accepts them but reads none, because its limit is fixed at three levels.
+Every complexity rule accepts the same options. `complexity-subgraph-nesting-too-deep` accepts them but reads none, because its limit is fixed at three levels.
 
 | Option | Type | Meaning |
 |---|---|---|

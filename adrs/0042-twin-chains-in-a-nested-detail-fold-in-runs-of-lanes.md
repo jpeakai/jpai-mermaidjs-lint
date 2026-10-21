@@ -25,19 +25,36 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-21T00:00:00Z }
 
 #### Given
 
-a reader opens one detail per group, and a group of two members says little its detail does not. A detail split again whose groups each hold one lane reads as many tiny diagrams of one shape. Lanes whose labels lead with one word at every place read as one stage. A detail split again must fit its target, since none is split a third time
+a reader opens one detail per group, and a group of two members says little its detail does not.
+A detail split again whose groups each hold one lane reads as many tiny diagrams of one shape.
+Lanes whose labels lead with one word at every place read as one stage.
+A detail split again must fit its target, since none is split a third time
 
 #### We prefer
 
-folding twin chains in runs of lanes in a detail split again, when they do not fit whole and every lane fits as one stage. Lanes whose labels give the same word at every place, a dotted namespace or else a first word, form one set. When there are two sets or more, every set fits whole, and one holds two lanes or more, each set folds as one group. So an ETL detail at the medium preset reads "Extract → bronze (+12)" beside the one ingest lane. Else the lanes fold in natural order of their entries' labels, in runs of as many as fit. The runs are cut as evenly as every run still fitting allows. So the same detail at the low preset reads "Extract → bronze (+8)" and "Extract/Ingest → bronze (+6)". A lane in no run folds alone, as before. Each run is a twins group named by its lanes' stages, which the contract and both test readers recompute from the members
+folding twin chains in runs of lanes in a detail split again, when they do not fit whole and every lane fits as one stage.
+Lanes whose labels give the same word at every place, a dotted namespace or else a first word, form one set.
+When there are two sets or more, every set fits whole, and one holds two lanes or more, each set folds as one group.
+So an ETL detail at the medium preset reads "Extract → bronze (+12)" beside the one ingest lane.
+
+Else the lanes fold in natural order of their entries' labels, in runs of as many as fit.
+The runs are cut as evenly as every run still fitting allows.
+So the same detail at the low preset reads "Extract → bronze (+8)" and "Extract/Ingest → bronze (+6)".
+A lane in no run folds alone, as before.
+
+Each run is a twins group named by its lanes' stages, which the contract and both test readers recompute from the members
 
 #### Because
 
-a few details each holding several lanes say what one per lane said, in fewer diagrams. A set of lanes led by one word reads as a stage, so grouping by it sorts the lanes by their labels. Runs in label order sort them where no word does, inside a group the overview already names as one stage
+a few details each holding several lanes say what one per lane said, in fewer diagrams.
+A set of lanes led by one word reads as a stage, so grouping by it sorts the lanes by their labels.
+Runs in label order sort them where no word does, inside a group the overview already names as one stage
 
 #### Unless
 
-the walk is the overview's, or a detail it may split again, where twin chains still fold whole per MJL-0038. Lanes that fit whole fold as one group. When no two lanes fit together, each lane folds alone
+the walk is the overview's, or a detail it may split again, where twin chains still fold whole per MJL-0038.
+Lanes that fit whole fold as one group.
+When no two lanes fit together, each lane folds alone
 
 ## Consequences
 

@@ -1,0 +1,89 @@
+{
+  "0027-gaps-in-the-official-parsers-are-recorded.md": [
+    "Third, mermaid core has no zenuml detector.",
+    "The zenuml detector is a one-line type detector registered through registerExternalDiagrams. styles2Map is a mirror whose output a test pins to mermaid's compiled styles."
+  ],
+  "0028-decision-regions-and-aggregates-fold-whole.md": [
+    "These are the regions of the program structure tree of Johnson, Pearson and Pingali (1994).",
+    "In an erDiagram an entity is owned by its single identifying parent, or as a leaf by the one entity it depends on."
+  ],
+  "0029-runs-meshes-and-terminals-read-as-they-are.md": [
+    "It is refused when a member of another group has a label from the first to the last.",
+    "In a mesh whose overview joins at least half of all pairs, T6 also proposes maximal cliques of ungrouped nodes.",
+    "It keeps its own node under the strict rules, and under a second rule set that folds hubs and branches."
+  ],
+  "0030-a-group-is-named-where-a-reader-enters-it.md": [
+    "A lookup root is one every edge of which joins one other member.",
+    "Its nodes then average more than four links.",
+    "Two edges from different members of one outside group can draw one edge twice in a detail.",
+    "A decision region hiding one node is undone when the overview and every detail still meet the target without it."
+  ],
+  "0031-a-plan-keeps-groups-even-and-names-each-stub-once.md": [
+    "Held to no target, any owner's aggregate may fold, not only a root's.",
+    "Failing that, it is letters and an underscore leading an id, such as br_.",
+    "In T6 they come within 5% of the best gain, at the same kin.",
+    "Each takes \" from \" and the label of the one member its edges leave, as \"Checkout domain (+5) from paymentservice\"."
+  ],
+  "0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md": [
+    "A whole-group stub may sit beside a stub for the member its group is named after.",
+    "Such a pair is taken only when it names one prefix family.",
+    "They are also joined by a neighbour they share, when both name one prefix family or both are leaves."
+  ],
+  "0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md": [
+    "A tangled one folds aggregates once the target is met, even by dropping rows alone.",
+    "A family whose detail does not fit is offered as even contiguous runs in natural order, each connected, in one step.",
+    "A region's shape is its own node count and each child region's label and shape.",
+    "It sits in that region in the overview and counts every member.",
+    "When edges join two groups both ways, one detail draws every edge between them exactly, with stubs for the other's members.",
+    "The edges of one kind one way between a group's stub and one member draw once.",
+    "Two regions drawn from one template folded to different depths read as different things."
+  ],
+  "0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md": [
+    "A dense mesh prints as a markdown table, a row and a column per node.",
+    "Under the third set of rules, hubs and branches fold while prefix families stay apart, before a walk mixes them.",
+    "A root whose whole aggregate would draw one is also offered trimmed.",
+    "It then folds whole only when its detail fits, under every set of rules, and only when no such walk plans is it folded whole",
+    "A schema already within its target gains nothing from a fold that makes pairs reachable."
+  ],
+  "0035-a-region-folds-whole-and-a-nested-detail-names-members.md": [
+    "Otherwise the group needing stubs for fewer of the other's members draws them, as before."
+  ],
+  "0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md": [
+    "The chains run two or more, each of one length of two members or more.",
+    "Both labels count every member, as an author region's label does.",
+    "The contract and both test readers accept the two labels only as recomputed from the members.",
+    "The source's detail draws the target as one stub, each edge alike drawn once.",
+    "A bare bracket or \"in group\" leaves the reader to guess which group, and inside a nested overview the nearest guess is wrong."
+  ],
+  "0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md": [
+    "Its box then stands for the region, and an edge to the region meets the box.",
+    "A detail draws its boxes, most stubs first, while it still meets its target, and a detail split again draws none.",
+    "The target draws them exactly when it needs stubs for fewer of the source's members than the source needs of the target's.",
+    "Otherwise, or when the source's detail is split again, the source draws them, as before.",
+    "Two groups of one size read as two parts of one story."
+  ],
+  "0038-twin-chains-fold-whole-and-a-pair-names-both-members.md": [
+    "A target whose detail is split again draws the edges joining two groups one way, from stubs for the source's members.",
+    "A group of two members shows the label it is named after, then \" (+\", the other's label and \")\", as \"ROOM (+BUILDING)\".",
+    "A stub for a member of such a group shows its own label alone.",
+    "That name is a kept node's label or the base label a group shows.",
+    "So is a stub for the member a group is named after."
+  ],
+  "0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md": [
+    "It ends with which measure is over, here \"over on its score alone\".",
+    "They come in natural order, joined by a comma, as \"ADDRESS (+CITY, COUNTRY)\".",
+    "A stub for any member of such a group shows its own label alone.",
+    "Such a group with no decision or aggregate head is named by both labels joined by an arrow.",
+    "It comes after a region's label, a head, a family, a lane, a range and a fan, and before a member's label.",
+    "A name showing every member of a small group hides nothing."
+  ],
+  "0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md": [
+    "An aggregate whose other members relate outside it stays in view.",
+    "It lists every member however many, and the whole label holds 80 characters at most.",
+    "Groups folded alike take list labels only when every one of them that may be listed can."
+  ],
+  "0042-twin-chains-in-a-nested-detail-fold-in-runs-of-lanes.md": [
+    "Else the lanes fold in natural order of their entries' labels, in runs of as many as fit.",
+    "Each run is a twins group named by its lanes' stages, which the contract and both test readers recompute from the members"
+  ]
+}

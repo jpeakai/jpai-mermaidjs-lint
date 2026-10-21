@@ -25,15 +25,18 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 
 #### Given
 
-a parser's result holds records with nothing to read, such as a block's closing line or a start marker. It also files some things a reader does read, such as attributes, outside its nodes
+a parser's result holds records with nothing to read, such as a block's closing line or a start marker.
+It also files some things a reader does read, such as attributes, outside its nodes
 
 #### We prefer
 
-counting messages, boxes, blocks, states and rows, and leaving out control lines, markers and notes. That is preferred over counting every record the parser keeps
+counting messages, boxes, blocks, states and rows, and leaving out control lines, markers and notes.
+That is preferred over counting every record the parser keeps
 
 #### Because
 
-the score stands for what a reader must find, trace and hold. A record with nothing to read inflates it, and a missed boundary or row deflates it
+the score stands for what a reader must find, trace and hold.
+A record with nothing to read inflates it, and a missed boundary or row deflates it
 
 #### Unless
 

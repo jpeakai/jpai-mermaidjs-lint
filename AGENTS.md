@@ -50,8 +50,8 @@ When a new domain term enters the code or the conversation, add it to the glossa
   Everything in `adrs/` except the `.yml` records, `okf_render.py`, `record.schema.json` and `templates/` is generated.
   Fix generated ADR prose in its record or its template.
   So is `dist/`, which `make build` bundles from `src/` for Node and git ignores.
-  So are the docs site's rules page, its fixtures and examples gallery pages, and its snippets.
-  `make site` writes them from `RULES.md`, `tests/fixtures`, `examples/` and the CLI help.
+
+  So are the docs site's rules page, its fixtures and examples gallery pages, and its snippets. `make site` writes them from `RULES.md`, `tests/fixtures`, `examples/` and the CLI help.
   The gallery's `index.md` and `agent-evals.md` are hand-written.
 - Never let the docs describe unreleased behaviour without an `Unreleased` entry in `CHANGELOG.md`.
   The README on GitHub shows main, while the site and npm readers see the latest release.

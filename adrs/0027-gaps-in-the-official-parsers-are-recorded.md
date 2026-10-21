@@ -28,19 +28,33 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 
 #### Given
 
-a feature needs something mermaid does not expose. There are four such gaps. First, mermaid keeps no source map from the preprocessed text it parses back to the diagram source. Second, decodeEntities is exported only from a hash-named chunk. Third, mermaid core has no zenuml detector. Fourth, styles2Map, which reads a style declaration, is internal
+a feature needs something mermaid does not expose.
+There are four such gaps.
+First, mermaid keeps no source map from the preprocessed text it parses back to the diagram source.
+Second, decodeEntities is exported only from a hash-named chunk.
+
+Third, mermaid core has no zenuml detector.
+Fourth, styles2Map, which reads a style declaration, is internal
 
 #### We prefer
 
-one narrow workaround per gap, each pinned by a test. A position is recovered only from the official lexer's tokens. A parsed line is placed in the source only when exactly one body line past the frontmatter can be it. Otherwise the span is refused. decodeEntities is a copy whose behaviour a test pins to mermaid's. The zenuml detector is a one-line type detector registered through registerExternalDiagrams. styles2Map is a mirror whose output a test pins to mermaid's compiled styles. That is preferred over a custom parser, and over a text match that picks a best guess
+one narrow workaround per gap, each pinned by a test.
+A position is recovered only from the official lexer's tokens.
+A parsed line is placed in the source only when exactly one body line past the frontmatter can be it.
+Otherwise the span is refused. decodeEntities is a copy whose behaviour a test pins to mermaid's.
+
+The zenuml detector is a one-line type detector registered through registerExternalDiagrams. styles2Map is a mirror whose output a test pins to mermaid's compiled styles.
+That is preferred over a custom parser, and over a text match that picks a best guess
 
 #### Because
 
-each workaround stays as small as the gap, and its test fails the day mermaid's behaviour drifts from it. A refusal keeps a fixer from rewriting text it cannot place, per MJL-0005
+each workaround stays as small as the gap, and its test fails the day mermaid's behaviour drifts from it.
+A refusal keeps a fixer from rewriting text it cannot place, per MJL-0005
 
 #### Unless
 
-mermaid exposes the missing piece, when the workaround is deleted and the dependency is called instead. A new gap is added to this record by a superseding record, never worked around unrecorded
+mermaid exposes the missing piece, when the workaround is deleted and the dependency is called instead.
+A new gap is added to this record by a superseding record, never worked around unrecorded
 
 ## Consequences
 

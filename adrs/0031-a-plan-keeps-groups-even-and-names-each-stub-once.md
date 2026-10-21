@@ -37,19 +37,49 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 
 #### Given
 
-a reader of an overview counts its nodes against the target and compares its groups' sizes. A group's name reads as a promise about its members, and parallel lines read as separate relationships. A detail's stubs are read by their text alone
+a reader of an overview counts its nodes against the target and compares its groups' sizes.
+A group's name reads as a promise about its members, and parallel lines read as separate relationships.
+A detail's stubs are read by their text alone
 
 #### We prefer
 
-undoing a group when a walk leaves the overview below 60% of node_target, rounded up. The group undone gives back the most nodes while the overview and every fitting detail still meet their targets. A T2 group stays, since it is one run of a pattern folded evenly. An erDiagram aggregate folded over the target is never folded again into its owner's aggregate. Held to no target, any owner's aggregate may fold, not only a root's. A T5 or T6 group never holds members of two prefix families under the strict rules. A prefix family is the dotted prefix leading a label, such as bronze. Failing that, it is the letters leading an id-led label, such as PLAT- in PLAT-1201. Failing that, it is letters and an underscore leading an id, such as br_. In T6, a pair within one family ranks before any other pair, then by modularity gain. When the target cannot be met so, the plan is walked again with families mixed, before hubs and branches are folded. In T4, T5 and T6, some candidates come within 5% of the best saving per node hidden. In T6 they come within 5% of the best gain, at the same kin. Of those, the one leaving the fewest parallel overview edges is taken. A parallel edge is an overview edge beside another between the same two nodes, at least one a group. Stubs for one whole group drawn apart in one detail would show one text. Each takes " from " and the label of the one member its edges leave, as "Checkout domain (+5) from paymentservice". So does a whole-group stub beside a stub for the member its group is named after, as "10007 QA (+2)" beside "10007 QA (in group)". The text must have exactly one reading, the group, and the member must draw every edge the stub draws. When any stub cannot be named so, the detail draws one stub for the group
+undoing a group when a walk leaves the overview below 60% of node_target, rounded up.
+The group undone gives back the most nodes while the overview and every fitting detail still meet their targets.
+A T2 group stays, since it is one run of a pattern folded evenly.
+An erDiagram aggregate folded over the target is never folded again into its owner's aggregate.
+
+Held to no target, any owner's aggregate may fold, not only a root's.
+A T5 or T6 group never holds members of two prefix families under the strict rules.
+A prefix family is the dotted prefix leading a label, such as bronze.
+Failing that, it is the letters leading an id-led label, such as PLAT- in PLAT-1201.
+
+Failing that, it is letters and an underscore leading an id, such as br_.
+In T6, a pair within one family ranks before any other pair, then by modularity gain.
+When the target cannot be met so, the plan is walked again with families mixed, before hubs and branches are folded.
+In T4, T5 and T6, some candidates come within 5% of the best saving per node hidden.
+
+In T6 they come within 5% of the best gain, at the same kin.
+Of those, the one leaving the fewest parallel overview edges is taken.
+A parallel edge is an overview edge beside another between the same two nodes, at least one a group.
+Stubs for one whole group drawn apart in one detail would show one text.
+
+Each takes " from " and the label of the one member its edges leave, as "Checkout domain (+5) from paymentservice".
+So does a whole-group stub beside a stub for the member its group is named after, as "10007 QA (+2)" beside "10007 QA (in group)".
+The text must have exactly one reading, the group, and the member must draw every edge the stub draws.
+When any stub cannot be named so, the detail draws one stub for the group
 
 #### Because
 
-a four-node overview of a twenty-two node diagram hides more than the target asks. A group holding half a diagram is a second diagram to read, not a summary. Ticket keys, table namespaces and id prefixes are the author's own grouping, so a group mixing two reads as wrong whatever its modularity. Five lines between two boxes read as noise when another fold saving as much draws none. Three stubs with one text read as a duplicate, while naming each member shows three sources
+a four-node overview of a twenty-two node diagram hides more than the target asks.
+A group holding half a diagram is a second diagram to read, not a summary.
+Ticket keys, table namespaces and id prefixes are the author's own grouping, so a group mixing two reads as wrong whatever its modularity.
+Five lines between two boxes read as noise when another fold saving as much draws none.
+Three stubs with one text read as a duplicate, while naming each member shows three sources
 
 #### Unless
 
-a diagram meets its target only with families mixed, with an uncapped aggregate inside another, or with a stub text that reads two ways. The plan then falls back in that order, as before
+a diagram meets its target only with families mixed, with an uncapped aggregate inside another, or with a stub text that reads two ways.
+The plan then falls back in that order, as before
 
 ## Consequences
 

@@ -29,13 +29,14 @@ Start the package in a new folder, with this `package.json`:
 }
 ```
 
-- **`"type": "module"`** marks `index.js` as an ES module. Without it, Node reparses the file, and warns on every run while you test the package through a link.
+- **`"type": "module"`** marks `index.js` as an ES module.
+  Without it, Node reparses the file, and warns on every run while you test the package through a link.
 - **`exports`** names the file the linter imports.
 - **`peerDependencies`** says which linter versions the plugin works with, and uses the project's own copy.
-  A rule with a `canvas`-type option under another name needs 0.6.1 or newer, so the template starts there.
-  0.6.1 is the first release where such an option receives the canvas flags.
+  A rule with a `canvas`-type option under another name needs 0.6.1 or newer, so the template starts there. 0.6.1 is the first release where such an option receives the canvas flags.
   Before it, only an option named `canvas` received them.
   Under 0.x a caret range accepts only patch releases, so `^0.16.0` matches 0.16.5 but not 0.17.0.
+
   Each 0.x minor may change the plugin contract, so widen the range only after testing the next minor, for example to `>=0.16.0 <0.18.0`.
 - **`devDependencies`** installs the linter, so the plugin's tests can run.
 
@@ -63,12 +64,15 @@ export default {
 };
 ```
 
-- **`namespace`** prefixes every rule id, so this rule runs as `acme/acme-direction`. It must be lower-case and cannot be `local`.
+- **`namespace`** prefixes every rule id, so this rule runs as `acme/acme-direction`.
+  It must be lower-case and cannot be `local`.
 - **`apiVersion`** must match the version the tool implements, which is `1`.
-- **`categories`** declares any new category word the rules use, and each rule key starts with its category word. A built-in category needs no declaration.
+- **`categories`** declares any new category word the rules use, and each rule key starts with its category word.
+  A built-in category needs no declaration.
   A category word is global, so no other plugin or local rule in the project may declare it, as [the plugin model](../concepts/plugin-model.md#namespaces-and-categories-are-global) explains.
   This guide uses `acme` because [Write a local rule](local-rule.md) already declares `house`.
-- **`options`** declares each option the rule accepts, as a name mapped to one of the types in [PluginRule](../reference/plugin-api.md#pluginrule), such as `number` or `canvas`. The rule reads them from `options`.
+- **`options`** declares each option the rule accepts, as a name mapped to one of the types in [PluginRule](../reference/plugin-api.md#pluginrule), such as `number` or `canvas`.
+  The rule reads them from `options`.
 
 A flowchart opens with either `flowchart` or `graph`, and its keyword is `flowchart` either way, so the regular expression checks both spellings.
 

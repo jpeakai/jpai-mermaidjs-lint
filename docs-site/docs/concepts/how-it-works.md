@@ -89,10 +89,10 @@ A fixer proposes edits: a span of the source, its replacement, and an expectatio
 | `same-tree` | The markdown tree is identical, except for whitespace in prose text. Mermaid fence bodies must match exactly, and no diagram that parsed may stop parsing. A raw diagram file has an empty tree, so there the diagram must also pass the `same-diagrams` check. |
 
 The engine splices the edits, parses the whole document again, and keeps the change only when every expectation holds.
-Neither expectation lets an edit turn a diagram that parses into one that does not.
-`same-diagrams` is a structural check, and it does not show that nothing else changed.
+Neither expectation lets an edit turn a diagram that parses into one that does not. `same-diagrams` is a structural check, and it does not show that nothing else changed.
 It does not compare edges, labels, node text or styles, so a fixer that declares it must keep those intact itself.
 [Edits](../reference/plugin-api.md#edits) lists exactly what each expectation compares.
+
 A rule's edits are first tried as one batch.
 When the batch fails, each edit is tried alone, so one bad edit never blocks the others.
 An edit that fails is refused, remembered, and never proposed again for the same text.
@@ -121,4 +121,5 @@ Each pass keeps an edit only when the verifier accepts it, and a refused edit le
 
 - It never renders a diagram, so layout problems a renderer would show are out of reach.
 - It never splits or restructures a diagram, because that changes what the diagram says.
-- It never picks a brand colour. The only colour fix swaps a declared label colour for black or white.
+- It never picks a brand colour.
+  The only colour fix swaps a declared label colour for black or white.

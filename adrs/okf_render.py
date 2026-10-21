@@ -21,6 +21,7 @@ import argparse
 import json
 import logging
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -343,9 +344,25 @@ def render(
     # whole metadata block styled as a title. The viewer shows those fields as
     # chips instead.
     rendered: dict[str, Record] = {}
+    # Formatting belongs to the reading surface. Accepted YAML stays immutable.
+    raw_markdown = {
+        f"{record['id'].split('-')[-1]}-{record['slug']}.md": env.get_template(
+            "record.md.j2"
+        ).render(rec=record, author=author)
+        for record in records
+    }
+    formatted = json.loads(
+        subprocess.run(
+            ["bun", "run", str(SCRIPT_DIR.parent / "scripts" / "adr-prose.ts")],
+            input=json.dumps(raw_markdown),
+            text=True,
+            stdout=subprocess.PIPE,
+            check=True,
+        ).stdout
+    )
     for record in records:
         name = f"{record['id'].split('-')[-1]}-{record['slug']}.md"
-        markdown = env.get_template("record.md.j2").render(rec=record, author=author)
+        markdown = formatted[name]
         (source_dir / name).write_text(markdown, encoding="utf-8")
         rendered[record["id"]] = {
             "file": name,

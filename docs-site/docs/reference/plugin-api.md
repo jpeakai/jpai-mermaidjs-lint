@@ -4,6 +4,7 @@ The contract a plugin or a local rule implements.
 For a walkthrough, see [Write a local rule](../guides/local-rule.md) or [Publish a plugin package](../guides/plugin-package.md).
 [The plugin model](../concepts/plugin-model.md) explains how plugins are found and loaded.
 The types are exported from `@jpeakai/mermaidjs-lint`, as `.d.ts` declarations in `dist/types/`.
+
 A TypeScript project needs no extra compiler options for the main entry.
 The `@jpeakai/mermaidjs-lint/testing` entry is found through the package's `exports` map, so it needs `moduleResolution` set to `node16`, `nodenext` or `bundler`.
 
@@ -59,8 +60,8 @@ The option names `preset` and `profile` keep their built-in meaning for every ru
   A `preset` is checked against the preset names and their aliases, in any case.
 - **The flags overwrite them.** `--preset` and `--profile` replace the configured value for the run.
 - **Declare one only as `"string"`.** Any other type fails the load with `error[plugin-contract]`.
-- **The rule reads what was set, not a default.** `ctx.options.preset` is the canonical preset name, such as `high-density`, even when the user typed an alias. `ctx.options.profile` is the profile as given. Each is absent when neither the flag nor the config sets it, so treat absent as `high-density` and `auto`.
-  `auto` means `mkdocs-material` when a parent folder of the file holds `mkdocs.yml` or `mkdocs.yaml`, else `github`, and no helper resolves it for you.
+- **The rule reads what was set, not a default.** `ctx.options.preset` is the canonical preset name, such as `high-density`, even when the user typed an alias. `ctx.options.profile` is the profile as given.
+  Each is absent when neither the flag nor the config sets it, so treat absent as `high-density` and `auto`. `auto` means `mkdocs-material` when a parent folder of the file holds `mkdocs.yml` or `mkdocs.yaml`, else `github`, and no helper resolves it for you.
 
 Give a rule's own setting another name, such as `mode`.
 
@@ -110,8 +111,7 @@ An edit outside those bounds is refused, and the finding stays.
 | `same-tree` | The markdown tree is identical, except for whitespace in prose text. Mermaid fence bodies must match exactly, and no diagram that parsed may stop parsing. In a `.mmd` or `.mermaid` file the tree is empty, so the diagram must also pass the `same-diagrams` check. |
 
 Whether a diagram parses is the test `parse-diagram-unparseable` applies.
-Under `same-diagrams` it must not change in either direction, so an edit can neither break a diagram nor be the edit that repairs one.
-`same-diagrams` does not compare the edge list, so an edge's endpoints, direction and arrow type can change.
+Under `same-diagrams` it must not change in either direction, so an edit can neither break a diagram nor be the edit that repairs one. `same-diagrams` does not compare the edge list, so an edge's endpoints, direction and arrow type can change.
 It does not compare labels, node text or style directives either.
 A fixer that declares it must therefore keep those intact itself, because the engine will not refuse a change to them.
 

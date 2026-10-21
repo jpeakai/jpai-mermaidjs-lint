@@ -29,11 +29,13 @@ a rule needs to read a colour, blend a translucent fill, or score contrast again
 
 #### We prefer
 
-calling colorjs.io for the parse, the colour space conversion and the contrast ratio. That is preferred over writing our own colour parser, luminance formula or ratio
+calling colorjs.io for the parse, the colour space conversion and the contrast ratio.
+That is preferred over writing our own colour parser, luminance formula or ratio
 
 #### Because
 
-colorjs.io reads every CSS Color Level 4 syntax and implements the published WCAG 2.1 and APCA algorithms. A copy of that maths can only drift from it
+colorjs.io reads every CSS Color Level 4 syntax and implements the published WCAG 2.1 and APCA algorithms.
+A copy of that maths can only drift from it
 
 #### Unless
 

@@ -25,8 +25,10 @@ A plugin therefore cannot report under another rule's name.
 
 Discovery reads three places, in this order:
 
-1. **Local rule files** in `.mermaidjs-lint/rules` at the project root. Each file is one rule, and all of them load together as one plugin under the reserved namespace `local`.
-2. **Declared dependencies** whose name matches `mermaidjs-lint-plugin` or `mermaidjs-lint-plugin-*`, scoped or not. Only the project's own `dependencies`, `devDependencies` and `optionalDependencies` are read.
+1. **Local rule files** in `.mermaidjs-lint/rules` at the project root.
+   Each file is one rule, and all of them load together as one plugin under the reserved namespace `local`.
+2. **Declared dependencies** whose name matches `mermaidjs-lint-plugin` or `mermaidjs-lint-plugin-*`, scoped or not.
+   Only the project's own `dependencies`, `devDependencies` and `optionalDependencies` are read.
 3. **Paths or names listed** under `plugins` in the config file.
 
 `node_modules` is never scanned for plugins.
@@ -44,10 +46,10 @@ Discovery runs in every plugin mode, but only a mode other than off imports what
     --8<-- "plugin-discovery-detail.md"
 
 A plugin is not the only code a run can execute.
-A `mermaidjs-lint.config.mjs` is a module, so reading it runs it, and each `plugins` entry in the config names more code to load.
-`--no-plugins` loads no plugin and never imports a `.mjs` config, so a run uses the built-in rules and at most a `.json` config.
+A `mermaidjs-lint.config.mjs` is a module, so reading it runs it, and each `plugins` entry in the config names more code to load. `--no-plugins` loads no plugin and never imports a `.mjs` config, so a run uses the built-in rules and at most a `.json` config.
 Faced with a `.mjs` config, it stops with `error[config-code]`, and `--config` with a `.json` config of your own lets it run.
 It does not make a repository you do not trust safe.
+
 Installing its dependencies has already run their code.
 A package runner started inside it reads its `bunfig.toml` or `.npmrc`, which can run code before the linter starts.
 [SECURITY.md](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/SECURITY.md) states the full trust model, and how to lint such a repository from a folder you control.

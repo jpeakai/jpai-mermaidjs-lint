@@ -28,6 +28,7 @@ A diagram that mermaid's parser reports an error for, on one line or many, such 
 The message carries the parser's own reason, whose line numbers count within the diagram, not the file.
 A diagram whose type mermaid does not detect is reported too, with mermaid's reason.
 A diagram the parser reads without an error passes even with no nodes.
+
 Examples are `pie` with a `title` line, `info`, and a `sequenceDiagram` under a frontmatter title.
 There is no fixer, since a syntax error needs an author.
 
@@ -53,10 +54,12 @@ A mermaid fence that is never closed, so every line after it is read as diagram 
 The fix adds the closing fence at the end of the file, using the opening fence's own marker and indentation.
 At the top level an unclosed fence runs to the end of the file, so any prose after the diagram ends up inside the fence.
 That prose stays diagram source after the fix, and `parse-diagram-unparseable` then reports it for a human to move.
+
 A fence inside a quote or a list item ends with its container.
 There the fixer closes it only when nothing follows the container, using the container's prefix.
 When content follows, the fixer leaves it alone, because the closing line would be a guess.
 A fence opened on the list marker's own line, such as `- ```mermaid`, is left for a human even when nothing follows it.
+
 Only mermaid fences are checked: a diagram after an unclosed fence of another language is read as that fence's code, and is never seen.
 
 ````text before
@@ -74,11 +77,11 @@ flowchart LR
 
 ## Complexity
 
-Every complexity rule takes a `preset` option and any of the numeric thresholds, such as `nodeAcceptable`.
-`complexity-subgraph-nesting-too-deep` accepts them but reads none.
+Every complexity rule takes a `preset` option and any of the numeric thresholds, such as `nodeAcceptable`. `complexity-subgraph-nesting-too-deep` accepts them but reads none.
 The node count rules form one ladder, and the two visual score rules form another.
 A diagram lands in one band of each ladder, so only the most severe rule of a ladder fires.
 A threshold such as `nodeHardLimit` is the boundary between two neighbouring bands, so set it on both rules that read it.
+
 Set on one rule alone, it opens a gap or an overlap, and an overlap makes two rules report the same diagram.
 A `--preset` flag overrides a rule's configured preset, and a numeric threshold option overrides both.
 No complexity rule has a fixer, because splitting a diagram changes what it says.
@@ -269,7 +272,8 @@ flowchart LR
 ### complexity-visual-score-critical
 
 A visual complexity score above the preset's complex threshold, `vcsComplex`, which is 100 under `high-density`.
-The score is nodes plus half a point per edge plus three per subgraph. It is scaled by one tenth per level of subgraph nesting or tree depth, whichever is deeper.
+The score is nodes plus half a point per edge plus three per subgraph.
+It is scaled by one tenth per level of subgraph nesting or tree depth, whichever is deeper.
 The `vcsCritical` option is accepted but no rule reads it.
 This diagram has only 35 nodes, but its ten subgraphs, two levels of nesting and report-back edges score above 100.
 
@@ -472,8 +476,8 @@ flowchart LR
 Contrast is read through a profile.
 Under `github` the declared pairs are scored as written, and a translucent fill is composited over both page canvases.
 The canvases are GitHub's unless a run sets its own, as [A host with its own page sets a canvas](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/contrast/#a-host-with-its-own-page-sets-a-canvas) explains.
-Under `mkdocs-material` the host forces the label text, so `color:` is ignored and the host text is scored in both themes.
-`auto` reads `mkdocs-material` when any parent folder holds `mkdocs.yml` or `mkdocs.yaml`.
+Under `mkdocs-material` the host forces the label text, so `color:` is ignored and the host text is scored in both themes. `auto` reads `mkdocs-material` when any parent folder holds `mkdocs.yml` or `mkdocs.yaml`.
+
 A `sequenceDiagram` is scored by the theme colours Mermaid resolves for it, in both themes, as [Contrast profiles](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/contrast/#a-sequence-diagram-is-scored-by-its-theme-colours) explains.
 
 ### contrast-text-below-aa

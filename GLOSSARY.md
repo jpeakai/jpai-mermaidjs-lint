@@ -322,6 +322,7 @@ The single-entry single-exit region from a branching node to the node where its 
 The branching node is a Decision, a decision shape, a choice, a fork, or any node with a labelled branch.
 Every edge into it enters the branching node, and every edge out of it reaches the rejoin node.
 A branch that ends the flow is folded inside it.
+
 A Split Plan's `T2` folds it whole, innermost first, into a Group Node named after the branching node.
 One hiding a single node is undone when the Overview and every Detail Diagram still meet the target without it.
 
@@ -335,8 +336,7 @@ The refusal prints the Diagram as a Split Alternative.
 
 ## Design Token
 
-One named brand colour in `docs-site/theme/osakanights/design-tokens.json`.
-`make theme` writes the theme's CSS colour block from these tokens.
+One named brand colour in `docs-site/theme/osakanights/design-tokens.json`. `make theme` writes the theme's CSS colour block from these tokens.
 
 ## Detail Diagram
 
@@ -359,8 +359,7 @@ Its reference pages are generated from the Fixtures, `RULES.md` and `examples/`.
 
 ## Document Model
 
-What a Rule reads for one file: the source, its kind, the markdown tree and its Diagrams.
-`buildDocModel` in `src/model.ts` builds it once per file.
+What a Rule reads for one file: the source, its kind, the markdown tree and its Diagrams. `buildDocModel` in `src/model.ts` builds it once per file.
 
 ## Dual Density
 
@@ -457,6 +456,7 @@ One node of an Overview that stands for a set of the original nodes, folded toge
 Its label is an author label or a member's, with the count of the rest, such as `ingest (+5)`.
 A chain-like group takes its Chain Entry's label.
 Another group from `T5` or `T6` takes the label of the member with the most edges crossing its boundary.
+
 Any other group takes its best-connected member's label.
 A long label is shown cut in the middle with an ellipsis, and no Group Node shows a label another node shows.
 It is drawn apart from an original node.
@@ -575,10 +575,12 @@ The family of names a node's label or id belongs to.
 It is a dotted prefix leading the node's label, such as `bronze.`.
 Failing that, it is the letters leading a label that leads with an id, such as `PLAT-` in `PLAT-1201`.
 Failing that, it is letters and an underscore leading its id, such as `br_`.
+
 Failing that, it is the node's Status Family.
 Under the strict rules, no `T5` or `T6` group holds two Prefix Families, per [MJL-0031](adrs/0031-a-plan-keeps-groups-even-and-names-each-stub-once.md).
 In `T6`, a pair within one family goes before any other, joined by an edge or by a neighbour they share, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
 With hubs folded, families stay apart before they are mixed, and a chain stage keeps to one family.
+
 A pair sharing more overview neighbours goes first, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 
 ## Pinned Fix
@@ -715,8 +717,7 @@ A stub for either end shows its own label alone.
 What a refused Split Plan prints in its place when its reason says a list or table reads better, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 A Star prints as a markdown list of its hub and every leaf, by way, label and connector.
 A Dense Mesh prints as a markdown adjacency matrix, with a line naming the pairs no edge joins.
-Both are built from the parsed graph alone and draw every node and edge.
-`--split-plan` prints it after the reason, and the Remediation points to it.
+Both are built from the parsed graph alone and draw every node and edge. `--split-plan` prints it after the reason, and the Remediation points to it.
 
 ## Split Plan
 
@@ -726,8 +727,7 @@ It ends the Remediation, and `--split-plan` prints it, but nothing applies it, p
 
 ## Stage Word
 
-The word one label gives its place in a lane of Twin Chains: its dotted namespace, else its first word.
-`Extract Postgres orders` gives `Extract`, and `bronze.orders` gives `bronze`.
+The word one label gives its place in a lane of Twin Chains: its dotted namespace, else its first word. `Extract Postgres orders` gives `Extract`, and `bronze.orders` gives `bronze`.
 Lanes whose labels give the same words at every place form one set, which a detail split again folds as one group, per [MJL-0042](adrs/0042-twin-chains-in-a-nested-detail-fold-in-runs-of-lanes.md).
 
 ## Star
@@ -748,14 +748,17 @@ A node in a Detail Diagram that stands for a node, subgraph or interface outside
 An edge in from another group starts at one Stub for that whole group.
 Edges of one kind one way between that Stub and one member are drawn once, with only the label they share, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
 When edges join two groups both ways, one detail draws the other group as one Stub, and the other draws Stubs for its members.
+
 The detail split again draws the members when the other's detail fits, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
 Edges running one way from a single member into several members of another group come in from one Stub for that member, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 It is drawn dashed, so the reader sees where an edge leaves the group.
 Its label is the node's label.
+
 For a node inside a group, it adds the label the Overview shows for that group in brackets after "in".
 An example is `PAYMENT_METHOD (in CUSTOMER (+2))`, per [MJL-0036](adrs/0036-a-group-is-named-by-its-family-or-lanes-and-a-stub-by-its-group.md).
 Its text must have exactly one reading.
 When the text could name anything else, it adds the node's id in brackets, as often as it takes.
+
 The target of edges joining two groups one way may draw Stubs for the source's members.
 It does so when it needs fewer, or as many and meets fewer outside nodes, per [MJL-0037](adrs/0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md).
 
@@ -812,8 +815,7 @@ A Diagram that is a Dense Mesh from the start is refused instead.
 
 ## Trimmed Aggregate
 
-An Aggregate without each owned part sharing an outside neighbour with the rest, as an address chain without the `STORE` it locates.
-`T4` offers it when the whole Aggregate would add a Folded Parallel, and only where it adds no new reachable pair, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
+An Aggregate without each owned part sharing an outside neighbour with the rest, as an address chain without the `STORE` it locates. `T4` offers it when the whole Aggregate would add a Folded Parallel, and only where it adds no new reachable pair, per [MJL-0034](adrs/0034-a-refusal-prints-its-list-or-table-and-folds-stay-tight.md).
 
 ## Twin Chains
 

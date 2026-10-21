@@ -29,15 +29,18 @@ a user wants one run to check a different set of categories from the one the con
 
 #### We prefer
 
-settling the rules in three steps. Every loaded rule starts on, the config turns some off, then the category flags turn whole categories on or off
+settling the rules in three steps.
+Every loaded rule starts on, the config turns some off, then the category flags turn whole categories on or off
 
 #### Because
 
-a flag is an explicit choice for this run, so it outranks the standing config, as --preset and --profile already do. A re-enabled rule keeps its configured options, so it runs as the config describes it.
+a flag is an explicit choice for this run, so it outranks the standing config, as --preset and --profile already do.
+A re-enabled rule keeps its configured options, so it runs as the config describes it.
 
 #### Unless
 
-the flags name a category no loaded source declares, name one category both ways, or turn off every rule. Each would check something other than what was asked, so it is a usage error rather than a guess.
+the flags name a category no loaded source declares, name one category both ways, or turn off every rule.
+Each would check something other than what was asked, so it is a usage error rather than a guess.
 
 ## Consequences
 

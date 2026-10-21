@@ -38,19 +38,58 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-20T00:00:00Z }
 
 #### Given
 
-a reader of a plan for a diagram within its node target wants to know why it was split. A score can be over its target only for the attribute rows a diagram draws, and dropping rows from the overview hides no entity. A reader of an overview reads a group's name as what it holds
+a reader of a plan for a diagram within its node target wants to know why it was split.
+A score can be over its target only for the attribute rows a diagram draws, and dropping rows from the overview hides no entity.
+A reader of an overview reads a group's name as what it holds
 
 #### We prefer
 
-the fewest changes that meet the target. A diagram that meets the target with its rows dropped from the overview stays at T1, rows dropped, and folds nothing more, tangled or not. Every plan says why it was offered. The university schema's reads "flagged at 23 nodes and a score of 63.75, against a split target of 25 nodes and 40". It ends with which measure is over, here "over on its score alone". The size is the one the complexity rules measured, rows counted, and a detail split again reports its own. A plan at T1 adds that its rows move to row diagrams, the size of the overview without them, and that no node folds. --split-plan prints that text under each plan's heading. A group of three shows the label it is named after, then the other two labels in brackets after a plus. They come in natural order, joined by a comma, as "ADDRESS (+CITY, COUNTRY)". Each other label meets the pair rules and holds no comma, and the whole label holds 40 characters at most. A group a range, family or lane label names keeps that label. Groups of two or three folded alike take pair or list labels only when every one of them can. A stub for any member of such a group shows its own label alone. A flowchart group of three members or more, folding no region, may be entered at one member and left from another. The entry is the one member every edge from outside reaches, else the one member no edge reaches. The exit is the one member every edge to outside leaves, else the one member no edge leaves. Such a group with no decision or aggregate head is named by both labels joined by an arrow. So a run of setup steps reads "git push to main → tsc --noEmit (+4)". Neither label holds markup, an arrow or an ellipsis, and the two labels hold 40 characters at most. The count is of the members neither names. It comes after a region's label, a head, a family, a lane, a range and a fan, and before a member's label. A stub for the entry or the exit shows its own label alone. The contract and both test readers accept each label only as recomputed from the members
+the fewest changes that meet the target.
+A diagram that meets the target with its rows dropped from the overview stays at T1, rows dropped, and folds nothing more, tangled or not.
+Every plan says why it was offered.
+The university schema's reads "flagged at 23 nodes and a score of 63.75, against a split target of 25 nodes and 40".
+
+It ends with which measure is over, here "over on its score alone".
+The size is the one the complexity rules measured, rows counted, and a detail split again reports its own.
+A plan at T1 adds that its rows move to row diagrams, the size of the overview without them, and that no node folds. --split-plan prints that text under each plan's heading.
+A group of three shows the label it is named after, then the other two labels in brackets after a plus.
+
+They come in natural order, joined by a comma, as "ADDRESS (+CITY, COUNTRY)".
+Each other label meets the pair rules and holds no comma, and the whole label holds 40 characters at most.
+A group a range, family or lane label names keeps that label.
+Groups of two or three folded alike take pair or list labels only when every one of them can.
+
+A stub for any member of such a group shows its own label alone.
+A flowchart group of three members or more, folding no region, may be entered at one member and left from another.
+The entry is the one member every edge from outside reaches, else the one member no edge reaches.
+The exit is the one member every edge to outside leaves, else the one member no edge leaves.
+
+Such a group with no decision or aggregate head is named by both labels joined by an arrow.
+So a run of setup steps reads "git push to main → tsc --noEmit (+4)".
+Neither label holds markup, an arrow or an ellipsis, and the two labels hold 40 characters at most.
+The count is of the members neither names.
+
+It comes after a region's label, a head, a family, a lane, a range and a fan, and before a member's label.
+A stub for the entry or the exit shows its own label alone.
+The contract and both test readers accept each label only as recomputed from the members
 
 #### Because
 
-a plan that folds what the target did not ask to fold hides names for no reason a reader can see. Raters across five rounds were split on the folded schema, so the fewer changes win. A reader sees why a diagram was flagged, and that rows alone put it over. That reader takes a plan at rows dropped as the whole answer. A name showing every member of a small group hides nothing. A run named by its first and last step reads as the stage it is, where one member's name promises only that member
+a plan that folds what the target did not ask to fold hides names for no reason a reader can see.
+Raters across five rounds were split on the folded schema, so the fewer changes win.
+A reader sees why a diagram was flagged, and that rows alone put it over.
+That reader takes a plan at rows dropped as the whole answer.
+
+A name showing every member of a small group hides nothing.
+A run named by its first and last step reads as the stage it is, where one member's name promises only that member
 
 #### Unless
 
-the diagram is over its target with its rows dropped, and folds as before. A group may be larger than three, or a label may hold a comma, markup or a bracket. A label may be too long. Its group then keeps its count. A flowchart group may be entered or left at more than one member, and is then named as before
+the diagram is over its target with its rows dropped, and folds as before.
+A group may be larger than three, or a label may hold a comma, markup or a bracket.
+A label may be too long.
+Its group then keeps its count.
+A flowchart group may be entered or left at more than one member, and is then named as before
 
 ## Consequences
 

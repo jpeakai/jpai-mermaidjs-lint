@@ -39,19 +39,50 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 
 #### Given
 
-a reader of a refusal has nothing to read but the reason. A reader of an overview counts lines and reads groups as the diagram's own layers. A plan that refuses because a list or table reads better owes the reader that list or table. An overview drawing two lines between one group and one entity reads as two relationships the original does not draw
+a reader of a refusal has nothing to read but the reason.
+A reader of an overview counts lines and reads groups as the diagram's own layers.
+A plan that refuses because a list or table reads better owes the reader that list or table.
+An overview drawing two lines between one group and one entity reads as two relationships the original does not draw
 
 #### We prefer
 
-printing, in a refused plan's place, the list or table its reason names. A star prints as a markdown list, starting with the node with the most links. Each of its links follows by way, label and connector, each leaf an item. Every other edge follows under its source, and a node no edge touches follows last. A dense mesh prints as a markdown table, a row and a column per node. Each cell holds every edge between its row and column, drawn from the row's side in both cells. A line before the table names the pairs no edge joins. Both are built from the parsed graph alone, and a test reads each back through mdast to find every node and edge. --split-plan prints it after the reason, and the remediation points to it. Under the third set of rules, hubs and branches fold while prefix families stay apart, before a walk mixes them. A chain stage keeps to one family wherever the rules keep families apart. Of two pairs of one family tied on gain and label, T6 takes the one sharing more of its overview neighbours. An aggregate folds only where it draws no relationship beside another between the same two overview nodes that the original draws between other ends. A root whose whole aggregate would draw one is also offered trimmed. Each owned part sharing an outside neighbour with the rest is cut away, and the trimmed fold may add no new reachable pair. Past the target, an aggregate folds only when it adds no new reachable pair. A region holding more than half of a diagram's nodes, beside another region holding nodes, is walked first as its parts. It then folds whole only when its detail fits, under every set of rules, and only when no such walk plans is it folded whole
+printing, in a refused plan's place, the list or table its reason names.
+A star prints as a markdown list, starting with the node with the most links.
+Each of its links follows by way, label and connector, each leaf an item.
+Every other edge follows under its source, and a node no edge touches follows last.
+
+A dense mesh prints as a markdown table, a row and a column per node.
+Each cell holds every edge between its row and column, drawn from the row's side in both cells.
+A line before the table names the pairs no edge joins.
+Both are built from the parsed graph alone, and a test reads each back through mdast to find every node and edge. --split-plan prints it after the reason, and the remediation points to it.
+
+Under the third set of rules, hubs and branches fold while prefix families stay apart, before a walk mixes them.
+A chain stage keeps to one family wherever the rules keep families apart.
+Of two pairs of one family tied on gain and label, T6 takes the one sharing more of its overview neighbours.
+An aggregate folds only where it draws no relationship beside another between the same two overview nodes that the original draws between other ends.
+
+A root whose whole aggregate would draw one is also offered trimmed.
+Each owned part sharing an outside neighbour with the rest is cut away, and the trimmed fold may add no new reachable pair.
+Past the target, an aggregate folds only when it adds no new reachable pair.
+A region holding more than half of a diagram's nodes, beside another region holding nodes, is walked first as its parts.
+
+It then folds whole only when its detail fits, under every set of rules, and only when no such walk plans is it folded whole
 
 #### Because
 
-a reader refused a plan still wants the diagram's story. A list of a hub's leaves or a matrix of a mesh tells it in full. A pipeline's layers are the author's own grouping, and a group of two layers hides where one ends. Two lines between one group and one entity read as two relationships, and a lookup chain shared by several owners belongs to none of them. A schema already within its target gains nothing from a fold that makes pairs reachable. One group holding most of a diagram beside small ones reads as that group alone
+a reader refused a plan still wants the diagram's story.
+A list of a hub's leaves or a matrix of a mesh tells it in full.
+A pipeline's layers are the author's own grouping, and a group of two layers hides where one ends.
+Two lines between one group and one entity read as two relationships, and a lookup chain shared by several owners belongs to none of them.
+
+A schema already within its target gains nothing from a fold that makes pairs reachable.
+One group holding most of a diagram beside small ones reads as that group alone
 
 #### Unless
 
-a plan is refused for another reason, or a diagram names no prefix family. An aggregate may draw no relationship twice, or no region hold most of the diagram. The plan then stands as before
+a plan is refused for another reason, or a diagram names no prefix family.
+An aggregate may draw no relationship twice, or no region hold most of the diagram.
+The plan then stands as before
 
 ## Consequences
 

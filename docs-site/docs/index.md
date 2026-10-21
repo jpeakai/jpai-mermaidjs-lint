@@ -93,10 +93,12 @@ Licensed under [MIT](https://github.com/jpeakai/jpai-mermaidjs-lint/blob/main/LI
 
 - **It does not draw diagrams.** "Renders" means the mermaid parsers this package ships accept the diagram, so a diagram that parses but draws badly is not caught.
 - **It does not know your host's mermaid version.** A host on an older mermaid may fail to draw a diagram type that parses here.
-- **It does not score unstyled nodes or theme settings outside a sequence diagram.** A `sequenceDiagram` is scored by its resolved theme colours. Elsewhere only the colours a diagram declares are scored, and [Contrast profiles](concepts/contrast.md#what-is-not-scored) lists what is left out.
+- **It does not score unstyled nodes or theme settings outside a sequence diagram.** A `sequenceDiagram` is scored by its resolved theme colours.
+  Elsewhere only the colours a diagram declares are scored, and [Contrast profiles](concepts/contrast.md#what-is-not-scored) lists what is left out.
 - **It does not see a diagram inside another fence.** A mermaid fence after an unclosed fence of another language is read as that fence's code.
 - **It has no per-diagram suppression.** A rule is on for every diagram or off for all of them, and [Troubleshooting](guides/troubleshooting.md) gives the workarounds.
-- **It does not split diagrams.** A complexity finding names the subgraphs to split along, and a human or an LLM decides. The [fixture gallery](gallery/fixtures.md) shows what an LLM would do.
+- **It does not split diagrams.** A complexity finding names the subgraphs to split along, and a human or an LLM decides.
+  The [fixture gallery](gallery/fixtures.md) shows what an LLM would do.
 - **It does not choose colours.** A contrast fix only swaps a declared label colour for black or white, and only when that passes every background it is scored on.
 - **It has no warnings.** Every finding fails the run, and a rule you do not want is switched off in the config.
 

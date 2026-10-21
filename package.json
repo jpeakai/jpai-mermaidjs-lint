@@ -67,7 +67,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2",
-    "@jpeakai/prose-gates": "^0.2.0",
+    "@jpeakai/prose-gates": "0.4.0",
     "@types/bun": "latest",
     "typescript": "^5"
   }

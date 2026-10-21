@@ -28,19 +28,23 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-18T00:00:00Z }
 
 #### Given
 
-a feature needs something a diagram or a document says. That may be a node, an edge label, a shape, an arrow, a block or a fence
+a feature needs something a diagram or a document says.
+That may be a node, an edge label, a shape, an arrow, a block or a fence
 
 #### We prefer
 
-starting from the result of the canonical parsers, which are mermaid core, @mermaid-js/parser and mdast. That is preferred over writing a parser, a tokeniser or a regex over the text, and over rebuilding anything an installed dependency already provides
+starting from the result of the canonical parsers, which are mermaid core, @mermaid-js/parser and mdast.
+That is preferred over writing a parser, a tokeniser or a regex over the text, and over rebuilding anything an installed dependency already provides
 
 #### Because
 
-the official parsers implement the grammar the renderer draws, so a reimplementation can only drift from it. A second parser also doubles the code to test and maintain
+the official parsers implement the grammar the renderer draws, so a reimplementation can only drift from it.
+A second parser also doubles the code to test and maintain
 
 #### Unless
 
-never. Text a feature emits is checked by parsing it again with the same parsers, never by scanning it
+never.
+Text a feature emits is checked by parsing it again with the same parsers, never by scanning it
 
 ## Consequences
 

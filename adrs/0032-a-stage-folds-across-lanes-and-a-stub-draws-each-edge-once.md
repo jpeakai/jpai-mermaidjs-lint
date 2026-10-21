@@ -34,19 +34,43 @@ generated: { by: jpai-mermaidjs-lint, at: 2026-10-19T00:00:00Z }
 
 #### Given
 
-a reader of a detail reads each stub as one outside thing and each line as one relationship. A pipeline's stage is the set of tables one step produces, and they rarely feed each other. A workflow named by status ids carries its stages only in the status words
+a reader of a detail reads each stub as one outside thing and each line as one relationship.
+A pipeline's stage is the set of tables one step produces, and they rarely feed each other.
+A workflow named by status ids carries its stages only in the status words
 
 #### We prefer
 
-drawing an edge from a whole group into a member once. It stands for every edge from that group into the member with one label, kind and cardinality. The source group's own detail draws each of those edges to the exact member, so every original edge still reads back exactly once. The contract, the reading and the checker read such half edges as a set, and a half drawn twice is refused. A whole-group stub may sit beside a stub for the member its group is named after. It still takes " from " and the one member its edges leave. It takes none when that member is the namesake, which the group's label already names. In T6, two overview nodes no edge joins are offered as a pair when members of each share an original neighbour. Such a pair is taken only when it names one prefix family. So it ranks with the other pairs of one family, before any other pair. A T6 group must be connected. Two members are joined by an edge between them, or by an author region the group folds whole. They are also joined by a neighbour they share, when both name one prefix family or both are leaves. A label leading with a bare id and naming no prefix family takes a status family. That is the one stem a word after its id shares with another such label, as "releas" in "10008 Ready for Release" and "10009 Released". A label sharing no stem, or two, takes none
+drawing an edge from a whole group into a member once.
+It stands for every edge from that group into the member with one label, kind and cardinality.
+The source group's own detail draws each of those edges to the exact member, so every original edge still reads back exactly once.
+The contract, the reading and the checker read such half edges as a set, and a half drawn twice is refused.
+
+A whole-group stub may sit beside a stub for the member its group is named after.
+It still takes " from " and the one member its edges leave.
+It takes none when that member is the namesake, which the group's label already names.
+In T6, two overview nodes no edge joins are offered as a pair when members of each share an original neighbour.
+
+Such a pair is taken only when it names one prefix family.
+So it ranks with the other pairs of one family, before any other pair.
+A T6 group must be connected.
+Two members are joined by an edge between them, or by an author region the group folds whole.
+
+They are also joined by a neighbour they share, when both name one prefix family or both are leaves.
+A label leading with a bare id and naming no prefix family takes a status family.
+That is the one stem a word after its id shares with another such label, as "releas" in "10008 Ready for Release" and "10009 Released".
+A label sharing no stem, or two, takes none
 
 #### Because
 
-one stub drawn per member, or one stub drawn three times, reads as three sources or a duplicate where the overview draws one edge. The tables of one pipeline stage belong together however few edges join them, and a shared neighbour is the structure that says so. Requiring a shared neighbour and one family keeps every suggested group connected, so a group never gathers unrelated nodes. Two statuses sharing a stem name one stage of a workflow, and a status sharing none says nothing a family could use
+one stub drawn per member, or one stub drawn three times, reads as three sources or a duplicate where the overview draws one edge.
+The tables of one pipeline stage belong together however few edges join them, and a shared neighbour is the structure that says so.
+Requiring a shared neighbour and one family keeps every suggested group connected, so a group never gathers unrelated nodes.
+Two statuses sharing a stem name one stage of a workflow, and a status sharing none says nothing a family could use
 
 #### Unless
 
-a diagram meets its target only with families mixed, when the plan falls back as MJL-0031 says. A detail still draws two edges from one stub when their labels or kinds differ
+a diagram meets its target only with families mixed, when the plan falls back as MJL-0031 says.
+A detail still draws two edges from one stub when their labels or kinds differ
 
 ## Consequences
 

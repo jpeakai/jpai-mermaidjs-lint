@@ -10,7 +10,10 @@ Anything under `Unreleased` is on `main` but not yet released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- Documentation checks use prose-gates 0.4.0 and this library's current Mermaid linter, with recursive discovery of documentation at every depth.
+- Documentation now meets the sentence and paragraph gates, including the summarisation guide and the generated ADR reading surface.
 
 ## [0.16.0] - 2026-10-21
 
@@ -28,8 +31,7 @@ Nothing yet.
 - **A diagram over its target only for its rows folds only its closed aggregates.** Once the overview meets the target with rows dropped, an `erDiagram` folds only aggregates one entity holds every outside relationship of, per [MJL-0040](adrs/0040-closed-aggregates-fold-at-rows-dropped-and-leaves-are-listed.md).
   So a university schema folds `ROOM (+BUILDING)` and `ENROLMENT (+GRADE)` and keeps ASSESSMENT in view, where it folded it into `SECTION (+ASSESSMENT)`.
   Any other diagram stops at `T1`, rows dropped, and folds nothing, per [MJL-0039](adrs/0039-rows-alone-fold-nothing-and-a-plan-says-why-it-was-flagged.md).
-- **A plan says why it was offered.** Each plan carries `flagged`: the size the complexity rules measured, the split target and which measure is over.
-  `--split-plan` prints it under the heading.
+- **A plan says why it was offered.** Each plan carries `flagged`: the size the complexity rules measured, the split target and which measure is over. `--split-plan` prints it under the heading.
   A plan at `T1` adds that its rows move to row diagrams and no node folds.
   A plan folding closed aggregates says only those fold.
 - **A group of three names every member.** `ADDRESS (+CITY, COUNTRY)` replaces `ADDRESS (+2)`, the others in natural order, and a stub for any member shows its own label alone.
@@ -61,6 +63,7 @@ Nothing yet.
   Each stub inside shows its member's own label, per [MJL-0037](adrs/0037-stubs-for-one-group-share-a-box-and-the-lighter-detail-draws-exactly.md).
   A group folding one author region whole is boxed as that region, so an edge to the region meets the box.
   A detail draws a box only while it still meets the target.
+
   The contract reads each box and each stub inside it with exactly one reading.
 - **The lighter detail draws edges joining two groups one way.** The target draws them when it needs stubs for fewer of the source's members.
   With as many, it draws them when it meets fewer outside nodes, while it still meets the target.
@@ -93,7 +96,8 @@ Nothing yet.
 
 ### Changed
 
-- **A pipeline folds by lane.** A chain stage may join prefix families, so each extract folds with the bronze table it lands in. Lanes alike fold as twins, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
+- **A pipeline folds by lane.** A chain stage may join prefix families, so each extract folds with the bronze table it lands in.
+  Lanes alike fold as twins, per [MJL-0035](adrs/0035-a-region-folds-whole-and-a-nested-detail-names-members.md).
   With hubs folded, prefix families such as `bronze.` and `silver.` stay apart before a walk mixes them.
   A pair of one family sharing more overview neighbours folds first.
 - **An aggregate draws no relationship twice.** `T4` folds an aggregate only where the overview draws no two relationships between one group and one entity that the original draws between other ends.
@@ -102,7 +106,8 @@ Nothing yet.
 - **A star of alphabetical buckets is refused.** A plan whose every group is a range of one hub's sibling leaves gets no plan, per [MJL-0033](adrs/0033-a-plan-folds-what-the-author-grouped-and-refuses-buckets.md).
   The reason says a list reads better, as a gateway fronting 34 services shows.
 - **A tangled `erDiagram` folds its aggregates.** An overview meeting a cycle every four nodes keeps folding aggregates once the target is met, even by dropping rows alone.
-  Each fold takes away an overview edge per entity it hides, down to 60% of `nodeTarget`. A tree-like schema stays at rows dropped.
+  Each fold takes away an overview edge per entity it hides, down to 60% of `nodeTarget`.
+  A tree-like schema stays at rows dropped.
 - **A ticket family folds whole.** When every label leads with an id such as `PLAT-1201`, `T6` folds each family whole, hubs included, or in even contiguous runs.
 - **Regions drawn from one template fold alike.** Two cloud regions with the same subnets fold to the same depth, in one step.
   Their groups are named apart by the region around them, as `Public subnets (us-east-1) (+2)`.
@@ -111,6 +116,7 @@ Nothing yet.
   Otherwise the detail needing fewer stubs draws them.
   The other draws the group as one stub, with edges each way, so `ORDER (+6) from PAYMENT` beside `ORDER (in group)` no longer appears.
   The contract, and both test readers, read an edge from a member into a whole group's stub as a half edge.
+
   The contract refuses a group drawn both ways in one detail.
 - **Edges between a group's stub and a member are drawn once.** Edges of one kind one way keep only the label they share, as the overview does.
   So three labelled transitions from one group into `Allocating` read as one line.
@@ -121,6 +127,7 @@ Nothing yet.
   They are drawn once from the group's one stub, per [MJL-0032](adrs/0032-a-stage-folds-across-lanes-and-a-stub-draws-each-edge-once.md).
   The source group's detail still draws each of them exactly, so nothing is lost.
   A detail no longer draws one stub edge twice, or a stub per member such as `Checkout domain (+5) from paymentservice`.
+
   The contract, and the test suite's two independent readers, refuse a half edge drawn twice.
 - **A pipeline stage folds though no edge joins it.** In `T6`, two nodes of one prefix family that share a neighbour pair like two an edge joins.
   So an ETL pipeline's `gold.` tables fold into one group with no new reachable pair.
@@ -138,6 +145,7 @@ Nothing yet.
   The group is named after the decision, per [MJL-0028](adrs/0028-decision-regions-and-aggregates-fold-whole.md).
   The region is single-entry single-exit, found from dominators and post-dominators, so the fold adds no reachable pair and belongs to `T2`.
   A branch that ends the flow folds inside the region, regions fold innermost first, and a chain stage may pass through a folded region.
+
   A decision-heavy flowchart that got no plan before now gets one under every preset.
 - `SplitPlan` gains `ladder`, the overview's node count and score after each tier the plan walked, and the library exports its `LadderStep` type.
   The contract recounts it.
@@ -145,8 +153,7 @@ Nothing yet.
 
 ### Changed
 
-- **erDiagram plans group entities by aggregate root.** An entity belongs to the aggregate of its single identifying parent, or, as a leaf, of the one entity it depends on.
-  `T4` folds the largest aggregate that fits, named after its root, and splits a root's aggregate again when none fits.
+- **erDiagram plans group entities by aggregate root.** An entity belongs to the aggregate of its single identifying parent, or, as a leaf, of the one entity it depends on. `T4` folds the largest aggregate that fits, named after its root, and splits a root's aggregate again when none fits.
   A junction identified by two roots no longer folds into one side, and `T5` and `T6` keep it in view.
 - A chain stage is named after the member where it starts, not its best-connected member.
 - A twin class too large for one group is cut into runs of even size.
@@ -155,6 +162,7 @@ Nothing yet.
   The range is the first and last label in natural order, such as `accounts-service … feature-flag-service (+9)`.
   A range is refused when a member of another group falls inside it.
   An id-led group with no honest range is named by its first label.
+
   A twin class is put in label order before it is cut into runs.
 - **A shared terminal stays in view.** A flowchart or `stateDiagram` node that three nodes or more lead into and that leads nowhere is no longer folded into one branch's group.
   This holds under the strict rules and under a new second rule set that folds hubs and branches.
@@ -204,8 +212,7 @@ Nothing yet.
   The text before it is unchanged, and no complexity rule gains a fixer.
 - `--split-plan` prints, after the report, the overview and every detail diagram of each plan as mermaid fences, under a heading naming `file:line` and the tier.
   It writes no file, exits as a check does, and refuses `--fix`, `--json`, `--list-rules` and `--validate-plugins`.
-- The library exports `splitPlan`, `splitOutcome` and the `SplitPlan`, `SplitGroup`, `SplitDetail`, `SplitLoss`, `SplitOutcome` and `Tier` types.
-  `Diagram` gains `graph()`, the parser's nodes, edges and subgraphs, read once.
+- The library exports `splitPlan`, `splitOutcome` and the `SplitPlan`, `SplitGroup`, `SplitDetail`, `SplitLoss`, `SplitOutcome` and `Tier` types. `Diagram` gains `graph()`, the parser's nodes, edges and subgraphs, read once.
 - A docs site page, [Summarising a diagram](https://jpeakai.github.io/jpai-mermaidjs-lint/concepts/summarisation/), explains the graph theory behind split plans, the tier ladder and the contract.
   It plans one large diagram under every preset, drawn by the site build from what `splitPlan` returns.
 - A split plan folds the author's regions first and folds repeated patterns evenly, per [MJL-0026](adrs/0026-a-split-plan-follows-the-authors-structure.md).
@@ -239,8 +246,7 @@ Nothing yet.
   A diagram under frontmatter or a directive that parses with no nodes now passes.
 - A parser reason is built from the parser's structured error.
   A line number at the end of a diagram is now the real line.
-- Fences are read from micromark's tokens rather than scanned.
-  `Diagram` gains `closingFence`, and `DiagramStats` gains `error_line`.
+- Fences are read from micromark's tokens rather than scanned. `Diagram` gains `closingFence`, and `DiagramStats` gains `error_line`.
 - Contrast style directives are read from mermaid's parsed diagram, not a scan of its text, per [MJL-0022](adrs/0022-start-from-the-official-parsers-output.md).
   Text inside a label is no longer taken for a `classDef`, `style` or `linkStyle`.
   A style joined to another statement by `;` is read.
@@ -251,8 +257,7 @@ Nothing yet.
 - An unparseable diagram gets no contrast findings, only `parse-diagram-unparseable`.
 - A sequence theme variable's line is read from the frontmatter.
   One set in `%%{init}%%` points at the keyword line.
-- **Breaking for the library:** `Diagram.directives` is now `Diagram.styles()`, which returns a promise of a `StyleReading`.
-  `StyleDirective` loses the `inlineClass` kind and `class_name`.
+- **Breaking for the library:** `Diagram.directives` is now `Diagram.styles()`, which returns a promise of a `StyleReading`. `StyleDirective` loses the `inlineClass` kind and `class_name`.
 - `micromark`, `stemmer` and `yaml` are new runtime dependencies.
 - A contrast value is placed from the tokens the lexer read for it, and `--fix` refuses more often rather than guess, per [MJL-0027](adrs/0027-gaps-in-the-official-parsers-are-recorded.md).
   A classDiagram's colours are reported but never rewritten, because its lexer reads a statement's declarations as one run of text.
@@ -299,8 +304,7 @@ Nothing yet.
   Each row adds 0.25 points to the visual complexity score, and the new `rowWeight` option sets that weight.
 - A `classDiagram` counts each `namespace` as a subgraph.
   A namespace inside another adds a level of nesting.
-- `DiagramStats` gains `rows`, and `ThresholdConfig` gains `row_weight`.
-  `same-diagrams` also compares `rows`.
+- `DiagramStats` gains `rows`, and `ThresholdConfig` gains `row_weight`. `same-diagrams` also compares `rows`.
 - The Measuring complexity page has worked examples for sequence, entity and state diagrams.
 
 ### Fixed
@@ -348,8 +352,7 @@ Nothing yet.
 - `--list-rules` takes the category flags, to show the rules a run would use.
 - `buildRegistry` and `setUp` take a `selection` of categories to enable and disable, exported as the `CategorySelection` type.
 
-A category that is not loaded, one named by both flags, or flags that turn off every rule fail with `error[flag]` and exit code 2.
-`--validate-plugins` refuses a category flag, since it checks every plugin.
+A category that is not loaded, one named by both flags, or flags that turn off every rule fail with `error[flag]` and exit code 2. `--validate-plugins` refuses a category flag, since it checks every plugin.
 See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 
 ## [0.6.3] - 2026-10-16
@@ -390,8 +393,7 @@ See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 
 ### Added
 
-- A host that draws its own page can set the canvas, so page-backed colours are scored on the page a reader sees.
-  `--canvas-light` and `--canvas-dark` set it for a run, and a `canvas` option of `{ light, dark }` sets it on the contrast rules in the config.
+- A host that draws its own page can set the canvas, so page-backed colours are scored on the page a reader sees. `--canvas-light` and `--canvas-dark` set it for a run, and a `canvas` option of `{ light, dark }` sets it on the contrast rules in the config.
   The library takes it as `RunFlags.canvas`.
   Translucent fills, edge label boxes and a sequence diagram's page-backed text and lines are scored on it.
   The default stays GitHub's `#ffffff` and `#0d1117`, so a run that sets no canvas reports what it did before.
@@ -400,7 +402,8 @@ See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
   A canvas flag beside `--profile mkdocs-material` is `error[flag]`, and a canvas beside `profile` `mkdocs-material` on one config rule is `error[rule-option]`.
   Any other canvas on such a file is the new `error[canvas-profile]` (`CanvasProfileError`).
 - A canvas colour that will not parse, or is translucent, is `error[flag]` from a flag and `error[rule-option]` from the config.
-- A plugin rule may declare an option of the new type `canvas`. It receives the canvas flags as the contrast rules do, and its value is checked the same way.
+- A plugin rule may declare an option of the new type `canvas`.
+  It receives the canvas flags as the contrast rules do, and its value is checked the same way.
 
 ## [0.5.0] - 2026-10-16
 
@@ -414,11 +417,14 @@ See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 ### Changed
 
 - `mermaid` is pinned to exactly 11.17.2, because the sequence colours it resolves change between releases.
-- The `error[plugin-source]` message for a TypeScript local rule says Node 23 needs 23.6 or newer. Node 23.0 to 23.5 cannot import TypeScript.
+- The `error[plugin-source]` message for a TypeScript local rule says Node 23 needs 23.6 or newer.
+  Node 23.0 to 23.5 cannot import TypeScript.
 
 ### Upgrading from 0.4.2
 
-- **A sequence diagram that passed before may now fail.** One likely cause is a fixed message colour that fades on a dark page. Another is a note with no colours set, which Mermaid's dark theme draws at 4.49 to 1. Set `noteBkgColor` and `noteTextColor` to one readable pair, and leave colours on the page to the theme.
+- **A sequence diagram that passed before may now fail.** One likely cause is a fixed message colour that fades on a dark page.
+  Another is a note with no colours set, which Mermaid's dark theme draws at 4.49 to 1.
+  Set `noteBkgColor` and `noteTextColor` to one readable pair, and leave colours on the page to the theme.
 
 ## [0.4.2] - 2026-10-16
 
@@ -431,7 +437,8 @@ See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 
 ### Changed
 
-- `checkMarkdown`, `checkModel`, `fixSource` and `fixSourceReport` reject an unknown `preset` or `profile` in `RunFlags` with `FlagError`, code `flag`. They rejected with a plain `Error` before.
+- `checkMarkdown`, `checkModel`, `fixSource` and `fixSourceReport` reject an unknown `preset` or `profile` in `RunFlags` with `FlagError`, code `flag`.
+  They rejected with a plain `Error` before.
 - `--help` describes `--json`.
 
 ## [0.4.0] - 2026-10-16
@@ -439,7 +446,8 @@ See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 ### Fixed
 
 - Fix verification refuses an edit that leaves a diagram unparseable when it parsed before. `same-diagrams` also requires each diagram's parse result to be unchanged, and `same-tree` refuses an edit that breaks a diagram's parse.
-- `complexity-subgraph-nesting-too-deep` no longer fires on the depth of a `mindmap`, `treemap`, `treeView` or `ishikawa`, which draw no subgraphs. Their depth still counts toward the visual complexity score, which is unchanged.
+- `complexity-subgraph-nesting-too-deep` no longer fires on the depth of a `mindmap`, `treemap`, `treeView` or `ishikawa`, which draw no subgraphs.
+  Their depth still counts toward the visual complexity score, which is unchanged.
 - A `flowchart-elk` diagram is read and measured as a flowchart. 0.3.0 reported it as `parse-diagram-unparseable`.
 
 ### Changed
@@ -447,14 +455,18 @@ See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 - `DiagramStats` gains `max_tree_depth`, the depth of a tree-shaped diagram. `max_subgraph_depth` is now 0 for `mindmap`, `treemap`, `treeView` and `ishikawa`.
 - `same-diagrams` also compares `max_tree_depth`.
 - `error[fix-outside-root]` now ends "or run on the target path itself".
-- The `parse-fence-unterminated` remediation says to add the closing fence directly after the diagram's last line. It also says to repeat the opening line's prefix: `> ` in a quote, or the item's indent in a list.
+- The `parse-fence-unterminated` remediation says to add the closing fence directly after the diagram's last line.
+  It also says to repeat the opening line's prefix: `> ` in a quote, or the item's indent in a list.
 - `make evals-dry` writes its report under `tmp/evals-dry/`, so the last live run's report stays as it was.
-- The docs site deploys after the Publish workflow succeeds, or when its workflow is run by hand, so it describes the latest release. A pull request or a push to `main` only builds it.
-- The agent skill's remediation table covers `parse-fence-unterminated`, and gives `contrast-text-below-aa` its own rows for `mkdocs-material` and a `linkStyle`. It tells the agent to follow a finding's own `remediation` where that says more than the table.
+- The docs site deploys after the Publish workflow succeeds, or when its workflow is run by hand, so it describes the latest release.
+  A pull request or a push to `main` only builds it.
+- The agent skill's remediation table covers `parse-fence-unterminated`, and gives `contrast-text-below-aa` its own rows for `mkdocs-material` and a `linkStyle`.
+  It tells the agent to follow a finding's own `remediation` where that says more than the table.
 
 ### Upgrading from 0.3.0
 
-- **A plugin fixer may see an edit refused.** An edit that turns a parseable diagram into an unparseable one is refused, and the finding stays. So is a `same-diagrams` edit that makes an unparseable diagram parse.
+- **A plugin fixer may see an edit refused.** An edit that turns a parseable diagram into an unparseable one is refused, and the finding stays.
+  So is a `same-diagrams` edit that makes an unparseable diagram parse.
 - **Code that reads `max_subgraph_depth` for a tree-shaped diagram reads 0.** Read `max_tree_depth` instead.
 
 ## [0.3.0] - 2026-10-15
@@ -462,14 +474,17 @@ See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 ### Added
 
 - The package ships `.d.ts` type declarations in `dist/types/`, so a TypeScript project type-checks a plugin with no extra compiler options.
-- `error[package-json]`, exit 1, for a project `package.json` that is not a JSON object. A `--no-plugins` run carries on past it. An installed plugin whose `package.json` is not a JSON object fails to load with `error[plugin-source]`, which `--lenient-plugins` skips. 0.2.0 stopped with an uncaught error there.
+- `error[package-json]`, exit 1, for a project `package.json` that is not a JSON object.
+  A `--no-plugins` run carries on past it.
+  An installed plugin whose `package.json` is not a JSON object fails to load with `error[plugin-source]`, which `--lenient-plugins` skips. 0.2.0 stopped with an uncaught error there.
 - `error[fix-not-converging]`, exit 1, names the rules whose fixers never stop proposing edits.
 - `error[fix-outside-root]`, exit 2, stops `--fix` before it writes through a symbolic link whose target is outside the project root.
 - The library exports the types `Preset`, `ThresholdConfig`, `PluginFailure`, `SourceKind`, `Setup`, `SetupOptions` and `Collected`. `setUp` also returns the project `root`.
 
 ### Changed
 
-- A directory walk names each symbolic link it skips on standard error. A link named as a path is still checked.
+- A directory walk names each symbolic link it skips on standard error.
+  A link named as a path is still checked.
 - `quadrantChart` counts each plotted point as a node, with each quadrant that has a label.
 - `timeline` counts each event as a node, and an `xychart` with a numeric x-axis counts the points of its longest series.
 - A composite state in `stateDiagram` also counts as a subgraph, so its nesting depth is measured.
@@ -484,10 +499,14 @@ See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 
 ### Upgrading from 0.2.0
 
-- **A plugin may fail to load.** Rename a rule key or namespace with a trailing or doubled hyphen. Rename a `preset` or `profile` option that is not a string.
-- **Two local rule files with one name fail the load.** Files such as `house-x.js` and `house-x.mjs` loaded as one rule on 0.2.0, and now fail with `error[plugin-contract]`, exit 1. Keep one of them.
-- **`--fix` may stop on a symbolic link.** A named link whose target is outside the project root now stops `--fix` with `error[fix-outside-root]`, exit 2, before any file is written. Fix the target in its own project, or run on the target path itself.
-- **A plugin author sees two values change.** A rule's `ctx.file` is the absolute path in a command run. A config `plugins` entry that is not installed reports `kind` `config` in `--json`, not `package`.
+- **A plugin may fail to load.** Rename a rule key or namespace with a trailing or doubled hyphen.
+  Rename a `preset` or `profile` option that is not a string.
+- **Two local rule files with one name fail the load.** Files such as `house-x.js` and `house-x.mjs` loaded as one rule on 0.2.0, and now fail with `error[plugin-contract]`, exit 1.
+  Keep one of them.
+- **`--fix` may stop on a symbolic link.** A named link whose target is outside the project root now stops `--fix` with `error[fix-outside-root]`, exit 2, before any file is written.
+  Fix the target in its own project, or run on the target path itself.
+- **A plugin author sees two values change.** A rule's `ctx.file` is the absolute path in a command run.
+  A config `plugins` entry that is not installed reports `kind` `config` in `--json`, not `package`.
 - **A diagram may newly exceed a complexity limit.** `quadrantChart`, `timeline`, `xychart` and `stateDiagram` now count more nodes, and nested composite states can exceed the nesting limit.
 
 ## [0.2.0] - 2026-10-15
@@ -496,8 +515,10 @@ See [MJL-0020](adrs/0020-category-flags-have-the-last-word-for-a-run.md).
 
 A project that passed on 0.1.1 can fail on 0.2.0.
 
-- **Every `linkStyle` `color:` is now reported.** No one colour reads on the edge label box in both themes, and `--fix` cannot clear it. Remove the `color:` from the `linkStyle` line.
-- **A one-line diagram that does not parse is now reported.** For example, `graph TD; A-->; B[[[` passed on 0.1.1. Repair the syntax.
+- **Every `linkStyle` `color:` is now reported.** No one colour reads on the edge label box in both themes, and `--fix` cannot clear it.
+  Remove the `color:` from the `linkStyle` line.
+- **A one-line diagram that does not parse is now reported.** For example, `graph TD; A-->; B[[[` passed on 0.1.1.
+  Repair the syntax.
 - **A caret range does not reach 0.2.0.** Under 0.x, `^0.1.1` accepts only 0.1.x releases, so change the range to `^0.2.0`.
 
 ### Added
@@ -527,7 +548,8 @@ A project that passed on 0.1.1 can fail on 0.2.0.
 
 ### Security
 
-- `--no-plugins` no longer imports a `mermaidjs-lint.config.mjs`, which is code. The run stops with `error[config-code]` and exit 2 instead, and `--config` with a `.json` config lets it run.
+- `--no-plugins` no longer imports a `mermaidjs-lint.config.mjs`, which is code.
+  The run stops with `error[config-code]` and exit 2 instead, and `--config` with a `.json` config lets it run.
 
 ## [0.1.1] - 2026-10-15
 
